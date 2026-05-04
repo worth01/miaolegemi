@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>喵了个咪 · 主页大厅</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(108,92,231,0.3)} 50%{box-shadow:0 0 40px rgba(108,92,231,0.6)} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    @keyframes sparkle { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+    @keyframes checkPop { 0%{transform:scale(0) rotate(-20deg);opacity:0} 60%{transform:scale(1.2) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0deg);opacity:1} }
+    @keyframes coinDrop { 0%{transform:translateY(-20px) scale(0.5);opacity:0} 50%{transform:translateY(0) scale(1.2);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+    @keyframes rippleOut { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(2.5);opacity:0} }
+    @keyframes slideUp { 0%{transform:translateY(30px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════ */
+const C = {
+  purple: '#6C5CE7', purpleDark: '#4A3DB5', purpleLight: '#A29BFE',
+  orange: '#FD9644', blue: '#45B7D1',
+  yellow: '#F7DC6F', red: '#FF6B6B',
+  green: '#00B894', pink: '#FD79A8',
+  bg: '#0F0A1E',
+  card: 'rgba(255,255,255,0.06)',
+  cardBorder: 'rgba(255,255,255,0.08)',
+  glass: 'rgba(255,255,255,0.04)',
+  ink: '#F0EDFF', sub: 'rgba(240,237,255,0.55)', muted: 'rgba(240,237,255,0.3)',
+};
+
+const C_LIGHT = {
+  purple: '#6C5CE7', purpleDark: '#4A3DB5', purpleLight: '#5B4BCF',
+  orange: '#E8853A', blue: '#3AA5B9',
+  yellow: '#D4B94E', red: '#E05555',
+  green: '#009B7D', pink: '#E06890',
+  bg: '#F5F3FF',
+  card: 'rgba(108,92,231,0.06)',
+  cardBorder: 'rgba(108,92,231,0.1)',
+  glass: 'rgba(108,92,231,0.03)',
+  ink: '#2D1B69', sub: 'rgba(45,27,105,0.55)', muted: 'rgba(45,27,105,0.35)',
+};
+
+// 全局主题引用 — App通过 setDarkMode 切换
+window.T = { ...C };
+
+/* ═══════════════════════════════════════
+   MOCK DATA
+   ═══════════════════════════════════════ */
+const CATS = [
+  { id: 1, name: '橘猫',   breed: '中华田园', rarity: 'N',   unlocked: true,  img: 'cat/橘猫.png', desc: '贪吃爱睡，毛色温暖如阳光', checkins: 0 },
+  { id: 2, name: '黑猫',   breed: '孟买猫',   rarity: 'N',   unlocked: true,  img: 'cat/黑猫.png', desc: '神秘优雅，夜晚的守护者', checkins: 3 },
+  { id: 3, name: '白猫',   breed: '安哥拉',   rarity: 'N',   unlocked: true,  img: 'cat/白猫.png', desc: '纯洁如雪，温柔的小公主', checkins: 5 },
+  { id: 4, name: '蓝猫',   breed: '英国短毛', rarity: 'N',   unlocked: false, img: 'cat/蓝猫.png', desc: '圆脸蓝毛，安静的英伦绅士', checkins: 7 },
+  { id: 5, name: '猫爬架', breed: '特殊',     rarity: 'N',   unlocked: false, img: 'cat/猫爬架图片.jpeg', desc: '猫咪的游乐天堂，高处风景独好', checkins: 8 },
+  { id: 6, name: '三花猫', breed: '三色短毛', rarity: 'R',   unlocked: true,  img: 'cat/三花猫.png', desc: '三色交汇，幸运的象征', checkins: 10 },
+  { id: 7, name: '布偶猫', breed: '布偶',     rarity: 'R',   unlocked: true,  img: 'cat/布偶猫.png', desc: '蓝宝石眼睛，如布偶般温顺', checkins: 15 },
+  { id: 8, name: '暹罗猫', breed: '暹罗',     rarity: 'R',   unlocked: false, img: 'cat/暹罗猫.png', desc: '优雅修长，来自泰国的贵族', checkins: 20 },
+  { id: 9, name: '猫爪印', breed: '特殊',     rarity: 'SR',  unlocked: false, img: 'cat/猫爪印.png', desc: '留下足迹，记录每一步旅程', checkins: 25 },
+  { id: 10, name: '猫罐头', breed: '特殊',     rarity: 'SR',  unlocked: false, img: 'cat/猫罐头.png', desc: '美味罐头，猫咪的最爱', checkins: 30 },
+  { id: 11, name: '毛线球', breed: '特殊',     rarity: 'SR',  unlocked: false, img: 'cat/毛线球.png', desc: '五彩缤纷，快乐的代名词', checkins: 35 },
+  { id: 12, name: '猫薄荷', breed: '特殊',    rarity: 'SR',  unlocked: false, img: 'cat/猫薄荷.png', desc: '神秘草本，猫咪的快乐源泉', checkins: 40 },
+  { id: 13, name: '折耳猫', breed: '苏格兰折耳', rarity: 'SR', unlocked: false, img: 'cat/折耳猫.png', desc: '耳朵微折，安静温柔的小天使', checkins: 42 },
+  { id: 14, name: '无毛猫', breed: '斯芬克斯', rarity: 'SR',  unlocked: false, img: 'cat/无毛猫.png', desc: '无毛胜有毛，温暖的拥抱', checkins: 44 },
+  { id: 15, name: '波斯猫', breed: '波斯长毛', rarity: 'SR',  unlocked: false, img: 'cat/波斯猫.png', desc: '华丽长毛，优雅高贵的贵族', checkins: 46 },
+  { id: 16, name: '幸运猫', breed: '限定',    rarity: 'SSR', unlocked: false, img: 'cat/幸运猫.png', desc: '招财进宝，好运连连', checkins: 50 },
+  { id: 17, name: '星空猫', breed: '限定',    rarity: 'SSR', unlocked: false, img: 'cat/星空猫.png', desc: '星空之子，宇宙中最闪耀的存在', checkins: 60 },
+];
+
+const RARITY_COLORS = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
+const RARITY_BG = { N: 'rgba(178,190,195,0.1)', R: 'rgba(69,183,209,0.1)', SR: 'rgba(108,92,231,0.15)', SSR: 'rgba(253,150,68,0.15)' };
+
+const USER = { name: '小鱼干', streak: 32, total: 45, coins: 1280, level: 8 };
+
+/* ═══════════════════════════════════════
+   PROFILE DATA
+   ═══════════════════════════════════════ */
+const CAT_NAMES = ['橘座','黑炭','雪球','煤球','团子','麻薯','年糕','汤圆','豆沙','芝麻','奶盖','布丁','蛋挞','泡芙','芋圆','栗子','豆花','椰果','仙草','奶酪'];
+const MONTHS = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const MOODS = ['开心','困困','元气','慵懒','兴奋','冷静','甜蜜','酷酷','软萌','傲娇','佛系','认真'];
+function genNickname() {
+  return CAT_NAMES[Math.floor(Math.random()*CAT_NAMES.length)] + '的' + MONTHS[Math.floor(Math.random()*MONTHS.length)] + MOODS[Math.floor(Math.random()*MOODS.length)];
+}
+
+const TITLES = [
+  { id: 't1', name: '初来乍到', desc: '创建账号', color: T.sub, active: true },
+  { id: 't2', name: '欧皇附体', desc: '单抽SSR', color: T.orange },
+  { id: 't3', name: '图鉴大师', desc: '收集全部猫咪', color: T.purple },
+  { id: 't4', name: '签到达人', desc: '连续签到30天', color: T.green },
+  { id: 't5', name: '消消乐王者', desc: '通关核心关', color: T.red },
+  { id: 't6', name: '氪金大佬', desc: '累计充值', color: T.yellow },
+];
+
+const ACHIEVEMENTS = [
+  { icon: '🏆', name: '首抽SSR', done: false },
+  { icon: '🎯', name: '通关教学', done: true },
+  { icon: '💎', name: '集齐N卡', done: true },
+  { icon: '🌟', name: '集齐R卡', done: false },
+  { icon: '👑', name: '全图鉴', done: false },
+  { icon: '🔥', name: '30天连续', done: true },
+  { icon: '🎮', name: '百场对局', done: false },
+  { icon: '🐾', name: '猫咪挚友', done: false },
+  { icon: '🎪', name: '活动限定', done: false },
+  { icon: '💫', name: '欧气爆棚', done: false },
+];
+
+const FUNC_GRID = [
+  { icon: '⚙️', label: '设置', desc: '音效·震动·账号' },
+  { icon: '❓', label: '帮助反馈', desc: '常见问题' },
+  { icon: '🎁', label: '礼包兑换', desc: '输入兑换码' },
+  { icon: '📤', label: '分享好友', desc: '得抽卡券' },
+  { icon: '👥', label: '好友排行', desc: '看看谁更强' },
+  { icon: '🎨', label: '外观商店', desc: '头像框·称号' },
+];
+
+/* ═══════════════════════════════════════
+   iOS FRAME (lightweight)
+   ═══════════════════════════════════════ */
+function IosFrame({ children }) {
+  return (
+    <div style={{
+      display: 'inline-block', padding: 12, background: '#000',
+      borderRadius: 60, boxShadow: '0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)',
+    }}>
+      <div style={{
+        position: 'relative', borderRadius: 48, overflow: 'hidden',
+        width: 393, height: 852, background: T.bg,
+      }}>
+        {/* Dynamic Island */}
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          width: 126, height: 36, background: '#000', borderRadius: 999, zIndex: 30,
+        }}/>
+        {/* Status Bar */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 54,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 32px', fontSize: 16, fontWeight: 600, color: T.ink,
+          zIndex: 25, pointerEvents: 'none',
+        }}>
+          <span>9:41</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="rgba(240,237,255,0.85)">
+              <rect x="0" y="6" width="2" height="4" rx="0.5" opacity="0.4"/>
+              <rect x="3" y="4" width="2" height="6" rx="0.5" opacity="0.6"/>
+              <rect x="6" y="2" width="2" height="8" rx="0.5" opacity="0.8"/>
+              <rect x="9" y="0" width="2" height="10" rx="0.5"/>
+            </svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <path d="M8 11.5a1 1 0 100-2 1 1 0 000 2z" fill="rgba(240,237,255,0.85)"/>
+              <path d="M3 7.5a7 7 0 0110 0" stroke="rgba(240,237,255,0.85)" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+              <path d="M1 4.5a11 11 0 0114 0" stroke="rgba(240,237,255,0.85)" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.7"/>
+            </svg>
+            <div style={{ width: 26, height: 12, border: '1.5px solid rgba(240,237,255,0.7)', borderRadius: 3, padding: '1.5px', display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '78%', height: '100%', background: 'rgba(240,237,255,0.85)', borderRadius: 1 }}/>
+            </div>
+          </div>
+        </div>
+        {/* Content */}
+        <div style={{
+          position: 'absolute', top: 54, left: 0, right: 0, bottom: 34,
+          overflowY: 'auto', overflowX: 'hidden',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+        }}>
+          <style>{`div::-webkit-scrollbar{display:none}`}</style>
+          {children}
+        </div>
+        {/* Home Indicator */}
+        <div style={{
+          position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+          width: 134, height: 5, background: 'rgba(240,237,255,0.35)', borderRadius: 999, zIndex: 25,
+        }}/>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   TOP HEADER
+   ═══════════════════════════════════════ */
+function TopHeader({ darkMode, onToggleTheme }) {
+  const DAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+  const now = new Date();
+  const dateStr = `${DAYS[now.getDay()]} ${now.getMonth()+1}.${String(now.getDate()).padStart(2,'0')}`;
+  const greetings = ['新的一天加油 ✨','今天也要开心哦 ☀️','元气满满的一天 💪','好运连连 🍀','一起喵了个咪 🐱'];
+  const greeting = greetings[now.getDay() % greetings.length];
+  return (
+    <div style={{
+      padding: '8px 20px 0',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, letterSpacing: '-0.3px' }}>
+          {dateStr}
+        </div>
+        <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>
+          {greeting}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        {/* 连续打卡 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(108,92,231,0.15)', borderRadius: 999, padding: '4px 10px',
+        }}>
+          <span style={{ fontSize: 12 }}>🔥</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: T.purpleLight }}>{USER.streak}天</span>
+        </div>
+        {/* 金币 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(253,150,68,0.12)', borderRadius: 999, padding: '4px 10px',
+        }}>
+          <span style={{ fontSize: 12 }}>🪙</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: T.orange }}>{USER.coins}</span>
+        </div>
+        {/* 主题切换 */}
+        <div onClick={onToggleTheme} style={{
+          cursor: 'pointer', opacity: 0.6, display: 'flex', alignItems: 'center',
+          padding: '4px 8px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+          transition: 'opacity 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}
+        >
+          <span style={{ fontSize: 16 }}>{darkMode ? '☀️' : '🌙'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN FEATURED CAT AREA
+   ═══════════════════════════════════════ */
+function FeaturedCat({ cat, checkedIn, onCheckIn }) {
+  return (
+    <div style={{
+      textAlign: 'center',
+      padding: '20px 20px 0',
+      position: 'relative',
+    }}>
+      {/* 背景光晕 */}
+      <div style={{
+        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 300, height: 300, borderRadius: '50%',
+        background: `radial-gradient(circle, ${RARITY_COLORS[cat.rarity]}15 0%, transparent 70%)`,
+        pointerEvents: 'none',
+      }}/>
+      {/* 装饰星星 */}
+      {[
+        { top: 10, left: 50, size: 6, delay: 0 },
+        { top: 30, right: 60, size: 4, delay: 0.5 },
+        { top: 60, left: 30, size: 5, delay: 1 },
+        { top: 80, right: 40, size: 3, delay: 1.5 },
+        { top: 20, left: 120, size: 4, delay: 0.8 },
+      ].map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute', top: s.top, left: s.left, right: s.right,
+          width: s.size, height: s.size, borderRadius: '50%',
+          background: T.yellow, opacity: 0.4,
+          animation: `sparkle 2s ease-in-out ${s.delay}s infinite`,
+          pointerEvents: 'none',
+        }}/>
+      ))}
+      {/* 猫咪图片 */}
+      <div style={{
+        width: 200, height: 200, borderRadius: '50%',
+        margin: '0 auto',
+        background: `radial-gradient(circle, ${RARITY_COLORS[cat.rarity]}20, transparent)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: checkedIn ? 'none' : 'float 4s ease-in-out infinite',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <img
+          src={cat.img}
+          alt={cat.name}
+          style={{
+            width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%',
+            filter: cat.unlocked ? 'none' : 'grayscale(0.7) brightness(0.5)',
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.parentElement.innerHTML = `<div style="font-size:60px">${cat.unlocked ? '🐱' : '🔒'}</div>`;
+          }}
+        />
+        {!cat.unlocked && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(15,10,30,0.5)', borderRadius: '50%',
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <rect x="5" y="11" width="14" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5"/>
+                <path d="M8 11V7a4 4 0 118 0v4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* 猫咪名字 */}
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <span style={{
+          fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+          background: RARITY_BG[cat.rarity], color: RARITY_COLORS[cat.rarity],
+          letterSpacing: '0.05em',
+        }}>{cat.rarity}</span>
+        <span style={{ fontSize: 20, fontWeight: 800, color: T.ink, letterSpacing: '-0.5px' }}>{cat.name}</span>
+        <span style={{ fontSize: 11, color: T.sub }}>{cat.breed}</span>
+      </div>
+      <div style={{ fontSize: 12, color: T.sub, marginTop: 4, lineHeight: 1.5 }}>{cat.desc}</div>
+
+      {/* 打卡按钮 */}
+      {!checkedIn ? (
+        <button onClick={onCheckIn} style={{
+          margin: '16px auto 0',
+          width: '100%', maxWidth: 280, height: 52,
+          borderRadius: 16,
+          background: `linear-gradient(135deg, ${T.purple}, ${T.purpleDark})`,
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontSize: 16, fontWeight: 700, color: '#fff',
+          boxShadow: `0 8px 24px ${T.purple}40`,
+          transition: 'all 0.2s',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <span style={{ fontSize: 20 }}>🐾</span>
+          今日打卡
+        </button>
+      ) : (
+        <div style={{
+          marginTop: 16,
+          width: '100%', maxWidth: 280, height: 52, margin: '16px auto 0',
+          borderRadius: 16,
+          background: 'rgba(0,184,148,0.15)',
+          border: '1px solid rgba(0,184,148,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontSize: 16, fontWeight: 700, color: T.green,
+        }}>
+          <span style={{ fontSize: 18, animation: 'checkPop 0.5s ease-out' }}>✅</span>
+          今日已打卡
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   STATS BAR
+   ═══════════════════════════════════════ */
+function StatsBar({ unlockedCount, coins }) {
+  const stats = [
+    { icon: '🔥', value: USER.streak, label: '连续天数', color: T.red },
+    { icon: '📅', value: USER.total, label: '累计打卡', color: T.blue },
+    { icon: '🐱', value: unlockedCount, label: '已解锁', color: T.green },
+    { icon: '🪙', value: coins, label: '小鱼干', color: T.orange },
+  ];
+  return (
+    <div style={{
+      display: 'flex', gap: 8, padding: '16px 20px 0',
+    }}>
+      {stats.map((s, i) => (
+        <div key={i} style={{
+          flex: 1, borderRadius: 14, padding: '10px 0',
+          background: T.card, border: `1px solid ${T.cardBorder}`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+        }}>
+          <span style={{ fontSize: 16 }}>{s.icon}</span>
+          <div style={{ fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+          <div style={{ fontSize: 9, color: T.muted, fontWeight: 500 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   DAILY MISSIONS
+   ═══════════════════════════════════════ */
+function DailyMissions({ checkedIn, gachaDone }) {
+  const missions = [
+    { icon: '☀️', text: '每日打卡', reward: '+50 🐟', done: checkedIn },
+    { icon: '🎁', text: '体验抽卡', reward: '+20 🐟', done: gachaDone },
+    { icon: '👥', text: '分享给好友', reward: '+30 🐟', done: false },
+  ];
+  return (
+    <div style={{ padding: '16px 20px 0' }}>
+      <div style={{
+        fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8,
+        display: 'flex', alignItems: 'center', gap: 6,
+      }}>
+        <span>📋</span> 每日任务
+      </div>
+      <div style={{
+        background: T.card, borderRadius: 16, border: `1px solid ${T.cardBorder}`,
+        overflow: 'hidden',
+      }}>
+        {missions.map((m, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', padding: '10px 14px',
+            borderBottom: i < missions.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            gap: 10, opacity: m.done ? 0.5 : 1,
+          }}>
+            <span style={{ fontSize: 16 }}>{m.icon}</span>
+            <span style={{
+              flex: 1, fontSize: 13, fontWeight: 500, color: m.done ? T.sub : T.ink,
+              textDecoration: m.done ? 'line-through' : 'none',
+            }}>{m.text}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              color: m.done ? T.green : T.orange,
+              padding: '2px 8px', borderRadius: 999,
+              background: m.done ? 'rgba(0,184,148,0.1)' : 'rgba(253,150,68,0.1)',
+            }}>{m.done ? '已完成' : m.reward}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   CAT COLLECTION PREVIEW
+   ═══════════════════════════════════════ */
+function CatCollectionPreview({ onSelect }) {
+  return (
+    <div style={{ padding: '16px 20px 0' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span>🐱</span> 我的猫咪
+          <span style={{ fontSize: 10, color: T.sub, fontWeight: 400 }}>
+            {CATS.filter(c => c.unlocked).length}/{CATS.length}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: T.purpleLight, cursor: 'pointer', fontWeight: 500 }}>查看全部 →</div>
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+      }}>
+        {CATS.map((cat, i) => (
+          <div key={cat.id} onClick={() => onSelect(cat)} style={{
+            borderRadius: 14, padding: '8px 4px 6px',
+            background: cat.unlocked ? T.card : 'rgba(255,255,255,0.02)',
+            border: `1px solid ${cat.unlocked ? RARITY_COLORS[cat.rarity] + '20' : T.cardBorder}`,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            cursor: 'pointer', transition: 'all 0.2s',
+            animation: `slideUp 0.4s ease-out ${i * 0.05}s both`,
+          }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              overflow: 'hidden', position: 'relative',
+              background: cat.unlocked ? 'transparent' : 'rgba(255,255,255,0.03)',
+            }}>
+              <img
+                src={cat.img}
+                alt={cat.name}
+                style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  filter: cat.unlocked ? 'none' : 'grayscale(1) brightness(0.3)',
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              {!cat.unlocked && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="11" width="14" height="10" rx="2" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                    <path d="M8 11V7a4 4 0 118 0v4" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              )}
+            </div>
+            <span style={{
+              fontSize: 10, fontWeight: 600,
+              color: cat.unlocked ? T.ink : T.muted,
+            }}>{cat.name}</span>
+            <span style={{
+              fontSize: 8, fontWeight: 700,
+              color: RARITY_COLORS[cat.rarity], letterSpacing: '0.05em',
+            }}>{cat.rarity}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   GACHA RESULT MODAL
+   ═══════════════════════════════════════ */
+function GachaResultModal({ cat, show, onClose, isNew }) {
+  if (!show || !cat) return null;
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 60, animation: 'fadeIn 0.3s ease-out',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 280, background: 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        borderRadius: 24, padding: '32px 24px', textAlign: 'center',
+        border: `1px solid ${RARITY_COLORS[cat.rarity]}40`,
+        boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
+        animation: 'slideUp 0.4s ease-out',
+      }}>
+        <div style={{
+          width: 96, height: 96, borderRadius: '50%', margin: '0 auto 16px',
+          overflow: 'hidden',
+          border: `3px solid ${RARITY_COLORS[cat.rarity]}`,
+          boxShadow: `0 0 30px ${RARITY_COLORS[cat.rarity]}40`,
+        }}>
+          <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={e => { e.target.style.display = 'none'; }} />
+        </div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+          color: RARITY_COLORS[cat.rarity], marginBottom: 6,
+        }}>{cat.rarity}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: T.ink, marginBottom: 4 }}>{cat.name}</div>
+        <div style={{ fontSize: 12, color: T.sub, marginBottom: 6 }}>{cat.breed}</div>
+        <div style={{
+          fontSize: 11, color: isNew ? T.green : T.muted, fontWeight: 600, marginBottom: 20,
+        }}>
+          {isNew ? '✨ 新图鉴解锁！' : '已拥有，图鉴已点亮'}
+        </div>
+        <button onClick={onClose} style={{
+          width: '100%', height: 44, borderRadius: 14,
+          background: `linear-gradient(135deg, ${RARITY_COLORS[cat.rarity]}, ${RARITY_COLORS[cat.rarity]}CC)`,
+          border: 'none', cursor: 'pointer',
+          fontSize: 15, fontWeight: 700, color: '#fff',
+        }}>收下啦</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   GACHA PAGE
+   ═══════════════════════════════════════ */
+function GachaPage({ cats, unlockedIds, onDrawStart, playing }) {
+  return (
+    <div style={{ paddingBottom: 64 }}>
+      {/* 上半区：猫爬架 + 抽卡按钮 */}
+      <div style={{
+        padding: '20px 20px 12px', textAlign: 'center',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 12 }}>
+          🎁 猫咪抽卡
+        </div>
+        <div style={{
+          width: '100%', aspectRatio: '1', borderRadius: 18, overflow: 'hidden',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 14, position: 'relative',
+        }}>
+          {playing ? (
+            <video
+              src="cat/抽卡动画.mov"
+              autoPlay
+              muted
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<div style="text-align:center;color:rgba(240,237,255,0.4);font-size:14px;animation:pulse 1s infinite">抽卡中...</div>';
+              }}
+            />
+          ) : (
+            <img
+              src="cat/猫爬架图片.jpeg"
+              alt="猫爬架"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<div style="text-align:center;color:rgba(240,237,255,0.25);font-size:13px">猫爬架图片</div>';
+              }}
+            />
+          )}
+        </div>
+        <button onClick={onDrawStart} disabled={playing} style={{
+          width: '100%', height: 50, borderRadius: 16,
+          background: playing ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+          border: 'none', cursor: playing ? 'not-allowed' : 'pointer',
+          fontSize: 16, fontWeight: 800,
+          color: playing ? 'rgba(240,237,255,0.3)' : '#fff',
+          boxShadow: playing ? 'none' : '0 8px 24px rgba(108,92,231,0.35)',
+          opacity: playing ? 0.6 : 1,
+          transition: 'all 0.3s',
+        }}>
+          {playing ? '抽卡中...' : '抽卡'}
+        </button>
+      </div>
+      {/* 下半区：图鉴 */}
+      <div style={{ padding: '12px 20px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🐱</span> 我的猫咪
+            <span style={{ fontSize: 10, color: T.sub, fontWeight: 400 }}>
+              {unlockedIds.length}/{cats.length}
+            </span>
+          </div>
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+        }}>
+          {cats.map((cat, i) => {
+            const isUnlocked = unlockedIds.includes(cat.id);
+            return (
+              <div key={cat.id} style={{
+                borderRadius: 14, padding: '8px 4px 6px',
+                background: isUnlocked ? T.card : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isUnlocked ? RARITY_COLORS[cat.rarity] + '20' : T.cardBorder}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                animation: `slideUp 0.4s ease-out ${i * 0.05}s both`,
+              }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%',
+                  overflow: 'hidden', position: 'relative',
+                  background: isUnlocked ? 'transparent' : 'rgba(255,255,255,0.03)',
+                }}>
+                  <img
+                    src={cat.img} alt={cat.name}
+                    style={{
+                      width: '100%', height: '100%', objectFit: 'cover',
+                      filter: isUnlocked ? 'none' : 'grayscale(1) brightness(0.3)',
+                    }}
+                    onError={e => { e.target.style.display = 'none'; }}
+                  />
+                  {!isUnlocked && (
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <rect x="5" y="11" width="14" height="10" rx="2" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                        <path d="M8 11V7a4 4 0 118 0v4" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 600,
+                  color: isUnlocked ? T.ink : T.muted,
+                }}>{cat.name}</span>
+                <span style={{
+                  fontSize: 8, fontWeight: 700,
+                  color: RARITY_COLORS[cat.rarity],
+                  background: RARITY_BG[cat.rarity],
+                  padding: '1px 6px', borderRadius: 4,
+                }}>{cat.rarity}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   PROFILE PAGE
+   ═══════════════════════════════════════ */
+function ProfilePage({ unlockedIds, coins, gachaCount, ssrCount, checkedIn, gachaDrawn }) {
+  const [nickname] = useState(genNickname);
+  const [bio, setBio] = useState('我们一起喵了个咪');
+  const [activeTitle, setActiveTitle] = useState(TITLES[0]);
+  const [showTitlePicker, setShowTitlePicker] = useState(false);
+  const [selectedShowcase, setSelectedShowcase] = useState(null);
+  const [userId] = useState('MLM' + String(Math.floor(100000 + Math.random() * 900000)));
+  const [editCount] = useState(1);
+
+  const unlocked = CATS.filter(c => unlockedIds.includes(c.id));
+  const ssrCats = unlocked.filter(c => c.rarity === 'SSR');
+  const srCats = unlocked.filter(c => c.rarity === 'SR');
+  const showcaseCats = [...ssrCats, ...srCats, ...unlocked.filter(c => c.rarity === 'R')].slice(0, 3);
+  const collectionPct = Math.round(unlockedIds.length / CATS.length * 100);
+  const levelPct = Math.min(100, (USER.level / 20) * 100);
+  const luckValue = ssrCount > 0 ? Math.min(100, 50 + ssrCount * 10) : 12;
+
+  const s = { card: { borderRadius: 16, background: T.card, border: `1px solid ${T.cardBorder}`, padding: '14px 16px' } };
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      {/* ═══ 顶部背景条 ═══ */}
+      <div style={{
+        height: 140, position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(135deg, #1E1440 0%, #2D1B69 40%, #0F0A1E 100%)',
+      }}>
+        <div style={{
+          position: 'absolute', top: -60, right: -40, width: 200, height: 200,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,92,231,0.2), transparent)',
+        }}/>
+        <div style={{
+          position: 'absolute', bottom: -30, left: -20, width: 150, height: 150,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(253,150,68,0.12), transparent)',
+        }}/>
+        {/* 编辑资料按钮 */}
+        <div style={{
+          position: 'absolute', top: 8, right: 16,
+          fontSize: 11, color: 'rgba(240,237,255,0.5)', cursor: 'pointer',
+          padding: '4px 10px', borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)',
+        }}>编辑资料</div>
+      </div>
+
+      {/* ═══ 头像 + 昵称区 ═══ */}
+      <div style={{ padding: '0 20px', marginTop: -44, position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+          {/* 头像 + 头像框 */}
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%', flexShrink: 0,
+            border: `3px solid ${T.purpleLight}`,
+            boxShadow: `0 0 20px ${T.purple}40`,
+            overflow: 'hidden', position: 'relative',
+            background: 'linear-gradient(135deg, #FFEAA7, #FD9644)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 40 }}>🐱</span>
+            {/* 头像框装饰 */}
+            <div style={{
+              position: 'absolute', top: -2, left: -2, right: -2, bottom: -2,
+              borderRadius: '50%', border: '2px solid rgba(162,155,254,0.4)',
+              pointerEvents: 'none',
+            }}/>
+          </div>
+          {/* 昵称信息 */}
+          <div style={{ flex: 1, paddingBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: T.ink }}>{nickname}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 6,
+                background: 'rgba(108,92,231,0.2)', color: T.purpleLight,
+              }}>Lv.{USER.level}</span>
+            </div>
+            <div style={{ fontSize: 11, color: T.muted }}>ID: {userId} · 可修改 {editCount} 次/月</div>
+          </div>
+        </div>
+
+        {/* 称号 */}
+        <div
+          onClick={() => setShowTitlePicker(!showTitlePicker)}
+          style={{
+            marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 12px', borderRadius: 10,
+            background: `${activeTitle.color}15`, border: `1px solid ${activeTitle.color}30`,
+            cursor: 'pointer',
+          }}>
+          <span style={{ fontSize: 12 }}>🎖️</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: activeTitle.color }}>{activeTitle.name}</span>
+          <span style={{ fontSize: 9, color: T.muted }}>▾</span>
+        </div>
+        {/* 称号选择器 */}
+        {showTitlePicker && (
+          <div style={{
+            marginTop: 6, ...s.card, display: 'flex', flexWrap: 'wrap', gap: 6,
+          }}>
+            {TITLES.map(t => (
+              <div key={t.id} onClick={() => { setActiveTitle(t); setShowTitlePicker(false); }} style={{
+                padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                color: t.id === activeTitle.id ? '#fff' : t.color,
+                background: t.id === activeTitle.id ? t.color : `${t.color}12`,
+                border: `1px solid ${t.color}30`, cursor: 'pointer',
+              }}>{t.name}</div>
+            ))}
+          </div>
+        )}
+
+        {/* 个人签名 */}
+        <div style={{
+          marginTop: 10, fontSize: 12, color: T.sub, lineHeight: 1.5,
+          padding: '8px 12px', borderRadius: 10,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          <span style={{ fontSize: 11, marginRight: 4 }}>💬</span>{bio}
+        </div>
+      </div>
+
+      {/* ═══ 数据统计区 ═══ */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={s.card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>📊 数据统计</span>
+            <span style={{ fontSize: 10, color: T.muted }}>Lv.{USER.level}</span>
+          </div>
+          {/* 经验条 */}
+          <div style={{
+            height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)', marginBottom: 12,
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', width: `${levelPct}%`, borderRadius: 999,
+              background: `linear-gradient(90deg, ${T.purple}, ${T.purpleLight})`,
+            }}/>
+          </div>
+          {/* 数据网格 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px 0' }}>
+            {[
+              { v: gachaCount, l: '累计抽卡', c: T.purpleLight },
+              { v: ssrCount, l: 'SSR出货', c: T.orange },
+              { v: luckValue + '%', l: '欧气值', c: T.yellow },
+              { v: unlockedIds.length, l: '已收集', c: T.green },
+              { v: collectionPct + '%', l: '图鉴率', c: T.blue },
+              { v: USER.streak + '天', l: '连续签到', c: T.red },
+            ].map((d, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: d.c, letterSpacing: '-0.5px' }}>{d.v}</div>
+                <div style={{ fontSize: 9, color: T.muted, marginTop: 1 }}>{d.l}</div>
+              </div>
+            ))}
+          </div>
+          {/* 图鉴进度条 */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: T.sub }}>全图鉴完成度</span>
+              <span style={{ fontSize: 10, color: T.purpleLight, fontWeight: 700 }}>{unlockedIds.length}/{CATS.length}</span>
+            </div>
+            <div style={{
+              height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%', width: `${collectionPct}%`, borderRadius: 999,
+                background: `linear-gradient(90deg, ${T.green}, #55EFC4)`,
+                transition: 'width 0.6s ease-out',
+              }}/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ 卡牌展示区 ═══ */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+          ⭐ 核心展示
+        </div>
+        {showcaseCats.length > 0 ? (
+          <div style={{ display: 'flex', gap: 10 }}>
+            {showcaseCats.map((cat, i) => (
+              <div key={cat.id} onClick={() => setSelectedShowcase(cat)} style={{
+                flex: 1, borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+                background: T.card, border: `1px solid ${RARITY_COLORS[cat.rarity]}25`,
+                aspectRatio: '3/4', position: 'relative',
+              }}>
+                <img src={cat.img} alt={cat.name} style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                }} onError={e => { e.target.style.display='none'; }}/>
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                  padding: '20px 8px 8px', textAlign: 'center',
+                }}>
+                  <div style={{
+                    fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                    background: RARITY_BG[cat.rarity], color: RARITY_COLORS[cat.rarity],
+                    display: 'inline-block', marginBottom: 2,
+                  }}>{cat.rarity}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{cat.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            ...s.card, textAlign: 'center', padding: '24px 0',
+            fontSize: 12, color: T.muted,
+          }}>去抽卡解锁更多猫咪吧 🎁</div>
+        )}
+      </div>
+
+      {/* ═══ 功能入口区 ═══ */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+          📱 功能
+        </div>
+        <div style={{
+          ...s.card, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
+        }}>
+          {FUNC_GRID.map((f, i) => (
+            <div key={i} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <span style={{ fontSize: 22 }}>{f.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: T.ink }}>{f.label}</span>
+              <span style={{ fontSize: 9, color: T.muted }}>{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ 成就徽章栏 ═══ */}
+      <div style={{ padding: '16px 0 0' }}>
+        <div style={{ padding: '0 20px', fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 8 }}>
+          🏅 成就徽章
+        </div>
+        <div style={{
+          display: 'flex', gap: 10, overflowX: 'auto', padding: '0 20px',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+        }}>
+          <style>{`div::-webkit-scrollbar{display:none}`}</style>
+          {ACHIEVEMENTS.map((a, i) => (
+            <div key={i} style={{
+              flexShrink: 0, width: 64, textAlign: 'center',
+              padding: '10px 4px', borderRadius: 14,
+              background: a.done ? 'rgba(108,92,231,0.12)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${a.done ? 'rgba(108,92,231,0.25)' : 'rgba(255,255,255,0.05)'}`,
+              opacity: a.done ? 1 : 0.4,
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 4, filter: a.done ? 'none' : 'grayscale(1)' }}>{a.icon}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: a.done ? T.ink : T.muted }}>{a.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ 底部模块 ═══ */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={{ ...s.card, display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[
+            { icon: '🎨', label: '皮肤/外观', sub: '头像框·称号·气泡', arrow: true },
+            { icon: '📜', label: '战绩记录', sub: '最近抽卡高光', arrow: true },
+            { icon: '👍', label: '好友互动', sub: '获得 23 个赞', arrow: true },
+            { icon: '💎', label: '月卡/通行证', sub: '未开通', arrow: true, accent: T.orange },
+          ].map((item, i, arr) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0',
+              borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              cursor: 'pointer',
+            }}>
+              <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>{item.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{item.label}</div>
+                <div style={{ fontSize: 10, color: item.accent || T.muted, marginTop: 1 }}>{item.sub}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.3 }}>
+                <path d="M6 4l4 4-4 4" stroke={T.ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ SSR 大图弹窗 ═══ */}
+      {selectedShowcase && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(16px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 60, animation: 'fadeIn 0.3s ease-out',
+        }} onClick={() => setSelectedShowcase(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: 280, textAlign: 'center', animation: 'slideUp 0.4s ease-out',
+          }}>
+            <div style={{
+              width: 220, height: 280, borderRadius: 20, overflow: 'hidden',
+              margin: '0 auto 16px',
+              border: `3px solid ${RARITY_COLORS[selectedShowcase.rarity]}`,
+              boxShadow: `0 0 50px ${RARITY_COLORS[selectedShowcase.rarity]}30`,
+            }}>
+              <img src={selectedShowcase.img} alt={selectedShowcase.name} style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+              }} onError={e => { e.target.style.display='none'; }}/>
+            </div>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: 2,
+              color: RARITY_COLORS[selectedShowcase.rarity], marginBottom: 4,
+            }}>{selectedShowcase.rarity}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{selectedShowcase.name}</div>
+            <div style={{ fontSize: 12, color: T.sub }}>{selectedShowcase.desc}</div>
+            <button onClick={() => setSelectedShowcase(null)} style={{
+              marginTop: 16, width: 120, height: 36, borderRadius: 10,
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: T.ink,
+            }}>关闭</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   BOTTOM TAB BAR
+   ═══════════════════════════════════════ */
+function TabBar({ active, onChange, darkMode }) {
+  const tabs = [
+    { key: 'hall',  icon: '🏠', label: '大厅' },
+    { key: 'gacha', icon: '🎁', label: '抽卡' },
+    { key: 'me',    icon: '👤', label: '我的' },
+  ];
+  return (
+    <div style={{
+      flexShrink: 0, height: 64,
+      background: darkMode ? 'rgba(15,10,30,0.95)' : 'rgba(245,243,255,0.95)',
+      backdropFilter: 'blur(20px)',
+      borderTop: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(108,92,231,0.1)'}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+      zIndex: 20, paddingBottom: 6,
+    }}>
+      {tabs.map(tab => {
+        const isActive = tab.key === active;
+        return (
+          <div key={tab.key} onClick={() => onChange(tab.key)} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            cursor: 'pointer', padding: '4px 12px',
+            borderRadius: 12,
+            background: isActive ? 'rgba(108,92,231,0.12)' : 'transparent',
+            transition: 'all 0.2s',
+          }}>
+            <span style={{ fontSize: 20, filter: isActive ? 'none' : 'grayscale(0.5) opacity(0.5)' }}>
+              {tab.icon}
+            </span>
+            <span style={{
+              fontSize: 10, fontWeight: isActive ? 700 : 400,
+              color: isActive ? T.purpleLight : T.muted,
+            }}>{tab.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   CHECK-IN MODAL
+   ═══════════════════════════════════════ */
+function CheckInModal({ show, onClose, streak }) {
+  if (!show) return null;
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 50,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 300, background: 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        borderRadius: 24, padding: '32px 24px', textAlign: 'center',
+        border: '1px solid rgba(108,92,231,0.3)',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+        animation: 'checkPop 0.4s ease-out',
+      }}>
+        <div style={{ fontSize: 48, marginBottom: 8, animation: 'pulse 1s ease-in-out infinite' }}>🐾</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: T.ink, marginBottom: 4 }}>打卡成功！</div>
+        <div style={{ fontSize: 13, color: T.sub, marginBottom: 20 }}>连续打卡 {streak + 1} 天</div>
+        <div style={{
+          display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 20,
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: T.orange, animation: 'coinDrop 0.5s ease-out 0.3s both' }}>+50</div>
+            <div style={{ fontSize: 10, color: T.sub }}>小鱼干</div>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }}/>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: T.yellow, animation: 'coinDrop 0.5s ease-out 0.5s both' }}>+1</div>
+            <div style={{ fontSize: 10, color: T.sub }}>解锁进度</div>
+          </div>
+        </div>
+        {/* 连续打卡日历 */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 20 }}>
+          {[1,2,3,4,5,6,7].map(d => (
+            <div key={d} style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: d <= 4 ? T.purple : 'rgba(255,255,255,0.05)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 600,
+              color: d <= 4 ? '#fff' : T.muted,
+              border: d === 4 ? '2px solid ' + T.purpleLight : '1px solid transparent',
+            }}>{d <= 4 ? '✓' : d}</div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{
+          width: '100%', height: 44, borderRadius: 12,
+          background: `linear-gradient(135deg, ${T.purple}, ${T.purpleDark})`,
+          border: 'none', cursor: 'pointer',
+          fontSize: 15, fontWeight: 700, color: '#fff',
+        }}>好的</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   CAT DETAIL MODAL
+   ═══════════════════════════════════════ */
+function CatDetailModal({ cat, show, onClose }) {
+  if (!show || !cat) return null;
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      zIndex: 50,
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', background: 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        borderRadius: '24px 24px 0 0', padding: '24px 20px 32px',
+        animation: 'slideUp 0.3s ease-out',
+      }}>
+        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 999, margin: '0 auto 16px' }}/>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
+            border: `2px solid ${RARITY_COLORS[cat.rarity]}40`,
+            flexShrink: 0,
+          }}>
+            <img src={cat.img} alt={cat.name} style={{
+              width: '100%', height: '100%', objectFit: 'cover',
+              filter: cat.unlocked ? 'none' : 'grayscale(1) brightness(0.3)',
+            }} onError={e => { e.target.style.display = 'none'; }}/>
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 999,
+                background: RARITY_BG[cat.rarity], color: RARITY_COLORS[cat.rarity],
+              }}>{cat.rarity}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: T.ink }}>{cat.name}</span>
+            </div>
+            <div style={{ fontSize: 12, color: T.sub, marginBottom: 4 }}>{cat.breed}</div>
+            <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5 }}>{cat.desc}</div>
+          </div>
+        </div>
+        {!cat.unlocked && (
+          <div style={{
+            marginTop: 16, padding: '12px 16px',
+            background: 'rgba(253,150,68,0.1)', borderRadius: 12,
+            border: '1px solid rgba(253,150,68,0.2)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 20 }}>🔓</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.orange }}>累计打卡 {cat.checkins} 天解锁</div>
+              <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>
+                还需 {cat.checkins - USER.total} 天 · 当前进度 {Math.round(USER.total / cat.checkins * 100)}%
+              </div>
+            </div>
+          </div>
+        )}
+        <button onClick={onClose} style={{
+          marginTop: 16, width: '100%', height: 40, borderRadius: 12,
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+          cursor: 'pointer', fontSize: 13, fontWeight: 600, color: T.ink,
+        }}>关闭</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN APP
+   ═══════════════════════════════════════ */
+function App() {
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [activeTab, setActiveTab] = useState('hall');
+  const [featuredIdx, setFeaturedIdx] = useState(0);
+  const [selectedCat, setSelectedCat] = useState(null);
+  const [unlockedIds, setUnlockedIds] = useState([1, 2, 3, 6, 7]); // 初始已解锁的猫咪
+  const [gachaResult, setGachaResult] = useState(null);
+  const [showGachaResult, setShowGachaResult] = useState(false);
+  const [gachaIsNew, setGachaIsNew] = useState(false);
+  const [gachaDrawn, setGachaDrawn] = useState(false);
+  const [gachaPlaying, setGachaPlaying] = useState(false);
+  const [gachaCount, setGachaCount] = useState(0);
+  const [ssrCount, setSsrCount] = useState(0);
+  const [coins, setCoins] = useState(USER.coins);
+  const [darkMode, setDarkMode] = useState(true);
+  const ssrPityRef = useRef(0); // 保底计数器
+
+  // 同步全局主题
+  useEffect(() => {
+    window.T = darkMode ? { ...C } : { ...C_LIGHT };
+  }, [darkMode]);
+
+  const toggleTheme = () => setDarkMode(prev => !prev);
+
+  const handleCheckIn = () => {
+    setCheckedIn(true);
+    setShowCheckIn(true);
+  };
+
+  // 抽卡：加权概率 + 80抽保底
+  const handleDraw = () => {
+    ssrPityRef.current += 1;
+    const roll = Math.random() * 100;
+    let rarity;
+    if (ssrPityRef.current >= 80) {
+      rarity = 'SSR';
+      ssrPityRef.current = 0;
+    } else if (roll < 2) {
+      rarity = 'SSR';
+      ssrPityRef.current = 0;
+    } else if (roll < 7) {
+      rarity = 'SR';
+    } else if (roll < 25) {
+      rarity = 'R';
+    } else {
+      rarity = 'N';
+    }
+    const pool = CATS.filter(c => c.rarity === rarity);
+    const drawn = pool[Math.floor(Math.random() * pool.length)];
+    const isNew = !unlockedIds.includes(drawn.id);
+    if (isNew) {
+      setUnlockedIds(prev => [...prev, drawn.id]);
+    }
+    setGachaResult(drawn);
+    setGachaIsNew(isNew);
+    setShowGachaResult(true);
+    setGachaCount(prev => prev + 1);
+    if (drawn.rarity === 'SSR') setSsrCount(prev => prev + 1);
+    if (!gachaDrawn) {
+      setGachaDrawn(true);
+      setCoins(prev => prev + 20);
+    }
+  };
+
+  // 抽卡动画：先播放4秒视频，再弹出结果
+  const handleDrawStart = () => {
+    if (gachaPlaying) return;
+    setGachaPlaying(true);
+    setTimeout(() => {
+      handleDraw();
+      setGachaPlaying(false);
+    }, 4000);
+  };
+
+  // 自动轮播当前展示猫咪
+  const unlockedCats = CATS.filter(c => unlockedIds.includes(c.id));
+  const featuredCat = unlockedCats[featuredIdx % unlockedCats.length];
+
+  useEffect(() => {
+    if (checkedIn) return;
+    const timer = setInterval(() => {
+      setFeaturedIdx(i => (i + 1) % Math.max(unlockedCats.length, 1));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [checkedIn, unlockedCats.length]);
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: darkMode ? '#0E0E16' : '#EDE8FF',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: 48, gap: 32,
+    }}>
+      {/* Page Title */}
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: darkMode ? '#F0F0EC' : '#2D1B69', letterSpacing: '-0.5px', marginBottom: 4 }}>
+          喵了个咪 · {activeTab === 'gacha' ? '猫咪抽卡' : activeTab === 'me' ? '我的' : '主页大厅'}
+        </h1>
+        <p style={{ fontSize: 13, color: darkMode ? 'rgba(255,255,255,0.35)' : 'rgba(45,27,105,0.4)' }}>
+          {activeTab === 'gacha' ? '收集猫咪 · 解锁图鉴' : activeTab === 'me' ? '个人中心 · 数据一览' : '通勤打卡 · 猫咪养成 · 每日任务'}
+        </p>
+      </div>
+
+      <IosFrame>
+        <div style={{
+          height: '100%', display: 'flex', flexDirection: 'column',
+          background: `linear-gradient(180deg, ${T.bg} 0%, ${darkMode ? '#1A1235' : '#E0D8FF'} 50%, ${T.bg} 100%)`,
+        }}>
+          {/* 可滚动内容区 */}
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: 70, scrollbarWidth: 'none' }}>
+            <style>{`div::-webkit-scrollbar{display:none}`}</style>
+            {activeTab === 'hall' && (
+              <>
+                <TopHeader darkMode={darkMode} onToggleTheme={toggleTheme} />
+                <FeaturedCat cat={featuredCat} checkedIn={checkedIn} onCheckIn={handleCheckIn} />
+                {/* 开始游戏按钮 */}
+                <div style={{ padding: '14px 20px 0' }}>
+                  <a href="猫咪消消乐.html" style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    width: '100%', height: 56, borderRadius: 18,
+                    background: 'linear-gradient(135deg, #FD9644, #FF6B6B, #FD79A8)',
+                    border: 'none', cursor: 'pointer',
+                    fontSize: 18, fontWeight: 800, color: '#fff',
+                    textDecoration: 'none',
+                    boxShadow: '0 8px 32px rgba(253,150,68,0.35), 0 0 60px rgba(255,107,107,0.15)',
+                    animation: 'pulse 2s ease-in-out infinite',
+                    letterSpacing: '1px',
+                  }}>
+                    <span style={{ fontSize: 24 }}>🎮</span>
+                    开始游戏
+                    <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.8, marginLeft: 4 }}>猫咪消消乐</span>
+                  </a>
+                </div>
+                <StatsBar unlockedCount={unlockedIds.length} coins={coins} />
+                <DailyMissions checkedIn={checkedIn} gachaDone={gachaDrawn} />
+              </>
+            )}
+            {activeTab === 'gacha' && (
+              <GachaPage cats={CATS} unlockedIds={unlockedIds} onDrawStart={handleDrawStart} playing={gachaPlaying} />
+            )}
+            {activeTab === 'me' && (
+              <ProfilePage
+                unlockedIds={unlockedIds}
+                coins={coins}
+                gachaCount={gachaCount}
+                ssrCount={ssrCount}
+                checkedIn={checkedIn}
+                gachaDrawn={gachaDrawn}
+              />
+            )}
+          </div>
+          {/* 弹窗层 */}
+          <CheckInModal show={showCheckIn} onClose={() => setShowCheckIn(false)} streak={USER.streak} />
+          <CatDetailModal cat={selectedCat} show={!!selectedCat} onClose={() => setSelectedCat(null)} />
+          <GachaResultModal cat={gachaResult} show={showGachaResult} onClose={() => setShowGachaResult(false)} isNew={gachaIsNew} />
+          {/* 固定底部Tab */}
+          <TabBar active={activeTab} onChange={setActiveTab} darkMode={darkMode} />
+        </div>
+      </IosFrame>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

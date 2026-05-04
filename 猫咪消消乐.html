@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>喵了个咪 · 猫咪消消乐</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    @keyframes tileIn { 0%{transform:scale(0.3) rotate(-10deg);opacity:0} 60%{transform:scale(1.1) rotate(2deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+    @keyframes toSlot { 0%{transform:scale(1)} 50%{transform:scale(0.5)} 100%{transform:scale(0.45)} }
+    @keyframes matchPop { 0%{transform:scale(1);opacity:1} 40%{transform:scale(1.5);opacity:0.8;box-shadow:0 0 30px currentColor} 100%{transform:scale(0);opacity:0} }
+    @keyframes winBounce { 0%{transform:scale(0)} 50%{transform:scale(1.2)} 70%{transform:scale(0.9)} 100%{transform:scale(1)} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+    @keyframes confetti { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(200px) rotate(720deg);opacity:0} }
+    @keyframes slotPulse { 0%,100%{border-color:rgba(255,107,107,0.2)} 50%{border-color:rgba(255,107,107,0.6)} }
+    @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
+    @keyframes slideUp { 0%{transform:translateY(40px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes floatTile { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    @keyframes sparkle { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:0.8;transform:scale(1.2)} }
+    @keyframes btnPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+  </style>
+</head>
+<body>
+<script>
+// Live reload — 检测文件变化自动刷新（仅本地开发）
+(function(){
+  let lastEtag = '';
+  async function check() {
+    try {
+      const r = await fetch(location.href, { cache: 'no-store' });
+      const etag = r.headers.get('etag') || (await r.text()).length;
+      if (lastEtag && etag !== lastEtag) location.reload();
+      lastEtag = etag;
+    } catch(e) {}
+  }
+  setInterval(check, 1000);
+})();
+</script>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* ═══════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════ */
+const TILE_W = 60;
+const TILE_H = 67;
+const SLOT_CAPACITY = 7;
+const MATCH_COUNT = 3;
+const OFFSET_X = 12;
+const OFFSET_Y = 10;
+
+/* ═══════════════════════════════════════
+   LEVEL CONFIGS
+   ═══════════════════════════════════════ */
+const LEVELS = {
+  1: {
+    name: '教学关',
+    typeCount: 3, tilesPerType: 9,
+    typeIndices: [0, 1, 2], // 橘猫、黑猫、白猫
+    cols: 7, rows: 5, maxLayers: 4,
+    maskFn: (col, row, layer, cols, rows) => {
+      const cd = Math.abs(col - Math.floor(cols / 2)) + Math.abs(row - Math.floor(rows / 2));
+      return cd <= 5.5 - layer * 1.0;
+    },
+  },
+  2: {
+    name: '核心关',
+    typeCount: 12, tilesPerType: 18,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    cols: 10, rows: 8, maxLayers: 18,
+    maskFn: (col, row, layer, cols, rows) => {
+      const pat = layer % 3;
+      if (pat === 0) { // 品字型：三列分布
+        return col >= 1 && col <= 8 && row >= 1 && row <= 6
+          && (col >= 3 - Math.floor(layer / 3) && col <= 7 + Math.floor(layer / 3));
+      } else if (pat === 1) { // 书字型：竖条
+        return col >= 2 && col <= 7 && row >= 0 && row <= 7
+          && (row <= 7 - Math.floor(layer / 4));
+      } else { // 画字型：边框
+        const shrink = Math.floor(layer / 5);
+        return col >= shrink && col <= cols - 1 - shrink
+          && row >= shrink && row <= rows - 1 - shrink
+          && (col === shrink || col === cols - 1 - shrink || row === shrink || row === rows - 1 - shrink
+              || (col >= 3 && col <= 6 && row >= 3 && row <= 4));
+      }
+    },
+  },
+  3: {
+    name: '敬请期待',
+    typeCount: 0, tilesPerType: 0,
+    typeIndices: [],
+    cols: 7, rows: 5, maxLayers: 4,
+    maskFn: () => false,
+  },
+};
+
+const CAT_TYPES = [
+  { id: '橘猫',   img: 'cat/橘猫.png',   color: '#FD9644' },
+  { id: '黑猫',   img: 'cat/黑猫.png',   color: '#636E72' },
+  { id: '白猫',   img: 'cat/白猫.png',   color: '#DFE6E9' },
+  { id: '三花猫', img: 'cat/三花猫.png', color: '#E17055' },
+  { id: '布偶猫', img: 'cat/布偶猫.png', color: '#74B9FF' },
+  { id: '暹罗猫', img: 'cat/暹罗猫.png', color: '#A29BFE' },
+  { id: '蓝猫', img: 'cat/蓝猫.png', color: '#FD79A8' },
+  { id: '无毛猫', img: 'cat/无毛猫.png', color: '#00B894' },
+  { id: '毛线球', img: 'cat/毛线球.png', color: '#FDCB6E' },
+  { id: '波斯猫', img: 'cat/波斯猫.png', color: '#55EFC4' },
+  { id: '幸运猫', img: 'cat/幸运猫.png', color: '#FFEAA7' },
+  { id: '星空猫', img: 'cat/星空猫.png', color: '#0984E3' },
+];
+
+const POWERUPS = [
+  {
+    key: 'remove', name: '移出', icon: 'cat/猫爪印.png',
+    desc: '移出全部', detail: '将收集槽中的所有牌移至临时存放层，腾出空间。每局限用1次。',
+    color: '#FD79A8',
+  },
+  {
+    key: 'undo', name: '撤销', icon: 'cat/猫罐头.png',
+    desc: '撤回最近一张', detail: '撤回最近放入收集槽的一张牌，将其放回棋盘原位置。每局限用1次。',
+    color: '#00B894',
+  },
+  {
+    key: 'shuffle', name: '洗牌', icon: 'cat/猫薄荷.png',
+    desc: '打乱所有牌', detail: '随机打乱棋盘上所有未消除的牌的位置，重新排列。每局限用1次。',
+    color: '#55EFC4',
+  },
+];
+
+/* ═══════════════════════════════════════
+   BOARD GENERATION
+   ═══════════════════════════════════════ */
+function shuffleArr(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateBoard(levelNum) {
+  const lv = LEVELS[levelNum];
+  const { typeIndices, tilesPerType, cols, rows, maxLayers, maskFn } = lv;
+  const totalNeeded = typeIndices.length * tilesPerType;
+
+  // Build balanced pool: each type exactly tilesPerType times
+  const pool = [];
+  for (let i = 0; i < tilesPerType; i++) {
+    typeIndices.forEach(idx => { pool.push(CAT_TYPES[idx].id); });
+  }
+
+  // Safety: ensure pool is exactly the right size (must be multiple of typeCount)
+  while (pool.length % typeIndices.length !== 0) {
+    pool.push(CAT_TYPES[typeIndices[pool.length % typeIndices.length]].id);
+  }
+
+  const shuffled = shuffleArr(pool);
+
+  // Collect valid slots from mask
+  const layerSlots = [];
+  for (let layer = 0; layer < maxLayers; layer++) {
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        if (maskFn(col, row, layer, cols, rows)) {
+          layerSlots.push({ col, row, layer });
+        }
+      }
+    }
+  }
+
+  layerSlots.sort((a, b) => a.layer - b.layer);
+  const selected = layerSlots.slice(0, shuffled.length);
+
+  return selected.map((pos, i) => ({
+    id: i,
+    type: shuffled[i],
+    col: pos.col,
+    row: pos.row,
+    layer: pos.layer,
+    removed: false,
+    matched: false,
+  }));
+}
+
+function isTileBlocked(tile, allTiles) {
+  if (tile.removed) return true;
+  const left = tile.col * (TILE_W - OFFSET_X) + tile.layer * OFFSET_X;
+  const top = tile.row * (TILE_H - OFFSET_Y) + tile.layer * OFFSET_Y;
+  const right = left + TILE_W;
+  const bottom = top + TILE_H;
+
+  return allTiles.some(other => {
+    if (other.id === tile.id || other.removed || other.layer <= tile.layer) return false;
+    const cx = other.col * (TILE_W - OFFSET_X) + other.layer * OFFSET_X + TILE_W / 2;
+    const cy = other.row * (TILE_H - OFFSET_Y) + other.layer * OFFSET_Y + TILE_H / 2;
+    return cx > left && cx < right && cy > top && cy < bottom;
+  });
+}
+
+/* ═══════════════════════════════════════
+   GAME STATES
+   ═══════════════════════════════════════ */
+const GAME_PLAYING = 'playing';
+const GAME_WIN = 'win';
+const GAME_LOSE = 'lose';
+const GAME_LEVEL_COMPLETE = 'levelComplete';
+
+/* ═══════════════════════════════════════
+   CONFIRM MODAL
+   ═══════════════════════════════════════ */
+function ConfirmModal({ powerup, onConfirm, onCancel }) {
+  if (!powerup) return null;
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 200, animation: 'fadeIn 0.2s ease-out',
+    }} onClick={onCancel}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 280, background: 'linear-gradient(180deg, #2A1F4E 0%, #1A1235 100%)',
+        borderRadius: 24, padding: '28px 22px', textAlign: 'center',
+        border: `1px solid ${powerup.color}40`,
+        boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${powerup.color}15`,
+        animation: 'slideUp 0.3s ease-out',
+      }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%', margin: '0 auto 14px',
+          overflow: 'hidden', border: `2px solid ${powerup.color}60`,
+          boxShadow: `0 0 20px ${powerup.color}30`,
+        }}>
+          <img src={powerup.icon} alt={powerup.name} style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+          }} onError={e => { e.target.style.display = 'none'; }}/>
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#F0EDFF', marginBottom: 6 }}>
+          {powerup.name}
+        </div>
+        <div style={{
+          fontSize: 13, color: 'rgba(240,237,255,0.6)', lineHeight: 1.6, marginBottom: 20,
+        }}>
+          {powerup.detail}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} style={{
+            flex: 1, height: 44, borderRadius: 14,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.6)',
+          }}>取消</button>
+          <button onClick={onConfirm} style={{
+            flex: 1, height: 44, borderRadius: 14,
+            background: `linear-gradient(135deg, ${powerup.color}, ${powerup.color}CC)`,
+            border: 'none', cursor: 'pointer',
+            fontSize: 14, fontWeight: 700, color: '#fff',
+            boxShadow: `0 6px 16px ${powerup.color}40`,
+          }}>确认使用</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   TILE COMPONENT
+   ═══════════════════════════════════════ */
+function Tile({ tile, blocked, onClick, animDelay }) {
+  const cat = CAT_TYPES.find(c => c.id === tile.type);
+  const x = tile.col * (TILE_W - OFFSET_X) + tile.layer * OFFSET_X;
+  const y = tile.row * (TILE_H - OFFSET_Y) + tile.layer * OFFSET_Y;
+
+  if (tile.removed) return null;
+
+  return (
+    <div
+      onClick={() => !blocked && onClick(tile)}
+      style={{
+        position: 'absolute',
+        left: x, top: y,
+        width: TILE_W, height: TILE_H,
+        borderRadius: 10,
+        background: blocked
+          ? 'rgba(40,30,60,0.85)'
+          : 'rgba(255,255,255,0.95)',
+        border: `2.5px solid ${blocked ? 'rgba(255,255,255,0.08)' : cat.color + '80'}`,
+        cursor: blocked ? 'not-allowed' : 'pointer',
+        overflow: 'hidden',
+        zIndex: tile.layer * 100 + tile.row * 10 + tile.col,
+        animation: `tileIn 0.4s ease-out ${animDelay}s both`,
+        opacity: blocked ? 0.4 : 1,
+        filter: blocked ? 'brightness(0.3) saturate(0.2)' : `drop-shadow(0 2px 6px ${cat.color}40)`,
+        transition: 'transform 0.15s, box-shadow 0.15s',
+        boxShadow: blocked ? 'none' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`,
+      }}
+      onMouseEnter={e => {
+        if (!blocked) {
+          e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
+          e.currentTarget.style.boxShadow = `0 6px 20px rgba(0,0,0,0.5), 0 0 14px ${cat.color}40`;
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.boxShadow = `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`;
+      }}
+    >
+      <img
+        src={cat.img}
+        alt={tile.type}
+        style={{
+          width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8,
+          filter: blocked ? 'grayscale(1) brightness(0.3)' : 'none',
+        }}
+        onError={e => {
+          e.target.style.display = 'none';
+          e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;font-weight:700;color:${cat.color}">${tile.type.slice(0,2)}</div>`;
+        }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   COLLECTION SLOT (with 收集槽.png bg)
+   ═══════════════════════════════════════ */
+function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
+  // Slot positions: 7 for main collection, 3 for temp storage (20% larger)
+  const allPositions = [
+    { left: 10 }, { left: 68 }, { left: 126 }, { left: 184 },
+    { left: 242 }, { left: 300 }, { left: 358 },
+  ];
+  const slotPositions = maxSlots === 3
+    ? [{ left: 126 }, { left: 184 }, { left: 242 }]
+    : allPositions;
+
+  return (
+    <div style={{
+      position: 'relative',
+      width: '100%', height: 86,
+    }}>
+      {/* 收集槽贴图背景 — 全宽 */}
+      {showBg && (
+        <img
+          src="cat/收集槽.png"
+          alt="收集槽"
+          style={{
+            position: 'absolute', top: 0, left: 0,
+            width: '100%', height: '100%', objectFit: 'cover',
+            pointerEvents: 'none',
+            opacity: 0.85,
+            zIndex: 0,
+          }}
+          onError={e => {
+            e.target.style.display = 'none';
+          }}
+        />
+      )}
+      {/* 槽位容器 — 412px 居中 */}
+      <div style={{
+        position: 'relative', width: 412, height: '100%',
+        margin: '0 auto', zIndex: 1,
+      }}>
+      {/* 槽位指示器 */}
+      {slotPositions.map((pos, i) => {
+        const item = slot[i];
+        const isMatching = item && matching.includes(item.uid);
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            left: pos.left, top: 12,
+            width: 48, height: 58, borderRadius: 12,
+            zIndex: 2,
+          }}>
+            {item ? (() => {
+              const cat = CAT_TYPES.find(c => c.id === item.type);
+              return (
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: 10,
+                  overflow: 'hidden',
+                  border: `2px solid ${cat.color}70`,
+                  animation: isMatching ? 'matchPop 0.4s ease-out forwards' : 'toSlot 0.3s ease-out',
+                  boxShadow: isMatching ? `0 0 24px ${cat.color}` : `0 2px 8px rgba(0,0,0,0.3)`,
+                }}>
+                  <img
+                    src={cat.img}
+                    alt={item.type}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+                    onError={e => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:9px;font-weight:700;color:${cat.color};background:rgba(0,0,0,0.3)">${item.type.slice(0,2)}</div>`;
+                    }}
+                  />
+                </div>
+              );
+            })() : (
+              <div style={{
+                width: '100%', height: '100%', borderRadius: 10,
+                border: '1.5px dashed rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.02)',
+              }}/>
+            )}
+          </div>
+        );
+      })}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   POWERUP BUTTON
+   ═══════════════════════════════════════ */
+function PowerupButton({ powerup, used, onClick }) {
+  return (
+    <div
+      onClick={() => !used && onClick(powerup)}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        cursor: used ? 'not-allowed' : 'pointer',
+        opacity: used ? 0.3 : 1,
+        transition: 'all 0.2s',
+        filter: used ? 'grayscale(1)' : 'none',
+      }}
+    >
+      <div style={{
+        width: 58, height: 58, borderRadius: 16,
+        overflow: 'hidden',
+        border: `2px solid ${used ? 'rgba(255,255,255,0.05)' : powerup.color + '50'}`,
+        background: used ? 'rgba(255,255,255,0.02)' : `${powerup.color}12`,
+        boxShadow: used ? 'none' : `0 4px 12px ${powerup.color}20`,
+        position: 'relative',
+      }}>
+        <img
+          src={powerup.icon}
+          alt={powerup.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
+          onError={e => {
+            e.target.style.display = 'none';
+          }}
+        />
+        {used && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.4)', borderRadius: 12,
+          }}>
+            <span style={{ fontSize: 16 }}>✓</span>
+          </div>
+        )}
+      </div>
+      <span style={{
+        fontSize: 11, fontWeight: 600,
+        color: used ? 'rgba(240,237,255,0.2)' : powerup.color,
+      }}>{powerup.name}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   RESULT OVERLAY
+   ═══════════════════════════════════════ */
+function ResultOverlay({ gameState, remaining, onRestart, onBack, onNextLevel }) {
+  if (gameState === GAME_PLAYING) return null;
+  const isWin = gameState === GAME_WIN;
+  const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
+  const showConfetti = isWin || isLevelComplete;
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: showConfetti ? 'rgba(0,184,148,0.12)' : 'rgba(255,107,107,0.08)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      zIndex: 150, animation: 'fadeIn 0.4s ease-out',
+    }}>
+      {showConfetti && Array.from({ length: 24 }).map((_, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          left: `${10 + Math.random() * 80}%`,
+          top: `${Math.random() * 40}%`,
+          width: 6 + Math.random() * 6, height: 6 + Math.random() * 6,
+          background: ['#FD9644','#FF6B6B','#6C5CE7','#00B894','#F7DC6F','#45B7D1','#FD79A8'][i % 7],
+          borderRadius: i % 2 === 0 ? '50%' : 2,
+          animation: `confetti ${1.5 + Math.random() * 1}s ease-out ${Math.random() * 0.5}s forwards`,
+        }}/>
+      ))}
+      <div style={{ fontSize: 72, marginBottom: 12, animation: 'winBounce 0.6s ease-out' }}>
+        {showConfetti ? '🎉' : '😿'}
+      </div>
+      <div style={{
+        fontSize: 28, fontWeight: 900,
+        color: showConfetti ? '#00B894' : '#FF6B6B',
+        marginBottom: 6, letterSpacing: '-0.5px',
+      }}>
+        {isLevelComplete ? '关卡完成！' : isWin ? '全部通关！' : '游戏结束'}
+      </div>
+      <div style={{ fontSize: 14, color: 'rgba(240,237,255,0.55)', marginBottom: 28 }}>
+        {isLevelComplete ? '教学关通过，准备挑战核心关！' : isWin ? '恭喜你完成了所有关卡！' : `剩余 ${remaining} 张牌未消除`}
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        {isLevelComplete && (
+          <button onClick={onNextLevel} style={{
+            padding: '12px 28px', borderRadius: 16,
+            background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+            border: 'none', cursor: 'pointer',
+            fontSize: 15, fontWeight: 700, color: '#fff',
+            boxShadow: '0 8px 24px rgba(253,150,68,0.3)',
+          }}>下一关</button>
+        )}
+        <button onClick={onRestart} style={{
+          padding: '12px 28px', borderRadius: 16,
+          background: 'linear-gradient(135deg, #6C5CE7, #4A3DB5)',
+          border: 'none', cursor: 'pointer',
+          fontSize: 15, fontWeight: 700, color: '#fff',
+          boxShadow: '0 8px 24px rgba(108,92,231,0.3)',
+        }}>再来一局</button>
+        <button onClick={onBack} style={{
+          padding: '12px 28px', borderRadius: 16,
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          cursor: 'pointer',
+          fontSize: 15, fontWeight: 600, color: 'rgba(240,237,255,0.6)',
+        }}>返回大厅</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN GAME COMPONENT
+   ═══════════════════════════════════════ */
+function Game() {
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const levelConfig = LEVELS[currentLevel];
+  const [tiles, setTiles] = useState(() => generateBoard(1));
+  const [slot, setSlot] = useState([]);
+  const [tempStorage, setTempStorage] = useState([]);
+  const [matching, setMatching] = useState([]);
+  const [gameState, setGameState] = useState(GAME_PLAYING);
+  const [moveCount, setMoveCount] = useState(0);
+  const [moveHistory, setMoveHistory] = useState([]); // for undo: [{uid, type, tileId, tileObj}]
+  const [usedPowerups, setUsedPowerups] = useState({ remove: false, undo: false, shuffle: false });
+  const [confirmPowerup, setConfirmPowerup] = useState(null);
+  const uidRef = useRef(0);
+  const slotRef = useRef([]);
+  const tempStorageRef = useRef([]);
+  const tilesRef = useRef(tiles);
+  const matchTimeoutRef = useRef(null);
+  const boardContainerRef = useRef(null);
+  const [boardScale, setBoardScale] = useState(1);
+
+  useEffect(() => { slotRef.current = slot; }, [slot]);
+  useEffect(() => { tempStorageRef.current = tempStorage; }, [tempStorage]);
+  useEffect(() => { tilesRef.current = tiles; }, [tiles]);
+
+  const boardHeight = levelConfig.rows * (TILE_H - OFFSET_Y) + TILE_H + (levelConfig.maxLayers - 1) * OFFSET_Y + 10;
+  const boardWidth = levelConfig.cols * (TILE_W - OFFSET_X) + TILE_W + (levelConfig.maxLayers - 1) * OFFSET_X + 10;
+  const totalTiles = tiles.length;
+
+  // Dynamic board scaling to fill available space
+  useEffect(() => {
+    const el = boardContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const s = Math.min(
+        el.clientWidth / boardWidth,
+        el.clientHeight / boardHeight
+      );
+      setBoardScale(s);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [boardWidth, boardHeight]);
+
+  const handleTileClick = useCallback((tile) => {
+    if (gameState !== GAME_PLAYING) return;
+    if (tile.removed) return;
+    if (isTileBlocked(tile, tilesRef.current)) return;
+    if (slotRef.current.length >= SLOT_CAPACITY) return;
+
+    const uid = ++uidRef.current;
+    const slotItem = { uid, type: tile.type, tileId: tile.id };
+
+    setTiles(prev => prev.map(t => t.id === tile.id ? { ...t, removed: true } : t));
+    setMoveCount(m => m + 1);
+    setMoveHistory(h => [...h, { uid, type: tile.type, tileId: tile.id, tile: tilesRef.current.find(t => t.id === tile.id) }]);
+
+    // Compute next slot synchronously to detect matches
+    const nextSlot = [...slotRef.current, slotItem];
+    const curTemp = tempStorageRef.current;
+    const combined = [...curTemp, ...nextSlot];
+    const sameType = combined.filter(s => s.type === tile.type);
+
+    if (sameType.length >= MATCH_COUNT) {
+      // Cross-slot match: prioritize removing from tempStorage first
+      const tempMatches = curTemp.filter(s => s.type === tile.type);
+      const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
+      const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
+      const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
+
+      setSlot(nextSlot);
+      setMatching(allMatchUids);
+
+      // Capture type for timeout closure
+      const matchType = tile.type;
+      matchTimeoutRef.current = setTimeout(() => {
+        // Remove matched tiles from tempStorage
+        setTempStorage(prev => {
+          let removed = 0;
+          return prev.filter(s => {
+            if (s.type === matchType && removed < tempRemoveCount) { removed++; return false; }
+            return true;
+          });
+        });
+        // Remove matched tiles from slot
+        setSlot(prev => {
+          let toRemove = slotRemoveCount;
+          return prev.filter(s => {
+            if (s.type === matchType && toRemove > 0) { toRemove--; return false; }
+            return true;
+          });
+        });
+        // Clean moveHistory
+        setMoveHistory(prev => {
+          let rem = slotRemoveCount;
+          return prev.filter(m => {
+            if (m.type === matchType && rem > 0) { rem--; return false; }
+            return true;
+          });
+        });
+        // Check win
+        setTiles(prev => {
+          if (prev.filter(t => !t.removed).length === 0) {
+            setTimeout(() => {
+              if (currentLevel < 2) {
+                setGameState(GAME_LEVEL_COMPLETE);
+              } else {
+                setGameState(GAME_WIN);
+              }
+            }, 300);
+          }
+          return prev;
+        });
+        setMatching([]);
+      }, 400);
+    } else if (nextSlot.length >= SLOT_CAPACITY) {
+      setSlot(nextSlot);
+      setTimeout(() => {
+        const typeCounts = {};
+        nextSlot.forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
+        if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
+          setGameState(GAME_LOSE);
+        }
+      }, 300);
+    } else {
+      setSlot(nextSlot);
+    }
+  }, [gameState]);
+
+  /* ── POWERUPS ── */
+  const handlePowerupClick = (powerup) => {
+    if (usedPowerups[powerup.key]) return;
+    if (gameState !== GAME_PLAYING) return;
+    // Check if powerup can be used
+    if (powerup.key === 'remove' && slot.length === 0) return;
+    if (powerup.key === 'undo' && slot.length === 0) return;
+    if (powerup.key === 'shuffle' && tiles.filter(t => !t.removed).length < 2) return;
+    setConfirmPowerup(powerup);
+  };
+
+  const executePowerup = () => {
+    const key = confirmPowerup.key;
+    setUsedPowerups(prev => ({ ...prev, [key]: true }));
+    setConfirmPowerup(null);
+
+    if (key === 'remove') {
+      // Move last 3 (or fewer) slot tiles to temp storage (max 3 slots)
+      const count = Math.min(slotRef.current.length, 3);
+      const moved = slotRef.current.slice(-count);
+      setTempStorage(ts => [...ts, ...moved].slice(0, 3));
+      setSlot(prev => prev.slice(0, -count));
+      setMoveHistory(h => h.slice(0, -count));
+    } else if (key === 'undo') {
+      // Cancel any pending match timeout
+      if (matchTimeoutRef.current) {
+        clearTimeout(matchTimeoutRef.current);
+        matchTimeoutRef.current = null;
+      }
+      setMatching([]);
+      // Return last slot tile to board — use ref for synchronous read
+      const currentSlot = slotRef.current;
+      if (currentSlot.length === 0) return;
+      const last = currentSlot[currentSlot.length - 1];
+      const targetTileId = last.tileId;
+      // Verify tile exists and is actually removed before restoring
+      const tileExists = tilesRef.current.some(t => t.id === targetTileId && t.removed);
+      if (tileExists) {
+        setTiles(prev => prev.map(t => t.id === targetTileId ? { ...t, removed: false } : t));
+      }
+      setSlot(prev => prev.slice(0, -1));
+      setMoveHistory(h => h.slice(0, -1));
+    } else if (key === 'shuffle') {
+      // Shuffle all remaining tiles' positions
+      setTiles(prev => {
+        const remaining = prev.filter(t => !t.removed);
+        const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
+        const shuffledPositions = shuffleArr(positions);
+        return prev.map(t => {
+          if (t.removed) return t;
+          const idx = remaining.findIndex(r => r.id === t.id);
+          return { ...t, ...shuffledPositions[idx] };
+        });
+      });
+    }
+  };
+
+  const handleRestart = () => {
+    if (matchTimeoutRef.current) {
+      clearTimeout(matchTimeoutRef.current);
+      matchTimeoutRef.current = null;
+    }
+    setTiles(generateBoard(currentLevel));
+    setSlot([]);
+    setTempStorage([]);
+    setMatching([]);
+    setGameState(GAME_PLAYING);
+    setMoveCount(0);
+    setMoveHistory([]);
+    setUsedPowerups({ remove: false, undo: false, shuffle: false });
+    uidRef.current = 0;
+  };
+
+  const handleNextLevel = () => {
+    const nextLv = currentLevel + 1;
+    if (matchTimeoutRef.current) {
+      clearTimeout(matchTimeoutRef.current);
+      matchTimeoutRef.current = null;
+    }
+    setCurrentLevel(nextLv);
+    setTiles(generateBoard(nextLv));
+    setSlot([]);
+    setTempStorage([]);
+    setMatching([]);
+    setGameState(GAME_PLAYING);
+    setMoveCount(0);
+    setMoveHistory([]);
+    setUsedPowerups({ remove: false, undo: false, shuffle: false });
+    uidRef.current = 0;
+  };
+
+  const remaining = tiles.filter(t => !t.removed).length;
+  const progress = Math.round(((totalTiles - remaining) / totalTiles) * 100);
+
+  return (
+    <div style={{
+      height: '100%', position: 'relative',
+      display: 'flex', flexDirection: 'column',
+      background: `url('cat/bg.png') center/cover no-repeat`,
+      backgroundBlendMode: 'overlay',
+    }}>
+      {/* Dark overlay on bg */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(15,10,30,0.35)',
+        zIndex: 0,
+      }}/>
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+
+        {/* ═══ HEADER ═══ */}
+        <div style={{
+          padding: '6px 16px 8px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <a href="主页大厅.html" style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            textDecoration: 'none', color: 'rgba(240,237,255,0.6)', fontSize: 13, fontWeight: 500,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            返回
+          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#F0EDFF', letterSpacing: '-0.3px' }}>
+              🐾 喵了个咪
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: '#FD9644',
+              background: 'rgba(253,150,68,0.12)', padding: '2px 8px', borderRadius: 6,
+            }}>第{currentLevel}关 · {levelConfig.name}</span>
+          </div>
+          <button onClick={handleRestart} style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 10, padding: '5px 10px', cursor: 'pointer',
+            fontSize: 11, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
+          }}>重来</button>
+        </div>
+
+        {/* ═══ PROGRESS ═══ */}
+        <div style={{ padding: '0 16px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            flex: 1, height: 5, borderRadius: 3,
+            background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+          }}>
+            <div style={{
+              width: `${progress}%`, height: '100%', borderRadius: 3,
+              background: 'linear-gradient(90deg, #6C5CE7, #A29BFE)',
+              transition: 'width 0.3s',
+            }}/>
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,255,0.35)' }}>
+            {totalTiles - remaining}/{totalTiles} · {moveCount}步
+          </span>
+        </div>
+
+        {/* ═══ GAME BOARD (upper 2/3) ═══ */}
+        <div ref={boardContainerRef} style={{
+          height: '58vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'relative',
+            width: boardWidth, height: boardHeight,
+            transform: `scale(${boardScale})`,
+            transformOrigin: 'center center',
+          }}>
+            {tiles.map(tile => (
+              <Tile
+                key={tile.id}
+                tile={tile}
+                blocked={isTileBlocked(tile, tiles)}
+                onClick={handleTileClick}
+                animDelay={tile.layer * 0.06 + (tile.row * levelConfig.cols + tile.col) * 0.008}
+              />
+            ))}
+            <ResultOverlay
+              gameState={gameState}
+              remaining={remaining}
+              onRestart={handleRestart}
+              onBack={() => window.location.href = '主页大厅.html'}
+              onNextLevel={handleNextLevel}
+            />
+          </div>
+        </div>
+
+        {/* ═══ BOTTOM (lower 1/3) ═══ */}
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          paddingBottom: 10, minHeight: 0,
+        }}>
+          {/* 临时存放层 */}
+          {tempStorage.length > 0 && (
+            <div style={{ padding: '0 10px 4px' }}>
+              <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3} showBg={false} />
+            </div>
+          )}
+          {/* 收集槽 */}
+          <div style={{ padding: '0 10px' }}>
+            <CollectionSlot slot={slot} matching={matching} />
+          </div>
+
+          {/* 道具按钮 */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 40,
+            padding: '6px 0 4px',
+          }}>
+            {POWERUPS.map(p => (
+              <PowerupButton
+                key={p.key}
+                powerup={p}
+                used={usedPowerups[p.key]}
+                onClick={handlePowerupClick}
+              />
+            ))}
+          </div>
+
+
+        </div>
+      </div>
+
+      {/* ═══ CONFIRM MODAL ═══ */}
+      <ConfirmModal
+        powerup={confirmPowerup}
+        onConfirm={executePowerup}
+        onCancel={() => setConfirmPowerup(null)}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   APP WITH iOS FRAME
+   ═══════════════════════════════════════ */
+function App() {
+  const DESIGN_W = 750;
+  const DESIGN_H = 1334;
+  const [scale, setScale] = React.useState(1);
+
+  React.useEffect(() => {
+    function fit() {
+      const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
+      setScale(s);
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: '#0E0E16',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        width: DESIGN_W, height: DESIGN_H,
+        transform: `scale(${scale})`,
+        transformOrigin: 'center center',
+        background: '#0F0A1E',
+        overflow: 'hidden',
+        position: 'relative',
+      }}>
+        <Game />
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

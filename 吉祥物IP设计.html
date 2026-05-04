@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>喵了个咪 · 吉祥物IP设计</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #FAFBFE; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    @keyframes blink { 0%,90%,100%{transform:scaleY(1)} 95%{transform:scaleY(0.1)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════ */
+const C = {
+  purple: '#6C5CE7', purpleLight: '#A29BFE',
+  orange: '#FD9644', blue: '#45B7D1',
+  yellow: '#F7DC6F', red: '#FF6B6B',
+  green: '#00B894', pink: '#FD79A8',
+  surface: '#FFFFFF', surfaceAlt: '#F8F7FC',
+  bg: '#FAFBFE',
+  ink: '#2D3436', sub: '#636E72', muted: '#B2BEC3',
+  line: '#DFE6E9',
+};
+
+/* ═══════════════════════════════════════
+   SHARED SVG PARTS (consistent style)
+   ═══════════════════════════════════════ */
+const Ear = ({cx, cy, flip, color="#FFEAA7", stroke="#636E72"}) => (
+  <path d={flip
+    ? `M${cx-6} ${cy} C${cx-4} ${cy-12} ${cx+4} ${cy-11} ${cx+5} ${cy}`
+    : `M${cx-5} ${cy} C${cx-4} ${cy-12} ${cx+4} ${cy-11} ${cx+6} ${cy}`}
+    fill={color} stroke={stroke} strokeWidth="1.8" strokeLinejoin="round"/>
+);
+
+const Blush = ({cx, cy, r=4}) => (
+  <ellipse cx={cx} cy={cy} rx={r} ry={r*0.6} fill="#FD9644" opacity="0.3"/>
+);
+
+/* ═══════════════════════════════════════
+   MASCOT — 主形象（举双爪开心猫）
+   ═══════════════════════════════════════ */
+function MascotCat({size=200}) {
+  const s = size/200;
+  return (
+    <svg width={size} height={size*1.15} viewBox="0 0 200 230" fill="none">
+      {/* 左耳 */}
+      <path d="M55 95 C52 72 72 65 78 85" fill="#FFEAA7" stroke="#636E72" strokeWidth="2.5" strokeLinejoin="round"/>
+      <path d="M59 90 C57 78 68 73 73 85" fill="#FDCB6E" stroke="none"/>
+      {/* 右耳 */}
+      <path d="M145 95 C148 72 128 65 122 85" fill="#FFEAA7" stroke="#636E72" strokeWidth="2.5" strokeLinejoin="round"/>
+      <path d="M141 90 C143 78 132 73 127 85" fill="#FDCB6E" stroke="none"/>
+      {/* 头 */}
+      <ellipse cx="100" cy="108" rx="52" ry="48" fill="#FFEAA7" stroke="#636E72" strokeWidth="2.5"/>
+      {/* 身体 */}
+      <ellipse cx="100" cy="175" rx="40" ry="38" fill="#FFEAA7" stroke="#636E72" strokeWidth="2.5"/>
+      {/* 肚皮 */}
+      <ellipse cx="100" cy="178" rx="26" ry="26" fill="#FFF5CC" stroke="none"/>
+      {/* 左眼 — 闭眼微笑弧 */}
+      <path d="M78 105 Q83 113 88 105" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      {/* 右眼 — 闭眼微笑弧 */}
+      <path d="M112 105 Q117 113 122 105" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      {/* 鼻子 */}
+      <ellipse cx="100" cy="118" rx="3" ry="2.5" fill="#FD9644"/>
+      {/* 嘴巴 — w形 */}
+      <path d="M93 123 Q100 130 107 123" stroke="#636E72" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      {/* 腮红 */}
+      <Blush cx={72} cy={116} r={7}/>
+      <Blush cx={128} cy={116} r={7}/>
+      {/* 胡须 — 左 */}
+      <line x1="30" y1="108" x2="62" y2="112" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      <line x1="28" y1="120" x2="60" y2="118" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      {/* 胡须 — 右 */}
+      <line x1="170" y1="108" x2="138" y2="112" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      <line x1="172" y1="120" x2="140" y2="118" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      {/* 左手臂 — 举起 */}
+      <path d="M62 158 C48 140 42 120 52 108" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      {/* 左手爪 */}
+      <circle cx="52" cy="106" r="5" fill="#FFEAA7" stroke="#636E72" strokeWidth="1.8"/>
+      {/* 右手臂 — 举起 */}
+      <path d="M138 158 C152 140 158 120 148 108" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      {/* 右手爪 */}
+      <circle cx="148" cy="106" r="5" fill="#FFEAA7" stroke="#636E72" strokeWidth="1.8"/>
+      {/* 左脚 */}
+      <ellipse cx="82" cy="210" rx="12" ry="6" fill="#FFEAA7" stroke="#636E72" strokeWidth="2"/>
+      {/* 右脚 */}
+      <ellipse cx="118" cy="210" rx="12" ry="6" fill="#FFEAA7" stroke="#636E72" strokeWidth="2"/>
+      {/* 尾巴 */}
+      <path d="M140 190 Q165 180 158 155" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M140 190 Q165 180 158 155" stroke="#FFEAA7" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.5"/>
+      <path d="M140 190 Q165 180 158 155" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════
+   12 种猫咪表情 SVG 组件
+   ═══════════════════════════════════════ */
+function BaseCat({ children, bgColor = "#FFEAA7", size = 120 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
+      <rect width="120" height="120" rx="20" fill="white"/>
+      {/* 左耳 */}
+      <path d="M30 52 C28 36 42 33 46 46" fill={bgColor} stroke="#636E72" strokeWidth="2" strokeLinejoin="round"/>
+      {/* 右耳 */}
+      <path d="M90 52 C92 36 78 33 74 46" fill={bgColor} stroke="#636E72" strokeWidth="2" strokeLinejoin="round"/>
+      {/* 头 */}
+      <ellipse cx="60" cy="62" rx="30" ry="27" fill={bgColor} stroke="#636E72" strokeWidth="2"/>
+      {/* 身体 */}
+      <ellipse cx="60" cy="95" rx="22" ry="18" fill={bgColor} stroke="#636E72" strokeWidth="2"/>
+      {/* 胡须 — 左 */}
+      <line x1="16" y1="60" x2="36" y2="62" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+      <line x1="15" y1="68" x2="35" y2="67" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+      {/* 胡须 — 右 */}
+      <line x1="104" y1="60" x2="84" y2="62" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+      <line x1="105" y1="68" x2="85" y2="67" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+      {children}
+    </svg>
+  );
+}
+
+/* 1. 开心猫 */
+function HappyCat() {
+  return <BaseCat>
+    <path d="M46 58 Q51 66 56 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <path d="M64 58 Q69 66 74 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <ellipse cx="60" cy="68" rx="2.5" ry="2" fill="#FD9644"/>
+    <path d="M54 72 Q60 78 66 72" stroke="#636E72" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+    <Blush cx={40} cy={66} r={5}/><Blush cx={80} cy={66} r={5}/>
+  </BaseCat>;
+}
+
+/* 2. 墨镜酷猫 */
+function CoolCat() {
+  return <BaseCat>
+    <rect x="40" y="53" width="15" height="10" rx="3" fill="#2D3436" opacity="0.85"/>
+    <rect x="65" y="53" width="15" height="10" rx="3" fill="#2D3436" opacity="0.85"/>
+    <line x1="55" y1="58" x2="65" y2="58" stroke="#636E72" strokeWidth="1.5"/>
+    <line x1="40" y1="58" x2="34" y2="56" stroke="#636E72" strokeWidth="1.2"/>
+    <line x1="80" y1="58" x2="86" y2="56" stroke="#636E72" strokeWidth="1.2"/>
+    <path d="M56 72 Q60 70 64 72" stroke="#636E72" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+  </BaseCat>;
+}
+
+/* 3. 爱心猫 */
+function LoveCat() {
+  return <BaseCat>
+    <path d="M45 56 C43 52 47 49 49 53 C51 49 55 52 53 56 L49 62 Z" fill="#FF6B6B"/>
+    <path d="M67 56 C65 52 69 49 71 53 C73 49 77 52 75 56 L71 62 Z" fill="#FF6B6B"/>
+    <ellipse cx="60" cy="70" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M55 73 Q60 77 65 73" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <Blush cx={40} cy={68} r={5}/><Blush cx={80} cy={68} r={5}/>
+    {/* 小爱心飘出 */}
+    <path d="M88 42 C87 39 90 37 91 40 C92 37 95 39 94 42 L91 46 Z" fill="#FF6B6B" opacity="0.5"/>
+  </BaseCat>;
+}
+
+/* 4. 兴奋猫 */
+function ExcitedCat() {
+  return <BaseCat>
+    <circle cx="49" cy="58" r="4" fill="#2D3436"/>
+    <circle cx="71" cy="58" r="4" fill="#2D3436"/>
+    <circle cx="50" cy="57" r="1.5" fill="white"/>
+    <circle cx="72" cy="57" r="1.5" fill="white"/>
+    <ellipse cx="60" cy="68" rx="2.5" ry="2" fill="#FD9644"/>
+    <path d="M52 72 Q60 82 68 72" stroke="#636E72" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+    <Blush cx={40} cy={65} r={5}/><Blush cx={80} cy={65} r={5}/>
+    {/* 兴奋星星 */}
+    <text x="84" y="48" fontSize="10" fill="#F7DC6F">✦</text>
+    <text x="30" y="44" fontSize="7" fill="#F7DC6F">✦</text>
+  </BaseCat>;
+}
+
+/* 5. 困困猫 */
+function SleepyCat() {
+  return <BaseCat>
+    <path d="M44 60 L56 60" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <path d="M64 60 L76 60" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <ellipse cx="60" cy="70" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M82 46 Q86 42 84 48" stroke="#636E72" strokeWidth="1" fill="none" opacity="0.4"/>
+    <path d="M86 38 Q92 32 88 42" stroke="#636E72" strokeWidth="1" fill="none" opacity="0.3"/>
+    <path d="M88 30 Q96 22 90 34" stroke="#636E72" strokeWidth="1" fill="none" opacity="0.2"/>
+    <text x="78" y="30" fontSize="11" fill="#636E72" opacity="0.5">z</text>
+    <text x="88" y="22" fontSize="9" fill="#636E72" opacity="0.35">z</text>
+    <text x="96" y="16" fontSize="7" fill="#636E72" opacity="0.2">z</text>
+  </BaseCat>;
+}
+
+/* 6. 生气猫 */
+function AngryCat() {
+  return <BaseCat bgColor="#FFE0E0">
+    <line x1="42" y1="52" x2="54" y2="57" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <line x1="54" y1="52" x2="42" y2="57" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <line x1="66" y1="57" x2="78" y2="52" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <line x1="66" y1="52" x2="78" y2="57" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round"/>
+    <ellipse cx="60" cy="68" rx="2.5" ry="2" fill="#FF6B6B"/>
+    <path d="M52 73 L60 70 L68 73" stroke="#636E72" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+    <path d="M40 44 Q44 40 48 44" stroke="#FF6B6B" strokeWidth="2" fill="none"/>
+    <path d="M72 44 Q76 40 80 44" stroke="#FF6B6B" strokeWidth="2" fill="none"/>
+  </BaseCat>;
+}
+
+/* 7. 惊讶猫 */
+function SurprisedCat() {
+  return <BaseCat>
+    <circle cx="49" cy="58" r="5" fill="white" stroke="#636E72" strokeWidth="2"/>
+    <circle cx="49" cy="58" r="2.5" fill="#2D3436"/>
+    <circle cx="71" cy="58" r="5" fill="white" stroke="#636E72" strokeWidth="2"/>
+    <circle cx="71" cy="58" r="2.5" fill="#2D3436"/>
+    <ellipse cx="60" cy="70" rx="2.5" ry="2" fill="#FD9644"/>
+    <ellipse cx="60" cy="76" rx="5" ry="5" fill="white" stroke="#636E72" strokeWidth="1.8"/>
+    <Blush cx={39} cy={66} r={5}/><Blush cx={81} cy={66} r={5}/>
+  </BaseCat>;
+}
+
+/* 8. 哭哭猫 */
+function CryingCat() {
+  return <BaseCat bgColor="#E0ECFF">
+    <path d="M46 58 Q51 54 56 58" stroke="#636E72" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    <path d="M64 58 Q69 54 74 58" stroke="#636E72" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    <circle cx="48" cy="62" r="1.5" fill="#2D3436"/>
+    <circle cx="72" cy="62" r="1.5" fill="#2D3436"/>
+    <path d="M44 62 L42 78" stroke="#45B7D1" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M76 62 L78 78" stroke="#45B7D1" strokeWidth="2" strokeLinecap="round"/>
+    <ellipse cx="60" cy="70" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M55 74 Q60 70 65 74" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+  </BaseCat>;
+}
+
+/* 9. 思考猫 */
+function ThinkingCat() {
+  return <BaseCat>
+    <circle cx="49" cy="58" r="3" fill="#2D3436"/>
+    <circle cx="71" cy="58" r="3" fill="#2D3436"/>
+    <circle cx="48" cy="57" r="1.2" fill="white"/>
+    <circle cx="70" cy="57" r="1.2" fill="white"/>
+    <ellipse cx="60" cy="68" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M38 88 C34 84 36 76 42 78" stroke="#636E72" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+    <ellipse cx="36" cy="76" rx="6" ry="4" fill="#FFEAA7" stroke="#636E72" strokeWidth="1.5"/>
+    <circle cx="86" cy="42" r="3" fill="#DFE6E9"/>
+    <circle cx="92" cy="34" r="4.5" fill="#DFE6E9"/>
+    <circle cx="100" cy="24" r="6.5" fill="#DFE6E9"/>
+  </BaseCat>;
+}
+
+/* 10. 吃吃猫 */
+function EatingCat() {
+  return <BaseCat>
+    <circle cx="48" cy="58" r="2.5" fill="#2D3436"/>
+    <circle cx="72" cy="58" r="2.5" fill="#2D3436"/>
+    <ellipse cx="60" cy="69" rx="2.5" ry="2" fill="#FD9644"/>
+    <ellipse cx="60" cy="75" rx="4" ry="3.5" fill="white" stroke="#636E72" strokeWidth="1.5"/>
+    <ellipse cx="60" cy="74" rx="2.5" ry="1.5" fill="#FD9644" opacity="0.5"/>
+    <Blush cx={39} cy={66} r={5}/><Blush cx={81} cy={66} r={5}/>
+    {/* 鱼骨头 */}
+    <g transform="translate(88,48) rotate(15)">
+      <line x1="-6" y1="0" x2="6" y2="0" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="-6" y1="-4" x2="-3" y2="0" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="-6" y1="4" x2="-3" y2="0" stroke="#636E72" strokeWidth="1.2" strokeLinecap="round"/>
+      <circle cx="4" cy="0" r="2" fill="none" stroke="#636E72" strokeWidth="1"/>
+    </g>
+  </BaseCat>;
+}
+
+/* 11. 送花猫 */
+function FlowerCat() {
+  return <BaseCat>
+    <path d="M46 58 Q51 66 56 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <path d="M64 58 Q69 66 74 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <ellipse cx="60" cy="68" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M55 72 Q60 76 65 72" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <Blush cx={40} cy={66} r={5}/><Blush cx={80} cy={66} r={5}/>
+    {/* 花朵 */}
+    <g transform="translate(84,52)">
+      <circle cx="0" cy="0" r="3" fill="#FD9644"/>
+      <circle cx="0" cy="-6" r="3" fill="#FF6B6B"/>
+      <circle cx="5.7" cy="-1.8" r="3" fill="#FF6B6B"/>
+      <circle cx="3.5" cy="4.8" r="3" fill="#FF6B6B"/>
+      <circle cx="-3.5" cy="4.8" r="3" fill="#FF6B6B"/>
+      <circle cx="-5.7" cy="-1.8" r="3" fill="#FF6B6B"/>
+      <line x1="0" y1="6" x2="-4" y2="22" stroke="#00B894" strokeWidth="2" strokeLinecap="round"/>
+    </g>
+  </BaseCat>;
+}
+
+/* 12. 天使猫 */
+function AngelCat() {
+  return <BaseCat>
+    <path d="M46 58 Q51 66 56 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <path d="M64 58 Q69 66 74 58" stroke="#636E72" strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+    <ellipse cx="60" cy="68" rx="2" ry="1.5" fill="#FD9644"/>
+    <path d="M55 72 Q60 77 65 72" stroke="#636E72" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <Blush cx={40} cy={66} r={5}/><Blush cx={80} cy={66} r={5}/>
+    {/* 天使光环 */}
+    <ellipse cx="60" cy="32" rx="16" ry="6" fill="none" stroke="#F7DC6F" strokeWidth="2.5"/>
+    <ellipse cx="60" cy="32" rx="16" ry="6" fill="none" stroke="#F7DC6F" strokeWidth="1" opacity="0.3" strokeDasharray="3 3"/>
+    {/* 小翅膀 — 左 */}
+    <path d="M32 85 C22 75 20 62 28 60 C26 68 30 78 38 85" fill="white" stroke="#636E72" strokeWidth="1.2"/>
+    {/* 小翅膀 — 右 */}
+    <path d="M88 85 C98 75 100 62 92 60 C94 68 90 78 82 85" fill="white" stroke="#636E72" strokeWidth="1.2"/>
+  </BaseCat>;
+}
+
+/* ═══════════════════════════════════════
+   猫咪卡片（正常 + 锁定）
+   ═══════════════════════════════════════ */
+function CatCard({ name, desc, CatComponent, index, locked = false }) {
+  const accentColors = [C.purple, C.orange, C.blue, C.yellow, C.red, C.green, C.pink, C.purpleLight, C.orange, C.blue, C.red, C.yellow];
+  const accent = accentColors[index % accentColors.length];
+
+  return (
+    <div style={{
+      width: 140,
+      borderRadius: 20,
+      background: locked ? '#F0F0F0' : C.surface,
+      border: locked ? '2px dashed #DFE6E9' : `2px solid ${locked ? '#DFE6E9' : accent + '33'}`,
+      padding: '16px 12px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+      position: 'relative',
+      transition: 'all 0.3s',
+      cursor: 'pointer',
+      filter: locked ? 'grayscale(0.8)' : 'none',
+      opacity: locked ? 0.55 : 1,
+    }}>
+      {/* 猫咪 SVG */}
+      <div style={{
+        width: 90,
+        height: 90,
+        borderRadius: 16,
+        background: locked ? '#E8E8E8' : accent + '12',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+      }}>
+        <div style={{ transform: 'scale(0.72)', filter: locked ? 'grayscale(1) opacity(0.4)' : 'none' }}>
+          <CatComponent />
+        </div>
+        {/* 锁定覆盖 */}
+        {locked && (
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            borderRadius: 16,
+            background: 'rgba(240,240,240,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2" fill="#B2BEC3" stroke="#636E72" strokeWidth="1.5"/>
+              <path d="M8 11V7a4 4 0 118 0v4" stroke="#636E72" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <circle cx="12" cy="16" r="1.5" fill="white"/>
+            </svg>
+          </div>
+        )}
+      </div>
+      {/* 名称 */}
+      <div style={{
+        fontSize: 13,
+        fontWeight: 600,
+        color: locked ? '#B2BEC3' : C.ink,
+        textAlign: 'center',
+      }}>{name}</div>
+      {/* 描述 */}
+      <div style={{
+        fontSize: 10,
+        color: locked ? '#DFE6E9' : C.muted,
+        textAlign: 'center',
+        lineHeight: 1.4,
+      }}>{locked ? '打卡解锁' : desc}</div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   PAGE SECTIONS
+   ═══════════════════════════════════════ */
+function SectionTitle({ title, sub }) {
+  return (
+    <div style={{ textAlign: 'center', marginBottom: 32 }}>
+      <h2 style={{ fontSize: 28, fontWeight: 700, color: C.ink, letterSpacing: '-0.5px', marginBottom: 6 }}>{title}</h2>
+      {sub && <p style={{ fontSize: 14, color: C.sub, lineHeight: 1.6 }}>{sub}</p>}
+    </div>
+  );
+}
+
+function SpecTable({ items }) {
+  return (
+    <div style={{
+      background: C.surface,
+      borderRadius: 16,
+      border: `1px solid ${C.line}`,
+      overflow: 'hidden',
+      maxWidth: 600,
+      margin: '0 auto',
+    }}>
+      {items.map((item, i) => (
+        <div key={i} style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '12px 20px',
+          borderBottom: i < items.length - 1 ? `1px solid ${C.line}` : 'none',
+          gap: 16,
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: item.color || C.surfaceAlt,
+            flexShrink: 0,
+          }}/>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{item.label}</div>
+            {item.desc && <div style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>{item.desc}</div>}
+          </div>
+          {item.hex && <div style={{ fontSize: 12, fontWeight: 500, color: C.muted, fontFamily: 'monospace' }}>{item.hex}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN APP
+   ═══════════════════════════════════════ */
+function App() {
+  const [showLocked, setShowLocked] = useState(false);
+
+  const cats = [
+    { name: '开心', desc: '日常打卡好心情', Comp: HappyCat },
+    { name: '酷盖', desc: '墨镜一戴谁都不爱', Comp: CoolCat },
+    { name: '恋爱', desc: '满眼都是小爱心', Comp: LoveCat },
+    { name: '兴奋', desc: '连续打卡超激动', Comp: ExcitedCat },
+    { name: '困困', desc: '早起打卡有点困', Comp: SleepyCat },
+    { name: '生气', desc: '忘记打卡很恼火', Comp: AngryCat },
+    { name: '惊讶', desc: '居然破纪录了', Comp: SurprisedCat },
+    { name: '哭哭', desc: '打卡断了好难过', Comp: CryingCat },
+    { name: '思考', desc: '今天选哪个路线', Comp: ThinkingCat },
+    { name: '吃吃', desc: '早餐打卡必备', Comp: EatingCat },
+    { name: '送花', desc: '给坚持的自己', Comp: FlowerCat },
+    { name: '天使', desc: '满分成就达成', Comp: AngelCat },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Noto Sans SC', sans-serif" }}>
+
+      {/* ─── HEADER ─── */}
+      <div style={{
+        textAlign: 'center',
+        padding: '56px 24px 40px',
+        background: `linear-gradient(135deg, ${C.purple}08 0%, ${C.blue}06 50%, ${C.pink}05 100%)`,
+      }}>
+        <div style={{
+          fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', color: C.sub,
+          textTransform: 'uppercase', marginBottom: 12,
+        }}>喵了个咪 · IP 设计</div>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: C.ink, letterSpacing: '-0.5px', marginBottom: 8 }}>
+          吉祥物 & 猫咪图鉴
+        </h1>
+        <p style={{ fontSize: 14, color: C.sub, maxWidth: 480, margin: '0 auto' }}>
+          极简线条风格 · 通勤场景适配 · 12种打卡情绪
+        </p>
+      </div>
+
+      {/* ─── SECTION 1: 主形象 ─── */}
+      <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <SectionTitle title="主形象 · 喵喵" sub="圆润身体 · 闭眼微笑 · 举双爪欢呼 · 极简线条"/>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 40,
+          background: C.surface,
+          borderRadius: 24,
+          border: `1px solid ${C.line}`,
+          boxShadow: '0 8px 32px rgba(108,92,231,0.06)',
+          animation: 'float 4s ease-in-out infinite',
+        }}>
+          <MascotCat size={220}/>
+        </div>
+        {/* 设计要点 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 24,
+          marginTop: 28,
+          flexWrap: 'wrap',
+        }}>
+          {[
+            { label: '圆润', desc: '无棱角，亲和力', color: C.yellow },
+            { label: '闭眼', desc: '满足感，安全感', color: C.orange },
+            { label: '举爪', desc: '欢呼，积极情绪', color: C.purple },
+            { label: '线条', desc: '极简描边，通勤适配', color: C.blue },
+          ].map((d, i) => (
+            <div key={i} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              padding: '12px 16px',
+              background: C.surface,
+              borderRadius: 12,
+              border: `1px solid ${C.line}`,
+              minWidth: 100,
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color }}/>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{d.label}</div>
+              <div style={{ fontSize: 11, color: C.sub }}>{d.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── SECTION 2: 设计规范 ─── */}
+      <div style={{ padding: '16px 24px 48px' }}>
+        <SectionTitle title="设计规范" sub="基于 UI 风格选择 · 轻柔白"/>
+        <SpecTable items={[
+          { label: '主色 · Primary Purple', hex: '#6C5CE7', color: '#6C5CE7', desc: 'Tab 高亮、关键 CTA' },
+          { label: '点色 · Spot Orange', hex: '#FD9644', color: '#FD9644', desc: '腮红、鼻子、装饰' },
+          { label: '点色 · Spot Blue', hex: '#45B7D1', color: '#45B7D1', desc: '水滴、清新元素' },
+          { label: '点色 · Spot Yellow', hex: '#F7DC6F', color: '#F7DC6F', desc: '光环、星星、温暖' },
+          { label: '点色 · Spot Red', hex: '#FF6B6B', color: '#FF6B6B', desc: '爱心、生气、警示' },
+          { label: '点色 · Spot Green', hex: '#00B894', color: '#00B894', desc: '花茎、成长元素' },
+          { label: '猫体色 · Cat Yellow', hex: '#FFEAA7', color: '#FFEAA7', desc: '默认猫咪毛色' },
+          { label: '描边 · Stroke', hex: '#636E72', color: '#636E72', desc: '线条描边统一色' },
+          { label: '背景 · Surface', hex: '#FFFFFF', color: '#FFFFFF', desc: '卡片底色' },
+          { label: '页面底 · Background', hex: '#FAFBFE', color: '#FAFBFE', desc: '页面底色' },
+        ]}/>
+      </div>
+
+      {/* ─── SECTION 3: 12种猫咪图鉴 ─── */}
+      <div style={{ padding: '16px 24px 24px' }}>
+        <SectionTitle title="猫咪图鉴 · 12种情绪" sub="每种猫咪对应一个打卡场景，通过打卡解锁"/>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 8,
+          marginBottom: 28,
+        }}>
+          <button onClick={() => setShowLocked(false)} style={{
+            padding: '8px 20px', borderRadius: 999,
+            border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: !showLocked ? C.purple : C.surfaceAlt,
+            color: !showLocked ? '#fff' : C.sub,
+            transition: 'all 0.2s',
+          }}>正常状态</button>
+          <button onClick={() => setShowLocked(true)} style={{
+            padding: '8px 20px', borderRadius: 999,
+            border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: showLocked ? C.purple : C.surfaceAlt,
+            color: showLocked ? '#fff' : C.sub,
+            transition: 'all 0.2s',
+          }}>锁定状态</button>
+        </div>
+      </div>
+
+      {/* 正常状态网格 */}
+      {!showLocked && (
+        <div style={{ padding: '0 24px 48px' }}>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 14,
+            maxWidth: 680,
+            margin: '0 auto',
+          }}>
+            {cats.map((cat, i) => (
+              <CatCard
+                key={cat.name}
+                name={cat.name}
+                desc={cat.desc}
+                CatComponent={cat.Comp}
+                index={i}
+                locked={false}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 锁定状态网格 */}
+      {showLocked && (
+        <div style={{ padding: '0 24px 48px' }}>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: 14,
+            maxWidth: 680,
+            margin: '0 auto',
+          }}>
+            {cats.map((cat, i) => (
+              <CatCard
+                key={cat.name}
+                name={cat.name}
+                desc={cat.desc}
+                CatComponent={cat.Comp}
+                index={i}
+                locked={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── SECTION 4: 正常 vs 锁定 对比 ─── */}
+      <div style={{ padding: '16px 24px 56px' }}>
+        <SectionTitle title="正常 vs 锁定 · 对比展示" sub="左右对比查看同一猫咪的两种状态"/>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 40,
+          flexWrap: 'wrap',
+        }}>
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <CatCard name={cats[i].name} desc={cats[i].desc} CatComponent={cats[i].Comp} index={i} locked={false}/>
+              <div style={{ fontSize: 20, color: C.muted }}>→</div>
+              <CatCard name={cats[i].name} desc={cats[i].desc} CatComponent={cats[i].Comp} index={i} locked={true}/>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── FOOTER ─── */}
+      <div style={{
+        textAlign: 'center', padding: '24px 24px 40px',
+        fontSize: 12, color: C.muted, borderTop: `1px solid ${C.line}`,
+      }}>
+        喵了个咪 · 吉祥物IP设计 v1 · 2026-05-01
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
