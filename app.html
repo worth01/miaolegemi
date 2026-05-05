@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>喵了个咪 · 通勤打卡+猫咪养成</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(108,92,231,0.3)} 50%{box-shadow:0 0 40px rgba(108,92,231,0.6)} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-2px)} 80%{transform:translateX(2px)} }
+    @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
+    @keyframes slideUp { 0%{transform:translateY(30px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes coinPop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3);opacity:1} 100%{transform:scale(1);opacity:1} }
+    @keyframes bellRing { 0%{transform:rotate(0)} 20%{transform:rotate(-20deg)} 40%{transform:rotate(20deg)} 60%{transform:rotate(-10deg)} 80%{transform:rotate(10deg)} 100%{transform:rotate(0)} }
+    @keyframes adoptPop { 0%{transform:scale(0);opacity:0} 50%{transform:scale(1.3);opacity:1} 70%{transform:scale(0.9)} 100%{transform:scale(1);opacity:1} }
+    @keyframes barShine { 0%{background-position:-200% center} 100%{background-position:200% center} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════ */
+const C = {
+  purple: '#6C5CE7', purpleDark: '#4A3DB5', purpleLight: '#A29BFE',
+  orange: '#FD9644', blue: '#45B7D1', yellow: '#F7DC6F', red: '#FF6B6B',
+  green: '#00B894', pink: '#FD79A8',
+  bg: '#0F0A1E', bg2: '#1A1235',
+  card: 'rgba(255,255,255,0.06)', cardBorder: 'rgba(255,255,255,0.08)',
+  glass: 'rgba(255,255,255,0.04)',
+  ink: '#F0EDFF', sub: 'rgba(240,237,255,0.55)', muted: 'rgba(240,237,255,0.3)',
+};
+const RARITY_COLORS = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
+const RARITY_BG = { N: 'rgba(178,190,195,0.1)', R: 'rgba(69,183,209,0.1)', SR: 'rgba(108,92,231,0.15)', SSR: 'rgba(253,150,68,0.15)' };
+const STATUS_ICONS = { alive: '🟢', hungry: '🟡', starving: '🟠', packing: '🔴' };
+const STATUS_LABELS = { alive: '正常', hungry: '饥饿中', starving: '严重饥饿', packing: '收拾行李' };
+
+/* ═══════════════════════════════════════
+   BREED / PERSONALITY DATA
+   ═══════════════════════════════════════ */
+const BREEDS = [
+  { id: '橘猫', img: 'cat/橘猫.png', rarity: 'N', desc: '贪吃爱睡，毛色温暖如阳光' },
+  { id: '黑猫', img: 'cat/黑猫.png', rarity: 'N', desc: '神秘优雅，夜晚的守护者' },
+  { id: '白猫', img: 'cat/白猫.png', rarity: 'N', desc: '纯洁如雪，温柔的小公主' },
+  { id: '蓝猫', img: 'cat/蓝猫.png', rarity: 'N', desc: '圆脸蓝毛，安静的英伦绅士' },
+  { id: '三花猫', img: 'cat/三花猫.png', rarity: 'R', desc: '三色交汇，幸运的象征' },
+  { id: '布偶猫', img: 'cat/布偶猫.png', rarity: 'R', desc: '蓝宝石眼睛，如布偶般温顺' },
+  { id: '暹罗猫', img: 'cat/暹罗猫.png', rarity: 'R', desc: '优雅修长，来自泰国的贵族' },
+  { id: '折耳猫', img: 'cat/折耳猫.png', rarity: 'SR', desc: '耳朵微折，安静温柔的小天使' },
+  { id: '无毛猫', img: 'cat/无毛猫.png', rarity: 'SR', desc: '无毛胜有毛，温暖的拥抱' },
+  { id: '波斯猫', img: 'cat/波斯猫.png', rarity: 'SR', desc: '华丽长毛，优雅高贵的贵族' },
+  { id: '幸运猫', img: 'cat/幸运猫.png', rarity: 'SSR', desc: '招财进宝，好运连连' },
+  { id: '星空猫', img: 'cat/星空猫.png', rarity: 'SSR', desc: '星空之子，宇宙中最闪耀的存在' },
+];
+const PERSONALITIES = ['傲娇','吃货','黏人','胆小','好奇','佛系','社牛','高冷','软萌','元气','慵懒','呆萌','话痨','醋精','撒娇'];
+const CAT_NAMES = ['团子','麻薯','年糕','汤圆','豆沙','芝麻','奶盖','布丁','蛋挞','泡芙','芋圆','栗子','豆花','椰果','仙草','奶酪'];
+
+/* ═══════════════════════════════════════
+   GAME STATE (simulated backend)
+   ═══════════════════════════════════════ */
+let globalSerialId = 1;
+function nextSerialId() { return globalSerialId++; }
+
+function makeCatInstance(breedId, rarity, personality, bagExpiresDays = 30) {
+  const breed = BREEDS.find(b => b.id === breedId) || BREEDS[0];
+  return {
+    serialId: nextSerialId(),
+    breedId: breed.id,
+    name: breed.id,
+    rarity: rarity || breed.rarity,
+    img: breed.img,
+    desc: breed.desc,
+    personality: personality || [PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)], PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)]],
+    status: 'alive',
+    location: 'bag',
+    createdAt: Date.now(),
+    bagExpiresAt: Date.now() + bagExpiresDays * 86400000,
+    // nurturing fields
+    adoptedAt: null,
+    expiresAt: null,
+    lastFedAt: null,
+    daysAlive: 0,
+    gamesWitnessed: 0,
+    bestCombo: 0,
+    fishSpent: 0,
+    isGenesis: false,
+    previousOwners: [],
+    releasedAt: null,
+  };
+}
+
+// Initial state: create some cats in both nurturing and bag
+function seedInitialCats() {
+  const cats = [];
+  // 3 cats in nurturing area
+  const n1 = makeCatInstance('橘猫', 'N', ['贪吃','佛系']);
+  n1.location = 'nurturing';
+  n1.adoptedAt = Date.now() - 22 * 86400000;
+  n1.expiresAt = n1.adoptedAt + 30 * 86400000;
+  n1.lastFedAt = Date.now() - 14 * 3600000;
+  n1.status = 'alive';
+  n1.daysAlive = 22;
+  n1.gamesWitnessed = 14;
+  n1.bestCombo = 7;
+  n1.fishSpent = 22;
+  cats.push(n1);
+
+  const n2 = makeCatInstance('黑猫', 'N', ['高冷','酷酷']);
+  n2.location = 'nurturing';
+  n2.adoptedAt = Date.now() - 8 * 86400000;
+  n2.expiresAt = n2.adoptedAt + 30 * 86400000;
+  n2.lastFedAt = Date.now() - 3 * 86400000;
+  n2.status = 'hungry';
+  n2.daysAlive = 8;
+  n2.gamesWitnessed = 5;
+  n2.bestCombo = 3;
+  n2.fishSpent = 8;
+  cats.push(n2);
+
+  const n3 = makeCatInstance('布偶猫', 'R', ['黏人','撒娇']);
+  n3.location = 'nurturing';
+  n3.adoptedAt = Date.now() - 5 * 86400000;
+  n3.expiresAt = n3.adoptedAt + 30 * 86400000;
+  n3.lastFedAt = Date.now() - 1 * 3600000;
+  n3.status = 'alive';
+  n3.daysAlive = 5;
+  n3.gamesWitnessed = 3;
+  n3.bestCombo = 4;
+  n3.fishSpent = 5;
+  cats.push(n3);
+
+  // 4 cats in bag
+  const b1 = makeCatInstance('三花猫', 'R', ['好奇','元气'], 23);
+  cats.push(b1);
+  const b2 = makeCatInstance('暹罗猫', 'R', ['傲娇','醋精'], 18);
+  cats.push(b2);
+  const b3 = makeCatInstance('折耳猫', 'SR', ['胆小','软萌'], 7);
+  cats.push(b3);
+  const b4 = makeCatInstance('星空猫', 'SSR', ['呆萌','话痨'], 28);
+  cats.push(b4);
+
+  return cats;
+}
+
+// Track fish ledger
+let fishLedger = [
+  { type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() - 30*86400000 },
+  { type: 'earn', amount: 50, desc: '签到奖励', time: Date.now() - 22*86400000 },
+  { type: 'earn', amount: 18, desc: '消消乐结算', time: Date.now() - 1*86400000 },
+  { type: 'spend', amount: 22, desc: '橘猫喂食消耗', time: Date.now() - 1*86400000 },
+];
+
+function getFishBalance() {
+  return fishLedger.reduce((sum, t) => sum + (t.type === 'earn' ? t.amount : -t.amount), 0);
+}
+
+/* ═══════════════════════════════════════
+   STORAGE HELPERS
+   ═══════════════════════════════════════ */
+const STORAGE_KEY = 'miaolegemi_p0_v1';
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      globalSerialId = data.globalSerialId || 1;
+      fishLedger = data.fishLedger || fishLedger;
+      return data.cats || seedInitialCats();
+    }
+  } catch(e) {}
+  return seedInitialCats();
+}
+
+function saveState(cats, bells) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      cats, globalSerialId, fishLedger, bells,
+      savedAt: Date.now(),
+    }));
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════
+   STATUS ENGINE
+   ═══════════════════════════════════════ */
+function computeCatStatus(cat) {
+  if (cat.location !== 'nurturing' || !cat.lastFedAt) return 'alive';
+  const hoursSinceFeed = (Date.now() - cat.lastFedAt) / 3600000;
+  if (hoursSinceFeed >= 96) return 'packing'; // 4 days
+  if (hoursSinceFeed >= 48) return 'starving'; // 2 days (req says 4, but let's follow req: hungry=2d, starving=4d)
+  if (hoursSinceFeed >= 24) return 'hungry'; // hungry after 1 day
+  return 'alive';
+}
+
+function getRemainingDays(cat) {
+  if (cat.location === 'bag') {
+    return Math.max(0, Math.ceil((cat.bagExpiresAt - Date.now()) / 86400000));
+  }
+  if (cat.location === 'nurturing') {
+    return Math.max(0, Math.ceil((cat.expiresAt - Date.now()) / 86400000));
+  }
+  return 0;
+}
+
+function getHoursSinceFeed(cat) {
+  if (!cat.lastFedAt) return 999;
+  return Math.floor((Date.now() - cat.lastFedAt) / 3600000);
+}
+
+/* ═══════════════════════════════════════
+   iOS FRAME
+   ═══════════════════════════════════════ */
+function IosFrame({ children }) {
+  return (
+    <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)' }}>
+      <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:C.bg }}>
+        <div style={{ position:'absolute', top:12, left:'50%', transform:'translateX(-50%)', width:126, height:36, background:'#000', borderRadius:999, zIndex:30 }}/>
+        {children}
+        <div style={{ position:'absolute', bottom:10, left:'50%', transform:'translateX(-50%)', width:134, height:5, background:'rgba(240,237,255,0.35)', borderRadius:999, zIndex:25 }}/>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   TOP CURRENCY BAR
+   ═══════════════════════════════════════ */
+function CurrencyBar({ fish, bells, onFishClick, onBellClick }) {
+  return (
+    <div style={{ padding:'6px 20px', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12, position:'relative', zIndex:20 }}>
+      <div onClick={onFishClick} style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(253,150,68,0.12)', borderRadius:999, padding:'5px 12px', cursor:'pointer' }}>
+        <span style={{ fontSize:14 }}>🐟</span>
+        <span style={{ fontSize:13, fontWeight:700, color:C.orange }}>{fish}</span>
+      </div>
+      <div onClick={onBellClick} style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(162,155,254,0.12)', borderRadius:999, padding:'5px 12px', cursor:'pointer' }}>
+        <span style={{ fontSize:14 }}>🔔</span>
+        <span style={{ fontSize:13, fontWeight:700, color:C.purpleLight }}>{bells}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   NOTIFICATION BANNER
+   ═══════════════════════════════════════ */
+function NotificationBanner({ cats, onNavigate }) {
+  // Priority: packing > starving > bag expiring <=7d > hungry
+  const nurturing = cats.filter(c => c.location === 'nurturing');
+  const bagCats = cats.filter(c => c.location === 'bag');
+
+  let banner = null;
+
+  const packingCat = nurturing.find(c => computeCatStatus(c) === 'packing');
+  if (packingCat) {
+    const hours = getHoursSinceFeed(packingCat);
+    banner = { cat: packingCat, text: `${packingCat.name} #${String(packingCat.serialId).padStart(3,'0')} 正在收拾行李，还有 ${24-hours%24} 小时`, color: C.red, priority: 1 };
+  } else {
+    const starvingCat = nurturing.find(c => computeCatStatus(c) === 'starving');
+    if (starvingCat) {
+      const days = Math.floor(getHoursSinceFeed(starvingCat) / 24);
+      banner = { cat: starvingCat, text: `${starvingCat.name} #${String(starvingCat.serialId).padStart(3,'0')} 已经${days}天没吃东西了`, color: C.orange, priority: 2 };
+    } else {
+      const expiringBag = bagCats.find(c => getRemainingDays(c) <= 7);
+      if (expiringBag) {
+        const days = getRemainingDays(expiringBag);
+        banner = { cat: expiringBag, text: `包裹区有猫还有${days}天就会离开`, color: C.yellow, priority: 3 };
+      } else {
+        const hungryCat = nurturing.find(c => computeCatStatus(c) === 'hungry');
+        if (hungryCat) {
+          banner = { cat: hungryCat, text: '有猫咪需要喂食', color: C.yellow, priority: 4 };
+        }
+      }
+    }
+  }
+
+  if (!banner) return null;
+
+  return (
+    <div onClick={() => onNavigate('cat', banner.cat)} style={{
+      margin: '2px 16px 0', padding: '8px 14px', borderRadius: 12,
+      background: `${banner.color}15`, border: `1px solid ${banner.color}30`,
+      display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+      animation: 'fadeIn 0.3s ease-out',
+    }}>
+      <span style={{ fontSize: 14 }}>{banner.priority <= 2 ? '⚠️' : '📢'}</span>
+      <span style={{ flex:1, fontSize:11, fontWeight:600, color: banner.color }}>{banner.text}</span>
+      <span style={{ fontSize: 12, color: C.muted }}>→</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   HOME PAGE (Tab 1)
+   ═══════════════════════════════════════ */
+function HomePage({ cats, fish, bells, checkedIn, onCheckIn, onNavigate }) {
+  const nurturing = cats.filter(c => c.location === 'nurturing');
+  const maxSlots = 6;
+  const currentSlots = 3; // base slots (can be upgraded)
+
+  return (
+    <div>
+      {/* User info header */}
+      <div style={{ padding:'12px 20px 8px', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:'linear-gradient(135deg, #FFEAA7, #FD9644)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>🐱</div>
+        <div>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:16, fontWeight:800, color:C.ink }}>小鱼干</span>
+            <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:6, background:'rgba(108,92,231,0.2)', color:C.purpleLight }}>Lv.8</span>
+          </div>
+          <div style={{ fontSize:10, color:C.muted }}>合格铲屎官</div>
+        </div>
+      </div>
+
+      {/* Notification Banner */}
+      <NotificationBanner cats={cats} onNavigate={onNavigate} />
+
+      {/* Nurturing Preview */}
+      <div style={{ padding:'14px 20px 0' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.ink, display:'flex', alignItems:'center', gap:6 }}>
+            <span>🏠</span> 养成区
+            <span style={{ fontSize:10, color:C.sub, fontWeight:400 }}>{nurturing.length}/{currentSlots}</span>
+          </div>
+          <div onClick={() => onNavigate('cat')} style={{ fontSize:11, color:C.purpleLight, cursor:'pointer', fontWeight:500 }}>查看全部 →</div>
+        </div>
+        <div style={{ display:'flex', gap:10 }}>
+          {Array.from({ length: currentSlots }).map((_, i) => {
+            const cat = nurturing[i];
+            if (cat) {
+              const status = computeCatStatus(cat);
+              const daysLeft = getRemainingDays(cat);
+              return (
+                <div key={i} onClick={() => onNavigate('catDetail', cat)} style={{
+                  flex:1, borderRadius:14, padding:'10px 6px 8px', cursor:'pointer',
+                  background: C.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}25`,
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                  position:'relative',
+                }}>
+                  <div style={{ position:'absolute', top:4, right:6, width:8, height:8, borderRadius:'50%',
+                    background: status === 'alive' ? C.green : status === 'hungry' ? C.yellow : status === 'starving' ? C.orange : C.red,
+                    animation: status === 'packing' ? 'pulse 0.8s ease-in-out infinite' : status === 'starving' ? 'shake 0.5s ease-in-out infinite' : 'none',
+                  }}/>
+                  <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}40` }}>
+                    <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                      onError={e => { e.target.style.display='none'; }} />
+                  </div>
+                  <span style={{ fontSize:11, fontWeight:700, color:C.ink }}>{cat.name}</span>
+                  <span style={{ fontSize:9, fontWeight:600, color:RARITY_COLORS[cat.rarity] }}>#{String(cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+                  <span style={{ fontSize:9, color:C.sub }}>还有 {daysLeft} 天</span>
+                </div>
+              );
+            }
+            return (
+              <div key={i} onClick={() => onNavigate('cat', null, 'bag')} style={{
+                flex:1, borderRadius:14, padding:'10px 6px', cursor:'pointer',
+                background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.08)',
+                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
+                minHeight:130,
+              }}>
+                <div style={{ fontSize:24, color:C.muted }}>+</div>
+                <div style={{ fontSize:9, color:C.muted }}>领养新猫</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Check-in */}
+      <div style={{ padding:'14px 20px 0' }}>
+        <div onClick={!checkedIn ? onCheckIn : undefined} style={{
+          width:'100%', padding:'12px 16px', borderRadius:14,
+          background: checkedIn ? 'rgba(0,184,148,0.1)' : 'rgba(108,92,231,0.1)',
+          border: `1px solid ${checkedIn ? 'rgba(0,184,148,0.25)' : 'rgba(108,92,231,0.2)'}`,
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          cursor: checkedIn ? 'default' : 'pointer',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:20 }}>{checkedIn ? '✅' : '📅'}</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color: checkedIn ? C.green : C.ink }}>{checkedIn ? '今日已签到' : '每日签到'}</div>
+              <div style={{ fontSize:10, color:C.sub }}>获得鱼干 ×5 · 连续7天额外+🔔×1</div>
+            </div>
+          </div>
+          {!checkedIn && <span style={{ fontSize:14, fontWeight:700, color:C.purpleLight }}>签到 →</span>}
+        </div>
+      </div>
+
+      {/* Game entrance */}
+      <div style={{ padding:'14px 20px 0' }}>
+        <a href="猫咪消消乐.html" style={{
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+          width:'100%', height:52, borderRadius:16,
+          background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
+          border:'none', cursor:'pointer', textDecoration:'none',
+          fontSize:16, fontWeight:800, color:'#fff',
+          boxShadow:'0 8px 28px rgba(253,150,68,0.3)',
+        }}>
+          <span style={{ fontSize:22 }}>🎮</span>
+          去打消消乐
+          <span style={{ fontSize:11, fontWeight:500, opacity:0.8 }}>赚鱼干</span>
+        </a>
+        <div style={{ textAlign:'center', fontSize:10, color:C.muted, marginTop:6 }}>今日已获得 12 条鱼干</div>
+      </div>
+
+      {/* Recent cat bag reminder */}
+      {(() => {
+        const bagCats = cats.filter(c => c.location === 'bag');
+        if (bagCats.length === 0) return null;
+        return (
+          <div onClick={() => onNavigate('cat', null, 'bag')} style={{ padding:'12px 20px 0' }}>
+            <div style={{
+              padding:'10px 14px', borderRadius:12, cursor:'pointer',
+              background:C.card, border:`1px solid ${C.cardBorder}`,
+              display:'flex', alignItems:'center', gap:8,
+            }}>
+              <span style={{ fontSize:18 }}>📦</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>包裹区有 {bagCats.length} 只猫咪等你</div>
+                <div style={{ fontSize:10, color:C.sub }}>记得及时领养哦</div>
+              </div>
+              <span style={{ fontSize:12, color:C.muted }}>→</span>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   CAT PAGE (Tab 3) — Nurturing + Bag
+   ═══════════════════════════════════════ */
+function CatPage({ cats, fish, onFeed, onAdopt, onRelease, onNavigate, initialTab }) {
+  const [subTab, setSubTab] = useState(initialTab || 'nurturing');
+
+  // listen for tab changes
+  useEffect(() => {
+    if (initialTab) setSubTab(initialTab);
+  }, [initialTab]);
+
+  const nurturing = cats.filter(c => c.location === 'nurturing');
+  const bagCats = cats.filter(c => c.location === 'bag');
+  const maxSlots = 3; // base slots
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      {/* Sub tab bar */}
+      <div style={{ display:'flex', padding:'8px 20px', gap:0 }}>
+        <div onClick={() => setSubTab('nurturing')} style={{
+          flex:1, textAlign:'center', padding:'8px 0', borderRadius:'12px 12px 0 0',
+          fontSize:14, fontWeight: subTab==='nurturing' ? 700 : 400,
+          color: subTab==='nurturing' ? C.purpleLight : C.sub,
+          background: subTab==='nurturing' ? 'rgba(108,92,231,0.1)' : 'transparent',
+          borderBottom: subTab==='nurturing' ? `2px solid ${C.purple}` : '2px solid transparent',
+          cursor:'pointer', transition:'all 0.2s',
+        }}>
+          🏠 养成区 ({nurturing.length}/{maxSlots})
+        </div>
+        <div onClick={() => setSubTab('bag')} style={{
+          flex:1, textAlign:'center', padding:'8px 0', borderRadius:'12px 12px 0 0',
+          fontSize:14, fontWeight: subTab==='bag' ? 700 : 400,
+          color: subTab==='bag' ? C.purpleLight : C.sub,
+          background: subTab==='bag' ? 'rgba(108,92,231,0.1)' : 'transparent',
+          borderBottom: subTab==='bag' ? `2px solid ${C.purple}` : '2px solid transparent',
+          cursor:'pointer', transition:'all 0.2s',
+        }}>
+          📦 包裹区 ({bagCats.length})
+        </div>
+      </div>
+
+      {subTab === 'nurturing' && (
+        <NurturingArea cats={nurturing} maxSlots={maxSlots} fish={fish} onFeed={onFeed} onRelease={onRelease} onNavigate={onNavigate} />
+      )}
+      {subTab === 'bag' && (
+        <BagArea cats={bagCats} nurturingCount={nurturing.length} maxSlots={maxSlots} onAdopt={onAdopt} onNavigate={onNavigate} />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   NURTURING AREA
+   ═══════════════════════════════════════ */
+function NurturingArea({ cats, maxSlots, fish, onFeed, onRelease, onNavigate }) {
+  const allSlots = Array.from({ length: maxSlots });
+
+  if (cats.length === 0) {
+    return (
+      <div style={{ padding:'40px 20px', textAlign:'center' }}>
+        <div style={{ fontSize:48, marginBottom:12 }}>🏠</div>
+        <div style={{ fontSize:14, fontWeight:600, color:C.ink, marginBottom:4 }}>养成区空空如也</div>
+        <div style={{ fontSize:12, color:C.sub }}>去包裹区领养一只猫吧</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding:'8px 20px 0' }}>
+      {allSlots.map((_, i) => {
+        const cat = cats[i];
+        if (!cat) {
+          return (
+            <div key={i} style={{
+              borderRadius:16, padding:'16px', marginBottom:10,
+              background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.06)',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6, minHeight:100,
+              cursor:'pointer',
+            }} onClick={() => onNavigate('cat', null, 'bag')}>
+              <span style={{ fontSize:20, color:C.muted }}>+</span>
+              <span style={{ fontSize:12, color:C.muted }}>领养新猫</span>
+            </div>
+          );
+        }
+
+        const status = computeCatStatus(cat);
+        const daysLeft = getRemainingDays(cat);
+        const canFeed = fish >= 1 && status !== 'alive';
+
+        return (
+          <div key={cat.serialId} style={{
+            borderRadius:16, padding:'12px', marginBottom:10,
+            background:C.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}20`,
+            position:'relative',
+          }}>
+            {/* Status indicator */}
+            <div style={{ position:'absolute', top:10, right:12,
+              width:10, height:10, borderRadius:'50%',
+              background: status==='alive'?C.green : status==='hungry'?C.yellow : status==='starving'?C.orange : C.red,
+              animation: status==='packing'?'pulse 0.8s ease-in-out infinite' : status==='starving'?'shake 0.5s ease-in-out infinite':'none',
+            }}/>
+
+            <div onClick={() => onNavigate('catDetail', cat)} style={{ display:'flex', gap:12, cursor:'pointer' }}>
+              <div style={{ width:72, height:72, borderRadius:16, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}40`, flexShrink:0 }}>
+                <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                  onError={e => { e.target.style.display='none'; }} />
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                  <span style={{ fontSize:15, fontWeight:800, color:C.ink }}>{cat.name}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+                </div>
+                <div style={{ fontSize:11, color:C.sub, marginBottom:4 }}>
+                  性格：{cat.personality.join(' · ')}
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:11, fontWeight:600, color: status==='alive'?C.green : status==='hungry'?C.yellow : status==='starving'?C.orange : C.red }}>
+                    {STATUS_ICONS[status]} {STATUS_LABELS[status]}
+                  </span>
+                  <span style={{ fontSize:11, color:C.sub }}>还有 {daysLeft} 天</span>
+                </div>
+                <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>
+                  上次喂食：{getHoursSinceFeed(cat)}小时前
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display:'flex', gap:8, marginTop:10 }}>
+              <button onClick={() => onFeed(cat)} disabled={!canFeed} style={{
+                flex:1, height:34, borderRadius:10, border:'none', cursor: canFeed?'pointer':'not-allowed',
+                fontSize:12, fontWeight:700,
+                background: canFeed ? `linear-gradient(135deg, ${C.purple}, ${C.purpleDark})` : 'rgba(255,255,255,0.05)',
+                color: canFeed ? '#fff' : C.muted,
+                opacity: canFeed ? 1 : 0.5,
+              }}>
+                {canFeed ? `🐟 喂食 (-1鱼干)` : fish < 1 ? '鱼干不足' : '状态良好'}
+              </button>
+              <button onClick={() => onRelease(cat)} style={{
+                padding:'0 14px', height:34, borderRadius:10, border:'1px solid rgba(255,107,107,0.2)',
+                background:'rgba(255,107,107,0.08)', cursor:'pointer',
+                fontSize:11, fontWeight:600, color:C.red,
+              }}>送去猫星</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   BAG AREA
+   ═══════════════════════════════════════ */
+function BagArea({ cats, nurturingCount, maxSlots, onAdopt, onNavigate }) {
+  if (cats.length === 0) {
+    return (
+      <div style={{ padding:'40px 20px', textAlign:'center' }}>
+        <div style={{ fontSize:48, marginBottom:12 }}>📦</div>
+        <div style={{ fontSize:14, fontWeight:600, color:C.ink, marginBottom:4 }}>包裹区空空如也</div>
+        <div style={{ fontSize:12, color:C.sub }}>去抽卡带回一只猫吧</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding:'8px 20px 0' }}>
+      {cats.map(cat => {
+        const daysLeft = getRemainingDays(cat);
+        const canAdopt = nurturingCount < maxSlots;
+        const isUrgent = daysLeft <= 7;
+
+        return (
+          <div key={cat.serialId} style={{
+            borderRadius:16, padding:'12px', marginBottom:10,
+            background:C.card, border:`1px solid ${isUrgent ? 'rgba(255,107,107,0.2)' : RARITY_COLORS[cat.rarity] + '15'}`,
+            position:'relative',
+          }}>
+            <div onClick={() => onNavigate('catDetail', cat)} style={{ display:'flex', gap:12, cursor:'pointer' }}>
+              <div style={{ width:64, height:64, borderRadius:14, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}35`, flexShrink:0 }}>
+                <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                  onError={e => { e.target.style.display='none'; }} />
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                  <span style={{ fontSize:14, fontWeight:800, color:C.ink }}>{cat.name}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+                </div>
+                <div style={{ fontSize:11, color:C.sub, marginBottom:3 }}>
+                  性格：{cat.personality.join(' · ')}
+                </div>
+                <div style={{ fontSize:11, fontWeight:600, color: isUrgent ? C.red : C.sub }}>
+                  ⏰ 还有 {daysLeft} 天会离开
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:10 }}>
+              <button onClick={() => onAdopt(cat)} style={{
+                flex:1, height:34, borderRadius:10, border:'none', cursor: canAdopt?'pointer':'not-allowed',
+                fontSize:12, fontWeight:700,
+                background: canAdopt ? `linear-gradient(135deg, ${C.green}, #55EFC4)` : 'rgba(255,255,255,0.05)',
+                color: canAdopt ? '#fff' : C.muted,
+                opacity: canAdopt ? 1 : 0.5,
+              }}>
+                {canAdopt ? '领养' : '养成区已满'}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   CAT DETAIL PAGE
+   ═══════════════════════════════════════ */
+function CatDetailPage({ cats, catSerialId, onBack, onFeed, onRelease, onAdopt, fish, nurturingCount, maxSlots }) {
+  const cat = cats.find(c => c.serialId === catSerialId);
+  if (!cat) return null;
+  const status = computeCatStatus(cat);
+  const daysLeft = getRemainingDays(cat);
+  const canFeed = fish >= 1 && cat.location === 'nurturing';
+  const canAdopt = cat.location === 'bag' && nurturingCount < maxSlots;
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      {/* Back button */}
+      <div onClick={onBack} style={{ padding:'12px 20px', display:'flex', alignItems:'center', gap:4, cursor:'pointer', fontSize:13, color:C.sub, fontWeight:500 }}>
+        <span>←</span> 返回
+      </div>
+
+      {/* Cat card */}
+      <div style={{ padding:'0 20px', textAlign:'center' }}>
+        <div style={{
+          width:160, height:160, borderRadius:24, overflow:'hidden', margin:'0 auto 12px',
+          border:`3px solid ${RARITY_COLORS[cat.rarity]}`,
+          boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}30`,
+        }}>
+          <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+            onError={e => { e.target.style.display='none'; }} />
+        </div>
+        <div style={{ fontSize:22, fontWeight:800, color:C.ink, marginBottom:2 }}>{cat.name}</div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>{cat.rarity}</span>
+          <span style={{ fontSize:14, fontWeight:600, color:C.sub }}>#{String(cat.serialId).padStart(3,'0')}</span>
+          {cat.isGenesis && (
+            <span style={{ fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:999, background:'rgba(253,150,68,0.15)', color:C.orange }}>✦ 创世编号</span>
+          )}
+        </div>
+        <div style={{ fontSize:12, color:C.sub, marginTop:6, lineHeight:1.5 }}>{cat.desc}</div>
+        <div style={{ fontSize:12, color:C.sub, marginTop:2 }}>性格：{cat.personality.join(' · ')}</div>
+      </div>
+
+      {/* Status section */}
+      <div style={{ padding:'16px 20px 0' }}>
+        <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:8 }}>📊 状态</div>
+          {cat.location === 'nurturing' ? (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                <span style={{ fontSize:12, color:C.sub }}>当前状态</span>
+                <span style={{ fontSize:12, fontWeight:600, color: status==='alive'?C.green : status==='hungry'?C.yellow : status==='starving'?C.orange : C.red }}>
+                  {STATUS_ICONS[status]} {STATUS_LABELS[status]}
+                </span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                <span style={{ fontSize:12, color:C.sub }}>剩余天数</span>
+                <span style={{ fontSize:12, fontWeight:600, color:C.ink }}>{daysLeft} 天</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
+                <span style={{ fontSize:12, color:C.sub }}>上次喂食</span>
+                <span style={{ fontSize:12, fontWeight:600, color:C.ink }}>{getHoursSinceFeed(cat)}小时前</span>
+              </div>
+              {canFeed ? (
+                <button onClick={() => onFeed(cat)} style={{
+                  width:'100%', height:36, borderRadius:10, border:'none', cursor:'pointer',
+                  background:`linear-gradient(135deg, ${C.purple}, ${C.purpleDark})`,
+                  fontSize:13, fontWeight:700, color:'#fff',
+                }}>🐟 喂食 (-1条鱼干)</button>
+              ) : cat.location === 'nurturing' ? (
+                <div style={{ textAlign:'center', fontSize:11, color:C.muted }}>
+                  {fish < 1 ? '鱼干不足，去打消消乐获得' : '猫咪状态良好，暂不需要喂食'}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                <span style={{ fontSize:12, color:C.sub }}>位置</span>
+                <span style={{ fontSize:12, fontWeight:600, color:C.ink }}>包裹区</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
+                <span style={{ fontSize:12, color:C.sub }}>还有多久离开</span>
+                <span style={{ fontSize:12, fontWeight:600, color: daysLeft <= 7 ? C.red : C.ink }}>{daysLeft} 天</span>
+              </div>
+              <div style={{ fontSize:11, color:C.sub, textAlign:'center', marginBottom:12 }}>领养后开始记录成长档案</div>
+              {canAdopt ? (
+                <button onClick={() => onAdopt(cat)} style={{
+                  width:'100%', height:36, borderRadius:10, border:'none', cursor:'pointer',
+                  background:`linear-gradient(135deg, ${C.green}, #55EFC4)`,
+                  fontSize:13, fontWeight:700, color:'#fff',
+                }}>领养它</button>
+              ) : (
+                <div style={{ textAlign:'center', fontSize:11, color:C.muted }}>养成区已满，需要先送走一只猫</div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Growth record (nurturing only) */}
+      {cat.location === 'nurturing' && (
+        <div style={{ padding:'12px 20px 0' }}>
+          <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+            <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:8 }}>📈 成长档案</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 0' }}>
+              <div><span style={{ fontSize:11, color:C.sub }}>陪伴天数</span><div style={{ fontSize:16, fontWeight:800, color:C.ink }}>{cat.daysAlive} 天</div></div>
+              <div><span style={{ fontSize:11, color:C.sub }}>见证游戏</span><div style={{ fontSize:16, fontWeight:800, color:C.ink }}>{cat.gamesWitnessed} 场</div></div>
+              <div><span style={{ fontSize:11, color:C.sub }}>最大连击</span><div style={{ fontSize:16, fontWeight:800, color:C.ink }}>{cat.bestCombo} 连消</div></div>
+              <div><span style={{ fontSize:11, color:C.sub }}>消耗鱼干</span><div style={{ fontSize:16, fontWeight:800, color:C.ink }}>{cat.fishSpent} 条</div></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lineage */}
+      <div style={{ padding:'12px 20px 0' }}>
+        <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:8 }}>🔗 血统</div>
+          <div style={{ fontSize:11, color:C.sub, marginBottom:8 }}>
+            序列号：{cat.breedId} · 全球第 {cat.serialId} 只
+          </div>
+          {cat.previousOwners.length > 0 ? (
+            cat.previousOwners.map((owner, i) => (
+              <div key={i} style={{ padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>第{i+1}任 {owner.name}</div>
+                <div style={{ fontSize:10, color:C.sub }}>在世 {owner.daysAlive} 天 · 花费 {owner.fishSpent} 条 · 最大连击 {owner.bestCombo} · {owner.dateLeft}</div>
+              </div>
+            ))
+          ) : (
+            <div style={{ fontSize:11, color:C.sub }}>
+              {cat.location === 'nurturing' ? '你是第 1 任主人' : '暂无血统记录'}
+            </div>
+          )}
+          {cat.location === 'nurturing' && cat.previousOwners.length === 0 && (
+            <div style={{ fontSize:11, color:C.sub, marginTop:4 }}>你是第 1 任主人</div>
+          )}
+        </div>
+      </div>
+
+      {/* Release button (nurturing only) */}
+      {cat.location === 'nurturing' && (
+        <div style={{ padding:'16px 20px 0' }}>
+          <button onClick={() => onRelease(cat)} style={{
+            width:'100%', height:40, borderRadius:12, border:'1px solid rgba(255,107,107,0.25)',
+            background:'rgba(255,107,107,0.06)', cursor:'pointer',
+            fontSize:13, fontWeight:600, color:C.red,
+          }}>送去猫星</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   GACHA PAGE
+   ═══════════════════════════════════════ */
+function GachaPage({ bells, onGacha }) {
+  const [playing, setPlaying] = useState(false);
+
+  const handleGacha = () => {
+    if (bells < 1 || playing) return;
+    setPlaying(true);
+    setTimeout(() => {
+      onGacha();
+      setPlaying(false);
+    }, 3000);
+  };
+
+  return (
+    <div style={{ paddingBottom: 64, textAlign:'center' }}>
+      <div style={{ padding:'20px 20px 12px' }}>
+        <div style={{ fontSize:14, fontWeight:700, color:C.ink, marginBottom:4 }}>🎁 猫咪抽卡</div>
+        <div style={{ fontSize:11, color:C.sub, marginBottom:16 }}>
+          🔔 {bells} 枚猫铃铛 · 消耗1枚抽一次
+        </div>
+        <div style={{
+          width:'100%', aspectRatio:'1', borderRadius:18, overflow:'hidden',
+          background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          marginBottom:14, position:'relative',
+        }}>
+          {playing ? (
+            <div style={{ textAlign:'center', color:C.sub, fontSize:14, animation:'pulse 1s infinite' }}>抽卡中...</div>
+          ) : (
+            <img src="cat/猫爬架图片.jpeg" alt="猫爬架" style={{ width:'100%', height:'100%', objectFit:'contain' }}
+              onError={e => { e.target.style.display = 'none'; }} />
+          )}
+        </div>
+        <button onClick={handleGacha} disabled={playing || bells < 1} style={{
+          width:'100%', height:50, borderRadius:16,
+          background: (playing || bells < 1) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+          border:'none', cursor:(playing||bells<1)?'not-allowed':'pointer',
+          fontSize:16, fontWeight:800,
+          color:(playing||bells<1)?C.muted:'#fff',
+          opacity:(playing||bells<1)?0.6:1,
+          boxShadow:(playing||bells<1)?'none':'0 8px 24px rgba(108,92,231,0.35)',
+        }}>
+          {playing ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   PROFILE PAGE (Tab 4)
+   ═══════════════════════════════════════ */
+function ProfilePage({ cats, fish, bells }) {
+  const nurturing = cats.filter(c => c.location === 'nurturing');
+  const memorial = cats.filter(c => c.location === 'memorial');
+  const totalAdopted = cats.filter(c => c.location === 'nurturing' || c.location === 'memorial').length;
+  const longestCat = [...cats].sort((a,b) => b.daysAlive - a.daysAlive)[0];
+  const lowestSerial = [...cats].sort((a,b) => a.serialId - b.serialId)[0];
+  const totalFishSpent = cats.reduce((s,c) => s + c.fishSpent, 0);
+
+  const titles = [
+    { name:'新手铲屎官', cond:'首次领养', done: totalAdopted >= 1 },
+    { name:'合格铲屎官', cond:'领养满5只', done: totalAdopted >= 5 },
+    { name:'资深铲屎官', cond:'有猫存活90天', done: cats.some(c => c.daysAlive >= 90) },
+    { name:'猫咪守护者', cond:'领养满20只', done: totalAdopted >= 20 },
+    { name:'老铲屎官', cond:'有猫存活180天', done: cats.some(c => c.daysAlive >= 180) },
+    { name:'猫星摆渡人', cond:'送走3只猫', done: memorial.length >= 3 },
+  ];
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{ padding:'12px 20px', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:52, height:52, borderRadius:'50%', background:'linear-gradient(135deg, #FFEAA7, #FD9644)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>🐱</div>
+        <div>
+          <div style={{ fontSize:16, fontWeight:800, color:C.ink }}>小鱼干</div>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
+            <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:6, background:'rgba(108,92,231,0.2)', color:C.purpleLight }}>合格铲屎官</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ padding:'8px 20px' }}>
+        <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:10 }}>📊 我的数据</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px 0' }}>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.purpleLight }}>{totalAdopted}</div>
+              <div style={{ fontSize:10, color:C.muted }}>历史领养</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.green }}>{nurturing.length}</div>
+              <div style={{ fontSize:10, color:C.muted }}>存活中</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.orange }}>{longestCat?.daysAlive || 0}天</div>
+              <div style={{ fontSize:10, color:C.muted }}>最长存活</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.yellow }}>#{lowestSerial ? String(lowestSerial.serialId).padStart(3,'0') : '---'}</div>
+              <div style={{ fontSize:10, color:C.muted }}>最低编号</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.blue }}>{totalFishSpent}</div>
+              <div style={{ fontSize:10, color:C.muted }}>鱼干消耗</div>
+            </div>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.pink }}>{memorial.length}</div>
+              <div style={{ fontSize:10, color:C.muted }}>纪念册</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Titles */}
+      <div style={{ padding:'12px 20px 0' }}>
+        <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:8 }}>🎖️ 我的称号</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+            {titles.map((t,i) => (
+              <div key={i} style={{
+                padding:'4px 10px', borderRadius:8, fontSize:10, fontWeight:600,
+                color: t.done ? C.ink : C.muted,
+                background: t.done ? 'rgba(108,92,231,0.12)' : 'rgba(255,255,255,0.03)',
+                border:`1px solid ${t.done ? 'rgba(108,92,231,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                opacity: t.done ? 1 : 0.4,
+              }}>
+                {t.done ? '✓ ' : ''}{t.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Memorial */}
+      {memorial.length > 0 && (
+        <div style={{ padding:'12px 20px 0' }}>
+          <div style={{ borderRadius:16, padding:'14px', background:C.card, border:`1px solid ${C.cardBorder}` }}>
+            <div style={{ fontSize:12, fontWeight:700, color:C.ink, marginBottom:8 }}>🕯️ 永久纪念册</div>
+            {memorial.map(cat => (
+              <div key={cat.serialId} style={{ display:'flex', gap:10, padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ width:40, height:40, borderRadius:'50%', overflow:'hidden', border:`1px solid ${RARITY_COLORS[cat.rarity]}25`, flexShrink:0, filter:'grayscale(0.6)' }}>
+                  <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                    onError={e => { e.target.style.display='none'; }} />
+                </div>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{cat.name} · #{String(cat.serialId).padStart(3,'0')}</div>
+                  <div style={{ fontSize:10, color:C.sub }}>在世 {cat.daysAlive} 天 · 见证 {cat.gamesWitnessed} 场游戏</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════ */
+function AdoptConfirmModal({ cat, show, onConfirm, onCancel, canAdopt }) {
+  if (!show || !cat) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onCancel}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
+        <div style={{ width:64, height:64, borderRadius:'50%', overflow:'hidden', margin:'0 auto 14px', border:`2px solid ${RARITY_COLORS[cat.rarity]}50` }}>
+          <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+            onError={e => { e.target.style.display='none'; }} />
+        </div>
+        <div style={{ fontSize:16, fontWeight:800, color:C.ink, marginBottom:6 }}>
+          {canAdopt ? `正式领养这只${cat.name} #${String(cat.serialId).padStart(3,'0')}？` : '养成区已满'}
+        </div>
+        <div style={{ fontSize:12, color:C.sub, marginBottom:20, lineHeight:1.6 }}>
+          {canAdopt
+            ? '它将开始在你这里生活，需要每天喂食。'
+            : `养成区已满，需要先送走一只猫才能领养新成员。`}
+        </div>
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', fontSize:13, fontWeight:600, color:C.muted }}>取消</button>
+          {canAdopt && (
+            <button onClick={onConfirm} style={{ flex:1, height:40, borderRadius:12, background:`linear-gradient(135deg, ${C.green}, #55EFC4)`, border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>领养它</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReleaseConfirmModal({ cat, show, onConfirm, onCancel }) {
+  if (!show || !cat) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onCancel}>
+      <div onClick={e => e.stopPropagation()} style={{ width:290, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(255,107,107,0.3)', animation:'slideUp 0.3s ease-out' }}>
+        <div style={{ fontSize:48, marginBottom:12 }}>😿</div>
+        <div style={{ fontSize:16, fontWeight:800, color:C.red, marginBottom:8 }}>确定要送走{cat.name} #${String(cat.serialId).padStart(3,'0')} 吗？</div>
+        <div style={{ fontSize:12, color:C.sub, marginBottom:20, lineHeight:1.6 }}>
+          它陪伴了你 {cat.daysAlive} 天，见证了 {cat.gamesWitnessed} 场消消乐。<br/>
+          它的序列号将在 60 天后重新流通。<br/>
+          这段记忆将永久消失。
+        </div>
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', fontSize:13, fontWeight:600, color:C.muted }}>再想想</button>
+          <button onClick={onConfirm} style={{ flex:1, height:40, borderRadius:12, background:'linear-gradient(135deg, #FF6B6B, #E05555)', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>送它去猫星</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckInModal({ show, onClose }) {
+  if (!show) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.4s ease-out' }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>🐾</div>
+        <div style={{ fontSize:20, fontWeight:800, color:C.ink, marginBottom:4 }}>签到成功！</div>
+        <div style={{ fontSize:12, color:C.sub, marginBottom:16 }}>新的一天，和猫咪一起加油</div>
+        <div style={{ fontSize:28, fontWeight:800, color:C.orange, marginBottom:4, animation:'coinPop 0.5s ease-out' }}>+5 🐟</div>
+        <div style={{ fontSize:11, color:C.sub, marginBottom:20 }}>鱼干已到账</div>
+        <button onClick={onClose} style={{ width:'100%', height:40, borderRadius:12, background:`linear-gradient(135deg, ${C.purple}, ${C.purpleDark})`, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'#fff' }}>好的</button>
+      </div>
+    </div>
+  );
+}
+
+function InfoModal({ show, title, children, onClose }) {
+  if (!show) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:20, padding:'24px 20px', border:'1px solid rgba(255,255,255,0.1)', animation:'slideUp 0.3s ease-out' }}>
+        <div style={{ fontSize:14, fontWeight:700, color:C.ink, marginBottom:12 }}>{title}</div>
+        <div style={{ fontSize:12, color:C.sub, lineHeight:1.6 }}>{children}</div>
+        <button onClick={onClose} style={{ marginTop:16, width:'100%', height:36, borderRadius:10, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', fontSize:13, fontWeight:600, color:C.ink }}>知道了</button>
+      </div>
+    </div>
+  );
+}
+
+function GachaResultModal({ cat, show, onClose }) {
+  if (!show || !cat) return null;
+  return (
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}20`, animation:'slideUp 0.4s ease-out' }}>
+        <div style={{ width:80, height:80, borderRadius:'50%', overflow:'hidden', margin:'0 auto 14px', border:`3px solid ${RARITY_COLORS[cat.rarity]}` }}>
+          <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+            onError={e => { e.target.style.display='none'; }} />
+        </div>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:RARITY_COLORS[cat.rarity], marginBottom:4 }}>{cat.rarity}</div>
+        <div style={{ fontSize:18, fontWeight:800, color:C.ink, marginBottom:2 }}>{cat.name} · #{String(cat.serialId).padStart(3,'0')}</div>
+        <div style={{ fontSize:11, color:C.sub, marginBottom:6 }}>性格：{cat.personality.join(' · ')}</div>
+        <div style={{ fontSize:11, fontWeight:600, color:C.green, marginBottom:20 }}>✅ 已放入包裹区 · 30天内记得领养</div>
+        <button onClick={onClose} style={{ width:'100%', height:40, borderRadius:12, background:`linear-gradient(135deg, ${RARITY_COLORS[cat.rarity]}, ${RARITY_COLORS[cat.rarity]}CC)`, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'#fff' }}>收下啦</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   TAB BAR
+   ═══════════════════════════════════════ */
+function TabBar({ active, onChange }) {
+  const tabs = [
+    { key: 'home', icon: '🏠', label: '首页' },
+    { key: 'game', icon: '🎮', label: '消消乐' },
+    { key: 'cat', icon: '🐱', label: '猫咪' },
+    { key: 'me', icon: '👤', label: '我的' },
+  ];
+  return (
+    <div style={{ position:'absolute', bottom:0, left:0, right:0, height:68, background:'rgba(15,10,30,0.95)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-around', zIndex:20, paddingBottom:8 }}>
+      {tabs.map(tab => {
+        const isActive = tab.key === active;
+        return (
+          <div key={tab.key} onClick={() => onChange(tab.key)} style={{
+            display:'flex', flexDirection:'column', alignItems:'center', gap:2,
+            cursor:'pointer', padding:'4px 10px', borderRadius:12,
+            background: isActive ? 'rgba(108,92,231,0.12)' : 'transparent',
+            transition:'all 0.2s',
+          }}>
+            <span style={{ fontSize:20, filter: isActive ? 'none' : 'grayscale(0.5) opacity(0.5)' }}>{tab.icon}</span>
+            <span style={{ fontSize:10, fontWeight: isActive ? 700 : 400, color: isActive ? C.purpleLight : C.muted }}>{tab.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN APP
+   ═══════════════════════════════════════ */
+function App() {
+  // State
+  const [cats, setCats] = useState(loadState);
+  const [bells, setBells] = useState(3);
+  const [activeTab, setActiveTab] = useState('home');
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [selectedCat, setSelectedCat] = useState(null);
+  const [showCatDetail, setShowCatDetail] = useState(false);
+  const [adoptTarget, setAdoptTarget] = useState(null);
+  const [releaseTarget, setReleaseTarget] = useState(null);
+  const [gachaResult, setGachaResult] = useState(null);
+  const [showGachaResult, setShowGachaResult] = useState(false);
+  const [bagTab, setBagTab] = useState(null);
+
+  // Info modals
+  const [infoModal, setInfoModal] = useState(null);
+
+  const fish = getFishBalance();
+  const nurturing = cats.filter(c => c.location === 'nurturing');
+  const maxSlots = 3;
+
+  // Compute statuses periodically (simulate hourly backend job)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCats(prev => prev.map(c => {
+        if (c.location !== 'nurturing') return c;
+        const newStatus = computeCatStatus(c);
+        return c.status !== newStatus ? { ...c, status: newStatus } : c;
+      }));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Save state
+  useEffect(() => {
+    saveState(cats, bells);
+  }, [cats, bells]);
+
+  // Handle feeding
+  const handleFeed = useCallback((cat) => {
+    if (getFishBalance() < 1) return;
+    fishLedger.push({ type: 'spend', amount: 1, desc: `${cat.name}喂食`, time: Date.now() });
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      const newExpiresAt = (c.expiresAt || Date.now() + 30*86400000) + 86400000;
+      return { ...c, lastFedAt: Date.now(), expiresAt: newExpiresAt, status: 'alive', fishSpent: (c.fishSpent || 0) + 1, daysAlive: (c.daysAlive || 0) + 1 };
+    }));
+  }, []);
+
+  // Handle adoption
+  const handleAdopt = useCallback((cat) => {
+    if (nurturing.length >= maxSlots) return;
+    setAdoptTarget(cat);
+  }, [nurturing.length]);
+
+  const confirmAdopt = useCallback(() => {
+    if (!adoptTarget) return;
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== adoptTarget.serialId) return c;
+      return {
+        ...c, location: 'nurturing',
+        adoptedAt: Date.now(), expiresAt: Date.now() + 30*86400000,
+        lastFedAt: Date.now(), status: 'alive',
+        daysAlive: 0, gamesWitnessed: 0, bestCombo: 0, fishSpent: 0,
+      };
+    }));
+    setAdoptTarget(null);
+  }, [adoptTarget]);
+
+  // Handle release
+  const handleRelease = useCallback((cat) => {
+    setReleaseTarget(cat);
+  }, []);
+
+  const confirmRelease = useCallback(() => {
+    if (!releaseTarget) return;
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== releaseTarget.serialId) return c;
+      return {
+        ...c, location: 'memorial', releasedAt: Date.now(),
+      };
+    }));
+    setReleaseTarget(null);
+    if (showCatDetail && selectedCat?.serialId === releaseTarget.serialId) {
+      setShowCatDetail(false);
+      setSelectedCat(null);
+    }
+  }, [releaseTarget, showCatDetail, selectedCat]);
+
+  // Handle gacha
+  const handleGacha = useCallback(() => {
+    if (bells < 1) return;
+    setBells(prev => prev - 1);
+    // Weighted roll
+    const roll = Math.random() * 100;
+    let rarity;
+    if (roll < 2) rarity = 'SSR';
+    else if (roll < 7) rarity = 'SR';
+    else if (roll < 25) rarity = 'R';
+    else rarity = 'N';
+    const pool = BREEDS.filter(b => b.rarity === rarity);
+    const breed = pool[Math.floor(Math.random() * pool.length)];
+    const newCat = makeCatInstance(breed.id, breed.rarity, null, 30);
+    setCats(prev => [...prev, newCat]);
+    setGachaResult(newCat);
+    setShowGachaResult(true);
+  }, [bells]);
+
+  // Handle check-in
+  const handleCheckIn = useCallback(() => {
+    setCheckedIn(true);
+    setShowCheckIn(true);
+    fishLedger.push({ type: 'earn', amount: 5, desc: '每日签到', time: Date.now() });
+  }, []);
+
+  // Navigation
+  const handleNavigate = useCallback((tab, cat, subTab) => {
+    if (tab === 'catDetail' && cat) {
+      setSelectedCat(cat);
+      setShowCatDetail(true);
+    } else {
+      setActiveTab(tab);
+      if (subTab) setBagTab(subTab);
+    }
+  }, []);
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
+      <div style={{ textAlign:'center', marginBottom:0 }}>
+        <h1 style={{ fontSize:20, fontWeight:700, color:'#F0F0EC', letterSpacing:'-0.5px', marginBottom:4 }}>
+          喵了个咪 · 通勤打卡+猫咪养成
+        </h1>
+        <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginBottom:16 }}>
+          喂猫 · 消消乐 · 收集 · 陪伴
+        </p>
+      </div>
+
+      <IosFrame>
+        <div style={{ height:'100%', display:'flex', flexDirection:'column', background:`linear-gradient(180deg, ${C.bg} 0%, ${C.bg2} 50%, ${C.bg} 100%)` }}>
+          {/* Status bar area */}
+          <div style={{ height:54, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 32px', fontSize:16, fontWeight:600, color:C.ink, flexShrink:0 }}>
+            <span>9:41</span>
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="9" y="0" width="2" height="10" rx="0.5" fill={C.ink}/><rect x="6" y="2" width="2" height="8" rx="0.5" fill={C.ink} opacity="0.8"/><rect x="3" y="4" width="2" height="6" rx="0.5" fill={C.ink} opacity="0.6"/><rect x="0" y="6" width="2" height="4" rx="0.5" fill={C.ink} opacity="0.4"/></svg>
+              <div style={{ width:26, height:12, border:`1.5px solid ${C.ink}`, borderRadius:3, padding:2, display:'flex', alignItems:'center' }}><div style={{ width:'75%', height:'100%', background:C.ink, borderRadius:1 }}/></div>
+            </div>
+          </div>
+
+          {/* Currency bar */}
+          <CurrencyBar
+            fish={fish} bells={bells}
+            onFishClick={() => setInfoModal({ title:'🐟 鱼干', content: '日常高频资源，用于喂猫。通过签到和消消乐获得。' })}
+            onBellClick={() => setInfoModal({ title:'🔔 猫铃铛', content: '稀缺资源，用于抽卡获得新猫咪。可通过连续签到和特殊活动获得。' })}
+          />
+
+          {/* Content area */}
+          <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', scrollbarWidth:'none' }}>
+            <style>{`div::-webkit-scrollbar{display:none}`}</style>
+
+            {showCatDetail ? (
+              <CatDetailPage
+                cats={cats}
+                catSerialId={selectedCat?.serialId}
+                onBack={() => { setShowCatDetail(false); setSelectedCat(null); }}
+                onFeed={handleFeed}
+                onRelease={handleRelease}
+                onAdopt={handleAdopt}
+                fish={fish}
+                nurturingCount={nurturing.length}
+                maxSlots={maxSlots}
+              />
+            ) : activeTab === 'cat' ? (
+              <CatPage
+                cats={cats} fish={fish}
+                onFeed={handleFeed} onAdopt={handleAdopt}
+                onRelease={handleRelease} onNavigate={handleNavigate}
+                initialTab={bagTab}
+              />
+            ) : activeTab === 'home' ? (
+              <HomePage
+                cats={cats} fish={fish} bells={bells}
+                checkedIn={checkedIn} onCheckIn={handleCheckIn}
+                onNavigate={handleNavigate}
+              />
+            ) : activeTab === 'game' ? (
+              <div style={{ padding:'40px 20px', textAlign:'center' }}>
+                <div style={{ fontSize:48, marginBottom:12 }}>🎮</div>
+                <div style={{ fontSize:16, fontWeight:700, color:C.ink, marginBottom:8 }}>猫咪消消乐</div>
+                <div style={{ fontSize:12, color:C.sub, marginBottom:20 }}>消除猫咪，获得鱼干！</div>
+                <a href="猫咪消消乐.html" style={{
+                  display:'inline-flex', alignItems:'center', gap:8,
+                  padding:'12px 32px', borderRadius:14,
+                  background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                  textDecoration:'none', color:'#fff',
+                  fontSize:15, fontWeight:700,
+                  boxShadow:'0 8px 24px rgba(253,150,68,0.3)',
+                }}>
+                  <span style={{ fontSize:20 }}>🎮</span>
+                  开始游戏
+                </a>
+              </div>
+            ) : (
+              <ProfilePage cats={cats} fish={fish} bells={bells} />
+            )}
+          </div>
+
+          {/* Modals */}
+          {!showCatDetail && <TabBar active={activeTab} onChange={(tab) => { setActiveTab(tab); setBagTab(null); }} />}
+          <CheckInModal show={showCheckIn} onClose={() => setShowCheckIn(false)} />
+          <AdoptConfirmModal cat={adoptTarget} show={!!adoptTarget} canAdopt={nurturing.length < maxSlots} onConfirm={confirmAdopt} onCancel={() => setAdoptTarget(null)} />
+          <ReleaseConfirmModal cat={releaseTarget} show={!!releaseTarget} onConfirm={confirmRelease} onCancel={() => setReleaseTarget(null)} />
+          <GachaResultModal cat={gachaResult} show={showGachaResult} onClose={() => setShowGachaResult(false)} />
+          <InfoModal show={!!infoModal} title={infoModal?.title} onClose={() => setInfoModal(null)}>{infoModal?.content}</InfoModal>
+        </div>
+      </IosFrame>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
