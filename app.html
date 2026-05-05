@@ -364,7 +364,7 @@ function FeaturedCat({ cats, onNavigate }) {
   );
 }
 
-function HomePage({ cats, fish, bells, checkedIn, onCheckIn, onNavigate }) {
+function HomePage({ cats, fish, bells, checkedIn, gachaDone, onCheckIn, onNavigate }) {
   const nurturing = cats.filter(c => c.location === 'nurturing');
   const maxSlots = 6;
   const currentSlots = 3;
@@ -486,6 +486,30 @@ function HomePage({ cats, fish, bells, checkedIn, onCheckIn, onNavigate }) {
           </div>
         );
       })()}
+
+      {/* Daily Missions */}
+      <div style={{ padding:'16px 20px 0' }}>
+        <div style={{ fontSize:13, fontWeight:700, color:C.ink, marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+          <span>📋</span> 每日任务
+        </div>
+        <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.cardBorder}`, overflow:'hidden' }}>
+          {[
+            { icon:'☀️', text:'每日打卡', reward:'+5 🐟', done: checkedIn },
+            { icon:'🎁', text:'体验抽卡', reward:'+1 🔔', done: gachaDone },
+            { icon:'👥', text:'分享给好友', reward:'+3 🐟', done: false },
+          ].map((m, i, arr) => (
+            <div key={i} style={{
+              display:'flex', alignItems:'center', padding:'10px 14px',
+              borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              gap:10, opacity: m.done ? 0.5 : 1,
+            }}>
+              <span style={{ fontSize:16 }}>{m.icon}</span>
+              <span style={{ flex:1, fontSize:13, fontWeight:500, color: m.done ? C.sub : C.ink, textDecoration: m.done ? 'line-through' : 'none' }}>{m.text}</span>
+              <span style={{ fontSize:11, fontWeight:600, color: m.done ? C.green : C.orange, padding:'2px 8px', borderRadius:999, background: m.done ? 'rgba(0,184,148,0.1)' : 'rgba(253,150,68,0.1)' }}>{m.done ? '已完成' : m.reward}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -858,21 +882,34 @@ function CatDetailPage({ cats, catSerialId, onBack, onFeed, onRelease, onAdopt, 
 /* ═══════════════════════════════════════
    GACHA PAGE
    ═══════════════════════════════════════ */
-function GachaPage({ bells, pityCount, onGacha }) {
+function GachaPage({ bells, pityCount, onGacha, cats }) {
   const [playing, setPlaying] = useState(false);
+  const videoRef = useRef(null);
 
   const handleGacha = () => {
     if (bells < 1 || playing) return;
     setPlaying(true);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
     setTimeout(() => {
       onGacha();
       setPlaying(false);
-    }, 3000);
+    }, 4000);
   };
 
+  // Sort cats: SSR > SR > R > N, same rarity by serialId ascending
+  const RARITY_WEIGHT = { SSR: 4, SR: 3, R: 2, N: 1 };
+  const sortedCats = [...cats].sort((a, b) => {
+    const w = (RARITY_WEIGHT[b.rarity] || 0) - (RARITY_WEIGHT[a.rarity] || 0);
+    return w !== 0 ? w : a.serialId - b.serialId;
+  });
+
   return (
-    <div style={{ paddingBottom: 64, textAlign:'center' }}>
-      <div style={{ padding:'20px 20px 12px' }}>
+    <div style={{ paddingBottom: 80 }}>
+      {/* Gacha area */}
+      <div style={{ padding:'16px 20px 12px', textAlign:'center' }}>
         <div style={{ fontSize:14, fontWeight:700, color:C.ink, marginBottom:4 }}>🎁 猫咪抽卡</div>
         <div style={{ fontSize:11, color:C.sub, marginBottom:12 }}>
           🔔 {bells} 枚猫铃铛 · 消耗1枚抽一次
@@ -884,6 +921,7 @@ function GachaPage({ bells, pityCount, onGacha }) {
           </div>
           <span style={{ fontSize:10, fontWeight:600, color:C.orange }}>{pityCount} / 80</span>
         </div>
+        {/* Gacha display area */}
         <div style={{
           width:'100%', aspectRatio:'1', borderRadius:18, overflow:'hidden',
           background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)',
@@ -891,10 +929,22 @@ function GachaPage({ bells, pityCount, onGacha }) {
           marginBottom:14, position:'relative',
         }}>
           {playing ? (
-            <div style={{ textAlign:'center', color:C.sub, fontSize:14, animation:'pulse 1s infinite' }}>抽卡中...</div>
+            <video
+              ref={videoRef}
+              src="cat/抽卡动画.mov"
+              muted playsInline
+              style={{ width:'100%', height:'100%', objectFit:'contain' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<div style="text-align:center;color:rgba(240,237,255,0.4);font-size:14px;animation:pulse 1s infinite">抽卡中...</div>';
+              }}
+            />
           ) : (
-            <img src="cat/猫爬架图片.jpeg" alt="猫爬架" style={{ width:'100%', height:'100%', objectFit:'contain' }}
-              onError={e => { e.target.style.display = 'none'; }} />
+            <img src="cat/猫爬架.png" alt="猫爬架" style={{ width:'100%', height:'100%', objectFit:'contain' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<div style="text-align:center;color:rgba(240,237,255,0.25);font-size:13px">猫爬架</div>';
+              }} />
           )}
         </div>
         <button onClick={handleGacha} disabled={playing || bells < 1} style={{
@@ -908,6 +958,57 @@ function GachaPage({ bells, pityCount, onGacha }) {
         }}>
           {playing ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'}
         </button>
+      </div>
+
+      {/* Cat collection grid */}
+      <div style={{ padding:'0 20px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.ink, display:'flex', alignItems:'center', gap:6 }}>
+            <span>🐱</span> 我的猫咪
+            <span style={{ fontSize:10, color:C.sub, fontWeight:400 }}>{cats.length}/{BREEDS.length}</span>
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
+          {sortedCats.map((cat, i) => (
+            <div key={cat.serialId} style={{
+              borderRadius:14, padding:'8px 4px 6px',
+              background:C.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}20`,
+              display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+              animation:`slideUp 0.4s ease-out ${i * 0.05}s both`,
+            }}>
+              <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', border:`1.5px solid ${RARITY_COLORS[cat.rarity]}40` }}>
+                <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                  onError={e => { e.target.style.display = 'none'; }} />
+              </div>
+              <span style={{ fontSize:10, fontWeight:600, color:C.ink }}>{cat.name}</span>
+              <span style={{ fontSize:8, fontWeight:700, color:RARITY_COLORS[cat.rarity], padding:'1px 6px', borderRadius:4, background:RARITY_BG[cat.rarity] }}>#{String(cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+            </div>
+          ))}
+        </div>
+        {/* Unlocked breeds count */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginTop:8 }}>
+          {BREEDS.filter(b => !cats.some(c => c.breedId === b.id)).map((breed, i) => (
+            <div key={breed.id} style={{
+              borderRadius:14, padding:'8px 4px 6px',
+              background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)',
+              display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+              opacity:0.3,
+            }}>
+              <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', position:'relative' }}>
+                <img src={breed.img} alt={breed.id} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(1) brightness(0.3)' }}
+                  onError={e => { e.target.style.display = 'none'; }} />
+                <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <rect x="5" y="11" width="14" height="10" rx="2" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                    <path d="M8 11V7a4 4 0 118 0v4" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:600, color:C.muted }}>{breed.id}</span>
+              <span style={{ fontSize:8, fontWeight:700, color:RARITY_COLORS[breed.rarity], padding:'1px 6px', borderRadius:4, background:RARITY_BG[breed.rarity] }}>{breed.rarity}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1170,6 +1271,7 @@ function App() {
   const [gachaResult, setGachaResult] = useState(null);
   const [showGachaResult, setShowGachaResult] = useState(false);
   const [bagTab, setBagTab] = useState(null);
+  const [gachaDone, setGachaDone] = useState(false);
   const [pityCount, setPityCount] = useState(47); // 保底计数器 max 80
 
   // Info modals
@@ -1251,6 +1353,7 @@ function App() {
   const handleGacha = useCallback(() => {
     if (bells < 1) return;
     setBells(prev => prev - 1);
+    setGachaDone(true);
     setPityCount(prev => {
       const newPity = prev + 1;
       // Weighted roll with 80 pity guarantee
@@ -1347,11 +1450,11 @@ function App() {
             ) : activeTab === 'home' ? (
               <HomePage
                 cats={cats} fish={fish} bells={bells}
-                checkedIn={checkedIn} onCheckIn={handleCheckIn}
-                onNavigate={handleNavigate}
+                checkedIn={checkedIn} gachaDone={gachaDone}
+                onCheckIn={handleCheckIn} onNavigate={handleNavigate}
               />
             ) : activeTab === 'game' ? (
-              <GachaPage bells={bells} pityCount={pityCount} onGacha={handleGacha} />
+              <GachaPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} />
             ) : (
               <ProfilePage cats={cats} fish={fish} bells={bells} />
             )}
