@@ -364,7 +364,7 @@ function FeaturedCat({ cats, onNavigate }) {
   );
 }
 
-function HomePage({ cats, fish, bells, checkedIn, gachaDone, onCheckIn, onNavigate }) {
+function HomePage({ cats, fish, bells, todayFish, checkedIn, gachaDone, onCheckIn, onNavigate }) {
   const nurturing = cats.filter(c => c.location === 'nurturing');
   const maxSlots = 6;
   const currentSlots = 3;
@@ -462,7 +462,7 @@ function HomePage({ cats, fish, bells, checkedIn, gachaDone, onCheckIn, onNaviga
           去打消消乐
           <span style={{ fontSize:11, fontWeight:500, opacity:0.8 }}>赚鱼干</span>
         </a>
-        <div style={{ textAlign:'center', fontSize:10, color:C.muted, marginTop:6 }}>今日已获得 12 条鱼干</div>
+        <div style={{ textAlign:'center', fontSize:10, color:C.muted, marginTop:6 }}>今日已获得 {todayFish} 条鱼干</div>
       </div>
 
       {/* Recent cat bag reminder */}
@@ -1281,6 +1281,12 @@ function App() {
   const nurturing = cats.filter(c => c.location === 'nurturing');
   const maxSlots = 3;
 
+  // Today's fish earned (for home page display)
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todayFish = fishLedger
+    .filter(t => t.type === 'earn' && t.time > todayStart.getTime())
+    .reduce((s, t) => s + t.amount, 0);
+
   // Compute statuses periodically (simulate hourly backend job)
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1291,6 +1297,46 @@ function App() {
       }));
     }, 60000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Sync data when returning from game (visibility change)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const data = JSON.parse(saved);
+            // Sync fish ledger
+            const savedLedger = data.fishLedger;
+            if (Array.isArray(savedLedger)) {
+              const localLen = fishLedger.length;
+              const savedLen = savedLedger.length;
+              if (savedLen > localLen) {
+                const newEntries = savedLedger.slice(localLen);
+                fishLedger.push(...newEntries);
+              }
+            }
+            // Sync cat data
+            if (data.cats) {
+              const savedCats = data.cats;
+              setCats(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(savedCats)) return savedCats;
+                return prev;
+              });
+            }
+            // Sync other data
+            if (data.globalSerialId && data.globalSerialId > globalSerialId) {
+              globalSerialId = data.globalSerialId;
+            }
+            // Force re-render
+            setCats(prev => [...prev]);
+          }
+        } catch(e) {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   // Save state
@@ -1449,7 +1495,7 @@ function App() {
               />
             ) : activeTab === 'home' ? (
               <HomePage
-                cats={cats} fish={fish} bells={bells}
+                cats={cats} fish={fish} bells={bells} todayFish={todayFish}
                 checkedIn={checkedIn} gachaDone={gachaDone}
                 onCheckIn={handleCheckIn} onNavigate={handleNavigate}
               />

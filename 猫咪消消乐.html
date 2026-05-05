@@ -463,22 +463,24 @@ function PowerupButton({ powerup, used, onClick }) {
 }
 
 /* ═══════════════════════════════════════
-   RESULT OVERLAY
+   RESULT OVERLAY — 结算页
    ═══════════════════════════════════════ */
-function ResultOverlay({ gameState, remaining, onRestart, onBack, onNextLevel }) {
+function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, catCount, cats, onRestart, onBack, onNextLevel, onGoHome }) {
   if (gameState === GAME_PLAYING) return null;
   const isWin = gameState === GAME_WIN;
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
   const showConfetti = isWin || isLevelComplete;
+
   return (
     <div style={{
       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
       background: showConfetti ? 'rgba(0,184,148,0.12)' : 'rgba(255,107,107,0.08)',
-      backdropFilter: 'blur(10px)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      backdropFilter: 'blur(12px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
       zIndex: 150, animation: 'fadeIn 0.4s ease-out',
+      overflowY: 'auto', paddingBottom: 20,
     }}>
-      {showConfetti && Array.from({ length: 24 }).map((_, i) => (
+      {showConfetti && Array.from({ length: 30 }).map((_, i) => (
         <div key={i} style={{
           position: 'absolute',
           left: `${10 + Math.random() * 80}%`,
@@ -489,43 +491,200 @@ function ResultOverlay({ gameState, remaining, onRestart, onBack, onNextLevel })
           animation: `confetti ${1.5 + Math.random() * 1}s ease-out ${Math.random() * 0.5}s forwards`,
         }}/>
       ))}
-      <div style={{ fontSize: 72, marginBottom: 12, animation: 'winBounce 0.6s ease-out' }}>
-        {showConfetti ? '🎉' : '😿'}
+
+      {/* Header */}
+      <div style={{ marginTop: 60, textAlign: 'center' }}>
+        <div style={{ fontSize: 56, marginBottom: 8, animation: 'winBounce 0.6s ease-out' }}>
+          {showConfetti ? '🎉' : '😿'}
+        </div>
+        <div style={{
+          fontSize: 24, fontWeight: 900,
+          color: showConfetti ? '#00B894' : '#FF6B6B',
+          marginBottom: 4, letterSpacing: '-0.5px',
+        }}>
+          {isLevelComplete ? '本局结算' : isWin ? '全部通关！' : '本局结算'}
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.45)', marginBottom: 16 }}>
+          {isLevelComplete ? '教学关通过，准备挑战核心关' : isWin ? '恭喜完成所有关卡' : `剩余 ${remaining} 张牌`}
+        </div>
       </div>
+
+      {/* Stats cards */}
       <div style={{
-        fontSize: 28, fontWeight: 900,
-        color: showConfetti ? '#00B894' : '#FF6B6B',
-        marginBottom: 6, letterSpacing: '-0.5px',
+        width: 300, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
       }}>
-        {isLevelComplete ? '关卡完成！' : isWin ? '全部通关！' : '游戏结束'}
+        {[
+          { label: '得分', value: score.toLocaleString(), unit: '分', color: '#F7DC6F', icon: '🏆' },
+          { label: '最大连击', value: maxCombo, unit: '连消', color: '#FF6B6B', icon: '🔥' },
+          { label: '获得鱼干', value: `+${fishEarned}`, unit: '条', color: '#FD9644', icon: '🐟' },
+        ].map((s, i) => (
+          <div key={i} style={{
+            borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+            background: 'rgba(26,18,53,0.9)', border: `1px solid ${s.color}25`,
+          }}>
+            <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 4 }}>{s.icon} {s.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)' }}>{s.unit}</div>
+          </div>
+        ))}
       </div>
-      <div style={{ fontSize: 14, color: 'rgba(240,237,255,0.55)', marginBottom: 28 }}>
-        {isLevelComplete ? '教学关通过，准备挑战核心关！' : isWin ? '恭喜你完成了所有关卡！' : `剩余 ${remaining} 张牌未消除`}
+
+      {/* Cat witnesses */}
+      {catCount > 0 && (
+        <div style={{ width: 300, marginTop: 10, borderRadius: 14, padding: '14px 16px', background:'rgba(26,18,53,0.9)', border:'1px solid rgba(108,92,231,0.2)' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(240,237,255,0.7)', marginBottom: 8, textAlign:'center' }}>
+            这场游戏被 {catCount} 只猫见证了
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            {cats.map(cat => (
+              <div key={cat.serialId} style={{ textAlign:'center' }}>
+                <div style={{ width:40, height:40, borderRadius:'50%', overflow:'hidden', border:'1.5px solid rgba(162,155,254,0.3)', margin:'0 auto 3' }}>
+                  <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                    onError={e => { e.target.style.display='none'; }} />
+                </div>
+                <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(240,237,255,0.5)' }}>{cat.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Weekly rank placeholder */}
+      <div style={{ width: 300, marginTop: 8, textAlign: 'center' }}>
+        <span style={{ fontSize: 10, color: 'rgba(240,237,255,0.3)' }}>
+          周榜排名 <span style={{ color: '#A29BFE', fontWeight: 600 }}>#--</span>
+        </span>
       </div>
-      <div style={{ display: 'flex', gap: 12 }}>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         {isLevelComplete && (
           <button onClick={onNextLevel} style={{
-            padding: '12px 28px', borderRadius: 16,
+            padding: '10px 22px', borderRadius: 14,
             background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
             border: 'none', cursor: 'pointer',
-            fontSize: 15, fontWeight: 700, color: '#fff',
-            boxShadow: '0 8px 24px rgba(253,150,68,0.3)',
+            fontSize: 14, fontWeight: 700, color: '#fff',
           }}>下一关</button>
         )}
         <button onClick={onRestart} style={{
-          padding: '12px 28px', borderRadius: 16,
+          padding: '10px 22px', borderRadius: 14,
           background: 'linear-gradient(135deg, #6C5CE7, #4A3DB5)',
           border: 'none', cursor: 'pointer',
-          fontSize: 15, fontWeight: 700, color: '#fff',
-          boxShadow: '0 8px 24px rgba(108,92,231,0.3)',
-        }}>再来一局</button>
-        <button onClick={onBack} style={{
-          padding: '12px 28px', borderRadius: 16,
+          fontSize: 14, fontWeight: 700, color: '#fff',
+        }}>再玩一局</button>
+        <button onClick={onGoHome || onBack} style={{
+          padding: '10px 22px', borderRadius: 14,
           background: 'rgba(255,255,255,0.06)',
           border: '1px solid rgba(255,255,255,0.15)',
           cursor: 'pointer',
-          fontSize: 15, fontWeight: 600, color: 'rgba(240,237,255,0.6)',
-        }}>返回大厅</button>
+          fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.6)',
+        }}>去喂猫</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   BATTLE PREPARATION PAGE (P1)
+   ═══════════════════════════════════════ */
+const CAT_BONUSES = {
+  '橘猫': { desc: '消除速度 +5%', color: '#FD9644' },
+  '黑猫': { desc: '暴击消除概率 +3%', color: '#636E72' },
+  '白猫': { desc: '额外鱼干 +1', color: '#DFE6E9' },
+  '布偶猫': { desc: '收集槽 +1格', color: '#74B9FF' },
+  '三花猫': { desc: '随机触发链式消除', color: '#E17055' },
+  '暹罗猫': { desc: '道具使用次数 +1', color: '#A29BFE' },
+  '蓝猫': { desc: '撤销消耗减半', color: '#FD79A8' },
+  '折耳猫': { desc: '洗牌CD -1', color: '#A29BFE' },
+  '无毛猫': { desc: '收集槽容错 +1', color: '#00B894' },
+  '波斯猫': { desc: '得分倍数 ×1.1', color: '#55EFC4' },
+  '幸运猫': { desc: '幸运消除概率提升', color: '#FFEAA7' },
+  '星空猫': { desc: '随机触发链式消除', color: '#0984E3' },
+};
+function BattlePrep({ cats, onStart }) {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  return (
+    <div style={{
+      position:'absolute', top:0, left:0, right:0, bottom:0,
+      background:'rgba(15,10,30,0.95)', backdropFilter:'blur(20px)',
+      display:'flex', flexDirection:'column', alignItems:'center',
+      zIndex:100, animation:'fadeIn 0.4s ease-out',
+      overflowY:'auto', paddingBottom:40,
+    }}>
+      {/* Title */}
+      <div style={{ marginTop:60, textAlign:'center' }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>⚔️</div>
+        <div style={{ fontSize:20, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px', marginBottom:4 }}>
+          今日出击阵容
+        </div>
+        <div style={{ fontSize:12, color:'rgba(240,237,255,0.45)' }}>
+          棋盘：{dateStr} · 全服同一张
+        </div>
+      </div>
+
+      {/* Cat lineup */}
+      {cats.length > 0 ? (
+        <>
+          <div style={{ width:300, marginTop:20 }}>
+            <div style={{ display:'flex', justifyContent:'center', gap:16, flexWrap:'wrap' }}>
+              {cats.map(cat => {
+                const bonus = CAT_BONUSES[cat.breedId];
+                return (
+                  <div key={cat.serialId} style={{ textAlign:'center', width:80 }}>
+                    <div style={{
+                      width:64, height:64, borderRadius:'50%', overflow:'hidden',
+                      margin:'0 auto 6', border:`2px solid ${bonus?.color || '#FD9644'}50`,
+                      boxShadow:`0 0 16px ${bonus?.color || '#FD9644'}20`,
+                    }}>
+                      <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                        onError={e => { e.target.style.display='none'; }} />
+                    </div>
+                    <div style={{ fontSize:12, fontWeight:700, color:'#F0EDFF' }}>{cat.name}</div>
+                    <div style={{ fontSize:9, color:'rgba(240,237,255,0.45)', marginTop:2 }}>
+                      {bonus ? bonus.desc : '无特殊加成'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bonus summary */}
+          <div style={{ width:300, marginTop:16, borderRadius:14, padding:'12px 16px', background:'rgba(108,92,231,0.08)', border:'1px solid rgba(108,92,231,0.12)' }}>
+            <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', marginBottom:6, textAlign:'center' }}>猫咪加成效果</div>
+            {cats.map(cat => {
+              const bonus = CAT_BONUSES[cat.breedId];
+              return bonus ? (
+                <div key={cat.serialId} style={{ display:'flex', gap:8, padding:'4px 0', fontSize:11 }}>
+                  <span style={{ color:bonus.color }}>· {cat.name}</span>
+                  <span style={{ color:'rgba(240,237,255,0.5)' }}>{bonus.desc}</span>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </>
+      ) : (
+        <div style={{ marginTop:30, textAlign:'center', padding:'24px', background:'rgba(255,255,255,0.03)', borderRadius:14, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <span style={{ fontSize:16, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧 🐱</span>
+        </div>
+      )}
+
+      {/* Start button */}
+      <button onClick={onStart} style={{
+        marginTop:24, padding:'14px 60px', borderRadius:16,
+        background:'linear-gradient(135deg, #FD9644, #FF6B6B, #FD79A8)',
+        border:'none', cursor:'pointer',
+        fontSize:18, fontWeight:800, color:'#fff',
+        boxShadow:'0 8px 32px rgba(253,150,68,0.35)',
+        animation:'btnPulse 2s ease-in-out infinite',
+      }}>
+        🎮 开始消消乐
+      </button>
+
+      <div style={{ marginTop:8 }}>
+        <a href="app.html" style={{ fontSize:11, color:'rgba(240,237,255,0.3)', textDecoration:'none', cursor:'pointer' }}>← 返回大厅</a>
       </div>
     </div>
   );
@@ -543,9 +702,14 @@ function Game() {
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [moveCount, setMoveCount] = useState(0);
-  const [moveHistory, setMoveHistory] = useState([]); // for undo: [{uid, type, tileId, tileObj}]
+  const [moveHistory, setMoveHistory] = useState([]);
   const [usedPowerups, setUsedPowerups] = useState({ remove: false, undo: false, shuffle: false });
   const [confirmPowerup, setConfirmPowerup] = useState(null);
+  // P1: fish & combo tracking
+  const [fishEarned, setFishEarned] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [phase, setPhase] = useState('prep'); // prep → playing
+  const nourishingCats = useRef([]);
   const uidRef = useRef(0);
   const slotRef = useRef([]);
   const tempStorageRef = useRef([]);
@@ -553,6 +717,17 @@ function Game() {
   const matchTimeoutRef = useRef(null);
   const boardContainerRef = useRef(null);
   const [boardScale, setBoardScale] = useState(1);
+
+  // Load nurturing cats from localStorage for settlement
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        nourishingCats.current = (data.cats || []).filter(c => c.location === 'nurturing');
+      }
+    } catch(e) {}
+  }, []);
 
   useEffect(() => { slotRef.current = slot; }, [slot]);
   useEffect(() => { tempStorageRef.current = tempStorage; }, [tempStorage]);
@@ -605,6 +780,12 @@ function Game() {
 
       setSlot(nextSlot);
       setMatching(allMatchUids);
+      // P1: track fish earnings and max combo
+      setFishEarned(f => f + 1);
+      setMaxCombo(c => {
+        const currentCombo = sameType.filter(s => s.type === tile.type).length;
+        return Math.max(c, currentCombo);
+      });
 
       // Capture type for timeout closure
       const matchType = tile.type;
@@ -719,11 +900,40 @@ function Game() {
     }
   };
 
+  // P1: write fish earnings to localStorage when game ends
+  const gameEndedRef = useRef(false);
+  useEffect(() => {
+    if (gameState !== GAME_PLAYING && fishEarned > 0 && !gameEndedRef.current) {
+      gameEndedRef.current = true;
+      try {
+        const key = 'miaolegemi_p0_v1';
+        const saved = localStorage.getItem(key);
+        const data = saved ? JSON.parse(saved) : {};
+        let ledger = data.fishLedger || [];
+        if (!Array.isArray(ledger)) ledger = [];
+        ledger.push({ type: 'earn', amount: fishEarned, desc: '消消乐结算', time: Date.now() });
+        data.fishLedger = ledger;
+        // Update cat witness count
+        if (data.cats) {
+          data.cats = data.cats.map(c => {
+            if (c.location === 'nurturing') {
+              return { ...c, gamesWitnessed: (c.gamesWitnessed || 0) + 1, bestCombo: Math.max(c.bestCombo || 0, maxCombo) };
+            }
+            return c;
+          });
+        }
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch(e) {}
+    }
+  }, [gameState]);
+
   const handleRestart = () => {
     if (matchTimeoutRef.current) {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
+    gameEndedRef.current = false;
+    setPhase('playing');
     setTiles(generateBoard(currentLevel));
     setSlot([]);
     setTempStorage([]);
@@ -732,7 +942,14 @@ function Game() {
     setMoveCount(0);
     setMoveHistory([]);
     setUsedPowerups({ remove: false, undo: false, shuffle: false });
+    setFishEarned(0);
+    setMaxCombo(0);
     uidRef.current = 0;
+    // Reload cats
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) nourishingCats.current = (JSON.parse(saved).cats || []).filter(c => c.location === 'nurturing');
+    } catch(e) {}
   };
 
   const handleNextLevel = () => {
@@ -741,6 +958,8 @@ function Game() {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
+    gameEndedRef.current = false;
+    setPhase('playing');
     setCurrentLevel(nextLv);
     setTiles(generateBoard(nextLv));
     setSlot([]);
@@ -750,7 +969,13 @@ function Game() {
     setMoveCount(0);
     setMoveHistory([]);
     setUsedPowerups({ remove: false, undo: false, shuffle: false });
+    setFishEarned(0);
+    setMaxCombo(0);
     uidRef.current = 0;
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) nourishingCats.current = (JSON.parse(saved).cats || []).filter(c => c.location === 'nurturing');
+    } catch(e) {}
   };
 
   const remaining = tiles.filter(t => !t.removed).length;
@@ -763,6 +988,14 @@ function Game() {
       background: `url('cat/bg.png') center/cover no-repeat`,
       backgroundBlendMode: 'overlay',
     }}>
+      {/* P1: Battle preparation page */}
+      {phase === 'prep' && (
+        <BattlePrep
+          cats={nourishingCats.current}
+          onStart={() => setPhase('playing')}
+        />
+      )}
+
       {/* Dark overlay on bg */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -795,6 +1028,10 @@ function Game() {
               fontSize: 11, fontWeight: 700, color: '#FD9644',
               background: 'rgba(253,150,68,0.12)', padding: '2px 8px', borderRadius: 6,
             }}>第{currentLevel}关 · {levelConfig.name}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: '#FD9644',
+              background: 'rgba(253,150,68,0.15)', padding: '2px 8px', borderRadius: 6,
+            }}>🐟 +{fishEarned}</span>
           </div>
           <button onClick={handleRestart} style={{
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
@@ -843,9 +1080,15 @@ function Game() {
             <ResultOverlay
               gameState={gameState}
               remaining={remaining}
+              score={totalTiles - remaining}
+              maxCombo={maxCombo}
+              fishEarned={fishEarned}
+              catCount={nourishingCats.current.length}
+              cats={nourishingCats.current}
               onRestart={handleRestart}
               onBack={() => window.location.href = '主页大厅.html'}
               onNextLevel={handleNextLevel}
+              onGoHome={() => window.location.href = 'app.html'}
             />
           </div>
         </div>
