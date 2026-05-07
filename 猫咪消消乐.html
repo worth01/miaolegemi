@@ -7,6 +7,7 @@
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="api.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,7 +63,7 @@ const LEVELS = {
   1: {
     name: '教学关',
     typeCount: 3, tilesPerType: 9,
-    typeIndices: [0, 1, 2], // 橘猫、黑猫、白猫
+    typeIndices: [0, 3, 5], // 猫爪印、猫罐头、逗猫棒
     cols: 7, rows: 5, maxLayers: 4,
     maskFn: (col, row, layer, cols, rows) => {
       const cd = Math.abs(col - Math.floor(cols / 2)) + Math.abs(row - Math.floor(rows / 2));
@@ -71,9 +72,9 @@ const LEVELS = {
   },
   2: {
     name: '核心关',
-    typeCount: 12, tilesPerType: 18,
-    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    cols: 10, rows: 8, maxLayers: 18,
+    typeCount: 17, tilesPerType: 21,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    cols: 10, rows: 8, maxLayers: 15,
     maskFn: (col, row, layer, cols, rows) => {
       const pat = layer % 3;
       if (pat === 0) { // 品字型：三列分布
@@ -101,37 +102,58 @@ const LEVELS = {
 };
 
 const CAT_TYPES = [
-  { id: '橘猫',   img: 'cat/橘猫.png',   color: '#FD9644' },
-  { id: '黑猫',   img: 'cat/黑猫.png',   color: '#636E72' },
-  { id: '白猫',   img: 'cat/白猫.png',   color: '#DFE6E9' },
-  { id: '三花猫', img: 'cat/三花猫.png', color: '#E17055' },
-  { id: '布偶猫', img: 'cat/布偶猫.png', color: '#74B9FF' },
-  { id: '暹罗猫', img: 'cat/暹罗猫.png', color: '#A29BFE' },
-  { id: '蓝猫', img: 'cat/蓝猫.png', color: '#FD79A8' },
-  { id: '无毛猫', img: 'cat/无毛猫.png', color: '#00B894' },
+  { id: '猫爪印', img: 'cat/猫爪印.png', color: '#FD9644' },
+  { id: '猫薄荷', img: 'cat/猫薄荷.png', color: '#55EFC4' },
   { id: '毛线球', img: 'cat/毛线球.png', color: '#FDCB6E' },
-  { id: '波斯猫', img: 'cat/波斯猫.png', color: '#55EFC4' },
-  { id: '幸运猫', img: 'cat/幸运猫.png', color: '#FFEAA7' },
-  { id: '星空猫', img: 'cat/星空猫.png', color: '#0984E3' },
+  { id: '猫罐头', img: 'cat/猫罐头.png', color: '#74B9FF' },
+  { id: '猫爬架', img: 'cat/猫爬架.png', color: '#A29BFE' },
+  { id: '逗猫棒', img: 'cat/逗猫棒.png', color: '#FD79A8' },
+  { id: '猫铃铛', img: 'cat/猫铃铛.png', color: '#6C5CE7' },
+  { id: '猫条',   img: 'cat/猫条.png',   color: '#E17055' },
+  { id: '蝴蝶结', img: 'cat/蝴蝶结.png', color: '#DFE6E9' },
+  { id: '猫粮碗', img: 'cat/猫粮碗.png', color: '#F39C12' },
+  { id: '饮水机', img: 'cat/饮水机.png', color: '#3498DB' },
+  { id: '储存桶', img: 'cat/储存桶.png', color: '#27AE60' },
+  { id: '猫砂盆', img: 'cat/猫砂盆.png', color: '#D4A574' },
+  { id: '宠物梳子', img: 'cat/宠物梳子.png', color: '#E67E22' },
+  { id: '猫抓板', img: 'cat/猫抓板.png', color: '#C0392B' },
+  { id: '玩具鼠', img: 'cat/玩具鼠.png', color: '#8E44AD' },
+  { id: '猫窝',   img: 'cat/猫窝.png',   color: '#1ABC9C' },
 ];
 
-const POWERUPS = [
-  {
-    key: 'remove', name: '移出', icon: 'cat/猫爪印.png',
-    desc: '移出全部', detail: '将收集槽中的所有牌移至临时存放层，腾出空间。每局限用1次。',
-    color: '#FD79A8',
-  },
-  {
-    key: 'undo', name: '撤销', icon: 'cat/猫罐头.png',
-    desc: '撤回最近一张', detail: '撤回最近放入收集槽的一张牌，将其放回棋盘原位置。每局限用1次。',
-    color: '#00B894',
-  },
-  {
-    key: 'shuffle', name: '洗牌', icon: 'cat/猫薄荷.png',
-    desc: '打乱所有牌', detail: '随机打乱棋盘上所有未消除的牌的位置，重新排列。每局限用1次。',
-    color: '#55EFC4',
-  },
-];
+// P5: 旧道具按钮已移除，功能由猫咪主动技能取代
+// 移出 → 橘猫「挑出来」  撤销 → 黑猫「撤回」  洗牌 → 幸运猫「洗牌」
+const BREED_RARITY = { '橘猫':'N', '黑猫':'N', '白猫':'N', '蓝猫':'N', '三花猫':'R', '布偶猫':'R', '暹罗猫':'R', '折耳猫':'SR', '无毛猫':'SR', '波斯猫':'SR', '幸运猫':'SSR', '星空猫':'SSR' };
+
+/* ═══════════════════════════════════════
+   CAT SKILLS DATA
+   ═══════════════════════════════════════ */
+const CAT_SKILLS = {
+  '橘猫':   { active: '挑出来', icon: '⬅️', activeDesc: '将1张无遮挡卡直接移入收集槽' },
+  '黑猫':   { active: '撤回', icon: '↩️', activeDesc: '撤回最近放入收集槽的牌' },
+  '白猫':   { active: '吹毛', icon: '👀', activeDesc: '高亮标记1组可消除组合' },
+  '蓝猫':   { active: '冻结', icon: '❄️', activeDesc: '暂停计时5秒' },
+  '布偶猫': { active: '粘住', icon: '🧲', activeDesc: '收集槽已满时可强行塞入1张' },
+  '三花猫': { active: '蹦跶', icon: '🎪', activeDesc: '随机跳走2张干扰卡' },
+  '暹罗猫': { active: '瞬移', icon: '⚡', activeDesc: '将收集槽最底部1张移回棋盘' },
+  '幸运猫': { active: '洗牌', icon: '🔀', activeDesc: '重新打乱所有可点击卡牌位置' },
+  '折耳猫': { active: '听声', icon: '👂', activeDesc: '高亮标记2组可消除组合' },
+  '无毛猫': { active: '灼烧', icon: '🔥', activeDesc: '清除最顶层3张卡牌' },
+  '波斯猫': { active: '吐司', icon: '🍞', activeDesc: '将收集槽3张牌打乱放回棋盘' },
+};
+const PASSIVE_EFFECTS = {
+  '橘猫':   { passive: '吃得多', desc: '前10秒不倒计时', type: 'timerDelay', value: 10 },
+  '黑猫':   { passive: '灵光', desc: '收集槽上限+2', type: 'slotBonus', value: 2 },
+  '白猫':   { passive: '醒目', desc: '开局高亮1组', type: 'autoHint', value: 1 },
+  '蓝猫':   { passive: '猫抓板', desc: '自动移出1张干扰卡', type: 'autoRemove', value: 1 },
+  '布偶猫': { passive: '贵宾', desc: '鱼干+30%', type: 'fishBonus', value: 0.3 },
+  '三花猫': { passive: '三色守护', desc: '失败可重来1次', type: 'extraRestart', value: 1 },
+  '暹罗猫': { passive: '吃得快', desc: '前5秒不倒计时', type: 'timerDelay', value: 5 },
+  '幸运猫': { passive: '福星', desc: '鱼干+50%', type: 'fishBonus', value: 0.5 },
+  '折耳猫': { passive: '猫之眼', desc: '边缘卡可见', type: 'edgeVision', value: 1 },
+  '无毛猫': { passive: '不屈', desc: '鱼干+20%', type: 'fishBonus', value: 0.2 },
+  '波斯猫': { passive: '优雅步调', desc: '失败可重来1次', type: 'extraRestart', value: 1 },
+};
 
 /* ═══════════════════════════════════════
    BOARD GENERATION
@@ -185,19 +207,20 @@ function generateBoard(levelNum) {
     row: pos.row,
     layer: pos.layer,
     removed: false,
+    inSlot: false,
     matched: false,
   }));
 }
 
 function isTileBlocked(tile, allTiles) {
-  if (tile.removed) return true;
+  if (tile.removed || tile.inSlot) return true;
   const left = tile.col * (TILE_W - OFFSET_X) + tile.layer * OFFSET_X;
   const top = tile.row * (TILE_H - OFFSET_Y) + tile.layer * OFFSET_Y;
   const right = left + TILE_W;
   const bottom = top + TILE_H;
 
   return allTiles.some(other => {
-    if (other.id === tile.id || other.removed || other.layer <= tile.layer) return false;
+    if (other.id === tile.id || other.removed || other.inSlot || other.layer <= tile.layer) return false;
     const cx = other.col * (TILE_W - OFFSET_X) + other.layer * OFFSET_X + TILE_W / 2;
     const cy = other.row * (TILE_H - OFFSET_Y) + other.layer * OFFSET_Y + TILE_H / 2;
     return cx > left && cx < right && cy > top && cy < bottom;
@@ -213,10 +236,13 @@ const GAME_LOSE = 'lose';
 const GAME_LEVEL_COMPLETE = 'levelComplete';
 
 /* ═══════════════════════════════════════
-   CONFIRM MODAL
+   SKILL CONFIRM MODAL
    ═══════════════════════════════════════ */
-function ConfirmModal({ powerup, onConfirm, onCancel }) {
-  if (!powerup) return null;
+function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
+  if (!breed || !skill) return null;
+  const rarityColors = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
+  const rarity = BREED_RARITY[breed] || 'N';
+  const color = rarityColors[rarity];
   return (
     <div style={{
       position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -227,26 +253,29 @@ function ConfirmModal({ powerup, onConfirm, onCancel }) {
       <div onClick={e => e.stopPropagation()} style={{
         width: 280, background: 'linear-gradient(180deg, #2A1F4E 0%, #1A1235 100%)',
         borderRadius: 24, padding: '28px 22px', textAlign: 'center',
-        border: `1px solid ${powerup.color}40`,
-        boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${powerup.color}15`,
+        border: `1px solid ${color}40`,
+        boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${color}15`,
         animation: 'slideUp 0.3s ease-out',
       }}>
         <div style={{
-          width: 64, height: 64, borderRadius: '50%', margin: '0 auto 14px',
-          overflow: 'hidden', border: `2px solid ${powerup.color}60`,
-          boxShadow: `0 0 20px ${powerup.color}30`,
+          width: 64, height: 64, borderRadius: 16, margin: '0 auto 14px',
+          overflow: 'hidden', border: `2px solid ${color}60`,
+          boxShadow: `0 0 20px ${color}30`,
         }}>
-          <img src={powerup.icon} alt={powerup.name} style={{
+          <img src={`cat/${breed}.png`} alt={breed} style={{
             width: '100%', height: '100%', objectFit: 'cover',
           }} onError={e => { e.target.style.display = 'none'; }}/>
         </div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>
+          {breed} · 主动技能
+        </div>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#F0EDFF', marginBottom: 6 }}>
-          {powerup.name}
+          {skill.icon} {skill.active}
         </div>
         <div style={{
           fontSize: 13, color: 'rgba(240,237,255,0.6)', lineHeight: 1.6, marginBottom: 20,
         }}>
-          {powerup.detail}
+          {skill.activeDesc}
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onCancel} style={{
@@ -257,11 +286,11 @@ function ConfirmModal({ powerup, onConfirm, onCancel }) {
           }}>取消</button>
           <button onClick={onConfirm} style={{
             flex: 1, height: 44, borderRadius: 14,
-            background: `linear-gradient(135deg, ${powerup.color}, ${powerup.color}CC)`,
+            background: `linear-gradient(135deg, ${color}, ${color}CC)`,
             border: 'none', cursor: 'pointer',
             fontSize: 14, fontWeight: 700, color: '#fff',
-            boxShadow: `0 6px 16px ${powerup.color}40`,
-          }}>确认使用</button>
+            boxShadow: `0 6px 16px ${color}40`,
+          }}>使用技能</button>
         </div>
       </div>
     </div>
@@ -271,43 +300,46 @@ function ConfirmModal({ powerup, onConfirm, onCancel }) {
 /* ═══════════════════════════════════════
    TILE COMPONENT
    ═══════════════════════════════════════ */
-function Tile({ tile, blocked, onClick, animDelay }) {
+function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
   const cat = CAT_TYPES.find(c => c.id === tile.type);
   const x = tile.col * (TILE_W - OFFSET_X) + tile.layer * OFFSET_X;
   const y = tile.row * (TILE_H - OFFSET_Y) + tile.layer * OFFSET_Y;
 
   if (tile.removed) return null;
+  const isInSlot = tile.inSlot;
 
   return (
     <div
-      onClick={() => !blocked && onClick(tile)}
+      onClick={() => !blocked && !isInSlot && onClick(tile)}
       style={{
         position: 'absolute',
         left: x, top: y,
         width: TILE_W, height: TILE_H,
         borderRadius: 10,
-        background: blocked
-          ? 'rgba(40,30,60,0.85)'
-          : 'rgba(255,255,255,0.95)',
-        border: `2.5px solid ${blocked ? 'rgba(255,255,255,0.08)' : cat.color + '80'}`,
-        cursor: blocked ? 'not-allowed' : 'pointer',
+        background: isInSlot
+          ? 'rgba(108,92,231,0.15)'
+          : blocked
+            ? 'rgba(40,30,60,0.85)'
+            : 'rgba(255,255,255,0.95)',
+        border: `2.5px solid ${isInSlot ? 'rgba(108,92,231,0.3)' : highlighted ? '#FFD700' : blocked ? 'rgba(255,255,255,0.08)' : cat.color + '80'}`,
+        cursor: blocked || isInSlot ? 'not-allowed' : 'pointer',
         overflow: 'hidden',
         zIndex: tile.layer * 100 + tile.row * 10 + tile.col,
         animation: `tileIn 0.4s ease-out ${animDelay}s both`,
-        opacity: blocked ? 0.4 : 1,
-        filter: blocked ? 'brightness(0.3) saturate(0.2)' : `drop-shadow(0 2px 6px ${cat.color}40)`,
+        opacity: isInSlot ? 0.25 : blocked ? 0.4 : 1,
+        filter: isInSlot ? 'blur(1px) brightness(0.5)' : blocked ? 'brightness(0.3) saturate(0.2)' : `drop-shadow(0 2px 6px ${cat.color}40)`,
         transition: 'transform 0.15s, box-shadow 0.15s',
-        boxShadow: blocked ? 'none' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`,
+        boxShadow: highlighted ? '0 0 16px 4px rgba(255,215,0,0.6)' : blocked ? 'none' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`,
       }}
       onMouseEnter={e => {
-        if (!blocked) {
+        if (!blocked && !isInSlot) {
           e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
           e.currentTarget.style.boxShadow = `0 6px 20px rgba(0,0,0,0.5), 0 0 14px ${cat.color}40`;
         }
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`;
+        e.currentTarget.style.boxShadow = highlighted ? '0 0 16px 4px rgba(255,215,0,0.6)' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`;
       }}
     >
       <img
@@ -413,172 +445,137 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
   );
 }
 
-/* ═══════════════════════════════════════
-   POWERUP BUTTON
-   ═══════════════════════════════════════ */
-function PowerupButton({ powerup, used, onClick }) {
-  return (
-    <div
-      onClick={() => !used && onClick(powerup)}
-      style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-        cursor: used ? 'not-allowed' : 'pointer',
-        opacity: used ? 0.3 : 1,
-        transition: 'all 0.2s',
-        filter: used ? 'grayscale(1)' : 'none',
-      }}
-    >
-      <div style={{
-        width: 58, height: 58, borderRadius: 16,
-        overflow: 'hidden',
-        border: `2px solid ${used ? 'rgba(255,255,255,0.05)' : powerup.color + '50'}`,
-        background: used ? 'rgba(255,255,255,0.02)' : `${powerup.color}12`,
-        boxShadow: used ? 'none' : `0 4px 12px ${powerup.color}20`,
-        position: 'relative',
-      }}>
-        <img
-          src={powerup.icon}
-          alt={powerup.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }}
-          onError={e => {
-            e.target.style.display = 'none';
-          }}
-        />
-        {used && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.4)', borderRadius: 12,
-          }}>
-            <span style={{ fontSize: 16 }}>✓</span>
-          </div>
-        )}
-      </div>
-      <span style={{
-        fontSize: 11, fontWeight: 600,
-        color: used ? 'rgba(240,237,255,0.2)' : powerup.color,
-      }}>{powerup.name}</span>
-    </div>
-  );
-}
+// P5: PowerupButton 已移除，由猫咪技能按钮取代
 
 /* ═══════════════════════════════════════
    RESULT OVERLAY — 结算页
    ═══════════════════════════════════════ */
-function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, catCount, cats, onRestart, onBack, onNextLevel, onGoHome }) {
+function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fishMultiplier, timeLeft, catCount, cats, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
   if (gameState === GAME_PLAYING) return null;
   const isWin = gameState === GAME_WIN;
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
+  const isLose = gameState === GAME_LOSE;
   const showConfetti = isWin || isLevelComplete;
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-      background: showConfetti ? 'rgba(0,184,148,0.12)' : 'rgba(255,107,107,0.08)',
-      backdropFilter: 'blur(12px)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(15,10,30,0.6)', backdropFilter: 'blur(16px) saturate(1.2)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       zIndex: 150, animation: 'fadeIn 0.4s ease-out',
-      overflowY: 'auto', paddingBottom: 20,
     }}>
-      {showConfetti && Array.from({ length: 30 }).map((_, i) => (
+      {/* Confetti */}
+      {showConfetti && Array.from({ length: 20 }).map((_, i) => (
         <div key={i} style={{
           position: 'absolute',
           left: `${10 + Math.random() * 80}%`,
           top: `${Math.random() * 40}%`,
-          width: 6 + Math.random() * 6, height: 6 + Math.random() * 6,
+          width: 5 + Math.random() * 5, height: 5 + Math.random() * 5,
           background: ['#FD9644','#FF6B6B','#6C5CE7','#00B894','#F7DC6F','#45B7D1','#FD79A8'][i % 7],
           borderRadius: i % 2 === 0 ? '50%' : 2,
           animation: `confetti ${1.5 + Math.random() * 1}s ease-out ${Math.random() * 0.5}s forwards`,
         }}/>
       ))}
 
-      {/* Header */}
-      <div style={{ marginTop: 60, textAlign: 'center' }}>
-        <div style={{ fontSize: 56, marginBottom: 8, animation: 'winBounce 0.6s ease-out' }}>
-          {showConfetti ? '🎉' : '😿'}
-        </div>
-        <div style={{
-          fontSize: 24, fontWeight: 900,
-          color: showConfetti ? '#00B894' : '#FF6B6B',
-          marginBottom: 4, letterSpacing: '-0.5px',
-        }}>
-          {isLevelComplete ? '本局结算' : isWin ? '全部通关！' : '本局结算'}
-        </div>
-        <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.45)', marginBottom: 16 }}>
-          {isLevelComplete ? '教学关通过，准备挑战核心关' : isWin ? '恭喜完成所有关卡' : `剩余 ${remaining} 张牌`}
-        </div>
-      </div>
-
-      {/* Stats cards */}
+      {/* Modal */}
       <div style={{
-        width: 300, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+        width: 360, borderRadius: 24,
+        background: 'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
+        border: '1px solid rgba(108,92,231,0.3)',
+        boxShadow: 'none',
+        padding: '20px 18px',
+        animation: 'slideUp 0.4s ease-out',
       }}>
-        {[
-          { label: '得分', value: score.toLocaleString(), unit: '分', color: '#F7DC6F', icon: '🏆' },
-          { label: '最大连击', value: maxCombo, unit: '连消', color: '#FF6B6B', icon: '🔥' },
-          { label: '获得鱼干', value: `+${fishEarned}`, unit: '条', color: '#FD9644', icon: '🐟' },
-        ].map((s, i) => (
-          <div key={i} style={{
-            borderRadius: 14, padding: '14px 12px', textAlign: 'center',
-            background: 'rgba(26,18,53,0.9)', border: `1px solid ${s.color}25`,
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <div style={{
+            fontSize: 20, fontWeight: 900,
+            color: showConfetti ? '#00B894' : '#FF6B6B',
+            letterSpacing: '-0.5px',
           }}>
-            <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 4 }}>{s.icon} {s.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)' }}>{s.unit}</div>
+            {isLose ? '挑战失败' : '恭喜过关'}
           </div>
-        ))}
-      </div>
-
-      {/* Cat witnesses */}
-      {catCount > 0 && (
-        <div style={{ width: 300, marginTop: 10, borderRadius: 14, padding: '14px 16px', background:'rgba(26,18,53,0.9)', border:'1px solid rgba(108,92,231,0.2)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(240,237,255,0.7)', marginBottom: 8, textAlign:'center' }}>
-            这场游戏被 {catCount} 只猫见证了
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-            {cats.map(cat => (
-              <div key={cat.serialId} style={{ textAlign:'center' }}>
-                <div style={{ width:40, height:40, borderRadius:'50%', overflow:'hidden', border:'1.5px solid rgba(162,155,254,0.3)', margin:'0 auto 3' }}>
-                  <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
-                    onError={e => { e.target.style.display='none'; }} />
-                </div>
-                <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(240,237,255,0.5)' }}>{cat.name}</div>
-              </div>
-            ))}
+          <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.45)', marginTop: 4 }}>
+            本局结算
           </div>
         </div>
-      )}
 
-      {/* Weekly rank placeholder */}
-      <div style={{ width: 300, marginTop: 8, textAlign: 'center' }}>
-        <span style={{ fontSize: 10, color: 'rgba(240,237,255,0.3)' }}>
-          周榜排名 <span style={{ color: '#A29BFE', fontWeight: 600 }}>#--</span>
-        </span>
-      </div>
+        {/* Stats */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
+          borderRadius: 14, padding: '12px', background: 'rgba(26,18,53,0.6)',
+          border: '1px solid rgba(108,92,231,0.15)',
+        }}>
+          {[
+            { label: '得分', value: score.toLocaleString(), color: '#F7DC6F', icon: '🏆' },
+            { label: '最大连击', value: `${maxCombo}连消`, color: '#FF6B6B', icon: '🔥' },
+            { label: '获得鱼干', value: `+${Math.round(fishEarned * fishMultiplier)}`, color: '#FD9644', icon: '🐟' },
+            { label: isLose ? '剩余卡牌' : '剩余时间', value: isLose ? `${remaining}张` : `${String(Math.floor(timeLeft / 60)).padStart(2,'0')}:${String(timeLeft % 60).padStart(2,'0')}`, color: isLose ? '#FF6B6B' : '#A29BFE', icon: isLose ? '🃏' : '⏱️' },
+          ].map((s, i) => (
+            <div key={i} style={{
+              borderRadius: 10, padding: '10px 8px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.5)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 3 }}>{s.icon} {s.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        {isLevelComplete && (
-          <button onClick={onNextLevel} style={{
-            padding: '10px 22px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-            border: 'none', cursor: 'pointer',
-            fontSize: 14, fontWeight: 700, color: '#fff',
-          }}>下一关</button>
+        {/* Cat witnesses */}
+        {catCount > 0 && (
+          <div style={{ marginTop: 10, textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+              {cats.map(cat => (
+                <div key={cat.serialId} style={{ textAlign: 'center' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(162,155,254,0.3)', margin: '0 auto 2' }}>
+                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={e => { e.target.style.display = 'none'; }} />
+                  </div>
+                  <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(240,237,255,0.4)' }}>{cat.name}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 4 }}>{catCount} 只猫见证了本局</div>
+          </div>
         )}
-        <button onClick={onRestart} style={{
-          padding: '10px 22px', borderRadius: 14,
-          background: 'linear-gradient(135deg, #6C5CE7, #4A3DB5)',
-          border: 'none', cursor: 'pointer',
-          fontSize: 14, fontWeight: 700, color: '#fff',
-        }}>再玩一局</button>
-        <button onClick={onGoHome || onBack} style={{
-          padding: '10px 22px', borderRadius: 14,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.15)',
-          cursor: 'pointer',
-          fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.6)',
-        }}>去喂猫</button>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          {isLose ? (
+            <>
+              <button onClick={onRetry} style={{
+                flex: 1, height: 38, borderRadius: 12,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
+              }}>再试一次 (10🐟)</button>
+              <a href="app.html" style={{
+                flex: 1, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                border: 'none', cursor: 'pointer', textDecoration: 'none',
+                fontSize: 13, fontWeight: 700, color: '#fff',
+                boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
+              }}>返回大厅</a>
+            </>
+          ) : (
+            <>
+              <button onClick={onRestart} style={{
+                flex: 1, height: 38, borderRadius: 12,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
+              }}>再玩一局</button>
+              <button onClick={onNextLevel} style={{
+                flex: 1, height: 38, borderRadius: 12,
+                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, color: '#fff',
+                boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
+              }}>下一关</button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -587,104 +584,137 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, catC
 /* ═══════════════════════════════════════
    BATTLE PREPARATION PAGE (P1)
    ═══════════════════════════════════════ */
-const CAT_BONUSES = {
-  '橘猫': { desc: '消除速度 +5%', color: '#FD9644' },
-  '黑猫': { desc: '暴击消除概率 +3%', color: '#636E72' },
-  '白猫': { desc: '额外鱼干 +1', color: '#DFE6E9' },
-  '布偶猫': { desc: '收集槽 +1格', color: '#74B9FF' },
-  '三花猫': { desc: '随机触发链式消除', color: '#E17055' },
-  '暹罗猫': { desc: '道具使用次数 +1', color: '#A29BFE' },
-  '蓝猫': { desc: '撤销消耗减半', color: '#FD79A8' },
-  '折耳猫': { desc: '洗牌CD -1', color: '#A29BFE' },
-  '无毛猫': { desc: '收集槽容错 +1', color: '#00B894' },
-  '波斯猫': { desc: '得分倍数 ×1.1', color: '#55EFC4' },
-  '幸运猫': { desc: '幸运消除概率提升', color: '#FFEAA7' },
-  '星空猫': { desc: '随机触发链式消除', color: '#0984E3' },
-};
-function BattlePrep({ cats, onStart }) {
+function BattlePrep({ cats, skillSlots, onStart }) {
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
+  const activeSlots = [0, 1, 2].map(i => ({ breed: skillSlots[i], cat: cats[i] }));
+  const passiveSlots = [3, 4, 5].map(i => ({ breed: skillSlots[i], cat: cats[i] }));
+
   return (
     <div style={{
-      position:'absolute', top:0, left:0, right:0, bottom:0,
-      background:'rgba(15,10,30,0.95)', backdropFilter:'blur(20px)',
-      display:'flex', flexDirection:'column', alignItems:'center',
+      position:'fixed', top:0, left:0, right:0, bottom:0,
+      background:'rgba(15,10,30,0.6)', backdropFilter:'blur(16px) saturate(1.2)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       zIndex:100, animation:'fadeIn 0.4s ease-out',
-      overflowY:'auto', paddingBottom:40,
     }}>
+      <div style={{
+        width:360, maxHeight:'80vh', borderRadius:24,
+        background:'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
+        border:'1px solid rgba(108,92,231,0.3)',
+        boxShadow:'none',
+        padding:'20px 18px',
+        overflowY:'auto',
+        animation:'slideUp 0.4s ease-out',
+      }}>
+      {/* Timer info */}
+      <div style={{ borderRadius:12, padding:'8px 14px', background:'rgba(108,92,231,0.06)', border:'1px solid rgba(108,92,231,0.1)', marginBottom:12 }}>
+        <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', textAlign:'center' }}>⏱️ 本局 60 秒倒计时</div>
+      </div>
+
       {/* Title */}
-      <div style={{ marginTop:60, textAlign:'center' }}>
-        <div style={{ fontSize:48, marginBottom:8 }}>⚔️</div>
-        <div style={{ fontSize:20, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px', marginBottom:4 }}>
+      <div style={{ textAlign:'center', marginBottom:14 }}>
+        <div style={{ fontSize:20, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px' }}>
           今日出击阵容
-        </div>
-        <div style={{ fontSize:12, color:'rgba(240,237,255,0.45)' }}>
-          棋盘：{dateStr} · 全服同一张
         </div>
       </div>
 
-      {/* Cat lineup */}
       {cats.length > 0 ? (
         <>
-          <div style={{ width:300, marginTop:20 }}>
-            <div style={{ display:'flex', justifyContent:'center', gap:16, flexWrap:'wrap' }}>
-              {cats.map(cat => {
-                const bonus = CAT_BONUSES[cat.breedId];
+          {/* Active skills */}
+          <div style={{ width:'100%', marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#FD9644', marginBottom:8, textAlign:'center' }}>主动技能（1-3号位）</div>
+            <div style={{ display:'flex', justifyContent:'center', gap:12 }}>
+              {activeSlots.map((s, i) => {
+                const skill = s.breed ? CAT_SKILLS[s.breed] : null;
                 return (
-                  <div key={cat.serialId} style={{ textAlign:'center', width:80 }}>
-                    <div style={{
-                      width:64, height:64, borderRadius:'50%', overflow:'hidden',
-                      margin:'0 auto 6', border:`2px solid ${bonus?.color || '#FD9644'}50`,
-                      boxShadow:`0 0 16px ${bonus?.color || '#FD9644'}20`,
-                    }}>
-                      <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
-                        onError={e => { e.target.style.display='none'; }} />
-                    </div>
-                    <div style={{ fontSize:12, fontWeight:700, color:'#F0EDFF' }}>{cat.name}</div>
-                    <div style={{ fontSize:9, color:'rgba(240,237,255,0.45)', marginTop:2 }}>
-                      {bonus ? bonus.desc : '无特殊加成'}
-                    </div>
+                  <div key={i} style={{ textAlign:'center', width:90 }}>
+                    {s.cat ? (
+                      <>
+                        <div style={{
+                          width:52, height:52, borderRadius:'50%', overflow:'hidden',
+                          margin:'0 auto 4', border:`2px solid ${skill ? '#FD964450' : '#ffffff15'}`,
+                          boxShadow: skill ? `0 0 12px #FD964420` : 'none',
+                        }}>
+                          <img src={s.cat.img} alt={s.cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                            onError={e => { e.target.style.display='none'; }} />
+                        </div>
+                        <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF' }}>{s.cat.name}</div>
+                        <div style={{ fontSize:9, color:'#FD9644', marginTop:1 }}>
+                          {skill ? `${skill.icon} ${skill.active}` : '???'}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{
+                        width:52, height:52, borderRadius:'50%', margin:'0 auto 4',
+                        border:'1px dashed rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:14, color:'rgba(255,255,255,0.15)',
+                      }}>+</div>
+                    )}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Bonus summary */}
-          <div style={{ width:300, marginTop:16, borderRadius:14, padding:'12px 16px', background:'rgba(108,92,231,0.08)', border:'1px solid rgba(108,92,231,0.12)' }}>
-            <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', marginBottom:6, textAlign:'center' }}>猫咪加成效果</div>
-            {cats.map(cat => {
-              const bonus = CAT_BONUSES[cat.breedId];
-              return bonus ? (
-                <div key={cat.serialId} style={{ display:'flex', gap:8, padding:'4px 0', fontSize:11 }}>
-                  <span style={{ color:bonus.color }}>· {cat.name}</span>
-                  <span style={{ color:'rgba(240,237,255,0.5)' }}>{bonus.desc}</span>
-                </div>
-              ) : null;
-            })}
+          {/* Passive skills */}
+          <div style={{ width:'100%', marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#6C5CE7', marginBottom:8, textAlign:'center' }}>被动加成（4-6号位）</div>
+            <div style={{ display:'flex', justifyContent:'center', gap:12 }}>
+              {passiveSlots.map((s, i) => {
+                const eff = s.breed ? PASSIVE_EFFECTS[s.breed] : null;
+                return (
+                  <div key={i} style={{ textAlign:'center', width:90 }}>
+                    {s.cat ? (
+                      <>
+                        <div style={{
+                          width:52, height:52, borderRadius:'50%', overflow:'hidden',
+                          margin:'0 auto 4', border:`2px solid ${eff ? '#6C5CE750' : '#ffffff15'}`,
+                          boxShadow: eff ? `0 0 12px #6C5CE720` : 'none',
+                        }}>
+                          <img src={s.cat.img} alt={s.cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                            onError={e => { e.target.style.display='none'; }} />
+                        </div>
+                        <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF' }}>{s.cat.name}</div>
+                        <div style={{ fontSize:9, color:'#A29BFE', marginTop:1 }}>
+                          {eff ? `${eff.passive}` : '无加成'}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{
+                        width:52, height:52, borderRadius:'50%', margin:'0 auto 4',
+                        border:'1px dashed rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:14, color:'rgba(255,255,255,0.15)',
+                      }}>+</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </>
       ) : (
-        <div style={{ marginTop:30, textAlign:'center', padding:'24px', background:'rgba(255,255,255,0.03)', borderRadius:14, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <span style={{ fontSize:16, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧 🐱</span>
+        <div style={{ textAlign:'center', padding:'20px', background:'rgba(255,255,255,0.03)', borderRadius:14, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <span style={{ fontSize:14, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧 🐱</span>
         </div>
       )}
 
-      {/* Start button */}
-      <button onClick={onStart} style={{
-        marginTop:24, padding:'14px 60px', borderRadius:16,
-        background:'linear-gradient(135deg, #FD9644, #FF6B6B, #FD79A8)',
-        border:'none', cursor:'pointer',
-        fontSize:18, fontWeight:800, color:'#fff',
-        boxShadow:'0 8px 32px rgba(253,150,68,0.35)',
-        animation:'btnPulse 2s ease-in-out infinite',
-      }}>
-        🎮 开始消消乐
-      </button>
-
-      <div style={{ marginTop:8 }}>
-        <a href="app.html" style={{ fontSize:11, color:'rgba(240,237,255,0.3)', textDecoration:'none', cursor:'pointer' }}>← 返回大厅</a>
+      {/* Action buttons */}
+      <div style={{ display:'flex', gap:10, marginTop:16 }}>
+        <a href="app.html" style={{
+          flex:1, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
+          cursor:'pointer', textDecoration:'none',
+          fontSize:13, fontWeight:600, color:'rgba(240,237,255,0.5)',
+        }}>返回</a>
+        <button onClick={onStart} style={{
+          flex:1, height:38, borderRadius:12,
+          background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
+          border:'none', cursor:'pointer',
+          fontSize:13, fontWeight:700, color:'#fff',
+          boxShadow:'0 4px 16px rgba(253,150,68,0.3)',
+        }}>开始</button>
+      </div>
       </div>
     </div>
   );
@@ -703,8 +733,7 @@ function Game() {
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
-  const [usedPowerups, setUsedPowerups] = useState({ remove: false, undo: false, shuffle: false });
-  const [confirmPowerup, setConfirmPowerup] = useState(null);
+  // P5: 旧道具状态已移除，由 usedSkills 取代
   // P1: fish & combo tracking
   const [fishEarned, setFishEarned] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
@@ -718,13 +747,37 @@ function Game() {
   const boardContainerRef = useRef(null);
   const [boardScale, setBoardScale] = useState(1);
 
-  // Load nurturing cats from localStorage for settlement
+  // P2: Timer system
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const [timerDelay, setTimerDelay] = useState(0);
+  const timerPauseRef = useRef(null); // timeout for auto-resume
+  const timerDelayRef = useRef(0); // seconds to delay before counting starts
+  const timeLeftRef = useRef(60);
+
+  // P2: Skill system
+  const [skillSlots, setSkillSlots] = useState([]); // [active1, active2, active3, passive1, passive2, passive3]
+  const [usedSkills, setUsedSkills] = useState({ active0: false, active1: false, active2: false });
+  const [confirmSkill, setConfirmSkill] = useState(null); // { index, breed, skill }
+  const [fishMultiplier, setFishMultiplier] = useState(1);
+  const [extraRestarts, setExtraRestarts] = useState(0);
+  const [slotBonus, setSlotBonus] = useState(0);
+  const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
+
+  // Load nurturing cats and skill slots from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
       if (saved) {
         const data = JSON.parse(saved);
         nourishingCats.current = (data.cats || []).filter(c => c.location === 'nurturing');
+        // P2: Build skill slots from nurturing cats order
+        const nurturing = (data.cats || []).filter(c => c.location === 'nurturing');
+        const slots = [];
+        for (let i = 0; i < 6; i++) {
+          slots.push(nurturing[i] ? nurturing[i].breedId : null);
+        }
+        setSkillSlots(slots);
       }
     } catch(e) {}
   }, []);
@@ -732,6 +785,92 @@ function Game() {
   useEffect(() => { slotRef.current = slot; }, [slot]);
   useEffect(() => { tempStorageRef.current = tempStorage; }, [tempStorage]);
   useEffect(() => { tilesRef.current = tiles; }, [tiles]);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+
+  // P2: Timer countdown (respects timerDelay passive)
+  useEffect(() => {
+    if (phase !== 'playing' || gameState !== GAME_PLAYING) return;
+    const interval = setInterval(() => {
+      if (timerPauseRef.current) return; // frozen by skill
+      // Delay phase: timerDelayRef counts down before real timer starts
+      if (timerDelayRef.current > 0) {
+        timerDelayRef.current -= 1;
+        setTimerDelay(timerDelayRef.current);
+        return;
+      }
+      if (timeLeftRef.current <= 0) {
+        clearInterval(interval);
+        setGameState(GAME_LOSE);
+        return;
+      }
+      setTimeLeft(t => Math.max(0, t - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, gameState]);
+
+  // P2: Apply passive skills on game start
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    let delay = 0;
+    let fMult = 1;
+    let restarts = 0;
+    let slotB = 0;
+    const slots = skillSlots;
+
+    // Active slots 0-2 contribute to some passives, passive slots 3-5
+    for (let i = 3; i < 6; i++) {
+      const breed = slots[i];
+      if (!breed) continue;
+      const eff = PASSIVE_EFFECTS[breed];
+      if (!eff) continue;
+      switch (eff.type) {
+        case 'timerDelay': delay = Math.max(delay, eff.value); break;
+        case 'fishBonus': fMult += eff.value; break;
+        case 'extraRestart': restarts += eff.value; break;
+        case 'slotBonus': slotB = Math.max(slotB, eff.value); break;
+        case 'autoRemove': {
+          // Auto-remove 1 top-layer tile
+          setTiles(prev => {
+            const candidates = prev.filter(t => !t.removed);
+            if (candidates.length === 0) return prev;
+            // Find top layer tile
+            const maxLayer = Math.max(...candidates.map(t => t.layer));
+            const topTile = candidates.find(t => t.layer === maxLayer);
+            if (!topTile) return prev;
+            return prev.map(t => t.id === topTile.id ? { ...t, removed: true } : t);
+          });
+          break;
+        }
+        case 'autoHint': {
+          // Will be applied after tiles are set
+          break;
+        }
+        case 'edgeVision': break; // Implemented in isTileBlocked
+      }
+    }
+    timerDelayRef.current = delay;
+    setFishMultiplier(fMult);
+    setExtraRestarts(restarts);
+    setSlotBonus(slotB);
+
+    // Auto hint: highlight a matching pair
+    if (slots.slice(3, 6).some(b => b && PASSIVE_EFFECTS[b]?.type === 'autoHint')) {
+      setTimeout(() => {
+        setTiles(prev => {
+          const avail = prev.filter(t => !t.removed);
+          const typeCounts = {};
+          avail.forEach(t => { typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
+          // Find a type with >= 2 available
+          const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 2);
+          if (pairType) {
+            const pair = avail.filter(t => t.type === pairType).slice(0, 2);
+            setHighlightedTiles(pair.map(t => t.id));
+          }
+          return prev;
+        });
+      }, 500);
+    }
+  }, [phase]);
 
   const boardHeight = levelConfig.rows * (TILE_H - OFFSET_Y) + TILE_H + (levelConfig.maxLayers - 1) * OFFSET_Y + 10;
   const boardWidth = levelConfig.cols * (TILE_W - OFFSET_X) + TILE_W + (levelConfig.maxLayers - 1) * OFFSET_X + 10;
@@ -754,14 +893,21 @@ function Game() {
 
   const handleTileClick = useCallback((tile) => {
     if (gameState !== GAME_PLAYING) return;
-    if (tile.removed) return;
+    if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
-    if (slotRef.current.length >= SLOT_CAPACITY) return;
+    if (slotRef.current.length >= SLOT_CAPACITY + slotBonus) return;
+
+    // Cancel any pending match cleanup from a previous match
+    if (matchTimeoutRef.current) {
+      clearTimeout(matchTimeoutRef.current);
+      matchTimeoutRef.current = null;
+    }
 
     const uid = ++uidRef.current;
     const slotItem = { uid, type: tile.type, tileId: tile.id };
 
-    setTiles(prev => prev.map(t => t.id === tile.id ? { ...t, removed: true } : t));
+    // Mark tile as in-slot (not yet matched — stays on board dimmed)
+    setTiles(prev => prev.map(t => t.id === tile.id ? { ...t, inSlot: true } : t));
     setMoveCount(m => m + 1);
     setMoveHistory(h => [...h, { uid, type: tile.type, tileId: tile.id, tile: tilesRef.current.find(t => t.id === tile.id) }]);
 
@@ -787,8 +933,9 @@ function Game() {
         return Math.max(c, currentCombo);
       });
 
-      // Capture type for timeout closure
+      // Capture matched tile IDs for board removal
       const matchType = tile.type;
+      const matchedTileIds = sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
       matchTimeoutRef.current = setTimeout(() => {
         // Remove matched tiles from tempStorage
         setTempStorage(prev => {
@@ -814,7 +961,11 @@ function Game() {
             return true;
           });
         });
-        // Check win
+        // Mark matched tiles as removed from board (confirmed match)
+        setTiles(prev => prev.map(t =>
+          matchedTileIds.includes(t.id) ? { ...t, removed: true, inSlot: false } : t
+        ));
+        // Check win — all tiles either removed or still in slot will be cleared
         setTiles(prev => {
           if (prev.filter(t => !t.removed).length === 0) {
             setTimeout(() => {
@@ -829,74 +980,179 @@ function Game() {
         });
         setMatching([]);
       }, 400);
-    } else if (nextSlot.length >= SLOT_CAPACITY) {
+    } else if (nextSlot.length >= SLOT_CAPACITY + slotBonus) {
       setSlot(nextSlot);
       setTimeout(() => {
         const typeCounts = {};
         nextSlot.forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
         if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
+          // Slot full with no match — restore all in-slot tiles to board
+          setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+          setSlot([]);
+          setTempStorage([]);
           setGameState(GAME_LOSE);
         }
       }, 300);
     } else {
       setSlot(nextSlot);
     }
-  }, [gameState]);
+  }, [gameState, slotBonus]);
 
-  /* ── POWERUPS ── */
-  const handlePowerupClick = (powerup) => {
-    if (usedPowerups[powerup.key]) return;
+  // P5: 旧道具处理函数已移除，功能由 executeSkill 取代
+
+  /* ── ACTIVE SKILLS ── */
+  const handleSkillClick = (skillIndex) => {
+    const key = `active${skillIndex}`;
+    if (usedSkills[key]) return;
     if (gameState !== GAME_PLAYING) return;
-    // Check if powerup can be used
-    if (powerup.key === 'remove' && slot.length === 0) return;
-    if (powerup.key === 'undo' && slot.length === 0) return;
-    if (powerup.key === 'shuffle' && tiles.filter(t => !t.removed).length < 2) return;
-    setConfirmPowerup(powerup);
+    const breedId = skillSlots[skillIndex];
+    if (!breedId) return;
+    const skill = CAT_SKILLS[breedId];
+    if (!skill) return;
+    setConfirmSkill({ index: skillIndex, breed: breedId, skill });
   };
 
-  const executePowerup = () => {
-    const key = confirmPowerup.key;
-    setUsedPowerups(prev => ({ ...prev, [key]: true }));
-    setConfirmPowerup(null);
+  const executeSkill = () => {
+    if (!confirmSkill) return;
+    const skillIndex = confirmSkill.index;
+    const breedId = confirmSkill.breed;
+    setConfirmSkill(null);
+    const key = `active${skillIndex}`;
+    if (usedSkills[key]) return;
+    if (gameState !== GAME_PLAYING) return;
 
-    if (key === 'remove') {
-      // Move last 3 (or fewer) slot tiles to temp storage (max 3 slots)
-      const count = Math.min(slotRef.current.length, 3);
-      const moved = slotRef.current.slice(-count);
-      setTempStorage(ts => [...ts, ...moved].slice(0, 3));
-      setSlot(prev => prev.slice(0, -count));
-      setMoveHistory(h => h.slice(0, -count));
-    } else if (key === 'undo') {
-      // Cancel any pending match timeout
-      if (matchTimeoutRef.current) {
-        clearTimeout(matchTimeoutRef.current);
-        matchTimeoutRef.current = null;
+    setUsedSkills(prev => ({ ...prev, [key]: true }));
+
+    switch (breedId) {
+      case '橘猫': {
+        // 挑出来: pick 1 unblocked tile directly into slot
+        if (slotRef.current.length >= SLOT_CAPACITY + slotBonus) break;
+        const candidates = tilesRef.current.filter(t => !t.removed && !isTileBlocked(t, tilesRef.current));
+        if (candidates.length === 0) break;
+        const tile = candidates[Math.floor(Math.random() * candidates.length)];
+        handleTileClick(tile);
+        break;
       }
-      setMatching([]);
-      // Return last slot tile to board — use ref for synchronous read
-      const currentSlot = slotRef.current;
-      if (currentSlot.length === 0) return;
-      const last = currentSlot[currentSlot.length - 1];
-      const targetTileId = last.tileId;
-      // Verify tile exists and is actually removed before restoring
-      const tileExists = tilesRef.current.some(t => t.id === targetTileId && t.removed);
-      if (tileExists) {
-        setTiles(prev => prev.map(t => t.id === targetTileId ? { ...t, removed: false } : t));
+      case '黑猫': {
+        // 撤回: same as undo powerup
+        if (slotRef.current.length === 0) break;
+        if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+        setMatching([]);
+        const last = slotRef.current[slotRef.current.length - 1];
+        if (last) {
+          const tileExists = tilesRef.current.some(t => t.id === last.tileId && t.removed);
+          if (tileExists) setTiles(prev => prev.map(t => t.id === last.tileId ? { ...t, removed: false, inSlot: false } : t));
+          setSlot(prev => prev.slice(0, -1));
+          setMoveHistory(h => h.slice(0, -1));
+        }
+        break;
       }
-      setSlot(prev => prev.slice(0, -1));
-      setMoveHistory(h => h.slice(0, -1));
-    } else if (key === 'shuffle') {
-      // Shuffle all remaining tiles' positions
-      setTiles(prev => {
-        const remaining = prev.filter(t => !t.removed);
-        const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
-        const shuffledPositions = shuffleArr(positions);
-        return prev.map(t => {
-          if (t.removed) return t;
-          const idx = remaining.findIndex(r => r.id === t.id);
-          return { ...t, ...shuffledPositions[idx] };
+      case '白猫': {
+        // 吹毛: highlight 1 pair
+        const avail = tilesRef.current.filter(t => !t.removed);
+        const typeCounts = {};
+        avail.forEach(t => { typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
+        const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 2);
+        if (pairType) {
+          const pair = avail.filter(t => t.type === pairType).slice(0, 2);
+          setHighlightedTiles(pair.map(t => t.id));
+          setTimeout(() => setHighlightedTiles([]), 3000);
+        }
+        break;
+      }
+      case '蓝猫': {
+        // 冻结: pause timer 5s
+        timerPauseRef.current = true;
+        setTimerPaused(true);
+        setTimeout(() => { timerPauseRef.current = false; setTimerPaused(false); }, 5000);
+        break;
+      }
+      case '布偶猫': {
+        // 粘住: temp expand slot by 1
+        setSlotBonus(b => Math.max(b, 1));
+        break;
+      }
+      case '三花猫': {
+        // 蹦跶: randomly remove 2 unblocked tiles
+        const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
+        if (candidates.length < 2) break;
+        const shuffled = shuffleArr(candidates);
+        const removed = shuffled.slice(0, 2);
+        setTiles(prev => prev.map(t => removed.some(r => r.id === t.id) ? { ...t, removed: true } : t));
+        break;
+      }
+      case '暹罗猫': {
+        // 瞬移: move last slot tile back to board
+        if (slotRef.current.length === 0) break;
+        if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+        setMatching([]);
+        const lastItem = slotRef.current[slotRef.current.length - 1];
+        if (lastItem) {
+          const tileExists = tilesRef.current.some(t => t.id === lastItem.tileId && t.removed);
+          if (tileExists) setTiles(prev => prev.map(t => t.id === lastItem.tileId ? { ...t, removed: false, inSlot: false } : t));
+          setSlot(prev => prev.slice(0, -1));
+          setMoveHistory(h => h.slice(0, -1));
+        }
+        break;
+      }
+      case '幸运猫': {
+        // 洗牌: same as shuffle powerup
+        setTiles(prev => {
+          const remaining = prev.filter(t => !t.removed && !t.inSlot);
+          const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
+          const shuffledPositions = shuffleArr(positions);
+          return prev.map(t => {
+            if (t.removed || t.inSlot) return t;
+            const idx = remaining.findIndex(r => r.id === t.id);
+            return { ...t, ...shuffledPositions[idx] };
+          });
         });
-      });
+        break;
+      }
+      case '折耳猫': {
+        // 听声: highlight 2 pairs
+        const avail2 = tilesRef.current.filter(t => !t.removed);
+        const typeCounts2 = {};
+        avail2.forEach(t => { typeCounts2[t.type] = (typeCounts2[t.type] || 0) + 1; });
+        const pairTypes = Object.keys(typeCounts2).filter(k => typeCounts2[k] >= 2).slice(0, 2);
+        if (pairTypes.length > 0) {
+          const ids = [];
+          pairTypes.forEach(pt => { avail2.filter(t => t.type === pt).slice(0, 2).forEach(t => ids.push(t.id)); });
+          setHighlightedTiles(ids);
+          setTimeout(() => setHighlightedTiles([]), 3000);
+        }
+        break;
+      }
+      case '无毛猫': {
+        // 灼烧: remove top 3 tiles
+        const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot);
+        if (candidates.length === 0) break;
+        const maxLayer = Math.max(...candidates.map(t => t.layer));
+        const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, 3);
+        if (topTiles.length === 0) break;
+        setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
+        setTimeout(() => {
+          if (tilesRef.current.filter(t => !t.removed).length === 0) {
+            setGameState(currentLevel < 2 ? GAME_LEVEL_COMPLETE : GAME_WIN);
+          }
+        }, 300);
+        break;
+      }
+      case '波斯猫': {
+        // 吐司: move 3 slot tiles back to board
+        const count = Math.min(slotRef.current.length, 3);
+        if (count === 0) break;
+        if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+        setMatching([]);
+        const restoreItems = slotRef.current.slice(-count);
+        setSlot(prev => prev.slice(0, -count));
+        setMoveHistory(h => h.slice(0, -count));
+        setTiles(prev => prev.map(t => {
+          if (restoreItems.some(r => r.tileId === t.id)) return { ...t, removed: false, inSlot: false };
+          return t;
+        }));
+        break;
+      }
     }
   };
 
@@ -905,15 +1161,27 @@ function Game() {
   useEffect(() => {
     if (gameState !== GAME_PLAYING && fishEarned > 0 && !gameEndedRef.current) {
       gameEndedRef.current = true;
+      const finalFish = Math.round(fishEarned * fishMultiplier);
+
+      // Send to API if online
+      if (MiaolegemiAPI && MiaolegemiAPI.isLoggedIn()) {
+        MiaolegemiAPI.endGame({
+          score: score || 0,
+          fishEarned: finalFish,
+          maxCombo: maxCombo || 0,
+          activeCats: nurturingCats.map(c => c.id).filter(Boolean),
+        }).catch(() => {});
+      }
+
+      // Also write to localStorage (backup / local mode)
       try {
         const key = 'miaolegemi_p0_v1';
         const saved = localStorage.getItem(key);
         const data = saved ? JSON.parse(saved) : {};
         let ledger = data.fishLedger || [];
         if (!Array.isArray(ledger)) ledger = [];
-        ledger.push({ type: 'earn', amount: fishEarned, desc: '消消乐结算', time: Date.now() });
+        ledger.push({ type: 'earn', amount: finalFish, desc: '消消乐结算', time: Date.now() });
         data.fishLedger = ledger;
-        // Update cat witness count
         if (data.cats) {
           data.cats = data.cats.map(c => {
             if (c.location === 'nurturing') {
@@ -941,15 +1209,50 @@ function Game() {
     setGameState(GAME_PLAYING);
     setMoveCount(0);
     setMoveHistory([]);
-    setUsedPowerups({ remove: false, undo: false, shuffle: false });
     setFishEarned(0);
     setMaxCombo(0);
     uidRef.current = 0;
+    // P2: reset timer and skills
+    setTimeLeft(60);
+    timeLeftRef.current = 60;
+    setTimerPaused(false);
+    timerPauseRef.current = false;
+    timerDelayRef.current = 0;
+    setTimerDelay(0);
+    setUsedSkills({ active0: false, active1: false, active2: false });
+    setHighlightedTiles([]);
+    setSlotBonus(0);
     // Reload cats
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
       if (saved) nourishingCats.current = (JSON.parse(saved).cats || []).filter(c => c.location === 'nurturing');
     } catch(e) {}
+  };
+
+  const handleRetry = () => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        let ledger = data.fishLedger || [];
+        if (!Array.isArray(ledger)) ledger = [];
+        const totalFish = ledger.reduce((s, e) => s + (e.amount || 0), 0);
+        if (totalFish < 10) {
+          alert('鱼干不足，无法重试');
+          return;
+        }
+        ledger.push({ type: 'spend', amount: -10, desc: '消消乐重试', time: Date.now() });
+        data.fishLedger = ledger;
+        localStorage.setItem('miaolegemi_p0_v1', JSON.stringify(data));
+      }
+    } catch(e) {}
+    handleRestart();
+  };
+
+  // P2: Extra restart from passive skills (三色守护/优雅步调)
+  const handleExtraRestart = () => {
+    setExtraRestarts(r => Math.max(0, r - 1));
+    handleRestart();
   };
 
   const handleNextLevel = () => {
@@ -968,17 +1271,26 @@ function Game() {
     setGameState(GAME_PLAYING);
     setMoveCount(0);
     setMoveHistory([]);
-    setUsedPowerups({ remove: false, undo: false, shuffle: false });
     setFishEarned(0);
     setMaxCombo(0);
     uidRef.current = 0;
+    // P2: reset timer and skills
+    setTimeLeft(60);
+    timeLeftRef.current = 60;
+    setTimerPaused(false);
+    timerPauseRef.current = false;
+    timerDelayRef.current = 0;
+    setTimerDelay(0);
+    setUsedSkills({ active0: false, active1: false, active2: false });
+    setHighlightedTiles([]);
+    setSlotBonus(0);
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
       if (saved) nourishingCats.current = (JSON.parse(saved).cats || []).filter(c => c.location === 'nurturing');
     } catch(e) {}
   };
 
-  const remaining = tiles.filter(t => !t.removed).length;
+  const remaining = tiles.filter(t => !t.removed && !t.inSlot).length;
   const progress = Math.round(((totalTiles - remaining) / totalTiles) * 100);
 
   return (
@@ -992,6 +1304,7 @@ function Game() {
       {phase === 'prep' && (
         <BattlePrep
           cats={nourishingCats.current}
+          skillSlots={skillSlots}
           onStart={() => setPhase('playing')}
         />
       )}
@@ -1032,6 +1345,17 @@ function Game() {
               fontSize: 11, fontWeight: 700, color: '#FD9644',
               background: 'rgba(253,150,68,0.15)', padding: '2px 8px', borderRadius: 6,
             }}>🐟 +{fishEarned}</span>
+            {phase === 'playing' && (
+              <span style={{
+                fontSize: 11, fontWeight: 700,
+                color: timerDelay > 0 ? '#55EFC4' : timeLeft <= 10 ? '#FF6B6B' : timerPaused ? '#55EFC4' : 'rgba(240,237,255,0.6)',
+                background: timerDelay > 0 ? 'rgba(0,184,148,0.15)' : timeLeft <= 10 ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.06)',
+                padding: '2px 8px', borderRadius: 6,
+              }}>
+                {timerDelay > 0 ? `🛡️ 免计时 ${timerDelay}s` : timerPaused ? '⏸️ ' : '⏱️ '}
+                {timerDelay === 0 && `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`}
+              </span>
+            )}
           </div>
           <button onClick={handleRestart} style={{
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
@@ -1073,6 +1397,7 @@ function Game() {
                 key={tile.id}
                 tile={tile}
                 blocked={isTileBlocked(tile, tiles)}
+                highlighted={highlightedTiles.includes(tile.id)}
                 onClick={handleTileClick}
                 animDelay={tile.layer * 0.06 + (tile.row * levelConfig.cols + tile.col) * 0.008}
               />
@@ -1083,9 +1408,14 @@ function Game() {
               score={totalTiles - remaining}
               maxCombo={maxCombo}
               fishEarned={fishEarned}
+              fishMultiplier={fishMultiplier}
+              timeLeft={timeLeft}
               catCount={nourishingCats.current.length}
               cats={nourishingCats.current}
+              extraRestarts={extraRestarts}
               onRestart={handleRestart}
+              onRetry={handleRetry}
+              onExtraRestart={handleExtraRestart}
               onBack={() => window.location.href = '主页大厅.html'}
               onNextLevel={handleNextLevel}
               onGoHome={() => window.location.href = 'app.html'}
@@ -1109,30 +1439,73 @@ function Game() {
             <CollectionSlot slot={slot} matching={matching} />
           </div>
 
-          {/* 道具按钮 */}
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: 40,
-            padding: '6px 0 4px',
-          }}>
-            {POWERUPS.map(p => (
-              <PowerupButton
-                key={p.key}
-                powerup={p}
-                used={usedPowerups[p.key]}
-                onClick={handlePowerupClick}
-              />
-            ))}
-          </div>
+          {/* P5: 猫咪技能栏（升级版 — 取代旧道具按钮） */}
+          {phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', gap: 28,
+              padding: '8px 10px 6px',
+            }}>
+              {[0, 1, 2].map(i => {
+                const breed = skillSlots[i];
+                if (!breed) return <div key={i} style={{ width: 64 }} />;
+                const skill = CAT_SKILLS[breed];
+                const used = usedSkills[`active${i}`];
+                const rarityColors = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
+                const rarity = BREED_RARITY[breed] || 'N';
+                const borderColor = used ? 'rgba(255,255,255,0.08)' : (rarityColors[rarity] || '#6C5CE7');
+                return (
+                  <div key={i} onClick={() => !used && handleSkillClick(i)} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                    cursor: used ? 'not-allowed' : 'pointer',
+                    opacity: used ? 0.3 : 1,
+                    filter: used ? 'grayscale(1)' : 'none',
+                    transition: 'all 0.2s',
+                    maxWidth: 70,
+                  }}>
+                    <div style={{
+                      width: 54, height: 54, borderRadius: 16, overflow: 'hidden',
+                      border: `2px solid ${borderColor}`,
+                      background: used ? 'rgba(255,255,255,0.02)' : `${borderColor}15`,
+                      boxShadow: used ? 'none' : `0 4px 16px ${borderColor}30`,
+                      position: 'relative',
+                    }}>
+                      <img src={`cat/${breed}.png`} alt={breed} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }}
+                        onError={e => { e.target.style.display = 'none'; }} />
+                      {used && (
+                        <div style={{
+                          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'rgba(0,0,0,0.5)', borderRadius: 14,
+                        }}>
+                          <span style={{ fontSize: 18, color: '#fff' }}>✓</span>
+                        </div>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700,
+                      color: used ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
+                      textAlign: 'center', lineHeight: 1.2,
+                    }}>
+                      {skill ? skill.active : '???'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* P5: 旧道具按钮已移除，猫咪技能栏取代其位置 */}
 
 
         </div>
       </div>
 
-      {/* ═══ CONFIRM MODAL ═══ */}
-      <ConfirmModal
-        powerup={confirmPowerup}
-        onConfirm={executePowerup}
-        onCancel={() => setConfirmPowerup(null)}
+      {/* Skill confirm modal */}
+      <SkillConfirmModal
+        breed={confirmSkill?.breed}
+        skill={confirmSkill?.skill}
+        onConfirm={executeSkill}
+        onCancel={() => setConfirmSkill(null)}
       />
     </div>
   );

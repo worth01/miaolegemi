@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @db.VarChar(255)
+  nickname     String   @db.VarChar(50)
+  bells        Int      @default(0)
+  pityCount    Int      @default(0)
+  activeTitle  String?  @db.VarChar(50)
+  createdAt    DateTime @default(now())
+
+  cats          PlayerCat[]
+  fishLedger    FishLedger[]
+  gameSessions  GameSession[]
+  serialsOwned  CatSerialRegistry[] @relation("CurrentOwner")
+  serialsFirst  CatSerialRegistry[] @relation("FirstOwner")
+  checkins      Checkin[]
+
+  @@map("users")
+}
+
+model CatSpecies {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(50)
+  rarity        String   @db.VarChar(5)
+  activeSkill   Json
+  passiveSkill  Json
+  weight        Int
+
+  serials       CatSerialRegistry[]
+
+  @@map("cat_species")
+}
+
+model CatSerialRegistry {
+  id             String    @id @default(uuid()) @db.Uuid
+  speciesId      Int
+  serialNumber   Int
+  status         String    @default("available") @db.VarChar(20)
+  currentOwnerId String?   @db.Uuid
+  firstOwnerId   String?   @db.Uuid
+  availableAfter DateTime?
+
+  species      CatSpecies @relation(fields: [speciesId], references: [id])
+  currentOwner User?      @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
+  firstOwner   User?      @relation("FirstOwner", fields: [firstOwnerId], references: [id])
+  playerCats   PlayerCat[]
+
+  @@unique([speciesId, serialNumber])
+  @@map("cat_serial_registry")
+}
+
+model PlayerCat {
+  id              String   @id @default(uuid()) @db.Uuid
+  ownerId         String   @db.Uuid
+  serialId        String   @db.Uuid
+  location        String   @default("bag") @db.VarChar(20)
+  slotPosition    Int?
+  personality     Json
+  bagExpiresAt    DateTime?
+  adoptedAt       DateTime?
+  lastFedAt       DateTime?
+  expiresAt       DateTime?
+  daysAlive       Int      @default(0)
+  gamesWitnessed  Int      @default(0)
+  bestCombo       Int      @default(0)
+  fishSpent       Int      @default(0)
+  releasedAt      DateTime?
+  previousOwners  Json     @default("[]")
+  createdAt       DateTime @default(now())
+
+  owner  User          @relation(fields: [ownerId], references: [id])
+  serial CatSerialRegistry @relation(fields: [serialId], references: [id])
+
+  @@map("player_cats")
+}
+
+model FishLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  amount    Int
+  reason    String   @db.VarChar(50)
+  relatedId String?  @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("fish_ledger")
+}
+
+model GameSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  playerId    String   @db.Uuid
+  score       Int
+  fishEarned  Int
+  maxCombo    Int
+  activeCats  Json
+  createdAt   DateTime @default(now())
+
+  player User @relation(fields: [playerId], references: [id])
+
+  @@map("game_sessions")
+}
+
+model Checkin {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  date      DateTime @db.Date
+  streak    Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("checkins")
+}

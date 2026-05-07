@@ -8,3 +8,5 @@ _level_check.png
 _scale_check.png
 _temp_check.png
 *.b64
+node_modules/
+.env
