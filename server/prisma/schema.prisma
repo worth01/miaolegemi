@@ -15,6 +15,7 @@ model User {
   bells        Int      @default(0)
   pityCount    Int      @default(0)
   activeTitle  String?  @db.VarChar(50)
+  hasClaimedFirstGacha Boolean @default(false)
   createdAt    DateTime @default(now())
 
   cats          PlayerCat[]

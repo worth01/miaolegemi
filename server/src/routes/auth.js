@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
     });
 
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: { id: user.id, username: user.username, nickname: user.nickname, bells: user.bells } });
+    res.json({ token, user: { id: user.id, username: user.username, nickname: user.nickname, bells: user.bells, hasClaimedFirstGacha: user.hasClaimedFirstGacha } });
   } catch (e) {
     console.error('Register error:', e);
     res.status(500).json({ error: '注册失败' });
@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ error: '用户名或密码错误' });
 
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: { id: user.id, username: user.username, nickname: user.nickname, bells: user.bells } });
+    res.json({ token, user: { id: user.id, username: user.username, nickname: user.nickname, bells: user.bells, hasClaimedFirstGacha: user.hasClaimedFirstGacha } });
   } catch (e) {
     console.error('Login error:', e);
     res.status(500).json({ error: '登录失败' });

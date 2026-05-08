@@ -97,6 +97,7 @@ router.get('/profile', auth, async (req, res) => {
           serialNumber: lowestSerial.serial?.serialNumber,
         } : null,
       },
+      hasClaimedFirstGacha: user.hasClaimedFirstGacha,
     });
   } catch (e) {
     console.error(e);

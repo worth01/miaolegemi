@@ -330,10 +330,12 @@ return (
 /* ═══════════════════════════════════════
    TOP CURRENCY BAR
    ═══════════════════════════════════════ */
-function CurrencyBar({ fish, bells, onFishClick, onBellClick, theme, onToggleTheme }) {
+function CurrencyBar({ fish, bells, onFishClick, onBellClick, theme, onToggleTheme, left }) {
 
 return (
-    <div style={{ padding:'6px 20px', display:'flex', alignItems:'center', justifyContent:'flex-start', gap:12, position:'relative', zIndex:20 }}>
+    <div style={{ padding:'6px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', zIndex:20 }}>
+      {left ? <div style={{ flex:1 }}>{left}</div> : <div />}
+      <div style={{ display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
       <div onClick={onFishClick} style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(253,150,68,0.12)', borderRadius:999, padding:'5px 12px', cursor:'pointer' }}>
         <span style={{ fontSize:14 }}>🐟</span>
         <span style={{ fontSize:13, fontWeight:700, color:colors.orange }}>{fish}</span>
@@ -355,6 +357,7 @@ return (
           transition:'transform 0.3s, background 0.3s',
           display:'flex', alignItems:'center', justifyContent:'center', fontSize:10,
         }}>{theme === 'light' ? '☀️' : '🌙'}</div>
+      </div>
       </div>
     </div>
   );
@@ -481,13 +484,6 @@ const nurturing = cats.filter(c => c.location === 'nurturing');
 
   return (
     <div>
-      {/* User greeting */}
-      {user && (
-        <div style={{ padding:'8px 20px 0', display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:14 }}>👋</span>
-          <span style={{ fontSize:13, color:colors.sub }}>你好，<span style={{ color:colors.ink, fontWeight:700 }}>{user.nickname || '铲屎官'}</span></span>
-        </div>
-      )}
 
       {/* Notification Banner */}
       <NotificationBanner cats={cats} onNavigate={onNavigate} />
@@ -2738,6 +2734,7 @@ function App() {
             theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
             onFishClick={() => setInfoModal({ title:'🐟 鱼干', content: '日常高频资源，用于喂猫。通过签到和消消乐获得。' })}
             onBellClick={() => setInfoModal({ title:'🔔 猫铃铛', content: '稀缺资源，用于抽卡获得新猫咪。可通过连续签到和特殊活动获得。' })}
+            left={<span style={{ display:'flex', alignItems:'center', gap:8 }}><span style={{ fontSize:14 }}>👋</span><span style={{ fontSize:13, color:colors.sub }}>你好，<span style={{ color:colors.ink, fontWeight:700 }}>{user?.nickname || '铲屎官'}</span></span></span>}
           />
 
           {/* Content area */}

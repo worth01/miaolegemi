@@ -7,6 +7,96 @@ const router = Router();
 
 const PERSONALITY_WORDS = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '黏糊'];
 
+// 抽取一只猫（通用逻辑）
+async function pullCat(userId, forceSpeciesId) {
+  const species = await prisma.catSpecies.findMany();
+  let selected;
+  if (forceSpeciesId) {
+    selected = species.find(s => s.id === forceSpeciesId);
+  } else {
+    const totalWeight = species.reduce((sum, s) => sum + s.weight, 0);
+    let roll = Math.random() * totalWeight;
+    selected = species[0];
+    for (const s of species) {
+      roll -= s.weight;
+      if (roll <= 0) { selected = s; break; }
+    }
+  }
+
+  // 分配序列号
+  const serials = await prisma.catSerialRegistry.findMany({
+    where: { speciesId: selected.id, status: 'available' },
+    orderBy: { serialNumber: 'asc' },
+    take: 1,
+  });
+
+  let serial;
+  if (serials.length > 0) {
+    serial = await prisma.catSerialRegistry.update({
+      where: { id: serials[0].id },
+      data: { status: 'adopted', currentOwnerId: userId, firstOwnerId: serials[0].firstOwnerId || userId },
+    });
+  } else {
+    const maxSerial = await prisma.catSerialRegistry.aggregate({
+      where: { speciesId: selected.id },
+      _max: { serialNumber: true },
+    });
+    const nextNum = (maxSerial._max.serialNumber || 0) + 1;
+    serial = await prisma.catSerialRegistry.create({
+      data: {
+        speciesId: selected.id,
+        serialNumber: nextNum,
+        status: 'adopted',
+        currentOwnerId: userId,
+        firstOwnerId: userId,
+      },
+    });
+  }
+
+  const personality = randomPersonality();
+  const cat = await prisma.playerCat.create({
+    data: {
+      ownerId: userId,
+      serialId: serial.id,
+      location: 'bag',
+      personality,
+      bagExpiresAt: new Date(Date.now() + 30 * 86400000),
+    },
+    include: { serial: { include: { species: true } } },
+  });
+
+  return cat;
+}
+
+// 首次抽卡（注册赠送，50% 概率幸运猫）
+router.post('/first-pull', auth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ error: '用户不存在' });
+    if (user.hasClaimedFirstGacha) return res.status(400).json({ error: '已领取过首次抽卡' });
+
+    // 50% 概率幸运猫
+    const luckyCat = await prisma.catSpecies.findFirst({ where: { name: '幸运猫' } });
+    let forceId = null;
+    if (Math.random() < 0.5 && luckyCat) {
+      forceId = luckyCat.id;
+    }
+
+    const cat = await pullCat(req.user.id, forceId);
+
+    // +1 猫铃铛（首次赠送）+ 标记已领取
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { bells: { increment: 1 }, hasClaimedFirstGacha: true },
+    });
+
+    res.json({ cat, bellsRemaining: user.bells + 1 });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: '首次抽卡失败' });
+  }
+});
+
 function randomPersonality() {
   const shuffled = [...PERSONALITY_WORDS].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 2);

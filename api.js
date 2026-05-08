@@ -85,6 +85,7 @@ const MiaolegemiAPI = {
 
   // ─── 抽卡 ───
   async pullGacha() { return this.request('/gacha/pull', { method: 'POST' }); },
+  async firstPullGacha() { return this.request('/gacha/first-pull', { method: 'POST' }); },
   async getPity() { return this.request('/gacha/pity'); },
 
   // ─── 消消乐 ───
