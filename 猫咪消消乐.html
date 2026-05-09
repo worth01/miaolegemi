@@ -402,33 +402,45 @@ function hitTestTile(tiles, px, py) {
 const BREED_RARITY = { '橘猫':'N', '黑猫':'N', '白猫':'N', '蓝猫':'N', '三花猫':'R', '布偶猫':'R', '暹罗猫':'R', '折耳猫':'SR', '无毛猫':'SR', '波斯猫':'SR', '幸运猫':'SSR', '星空猫':'SSR' };
 
 /* ═══════════════════════════════════════
-   CAT SKILLS DATA
+   P3: 猫咪技能系统（设计文档 v3.1）
    ═══════════════════════════════════════ */
 const CAT_SKILLS = {
-  '橘猫':   { active: '挑出来', icon: '⬅️', activeDesc: '将1张无遮挡卡直接移入收集槽' },
-  '黑猫':   { active: '撤回', icon: '↩️', activeDesc: '撤回最近放入收集槽的牌' },
-  '白猫':   { active: '吹毛', icon: '👀', activeDesc: '高亮标记1组可消除组合' },
-  '蓝猫':   { active: '冻结', icon: '❄️', activeDesc: '暂停计时5秒' },
-  '布偶猫': { active: '粘住', icon: '🧲', activeDesc: '收集槽已满时可强行塞入1张' },
-  '三花猫': { active: '蹦跶', icon: '🎪', activeDesc: '随机跳走2张干扰卡' },
-  '暹罗猫': { active: '瞬移', icon: '⚡', activeDesc: '将收集槽最底部1张移回棋盘' },
-  '幸运猫': { active: '洗牌', icon: '🔀', activeDesc: '重新打乱所有可点击卡牌位置' },
-  '折耳猫': { active: '听声', icon: '👂', activeDesc: '高亮标记2组可消除组合' },
-  '无毛猫': { active: '灼烧', icon: '🔥', activeDesc: '清除最顶层3张卡牌' },
-  '波斯猫': { active: '吐司', icon: '🍞', activeDesc: '将收集槽3张牌打乱放回棋盘' },
+  // N级猫咪
+  '橘猫':   { active: '挑出来', icon: '📤', activeDesc: '将收集槽中最底层2张牌移动到临时存放槽中', color: '#FF9F43' },
+  '黑猫':   { active: '撤回',   icon: '↩️', activeDesc: '撤销上一步操作', color: '#6C5CE7' },
+  '白猫':   { active: '重整',   icon: '🔀', activeDesc: '重新打乱当前所有可点击卡牌', color: '#DFE6E9' },
+  '蓝猫':   { active: '冻结',   icon: '❄️', activeDesc: '5秒内计时暂停', color: '#74B9FF' },
+  // R级猫咪
+  '布偶猫': { active: '叼走',   icon: '🐾', activeDesc: '将收集槽中最底层3张牌移至临时存放槽中', color: '#A29BFE' },
+  '三花猫': { active: '蹦跶',   icon: '🐱', activeDesc: '随机跳走2张干扰卡', color: '#FD79A8' },
+  '暹罗猫': { active: '瞬移',   icon: '✨', activeDesc: '将收集槽3张卡打乱放回棋盘', color: '#FDCB6E' },
+  '无毛猫': { active: '灼烧',   icon: '🔥', activeDesc: '清除最顶层3张卡牌', color: '#E17055' },
+  // SR级猫咪
+  '波斯猫': { active: '吐息',   icon: '💨', activeDesc: '基于临时存放槽位，移出同等数量的牌', color: '#00CEC9' },
+  '折耳猫': { active: '听声',   icon: '👂', activeDesc: '撤销前2步，同时不计入失败次数', color: '#81ECEC' },
+  // SSR级猫咪
+  '星空猫': { active: '永昼',   icon: '🌟', activeDesc: '一定几率直接跳过本关', color: '#A855F7' },
+  '幸运猫': { active: '洗牌',   icon: '🎴', activeDesc: '重新打乱当前棋盘所有卡牌', color: '#F39C12' },
 };
+
+// 被动技能（出战席4位+家园5-6位触发，全局生效）
 const PASSIVE_EFFECTS = {
-  '橘猫':   { passive: '吃得多', desc: '前10秒不倒计时', type: 'timerDelay', value: 10 },
-  '黑猫':   { passive: '灵光', desc: '收集槽上限+2', type: 'slotBonus', value: 2 },
-  '白猫':   { passive: '醒目', desc: '开局高亮1组', type: 'autoHint', value: 1 },
-  '蓝猫':   { passive: '猫抓板', desc: '自动移出1张干扰卡', type: 'autoRemove', value: 1 },
-  '布偶猫': { passive: '贵宾', desc: '鱼干+30%', type: 'fishBonus', value: 0.3 },
-  '三花猫': { passive: '三色守护', desc: '失败可重来1次', type: 'extraRestart', value: 1 },
-  '暹罗猫': { passive: '吃得快', desc: '前5秒不倒计时', type: 'timerDelay', value: 5 },
-  '幸运猫': { passive: '福星', desc: '鱼干+50%', type: 'fishBonus', value: 0.5 },
-  '折耳猫': { passive: '猫之眼', desc: '边缘卡可见', type: 'edgeVision', value: 1 },
-  '无毛猫': { passive: '不屈', desc: '鱼干+20%', type: 'fishBonus', value: 0.2 },
-  '波斯猫': { passive: '优雅步调', desc: '失败可重来1次', type: 'extraRestart', value: 1 },
+  // N级猫咪
+  '橘猫':   { passive: '吃得多', desc: '每局计时从开局2秒后开始计算', type: 'timerDelay', value: 2 },
+  '黑猫':   { passive: '灵光', desc: '临时存放层槽位上限+1格', type: 'tempSlot', value: 1 },
+  '白猫':   { passive: '醒目', desc: '每局开局立即消除1组可消除组合', type: 'autoHint', value: 1 },
+  '蓝猫':   { passive: '沉静', desc: '鱼干+10%', type: 'fishBonus', value: 0.1 },
+  // R级猫咪
+  '布偶猫': { passive: '贵宾', desc: '鱼干+20%', type: 'fishBonus', value: 0.2 },
+  '三花猫': { passive: '收获', desc: '临时存放层槽位上限+2格', type: 'tempSlot', value: 2 },
+  '暹罗猫': { passive: '吃得快', desc: '每局计时从开局5秒后开始计算', type: 'timerDelay', value: 5 },
+  '无毛猫': { passive: '爪痕', desc: '每局自动移出1张干扰卡', type: 'autoRemove', value: 1 },
+  // SR级猫咪
+  '波斯猫': { passive: '优雅步调', desc: '每局额外1次重来机会', type: 'extraRestart', value: 1 },
+  '折耳猫': { passive: '猫之眼', desc: '被遮挡的卡牌仍以半透明显示', type: 'edgeVision', value: 1 },
+  // SSR级猫咪
+  '星空猫': { passive: '观星', desc: '时刻祝福你，增加幸运触发', type: 'luck', value: 0.05 },
+  '幸运猫': { passive: '福星', desc: '鱼干+40%', type: 'fishBonus', value: 0.4 },
 };
 
 /* ═══════════════════════════════════════
@@ -1169,18 +1181,22 @@ function Game() {
   const highlightedTilesRef = useRef([]);
   useEffect(() => { highlightedTilesRef.current = highlightedTiles; }, [highlightedTiles]);
 
-  // Load nurturing cats and skill slots from localStorage
+  // Load home cats and skill slots from localStorage (P3: updated to home from nurturing)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
       if (saved) {
         const data = JSON.parse(saved);
-        nourishingCats.current = (data.cats || []).filter(c => c.location === 'nurturing');
-        // P2: Build skill slots from nurturing cats order
-        const nurturing = (data.cats || []).filter(c => c.location === 'nurturing');
+        // P3: 读取出战席猫咪（前4位）
+        const battleCats = (data.cats || []).filter(c => c.battleSlot != null).sort((a, b) => a.battleSlot - b.battleSlot);
+        // P3: 读取家园猫咪（5-6位为额外被动技能）
+        const homeCats = (data.cats || []).filter(c => c.location === 'home');
+        // 合并：前4个出战位 + 家园前2只
+        nourishingCats.current = [...battleCats, ...homeCats.slice(0, 2)];
+        // 构建技能槽位：0-2主动(1-3号位), 3-5被动(4号位+家园5-6)
         const slots = [];
         for (let i = 0; i < 6; i++) {
-          slots.push(nurturing[i] ? nurturing[i].breedId : null);
+          slots.push(nourishingCats.current[i] ? nourishingCats.current[i].breedId : null);
         }
         setSkillSlots(slots);
       }
@@ -1214,16 +1230,17 @@ function Game() {
     return () => clearInterval(interval);
   }, [phase, gameState, isTimed]);
 
-  // P2: Apply passive skills on game start
+  // P3: Apply passive skills on game start (v3.1 updated)
   useEffect(() => {
     if (phase !== 'playing') return;
     let delay = 0;
     let fMult = 1;
     let restarts = 0;
-    let slotB = 0;
+    let tempSlotB = 0;
+    let luck = 0;
     const slots = skillSlots;
 
-    // Active slots 0-2 contribute to some passives, passive slots 3-5
+    // Passive slots 3-5 (position 4 + home 5-6) apply global effects
     for (let i = 3; i < 6; i++) {
       const breed = slots[i];
       if (!breed) continue;
@@ -1233,44 +1250,52 @@ function Game() {
         case 'timerDelay': delay = Math.max(delay, eff.value); break;
         case 'fishBonus': fMult += eff.value; break;
         case 'extraRestart': restarts += eff.value; break;
-        case 'slotBonus': slotB = Math.max(slotB, eff.value); break;
+        case 'tempSlot': tempSlotB = Math.max(tempSlotB, eff.value); break; // P3: 临时存放槽位
         case 'autoRemove': {
-          // Auto-remove 1 top-layer tile
-          setTiles(prev => {
-            const candidates = prev.filter(t => !t.removed);
-            if (candidates.length === 0) return prev;
-            // Find top layer tile
-            const maxLayer = Math.max(...candidates.map(t => t.layer));
-            const topTile = candidates.find(t => t.layer === maxLayer);
-            if (!topTile) return prev;
-            return prev.map(t => t.id === topTile.id ? { ...t, removed: true } : t);
-          });
+          // P3: 每局自动移出1张干扰卡（顶层卡）
+          setTimeout(() => {
+            setTiles(prev => {
+              const candidates = prev.filter(t => !t.removed && !t.inSlot);
+              if (candidates.length === 0) return prev;
+              const maxLayer = Math.max(...candidates.map(t => t.layer));
+              const topTile = candidates.find(t => t.layer === maxLayer);
+              if (!topTile) return prev;
+              return prev.map(t => t.id === topTile.id ? { ...t, removed: true } : t);
+            });
+          }, 300);
           break;
         }
         case 'autoHint': {
-          // Will be applied after tiles are set
+          // P3: 开局立即消除1组可消除组合
           break;
         }
-        case 'edgeVision': break; // Implemented in isTileBlocked
+        case 'edgeVision': break; // P3: 被遮挡的卡牌仍以半透明显示（实现于isTileBlocked）
+        case 'luck': luck += eff.value; break; // P3: 星空猫观星
       }
     }
     timerDelayRef.current = delay;
     setFishMultiplier(fMult);
     setExtraRestarts(restarts);
-    setSlotBonus(slotB);
+    setSlotBonus(tempSlotB); // P3: 临时存放槽位加成
 
-    // Auto hint: highlight a matching pair
+    // P3: 星空猫观星 - 幸运触发（暂不实现复杂逻辑）
+    
+    // P3: 白猫醒目 - 开局自动消除1组
     if (slots.slice(3, 6).some(b => b && PASSIVE_EFFECTS[b]?.type === 'autoHint')) {
       setTimeout(() => {
         setTiles(prev => {
-          const avail = prev.filter(t => !t.removed);
+          const avail = prev.filter(t => !t.removed && !isTileBlocked(t, prev));
           const typeCounts = {};
           avail.forEach(t => { typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
-          // Find a type with >= 2 available
-          const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 2);
+          const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 3);
           if (pairType) {
-            const pair = avail.filter(t => t.type === pairType).slice(0, 2);
-            setHighlightedTiles(pair.map(t => t.id));
+            const toRemove = avail.filter(t => t.type === pairType).slice(0, 3);
+            // 自动消除动画
+            toRemove.forEach(t => {
+              const cat = CAT_TYPES.find(c => c.id === t.type);
+              if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+            });
+            return prev.map(t => toRemove.some(r => r.id === t.id) ? { ...t, removed: true } : t);
           }
           return prev;
         });
@@ -1509,16 +1534,19 @@ function Game() {
 
     switch (breedId) {
       case '橘猫': {
-        // 挑出来: pick 1 unblocked tile directly into slot
-        if (slotRef.current.length >= SLOT_CAPACITY + slotBonus) break;
-        const candidates = tilesRef.current.filter(t => !t.removed && !isTileBlocked(t, tilesRef.current));
-        if (candidates.length === 0) break;
-        const tile = candidates[Math.floor(Math.random() * candidates.length)];
-        handleTileClick(tile);
+        // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中
+        const toMove = slotRef.current.slice(0, 2);
+        if (toMove.length === 0) break;
+        setTempStorage(prev => [...toMove, ...prev]);
+        setSlot(prev => prev.slice(2));
+        setMoveHistory(h => h.slice(Math.max(0, h.length - 2)));
+        toMove.forEach(item => {
+          setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
+        });
         break;
       }
       case '黑猫': {
-        // 撤回: same as undo powerup
+        // P3: 撤回 - 撤销上一步操作
         if (slotRef.current.length === 0) break;
         if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
         setMatching([]);
@@ -1532,55 +1560,73 @@ function Game() {
         break;
       }
       case '白猫': {
-        // 吹毛: highlight 1 pair
-        const avail = tilesRef.current.filter(t => !t.removed);
-        const typeCounts = {};
-        avail.forEach(t => { typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
-        const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 2);
-        if (pairType) {
-          const pair = avail.filter(t => t.type === pairType).slice(0, 2);
-          setHighlightedTiles(pair.map(t => t.id));
-          setTimeout(() => setHighlightedTiles([]), 3000);
-        }
+        // P3: 重整 - 重新打乱当前所有可点击卡牌
+        setTiles(prev => {
+          const remaining = prev.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, prev));
+          if (remaining.length === 0) return prev;
+          const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
+          const shuffledPositions = shuffleArr(positions);
+          return prev.map(t => {
+            if (t.removed || t.inSlot || isTileBlocked(t, prev)) return t;
+            const idx = remaining.findIndex(r => r.id === t.id);
+            return { ...t, ...shuffledPositions[idx] };
+          });
+        });
         break;
       }
       case '蓝猫': {
-        // 冻结: pause timer 5s
+        // P3: 冻结 - 5秒内计时暂停
         timerPauseRef.current = true;
         setTimerPaused(true);
         setTimeout(() => { timerPauseRef.current = false; setTimerPaused(false); }, 5000);
         break;
       }
       case '布偶猫': {
-        // 粘住: temp expand slot by 1
-        setSlotBonus(b => Math.max(b, 1));
+        // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中
+        const toMove = slotRef.current.slice(0, 3);
+        if (toMove.length === 0) break;
+        setTempStorage(prev => [...toMove, ...prev]);
+        setSlot(prev => prev.slice(3));
+        setMoveHistory(h => h.slice(Math.max(0, h.length - 3)));
+        toMove.forEach(item => {
+          setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
+        });
         break;
       }
       case '三花猫': {
-        // 蹦跶: randomly remove 2 unblocked tiles
+        // P3: 蹦跶 - 随机跳走2张干扰卡
         const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
         if (candidates.length < 2) break;
         const shuffled = shuffleArr(candidates);
         const removed = shuffled.slice(0, 2);
+        removed.forEach(t => {
+          const cat = CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+        });
         setTiles(prev => prev.map(t => removed.some(r => r.id === t.id) ? { ...t, removed: true } : t));
         break;
       }
       case '暹罗猫': {
-        // 瞬移: move last slot tile back to board
-        if (slotRef.current.length === 0) break;
+        // P3: 瞬移 - 将收集槽3张卡打乱放回棋盘
+        const count = Math.min(slotRef.current.length, 3);
+        if (count === 0) break;
         if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
         setMatching([]);
-        const lastItem = slotRef.current[slotRef.current.length - 1];
-        if (lastItem) {
-          const tileExists = tilesRef.current.some(t => t.id === lastItem.tileId && t.removed);
-          if (tileExists) setTiles(prev => prev.map(t => t.id === lastItem.tileId ? { ...t, removed: false, inSlot: false } : t));
-          setSlot(prev => prev.slice(0, -1));
-          setMoveHistory(h => h.slice(0, -1));
-        }
+        const restoreItems = slotRef.current.slice(-count);
+        const shuffledRestore = shuffleArr(restoreItems);
+        setSlot(prev => prev.slice(0, -count));
+        setMoveHistory(h => h.slice(0, -count));
+        shuffledRestore.forEach((item, idx) => {
+          const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && isTileBlocked(t, tilesRef.current));
+          if (candidates.length > 0) {
+            const target = candidates[idx % candidates.length];
+            setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, removed: false, inSlot: false, layer: target.layer, col: target.col, row: target.row } : t));
+          }
+        });
         break;
       }
       case '幸运猫': {
-        // 洗牌: same as shuffle powerup
+        // P3: 洗牌 - 重新打乱当前棋盘所有卡牌
         setTiles(prev => {
           const remaining = prev.filter(t => !t.removed && !t.inSlot);
           const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
@@ -1594,26 +1640,33 @@ function Game() {
         break;
       }
       case '折耳猫': {
-        // 听声: highlight 2 pairs
-        const avail2 = tilesRef.current.filter(t => !t.removed);
-        const typeCounts2 = {};
-        avail2.forEach(t => { typeCounts2[t.type] = (typeCounts2[t.type] || 0) + 1; });
-        const pairTypes = Object.keys(typeCounts2).filter(k => typeCounts2[k] >= 2).slice(0, 2);
-        if (pairTypes.length > 0) {
-          const ids = [];
-          pairTypes.forEach(pt => { avail2.filter(t => t.type === pt).slice(0, 2).forEach(t => ids.push(t.id)); });
-          setHighlightedTiles(ids);
-          setTimeout(() => setHighlightedTiles([]), 3000);
+        // P3: 听声 - 撤销前2步，同时不计入失败次数
+        let removed = 0;
+        while (removed < 2 && slotRef.current.length > 0) {
+          if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+          setMatching([]);
+          const last = slotRef.current[slotRef.current.length - 1];
+          if (last) {
+            const tileExists = tilesRef.current.some(t => t.id === last.tileId && t.removed);
+            if (tileExists) setTiles(prev => prev.map(t => t.id === last.tileId ? { ...t, removed: false, inSlot: false } : t));
+            setSlot(prev => prev.slice(0, -1));
+            setMoveHistory(h => h.slice(0, -1));
+          }
+          removed++;
         }
         break;
       }
       case '无毛猫': {
-        // 灼烧: remove top 3 tiles
+        // P3: 灼烧 - 清除最顶层3张卡牌
         const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot);
         if (candidates.length === 0) break;
         const maxLayer = Math.max(...candidates.map(t => t.layer));
         const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, 3);
         if (topTiles.length === 0) break;
+        topTiles.forEach(t => {
+          const cat = CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+        });
         setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
         setTimeout(() => {
           if (tilesRef.current.filter(t => !t.removed).length === 0) {
@@ -1623,18 +1676,32 @@ function Game() {
         break;
       }
       case '波斯猫': {
-        // 吐司: move 3 slot tiles back to board
-        const count = Math.min(slotRef.current.length, 3);
-        if (count === 0) break;
-        if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
-        setMatching([]);
-        const restoreItems = slotRef.current.slice(-count);
-        setSlot(prev => prev.slice(0, -count));
-        setMoveHistory(h => h.slice(0, -count));
-        setTiles(prev => prev.map(t => {
-          if (restoreItems.some(r => r.tileId === t.id)) return { ...t, removed: false, inSlot: false };
-          return t;
-        }));
+        // P3: 吐息 - 基于临时存放槽位，移出同等数量的牌
+        const tempCount = tempStorageRef.current.length;
+        if (tempCount === 0) break;
+        const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot);
+        if (candidates.length === 0) break;
+        const maxLayer = Math.max(...candidates.map(t => t.layer));
+        const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, tempCount);
+        if (topTiles.length === 0) break;
+        topTiles.forEach(t => {
+          const cat = CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+        });
+        setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
+        setTempStorage([]);
+        setTimeout(() => {
+          if (tilesRef.current.filter(t => !t.removed).length === 0) {
+            setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+          }
+        }, 300);
+        break;
+      }
+      case '星空猫': {
+        // P3: 永昼 - 一定几率直接跳过本关
+        if (Math.random() < 0.3) { // 30%几率
+          setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+        }
         break;
       }
     }
@@ -1657,7 +1724,7 @@ function Game() {
         }).catch(() => {});
       }
 
-      // Also write to localStorage (backup / local mode)
+      // Also write to localStorage (backup / local mode) - P3: updated to home
       try {
         const key = 'miaolegemi_p0_v1';
         const saved = localStorage.getItem(key);
@@ -1668,7 +1735,8 @@ function Game() {
         data.fishLedger = ledger;
         if (data.cats) {
           data.cats = data.cats.map(c => {
-            if (c.location === 'nurturing') {
+            // P3: 更新家园和出战席猫咪的见证记录
+            if (c.location === 'home' || c.battleSlot != null) {
               return { ...c, gamesWitnessed: (c.gamesWitnessed || 0) + 1, bestCombo: Math.max(c.bestCombo || 0, maxCombo) };
             }
             return c;
@@ -1898,6 +1966,39 @@ function Game() {
           </span>
         </div>
 
+        {/* ═══ 被动技能通知横幅 ═══ */}
+        {skillSlots.slice(3).some(s => s) && (
+          <div style={{
+            padding: '6px 16px 8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}>
+            {skillSlots.slice(3).map((breed, i) => {
+              if (!breed) return null;
+              const eff = PASSIVE_EFFECTS[breed];
+              if (!eff) return null;
+              const slotNum = i + 4; // 4号位或家园5-6位
+              return (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 8,
+                  background: 'rgba(108,92,231,0.12)',
+                  border: '1px solid rgba(108,92,231,0.2)',
+                  animation: 'fadeIn 0.4s ease-out',
+                }}>
+                  <span style={{ fontSize: 11 }}>🛡️</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#A29BFE' }}>{breed}：</span>
+                  <span style={{ fontSize: 10, color: 'rgba(240,237,255,0.7)' }}>{eff.desc}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* ═══ 棋盘 + 收集槽（紧贴） ═══ */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
           {/* GAME BOARD */}
@@ -1957,10 +2058,10 @@ function Game() {
           </div>
         </div>
 
-        {/* ═══ 技能栏（底部） ═══ */}
+        {/* ═══ 技能栏（底部）═══ P3: 显示猫咪头像+技能名+位置标签 */}
         {phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && (
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: 28,
+            display: 'flex', justifyContent: 'center', gap: 20,
             padding: '8px 10px 25px',
           }}>
             {[0, 1, 2].map(i => {
@@ -1970,16 +2071,24 @@ function Game() {
               const used = usedSkills[`active${i}`];
               const rarityColors = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
               const rarity = BREED_RARITY[breed] || 'N';
-              const borderColor = used ? 'rgba(255,255,255,0.08)' : (rarityColors[rarity] || '#6C5CE7');
+              const borderColor = used ? 'rgba(255,255,255,0.08)' : (skill?.color || rarityColors[rarity] || '#6C5CE7');
               return (
                 <div key={i} onClick={() => !used && handleSkillClick(i)} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   cursor: used ? 'not-allowed' : 'pointer',
                   opacity: used ? 0.3 : 1,
                   filter: used ? 'grayscale(1)' : 'none',
                   transition: 'all 0.2s',
                   maxWidth: 70,
                 }}>
+                  {/* 位置标签 */}
+                  <div style={{
+                    fontSize: 9, fontWeight: 700, color: used ? 'rgba(255,255,255,0.2)' : '#FD9644',
+                    background: used ? 'transparent' : 'rgba(253,150,68,0.15)',
+                    padding: '1px 6px', borderRadius: 4, marginBottom: 2,
+                  }}>
+                    {i + 1}号位
+                  </div>
                   <div style={{
                     width: 54, height: 54, borderRadius: 16, overflow: 'hidden',
                     border: `2px solid ${borderColor}`,
@@ -2000,7 +2109,14 @@ function Game() {
                     )}
                   </div>
                   <span style={{
-                    fontSize: 11, fontWeight: 700,
+                    fontSize: 10, fontWeight: 700,
+                    color: used ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
+                    textAlign: 'center', lineHeight: 1.2,
+                  }}>
+                    {skill ? skill.icon : '???'}
+                  </span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
                     color: used ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
                     textAlign: 'center', lineHeight: 1.2,
                   }}>
