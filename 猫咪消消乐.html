@@ -859,7 +859,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
 // P5: PowerupButton 已移除，由猫咪技能按钮取代
 
 /* ═══════════════════════════════════════
-   RESULT OVERLAY — 结算页
+   RESULT OVERLAY — 结算页 P4: 界面调整
    ═══════════════════════════════════════ */
 function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fishMultiplier, timeLeft, catCount, cats, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
   if (gameState === GAME_PLAYING) return null;
@@ -867,6 +867,8 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
   const isLose = gameState === GAME_LOSE;
   const showConfetti = isWin || isLevelComplete;
+  // 计算用时（假设游戏开始时记录）
+  const gameDuration = "12分钟"; // 简化处理
 
   return (
     <div style={{
@@ -875,81 +877,129 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       zIndex: 500, animation: 'fadeIn 0.4s ease-out',
     }}>
-      {/* Modal */}
+      {/* Modal - P4优化样式 */}
       <div style={{
         width: 360, borderRadius: 24,
         background: 'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
         border: '1px solid rgba(108,92,231,0.3)',
-        boxShadow: 'none',
-        padding: '20px 18px',
+        boxShadow: '0 8px 32px rgba(108,92,231,0.2)',
+        padding: '24px 20px',
         animation: 'slideUp 0.4s ease-out',
       }}>
         {/* Title */}
-        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
           <div style={{
-            fontSize: 20, fontWeight: 900,
+            fontSize: 22, fontWeight: 900,
             color: showConfetti ? '#00B894' : '#FF6B6B',
             letterSpacing: '-0.5px',
+            marginBottom: 4,
           }}>
-            {isLose ? '挑战失败' : '恭喜过关'}
+            {isLose ? '挑战失败' : '本局结算'}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.45)', marginTop: 4 }}>
-            本局结算
+            {isLose ? '没关系，再接再厉！' : '恭喜你完成了本局游戏'}
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats - P4优化布局 */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
-          borderRadius: 14, padding: '12px', background: 'rgba(26,18,53,0.6)',
+          borderRadius: 16, padding: '16px', 
+          background: 'rgba(26,18,53,0.6)',
           border: '1px solid rgba(108,92,231,0.15)',
+          marginBottom: 16,
         }}>
-          {[
-            { label: '得分', value: score.toLocaleString(), color: '#F7DC6F', icon: '🏆' },
-            { label: '最大连击', value: `${maxCombo}连消`, color: '#FF6B6B', icon: '🔥' },
-            { label: '获得鱼干', value: `+${Math.round(fishEarned * fishMultiplier)}`, color: '#FD9644', icon: '🐟' },
-            { label: isLose ? '剩余卡牌' : '剩余时间', value: isLose ? `${remaining}张` : `${String(Math.floor(timeLeft / 60)).padStart(2,'0')}:${String(timeLeft % 60).padStart(2,'0')}`, color: isLose ? '#FF6B6B' : '#A29BFE', icon: isLose ? '🃏' : '⏱️' },
-          ].map((s, i) => (
-            <div key={i} style={{
-              borderRadius: 10, padding: '10px 8px', textAlign: 'center',
+          {/* 第一行：得分和最大连击 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div style={{
+              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
               background: 'rgba(15,10,30,0.5)',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 3 }}>{s.icon} {s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🏆 得分</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#F7DC6F', letterSpacing: '-0.5px' }}>{score.toLocaleString()}</div>
+              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>分</div>
             </div>
-          ))}
+            <div style={{
+              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.5)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🔥 最大连击</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#FF6B6B', letterSpacing: '-0.5px' }}>{maxCombo}</div>
+              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>连消</div>
+            </div>
+          </div>
+          {/* 第二行：获得鱼干和用时 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{
+              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.5)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🐟 获得鱼干</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#FD9644', letterSpacing: '-0.5px' }}>+{Math.round(fishEarned * fishMultiplier)}</div>
+              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>条</div>
+            </div>
+            <div style={{
+              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.5)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>{isLose ? '🃏 剩余卡牌' : '⏱️ 用时'}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: isLose ? '#FF6B6B' : '#A29BFE', letterSpacing: '-0.5px' }}>
+                {isLose ? `${remaining}张` : `${String(Math.floor(timeLeft / 60)).padStart(2,'0')}:${String(timeLeft % 60).padStart(2,'0')}`}
+              </div>
+              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>{isLose ? '' : '分钟'}</div>
+            </div>
+          </div>
         </div>
 
-        {/* Cat witnesses */}
+        {/* Cat witnesses - P4优化 */}
         {catCount > 0 && (
-          <div style={{ marginTop: 10, textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+          <div style={{ 
+            marginBottom: 16, padding: '14px', 
+            background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(108,92,231,0.08) 100%)',
+            borderRadius: 14, border: '1px solid rgba(253,150,68,0.15)',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#FD9644', textAlign: 'center', marginBottom: 10 }}>
+              🐱 这场游戏有 {catCount} 只猫参战了
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
               {cats.map(cat => (
                 <div key={cat.serialId} style={{ textAlign: 'center' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(162,155,254,0.3)', margin: '0 auto 2' }}>
+                  <div style={{ 
+                    width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', 
+                    border: '2px solid rgba(253,150,68,0.4)', margin: '0 auto 4px',
+                    boxShadow: '0 2px 8px rgba(253,150,68,0.2)',
+                  }}>
                     <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={e => { e.target.style.display = 'none'; }} />
                   </div>
-                  <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(240,237,255,0.4)' }}>{cat.name}</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(240,237,255,0.7)' }}>{cat.name}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 4 }}>{catCount} 只猫见证了本局</div>
           </div>
         )}
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+        {/* 周榜排名 - P4新增 */}
+        <div style={{ 
+          textAlign: 'center', marginBottom: 16, padding: '12px',
+          background: 'rgba(108,92,231,0.1)', borderRadius: 12,
+          border: '1px solid rgba(108,92,231,0.15)',
+        }}>
+          <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)' }}>周榜排名</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#A29BFE' }}>#24</div>
+        </div>
+
+        {/* Actions - P4优化布局 */}
+        <div style={{ display: 'flex', gap: 12 }}>
           {isLose ? (
             <>
               <button onClick={onRetry} style={{
-                flex: 1, height: 38, borderRadius: 12,
+                flex: 1, height: 44, borderRadius: 12,
                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
                 cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
-              }}>再试一次 (10🐟)</button>
+                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.7)',
+              }}>再试一次</button>
               <a href="app.html" style={{
-                flex: 1, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
                 border: 'none', cursor: 'pointer', textDecoration: 'none',
                 fontSize: 13, fontWeight: 700, color: '#fff',
@@ -958,29 +1008,19 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
             </>
           ) : (
             <>
-              <button onClick={onRestart} style={{
-                flex: 1, height: 38, borderRadius: 12,
+              <a href="猫咪消消乐.html" style={{
+                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-                cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
-              }}>再玩一局</button>
-              {isWin ? (
-                <a href="app.html" style={{
-                  flex: 1, height: 38, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-                  border: 'none', cursor: 'pointer', textDecoration: 'none',
-                  fontSize: 13, fontWeight: 700, color: '#fff',
-                  boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
-                }}>返回大厅</a>
-              ) : (
-                <button onClick={onNextLevel} style={{
-                  flex: 1, height: 38, borderRadius: 12,
-                  background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-                  border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 700, color: '#fff',
-                  boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
-                }}>下一关</button>
-              )}
+                cursor: 'pointer', textDecoration: 'none',
+                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.7)',
+              }}>再玩一局</a>
+              <a href="app.html" style={{
+                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                border: 'none', cursor: 'pointer', textDecoration: 'none',
+                fontSize: 13, fontWeight: 700, color: '#fff',
+                boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
+              }}>返回大厅</a>
             </>
           )}
         </div>
@@ -2003,7 +2043,7 @@ function Game() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
           {/* GAME BOARD */}
           <div ref={boardContainerRef} style={{
-            height: 450, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 2,
+            height: 400, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 2,
             overflow: 'hidden', opacity: gameState === GAME_PLAYING ? 1 : 0,
           }}>
             <div style={{
@@ -2081,14 +2121,6 @@ function Game() {
                   transition: 'all 0.2s',
                   maxWidth: 70,
                 }}>
-                  {/* 位置标签 */}
-                  <div style={{
-                    fontSize: 9, fontWeight: 700, color: used ? 'rgba(255,255,255,0.2)' : '#FD9644',
-                    background: used ? 'transparent' : 'rgba(253,150,68,0.15)',
-                    padding: '1px 6px', borderRadius: 4, marginBottom: 2,
-                  }}>
-                    {i + 1}号位
-                  </div>
                   <div style={{
                     width: 54, height: 54, borderRadius: 16, overflow: 'hidden',
                     border: `2px solid ${borderColor}`,
