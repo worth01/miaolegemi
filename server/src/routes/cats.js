@@ -12,7 +12,7 @@ function randomPersonality() {
   return shuffled.slice(0, 2);
 }
 
-// 获取养成区猫咪
+// 获取家园猫咪
 router.get('/nurturing', auth, async (req, res) => {
   try {
     const cats = await prisma.playerCat.findMany({
@@ -23,7 +23,7 @@ router.get('/nurturing', auth, async (req, res) => {
     res.json(cats);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: '获取养成区失败' });
+    res.status(500).json({ error: '获取家园失败' });
   }
 });
 
@@ -56,7 +56,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// 领养（包裹区 → 养成区）
+// 领养（包裹区 → 家园）
 router.post('/:id/adopt', auth, async (req, res) => {
   try {
     const cat = await prisma.playerCat.findFirst({
@@ -64,7 +64,7 @@ router.post('/:id/adopt', auth, async (req, res) => {
     });
     if (!cat) return res.status(404).json({ error: '猫咪不在包裹区' });
 
-    // 检查养成区空位
+    // 检查家园空位
     const nurturingCount = await prisma.playerCat.count({
       where: { ownerId: req.user.id, location: 'nurturing' },
     });
@@ -87,7 +87,7 @@ router.post('/:id/adopt', auth, async (req, res) => {
     if (hasOldCat) maxSlots = 6;
 
     if (nurturingCount >= maxSlots) {
-      return res.status(400).json({ error: `养成区已满 (${nurturingCount}/${maxSlots})` });
+      return res.status(400).json({ error: `家园已满 (${nurturingCount}/${maxSlots})` });
     }
 
     const updated = await prisma.playerCat.update({
@@ -121,7 +121,7 @@ router.post('/:id/feed', auth, async (req, res) => {
     const cat = await prisma.playerCat.findFirst({
       where: { id: req.params.id, ownerId: req.user.id, location: 'nurturing' },
     });
-    if (!cat) return res.status(404).json({ error: '猫咪不在养成区' });
+    if (!cat) return res.status(404).json({ error: '猫咪不在家园' });
 
     // 检查鱼干余额
     const ledger = await prisma.fishLedger.aggregate({
@@ -153,14 +153,14 @@ router.post('/:id/feed', auth, async (req, res) => {
   }
 });
 
-// 送走（养成区 → 告别 → 流浪）
+// 送走（家园 → 告别 → 流浪）
 router.post('/:id/release', auth, async (req, res) => {
   try {
     const cat = await prisma.playerCat.findFirst({
       where: { id: req.params.id, ownerId: req.user.id, location: 'nurturing' },
       include: { serial: { include: { species: true } } },
     });
-    if (!cat) return res.status(404).json({ error: '猫咪不在养成区' });
+    if (!cat) return res.status(404).json({ error: '猫咪不在家园' });
 
     const now = new Date();
 

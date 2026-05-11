@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>金色流沙效果 Demo</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a14;min-height:100vh;font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden}
+
+/* ═══════════════════════════════════════
+   方案 A：纯 CSS 渐变旋转（最轻量）
+   ═══════════════════════════════════════ */
+.golden-border-a{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+}
+.golden-border-a::before{
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:18px;
+  background:conic-gradient(
+    from 0deg,
+    #8B6914, #D4A840, #FFF1A8, #FFE066, #D4A840,
+    #8B6914, #C49B30, #FFF5CC, #FFD700, #8B6914
+  );
+  animation:spinA 3s linear infinite;
+  z-index:-1;
+}
+@keyframes spinA{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════
+   方案 B：背景位移闪烁（更有流动感）
+   ═══════════════════════════════════════ */
+.golden-border-b{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+}
+.golden-border-b::before{
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:18px;
+  background:linear-gradient(
+    90deg,
+    #8B6914 0%, #D4A840 20%, #FFF1A8 35%,
+    #FFE066 50%, #FFF1A8 65%, #D4A840 80%, #8B6914 100%
+  );
+  background-size:200% 100%;
+  animation:shimmerB 2s ease-in-out infinite;
+  z-index:-1;
+}
+@keyframes shimmerB{0%,100%{background-position:200% 0}50%{background-position:-200% 0}}
+
+/* ═══════════════════════════════════════
+   方案 C：多层叠加 + 颗粒感（最精致）
+   ═══════════════════════════════════════ */
+@property --angle{
+  syntax:'<angle>';
+  initial-value:0deg;
+  inherits:false;
+}
+@property --shine{
+  syntax:'<percentage>';
+  initial-value:0%;
+  inherits:false;
+}
+.golden-border-c{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+}
+.golden-border-c::before{
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:18px;
+  background:conic-gradient(
+    from var(--angle),
+    #6B4E0A, #B8860B, #DAA520, #FFD700, #FFF8DC,
+    #FFD700, #DAA520, #B8860B, #6B4E0A
+  );
+  animation:rotateC 4s linear infinite;
+  z-index:-1;
+}
+.golden-border-c::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background:linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255,248,220,0.15) 45%,
+    rgba(255,215,0,0.25) 50%,
+    rgba(255,248,220,0.15) 55%,
+    transparent 70%
+  );
+  background-size:250% 100%;
+  animation:shineC 3s ease-in-out infinite;
+  z:1;
+  pointer-events:none;
+}
+@keyframes rotateC{to{--angle:360deg}}
+@keyframes shineC{0%,100%{background-position:250% 0}50%{background-position:-50% 0}}
+
+/* ═══════════════════════════════════════
+   方案 D：高级 — 带粒子闪烁（SSR 级别）
+   ═══════════════════════════════════════ */
+@property --angleD{
+  syntax:'<angle>';
+  initial-value:0deg;
+  inherits:false;
+}
+@property --glow{
+  syntax:'<percentage>';
+  initial-value:0%;
+  inherits:false;
+}
+.golden-border-d{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+}
+.golden-border-d::before{
+  content:'';
+  position:absolute;
+  inset:-3px;
+  border-radius:19px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,215,0,0.6) 0%, transparent 3%),
+    radial-gradient(circle at 80% 70%, rgba(255,215,0,0.5) 0%, transparent 2%),
+    radial-gradient(circle at 50% 10%, rgba(255,248,220,0.4) 0%, transparent 4%),
+    radial-gradient(circle at 70% 40%, rgba(255,215,0,0.3) 0%, transparent 2.5%),
+    radial-gradient(circle at 30% 80%, rgba(255,215,0,0.5) 0%, transparent 3%),
+    conic-gradient(
+      from var(--angleD),
+      #5C3D0A, #8B6914, #B8860B, #DAA520, #FFD700,
+      #FFFACD, #FFD700, #DAA520, #B8860B, #8B6914, #5C3D0A
+    );
+  animation:rotateD 5s linear infinite, twinkleD 2s ease-in-out infinite alternate;
+  z-index:-1;
+}
+.golden-border-d::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background:linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(255,255,240,0.08) 40%,
+    rgba(255,215,0,0.18) 48%,
+    rgba(255,255,240,0.25) 50%,
+    rgba(255,215,0,0.18) 52%,
+    rgba(255,255,240,0.08) 60%,
+    transparent 75%
+  );
+  background-size:300% 100%;
+  animation:glareD 4s ease-in-out infinite;
+  z:1;
+  pointer-events:none;
+}
+@keyframes rotateD{to{--angleD:360deg}}
+@keyframes twinkleD{0%{filter:brightness(1)}50%{filter:brightness(1.15)}100%{filter:brightness(1)}}
+@keyframes glareD{0%,100%{background-position:300% 0}50%{background-position:-100% 0}}
+
+/* 通用卡片内部 */
+.card-body{
+  border-radius:14px;
+  background:linear-gradient(135deg,#1a1a2e,#16213e);
+  padding:20px;
+  text-align:center;
+  position:relative;
+  z:0;
+}
+.card-body.light{
+  background:linear-gradient(135deg,#fff8f0,#fff5e6);
+}
+.card-emoji{font-size:48px;margin-bottom:8px}
+.card-title{font-size:14px;font-weight:600;color:#fff}
+.card-title.dark{color:#333}
+.card-sub{font-size:11px;color:#aaa;margin-top:4px}
+.card-sub.dark{color:#888}
+.card-badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:4px;
+  font-size:10px;
+  font-weight:600;
+  margin-top:8px;
+}
+.badge-ssr{background:rgba(255,215,0,0.2);color:#FFD700}
+.badge-sr{background:rgba(108,92,231,0.2);color:#A29BFE}
+.badge-r{background:rgba(69,183,209,0.2);color:#45B7D1}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+function App(){
+  const [scheme, setScheme] = useState('c');
+  const schemes = [
+    {id:'a', label:'方案A · conic-gradient 旋转', desc:'最轻量，兼容性好，1个伪元素'},
+    {id:'b', label:'方案B · 背景位移闪烁', desc:'流动感强，2个关键帧，无 @property'},
+    {id:'c', label:'方案C · 多层叠加（推荐）', desc:'旋转+光泽扫过，需 @property 支持'},
+    {id:'d', label:'方案D · 粒子闪烁', desc:'最高级，光点闪烁+扫光，SSR 级效果'},
+  ];
+
+  return(
+    <div style={{padding:'32px 16px',maxWidth:420,margin:'0 auto'}}>
+      <h1 style={{color:'#D4A840',textAlign:'center',fontSize:20,marginBottom:4,fontWeight:700}}>
+        金色流沙盒效果
+      </h1>
+      <p style={{color:'#666',textAlign:'center',fontSize:12,marginBottom:24}}>
+        四种方案对比 · 纯 CSS 动画 · 无 Canvas
+      </p>
+
+      {/* 方案切换 */}
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center',marginBottom:28}}>
+        {schemes.map(s=>(
+          <button key={s.id}
+            onClick={()=>setScheme(s.id)}
+            style={{
+              padding:'6px 12px',borderRadius:8,border:'none',cursor:'pointer',
+              fontSize:12,fontWeight:600,transition:'all .2s',
+              background: scheme===s.id ? '#D4A840' : 'rgba(255,255,255,0.06)',
+              color: scheme===s.id ? '#1a1a2e' : '#888',
+            }}>
+            {s.id.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <p style={{color:'#888',textAlign:'center',fontSize:11,marginBottom:20,minHeight:32}}>
+        {schemes.find(s=>s.id===scheme)?.desc}
+      </p>
+
+      {/* 卡片展示 — SSR 级 */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:24}}>
+        <div className={`golden-border-${scheme}`} style={{width:160}}>
+          <div className="card-body">
+            <div className="card-emoji">🐱</div>
+            <div className="card-title">星空猫 · #00042</div>
+            <div className="card-sub">性格: 傲娇 · 好奇</div>
+            <div><span className="card-badge badge-ssr">SSR</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 卡片展示 — SR 级 */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:24}}>
+        <div className={`golden-border-${scheme}`} style={{width:160}}>
+          <div className="card-body">
+            <div className="card-emoji">🐈</div>
+            <div className="card-title">幸运猫 · #0127</div>
+            <div className="card-sub">性格: 吃货 · 黏人</div>
+            <div><span className="card-badge badge-sr">SR</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 浅底版 */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:32}}>
+        <div className={`golden-border-${scheme}`} style={{width:160}}>
+          <div className="card-body light">
+            <div className="card-emoji">🐾</div>
+            <div className="card-title dark">橘猫 · #00847</div>
+            <div className="card-sub dark">性格: 懒散 · 话痨</div>
+            <div><span className="card-badge badge-r">N</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 使用说明 */}
+      <div style={{
+        background:'rgba(255,215,0,0.05)',borderRadius:12,padding:16,
+        border:'1px solid rgba(255,215,0,0.1)'
+      }}>
+        <h3 style={{color:'#D4A840',fontSize:13,marginBottom:8}}>接入到 app.html 的方法</h3>
+        <p style={{color:'#aaa',fontSize:11,lineHeight:1.8}}>
+          1. 复制对应方案的 CSS 到 app.html 的 &lt;style&gt; 中<br/>
+          2. 给抽卡结果卡片包裹 className: <code style={{color:'#FFD700'}}>golden-border-c</code><br/>
+          3. 注意：方案 C/D 需要 <code style={{color:'#FFD700'}}>@property</code> 支持（Chrome 85+、Safari 15.4+）<br/>
+          4. 方案 A/B 无兼容性问题，Safari 也能用<br/>
+          5. 伪元素 <code style={{color:'#FFD700'}}>::before</code> 做边框，<code style={{color:'#FFD700'}}>::after</code> 做光泽扫过
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

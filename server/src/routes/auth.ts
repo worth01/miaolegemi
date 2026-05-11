@@ -1,0 +1,202 @@
+// P5: 认证路由
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../index.js';
+import { generateToken, authMiddleware } from '../middleware/auth.js';
+import { generateCatNickname, generateUsername } from '../utils/nickname.js';
+
+const router = Router();
+
+// 注册
+router.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ error: '用户名长度需在3-20字符之间' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: '密码长度至少6位' });
+    }
+
+    // 检查用户是否存在
+    const existingUser = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: '用户名已存在' });
+    }
+
+    // 加密密码
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 创建用户
+    const user = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        nickname: generateCatNickname()
+      }
+    });
+
+    // 创建用户里程碑记录
+    await prisma.userMilestone.create({
+      data: { userId: user.id }
+    });
+
+    // 初始鱼干（用于测试）
+    await prisma.fishLedger.create({
+      data: {
+        userId: user.id,
+        amount: 100,
+        reason: 'initial',
+        relatedId: null
+      }
+    });
+
+    // 生成Token
+    const token = generateToken({
+      userId: user.id,
+      username: user.username
+    });
+
+    res.status(201).json({
+      message: '注册成功',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname
+      }
+    });
+  } catch (error: any) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: '注册失败' });
+  }
+});
+
+// 登录
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    // 查找用户
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+
+    // 验证密码
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ error: '用户名或密码错误' });
+    }
+
+    // 生成Token
+    const token = generateToken({
+      userId: user.id,
+      username: user.username
+    });
+
+    // 获取用户鱼干余额
+    const fishBalance = await prisma.fishLedger.aggregate({
+      where: { userId: user.id },
+      _sum: { amount: true }
+    });
+
+    res.json({
+      message: '登录成功',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname
+      },
+      fishBalance: fishBalance._sum.amount || 0
+    });
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: '登录失败' });
+  }
+});
+
+// 获取当前用户信息
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: {
+        id: true,
+        username: true,
+        nickname: true,
+        pityCount: true,
+        createdAt: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 获取鱼干余额
+    const fishBalance = await prisma.fishLedger.aggregate({
+      where: { userId: user.id },
+      _sum: { amount: true }
+    });
+
+    // 获取里程碑
+    const milestones = await prisma.userMilestone.findUnique({
+      where: { userId: user.id }
+    });
+
+    res.json({
+      ...user,
+      fishBalance: fishBalance._sum.amount || 0,
+      milestones
+    });
+  } catch (error: any) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: '获取用户信息失败' });
+  }
+});
+
+// 更新昵称
+router.put('/nickname', authMiddleware, async (req, res) => {
+  try {
+    const { nickname } = req.body;
+
+    if (!nickname || nickname.length < 2 || nickname.length > 10) {
+      return res.status(400).json({ error: '昵称长度需在2-10字符之间' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { nickname },
+      select: {
+        id: true,
+        username: true,
+        nickname: true
+      }
+    });
+
+    res.json({ message: '昵称更新成功', user });
+  } catch (error: any) {
+    console.error('Update nickname error:', error);
+    res.status(500).json({ error: '更新昵称失败' });
+  }
+});
+
+export default router;

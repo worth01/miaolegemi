@@ -51,6 +51,74 @@
     @keyframes farewellStar { 0%{transform:translateY(0) scale(0);opacity:0} 20%{transform:translateY(-20px) scale(1);opacity:1} 80%{transform:translateY(-80px) scale(0.8);opacity:0.6} 100%{transform:translateY(-120px) scale(0.3);opacity:0} }
     @keyframes farewellText { 0%{opacity:0;transform:translateY(20px)} 30%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
     @keyframes farewellTear { 0%{transform:translateY(0) scale(1);opacity:0.8} 100%{transform:translateY(40px) scale(0.5);opacity:0} }
+
+    /* P9: 布阵系统样式集成 */
+    .zone-battle {
+      background: linear-gradient(135deg, rgba(253, 150, 68, 0.12) 0%, rgba(108, 92, 231, 0.08) 50%, rgba(253, 150, 68, 0.06) 100%);
+      border: 1px solid rgba(253, 150, 68, 0.2);
+      margin: 0 16px 8px;
+      border-radius: 24px;
+      padding: 14px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(253, 150, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px); /* P9: 上移2px */
+    }
+    .zone-spectator {
+      background: linear-gradient(180deg, rgba(0, 180, 216, 0.08) 0%, rgba(0, 212, 255, 0.04) 100%);
+      border: 1px solid rgba(0, 180, 216, 0.15);
+      margin: 8px 16px 20px;
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(0, 180, 216, 0.08);
+      transform: translateY(-2px); /* P9: 上移2px */
+    }
+    .slot-grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 30%); 
+      justify-content: space-between; 
+      gap: 0px; 
+    }
+    .slot {
+      aspect-ratio: 0.72;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 2px dashed rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.3s;
+      min-height: 135px;
+    }
+    .slot.active-slot { border-color: rgba(253, 150, 68, 0.3); }
+    .slot.spectator-slot { border-color: rgba(0, 180, 216, 0.2); }
+    .slot.filled { background: rgba(255,255,255,0.06); border: 2px solid rgba(82, 196, 26, 0.4); border-style: solid; }
+    .slot.locked { background: rgba(255, 107, 107, 0.15); border: 2px solid rgba(255, 107, 107, 0.3); border-style: solid; }
+    .slot-label {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
+      background: rgba(0,0,0,0.5); white-space: nowrap;
+    }
+    .active-slot .slot-label {
+      background: linear-gradient(135deg, rgba(253, 150, 68, 0.8), rgba(253, 150, 68, 0.5));
+      color: #FD9644; border: 1px solid rgba(253, 150, 68, 0.8);
+    }
+    .spectator-slot .slot-label {
+      background: linear-gradient(135deg, rgba(0, 180, 216, 0.8), rgba(0, 212, 255, 0.3));
+      color: #00B4D8; border: 1px solid rgba(0, 180, 216, 0.8);
+    }
+    .cat-card-p9 {
+      flex-shrink: 0; width: 81px; border-radius: 16px; padding: 12px 7px 10px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; user-select: none; touch-action: none;
+    }
+    .cat-card-p9.dragging { opacity: 0.8; transform: scale(1.1); z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    .cat-card-p9.on-field { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
+    .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -75,9 +143,10 @@ const CL = {
   orange: '#E8890C', blue: '#45B7D1', yellow: '#D4A81D', red: '#E05555',
   green: '#00A885', pink: '#E866A0',
   bg: '#F5F3FF', bg2: '#EDE8FF',
-  card: 'rgba(0,0,0,0.03)', cardBorder: 'rgba(0,0,0,0.06)',
-  glass: 'rgba(0,0,0,0.02)',
-  ink: '#1A1235', sub: 'rgba(26,18,53,0.55)', muted: 'rgba(26,18,53,0.3)',
+  card: '#FFFFFF', cardBorder: 'rgba(0,0,0,0.08)',
+  glass: 'rgba(255,255,255,0.8)',
+  ink: '#1A1235', sub: '#4A3F6F', muted: '#7E769F',
+  border: 'rgba(0,0,0,0.1)',
 };
 let colors = CD;
 const RARITY_COLORS = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
@@ -855,7 +924,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
             <span>⚔️</span> 出战席
             <span style={{ fontSize:10, color:colors.sub, fontWeight:400 }}>{battleCats.length}/3</span>
           </div>
-          <div onClick={() => onNavigate('cat')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>调整阵容 →</div>
+          <div onClick={() => onNavigate('cat', null, 'battle')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>调整阵容 →</div>
         </div>
         <div style={{ 
           background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(108,92,231,0.08) 100%)',
@@ -890,13 +959,19 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
                 );
               }
               return (
-                <div key={slot} style={{
-                  borderRadius:10, padding:'8px 4px',
+                <div key={slot} onClick={() => onNavigate('cat', null, 'battle')} style={{
+                  borderRadius:10, padding:'8px 4px', cursor:'pointer',
                   background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.08)',
                   display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
                   minHeight:80,
                 }}>
-                  <div style={{ fontSize:16, color:colors.muted }}>+</div>
+                  <div style={{ 
+                    width: 32, height: 32, borderRadius: '50%', 
+                    border: '1.5px dashed rgba(253, 150, 68, 0.3)', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  }}>
+                    <div style={{ fontSize:16, color:'rgba(253, 150, 68, 0.4)' }}>+</div>
+                  </div>
                 </div>
               );
             })}
@@ -933,10 +1008,13 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
                     <span style={{ fontSize:8, fontWeight:700, color: intimacyColor.bar }}>{intimacy}</span>
                   </div>
                   <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}40` }}>
-                    <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                    <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit: 'cover' }}
                       onError={e => { e.target.style.display='none'; }} />
                   </div>
-                  <span style={{ fontSize:11, fontWeight:700, color:colors.ink }}>{cat.name}</span>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1 }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:colors.ink }}>{cat.name}</span>
+                    <span style={{ fontSize:8, color:colors.muted }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</span>
+                  </div>
                   {/* P2: 亲密度进度条 */}
                   <div style={{ width:'80%', height:3, borderRadius:2, background:'rgba(255,255,255,0.06)' }}>
                     <div style={{ width:`${intimacy}%`, height:'100%', borderRadius:2, background: intimacyColor.bar }}/>
@@ -1049,32 +1127,88 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
    P2: BATTLE AREA (出战席) - P4: 界面调整
    出战席：3个槽位（1-3号为主动技能位），暗金大理石圆形站台风格
    ═══════════════════════════════════════ */
-function BattleArea({ cats, homeCats, onDeploy, onWithdraw, onCatClick }) {
-  // 只筛选1-3号位（主动技能位）
-  const battleCats = cats.filter(c => c.battleSlot != null && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
-  
-  // 获取家园中可上场的猫咪
+/* ═══════════════════════════════════════
+   P9: 猫咪上阵布阵系统 - 统一布阵管理器
+   ═══════════════════════════════════════ */
+function LineupManager({ 
+  battleCats, 
+  spectatorCats, 
+  homeCats, 
+  onDeploy, 
+  onWithdraw, 
+  onSpectatorDeploy, 
+  onSpectatorWithdraw, 
+  onCatClick,
+  slot4Unlocked,
+  slot5Unlocked,
+  slot6Unlocked
+}) {
+  const [draggingCat, setDraggingCat] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [highlightZone, setHighlightZone] = useState(null); // 'battle' or 'spectator'
+  const dragRef = useRef(null);
+  const startPos = useRef({ x: 0, y: 0 });
+
+  // 筛选家园中可用的猫咪
   const availableCats = homeCats.filter(c => c.battleSlot == null && c.battleSpectator == null);
 
   // 冲突检测
-  const conflict = validateBattleLineup(battleCats);
+  const activeBattleCats = battleCats.filter(c => c.battleSlot != null && c.battleSlot <= 3);
+  const conflict = validateBattleLineup(activeBattleCats);
 
-  const getSkillInfo = (cat) => {
-    const sk = BREED_SKILLS[cat.breedId] || BREED_SKILLS[cat.name];
-    if (!sk) return null;
-    return { type: 'active', name: sk.active, desc: sk.activeDesc, icon: sk.activeIcon };
+  const handleDragStart = (e, cat) => {
+    const pos = e.type.includes('touch') ? e.touches[0] : e;
+    startPos.current = { x: pos.clientX, y: pos.clientY };
+    setDraggingCat(cat);
+    setDragOffset({ x: 0, y: 0 });
   };
 
-  const handleWithdraw = (cat) => {
-    onWithdraw(cat);
-  };
+  const handleDragMove = useCallback((e) => {
+    if (!draggingCat) return;
+    const pos = e.type.includes('touch') ? e.touches[0] : e;
+    const diffY = pos.clientY - startPos.current.clientY;
+    setDragOffset({ x: 0, y: diffY });
+
+    if (diffY < -60) setHighlightZone('battle');
+    else if (diffY > 60) setHighlightZone('spectator');
+    else setHighlightZone(null);
+  }, [draggingCat]);
+
+  const handleDragEnd = useCallback(() => {
+    if (!draggingCat) return;
+    
+    if (dragOffset.y < -60) {
+      onDeploy(draggingCat);
+    } else if (dragOffset.y > 60) {
+      onSpectatorDeploy(draggingCat);
+    }
+
+    setDraggingCat(null);
+    setDragOffset({ x: 0, y: 0 });
+    setHighlightZone(null);
+  }, [draggingCat, dragOffset, onDeploy, onSpectatorDeploy]);
+
+  useEffect(() => {
+    if (draggingCat) {
+      window.addEventListener('touchmove', handleDragMove, { passive: false });
+      window.addEventListener('touchend', handleDragEnd);
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+    }
+    return () => {
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('touchend', handleDragEnd);
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [draggingCat, handleDragMove, handleDragEnd]);
 
   return (
-    <div style={{ padding: '8px 20px 0' }}>
+    <div style={{ padding: '8px 0', animation: 'slideUp 0.3s ease-out' }}>
       {/* 冲突警告 */}
       {!conflict.valid && (
         <div style={{
-          marginBottom: 12,
+          margin: '0 20px 12px',
           padding: '10px 14px',
           borderRadius: 12,
           background: 'rgba(255,107,107,0.12)',
@@ -1085,547 +1219,168 @@ function BattleArea({ cats, homeCats, onDeploy, onWithdraw, onCatClick }) {
         }}>
           <span style={{ fontSize: 16 }}>⚠️</span>
           <span style={{ fontSize: 12, color: colors.red, fontWeight: 600 }}>
-            {conflict.conflict[0].name} 和 {conflict.conflict[1].name} 性格不合，不能同时出战
+            {conflict.conflict[0].name} 和 {conflict.conflict[1].name} 性格不合
           </span>
         </div>
       )}
 
-      {/* 出战席平台 - 暗金大理石圆形站台风格 - P4优化 */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(253,150,68,0.12) 0%, rgba(108,92,231,0.08) 50%, rgba(253,150,68,0.06) 100%)',
-        borderRadius: 24,
-        padding: '20px 16px 16px',
-        border: '1px solid rgba(253,150,68,0.2)',
-        marginBottom: 16,
-        boxShadow: '0 4px 20px rgba(253,150,68,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
-      }}>
-        {/* 圆形站台视觉 */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '120%',
-          height: '40px',
-          background: 'radial-gradient(ellipse at center, rgba(253,150,68,0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        
-        <div style={{ fontSize: 12, fontWeight: 700, color: colors.orange, marginBottom: 14, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14 }}>⚔️</span>
-          <span>出击阵容</span>
-          <span style={{ fontSize: 10, color: colors.sub, fontWeight: 400 }}>主动技能位</span>
+      {/* 出战席 */}
+      <div className="zone-battle" style={{ background: highlightZone === 'battle' ? 'rgba(253, 150, 68, 0.2)' : '' }}>
+        <div className="zone-title battle-title" style={{ color: colors.orange, transform: 'translateY(-10px)' }}>
+          <span><span style={{ fontSize: 12 }}>⚔️</span> <span style={{ fontWeight: 800 }}>出战席</span></span>
+          <span style={{ fontSize: 11, color: '#fff', fontWeight: 400, opacity: 0.4, marginLeft: 4 }}>猫咪在游戏中可使用主动技能</span>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {[1, 2, 3].map(slot => {
-            const cat = battleCats.find(c => c.battleSlot === slot);
-            const skillInfo = cat ? getSkillInfo(cat) : null;
-            
-            if (cat) {
-              return (
-                <div key={slot} style={{
-                  borderRadius: 16,
-                  padding: '14px 8px 10px',
-                  background: colors.card,
-                  border: `2px solid ${RARITY_COLORS[cat.rarity]}40`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 6,
-                  position: 'relative',
-                  boxShadow: `0 4px 12px ${RARITY_COLORS[cat.rarity]}15`,
-                }}>
-                  {/* 槽位编号 */}
-                  <div style={{
-                    position: 'absolute',
-                    top: -10,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: 8,
-                    background: 'linear-gradient(135deg, rgba(253,150,68,0.3), rgba(253,150,68,0.2))',
-                    color: colors.orange,
-                    border: '1px solid rgba(253,150,68,0.3)',
-                    boxShadow: '0 2px 8px rgba(253,150,68,0.2)',
-                  }}>
-                    🎯 {slot}
-                  </div>
-                  
-                  {/* 猫咪头像 */}
-                  <div onClick={() => onCatClick(cat)} style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: `3px solid ${RARITY_COLORS[cat.rarity]}`,
-                    cursor: 'pointer',
-                    boxShadow: `0 0 16px ${RARITY_COLORS[cat.rarity]}30`,
-                  }}>
-                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                  </div>
-                  
-                  {/* 猫咪名 */}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: colors.ink }}>{cat.name}</span>
-                  <span style={{ fontSize: 9, color: RARITY_COLORS[cat.rarity], fontWeight: 600 }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
-                  
-                  {/* 技能图标+名 */}
-                  {skillInfo && (
-                    <div style={{
-                      fontSize: 8,
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      background: 'rgba(253,150,68,0.12)',
-                      color: colors.orange,
-                      textAlign: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}>
-                      <span>{skillInfo.icon || '📤'}</span>
-                      <span>{skillInfo.name}</span>
-                    </div>
-                  )}
-                  
-                  {/* 撤回家园按钮 */}
-                  <button onClick={() => handleWithdraw(cat)} style={{
-                    marginTop: 4,
-                    padding: '4px 12px',
-                    borderRadius: 8,
-                    fontSize: 9,
-                    fontWeight: 600,
-                    border: 'none',
-                    background: 'rgba(255,107,107,0.15)',
-                    color: colors.red,
-                    cursor: 'pointer',
-                  }}>
-                    撤回家园
-                  </button>
-                </div>
-              );
-            }
-            
-            // 空槽位 - 圆形虚线框
-            return (
-              <div key={slot} style={{
-                borderRadius: 16,
-                padding: '14px 8px 10px',
-                background: 'rgba(255,255,255,0.02)',
-                border: '2px dashed rgba(253,150,68,0.3)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                minHeight: 160,
-                position: 'relative',
-              }}>
-                {/* 槽位编号 */}
-                <div style={{
-                  position: 'absolute',
-                  top: -10,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: 8,
-                  background: 'rgba(253,150,68,0.15)',
-                  color: colors.orange,
-                }}>
-                  🎯 {slot}
-                </div>
-                
-                <div style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  border: '2px dashed rgba(253,150,68,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: 24, color: colors.muted }}>+</span>
-                </div>
-                <span style={{ fontSize: 9, color: colors.muted }}>选择猫咪</span>
-                <span style={{ fontSize: 8, color: colors.muted }}>点击上阵</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 可上场的猫咪列表 */}
-      {availableCats.length > 0 && (
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>
-            🏠 家园猫咪 · 点击上阵
-          </div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
-            {availableCats.map(cat => {
-              const sk = BREED_SKILLS[cat.breedId] || BREED_SKILLS[cat.name];
-              return (
-                <div key={cat.serialId} onClick={() => onDeploy(cat)} style={{
-                  flexShrink: 0,
-                  width: 90,
-                  borderRadius: 12,
-                  padding: '10px 8px',
-                  background: colors.card,
-                  border: `1px solid ${RARITY_COLORS[cat.rarity]}25`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                }}>
-                  <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: `2px solid ${RARITY_COLORS[cat.rarity]}40`,
-                  }}>
-                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: colors.ink }}>{cat.name}</span>
-                  <span style={{ fontSize: 8, color: colors.sub }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</span>
-                  {sk && (
-                    <div style={{
-                      fontSize: 7,
-                      padding: '2px 4px',
-                      borderRadius: 4,
-                      background: 'rgba(108,92,231,0.12)',
-                      color: colors.purpleLight,
-                      textAlign: 'center',
-                    }}>
-                      {sk.passive}
-                    </div>
-                  )}
-                  <div style={{
-                    marginTop: 4,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    fontSize: 8,
-                    fontWeight: 600,
-                    background: 'rgba(0,184,148,0.15)',
-                    color: colors.green,
-                  }}>
-                    点击上阵
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 空状态 */}
-      {battleCats.length === 0 && availableCats.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>⚔️</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: colors.ink, marginBottom: 4 }}>尚未配置出战阵容</div>
-          <div style={{ fontSize: 12, color: colors.sub }}>从家园选择猫咪上场吧</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════
-   P2: SPECTATOR AREA (观战区) - P4: 界面调整
-   观战区：被动技能位，初始0格，通过里程碑解锁3格
-   ═══════════════════════════════════════ */
-function SpectatorArea({ cats: spectatorCats, homeCats, onSpectatorDeploy, onSpectatorWithdraw, onCatClick, slot4Unlocked, slot5Unlocked, slot6Unlocked }) {
-
-  // 获取可上阵观战的猫咪（家园中且不在观战席的）
-  const availableCats = homeCats.filter(c => c.battleSpectator == null && c.battleSlot == null);
-
-  // 观战席解锁状态
-  const spectatorSlots = [
-    { slot: 1, unlocked: slot4Unlocked, condition: '历史领养10只' },
-    { slot: 2, unlocked: slot5Unlocked, condition: '有猫存活90天' },
-    { slot: 3, unlocked: slot6Unlocked, condition: '历史领养30只' },
-  ];
-
-  return (
-    <div style={{ padding: '0 20px 0' }}>
-      {/* 观战席平台 - 清新蓝色风格 */}
-      <div style={{
-        background: 'linear-gradient(180deg, rgba(0,180,216,0.08) 0%, rgba(0,212,255,0.04) 100%)',
-        borderRadius: 20,
-        padding: '18px 16px 16px',
-        border: '1px solid rgba(0,180,216,0.15)',
-        marginBottom: 16,
-        boxShadow: '0 4px 16px rgba(0,180,216,0.08)',
-      }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#00B4D8', marginBottom: 4, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14 }}>🥳</span>
-          <span>观战阵容</span>
-          <span style={{ fontSize: 10, color: colors.sub, fontWeight: 400 }}>被动技能全局生效</span>
-        </div>
-        <div style={{ fontSize: 10, color: colors.sub, textAlign: 'center', marginBottom: 14 }}>
-          观战猫咪的被动技能将在消消乐中为你提供加成
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <div className="slot-grid">
           {[1, 2, 3].map(slotNum => {
-            const slotInfo = spectatorSlots[slotNum - 1];
-            const isUnlocked = slotInfo.unlocked;
-            const cat = spectatorCats.find(c => c.battleSpectator === slotNum);
-            
-            if (cat && isUnlocked) {
-              const sk = BREED_SKILLS[cat.breedId] || BREED_SKILLS[cat.name];
-              return (
-                <div key={slotNum} style={{
-                  borderRadius: 14,
-                  padding: '12px 6px 10px',
-                  background: colors.card,
-                  border: `2px solid ${RARITY_COLORS[cat.rarity]}35`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 5,
-                  position: 'relative',
-                  boxShadow: `0 3px 10px rgba(0,180,216,0.1)`,
-                }}>
-                  {/* 观战席编号 */}
-                  <div style={{
-                    position: 'absolute',
-                    top: -9,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    background: 'linear-gradient(135deg, rgba(0,180,216,0.25), rgba(0,212,255,0.15))',
-                    color: '#00B4D8',
-                    border: '1px solid rgba(0,180,216,0.25)',
-                  }}>
-                    👀 {slotNum}
-                  </div>
-                  
-                  {/* 猫咪头像 */}
-                  <div onClick={() => onCatClick(cat)} style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: `2px solid ${RARITY_COLORS[cat.rarity]}`,
-                    cursor: 'pointer',
-                    boxShadow: `0 0 12px ${RARITY_COLORS[cat.rarity]}25`,
-                  }}>
-                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                  </div>
-                  
-                  {/* 猫咪名 */}
-                  <span style={{ fontSize: 10, fontWeight: 700, color: colors.ink }}>{cat.name}</span>
-                  <span style={{ fontSize: 8, color: RARITY_COLORS[cat.rarity], fontWeight: 600 }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
-                  
-                  {/* 被动技能 */}
-                  {sk && sk.passive && (
-                    <div style={{
-                      fontSize: 7,
-                      padding: '2px 6px',
-                      borderRadius: 5,
-                      background: 'rgba(0,180,216,0.12)',
-                      color: '#00B4D8',
-                      textAlign: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                    }}>
-                      <span>{sk.passiveIcon || '🛡️'}</span>
-                      <span>{sk.passive}</span>
-                    </div>
-                  )}
-                  
-                  {/* 撤回家园按钮 */}
-                  <button onClick={() => onSpectatorWithdraw(cat)} style={{
-                    marginTop: 2,
-                    padding: '3px 10px',
-                    borderRadius: 6,
-                    fontSize: 8,
-                    fontWeight: 600,
-                    border: 'none',
-                    background: 'rgba(255,107,107,0.12)',
-                    color: colors.red,
-                    cursor: 'pointer',
-                  }}>
-                    撤回
-                  </button>
-                </div>
-              );
-            }
-            
-            // 锁定槽位
-            if (!isUnlocked) {
-              return (
-                <div key={slotNum} style={{
-                  borderRadius: 14,
-                  padding: '12px 6px 10px',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px dashed rgba(0,180,216,0.2)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  minHeight: 150,
-                  position: 'relative',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: -9,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    background: 'rgba(0,180,216,0.1)',
-                    color: colors.muted,
-                  }}>
-                    🔒 {slotNum}
-                  </div>
-                  <div style={{ fontSize: 28, color: 'rgba(0,180,216,0.3)', marginBottom: 2 }}>🔒</div>
-                  <span style={{ fontSize: 9, color: colors.muted }}>待解锁</span>
-                  <span style={{ fontSize: 8, color: colors.muted, textAlign: 'center', maxWidth: '80%' }}>{slotInfo.condition}</span>
-                </div>
-              );
-            }
-            
-            // 空槽位（已解锁但未放置）
+            const cat = battleCats.find(c => c.battleSlot === slotNum);
             return (
-              <div key={slotNum} style={{
-                borderRadius: 14,
-                padding: '12px 6px 10px',
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px dashed rgba(0,180,216,0.2)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 4,
-                minHeight: 150,
-                position: 'relative',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: -9,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 6,
-                  background: 'rgba(0,180,216,0.15)',
-                  color: '#00B4D8',
-                }}>
-                  👀{slotNum}
-                </div>
-                <div style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: '50%',
-                  border: '2px dashed rgba(0,180,216,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: 22, color: colors.muted }}>+</span>
-                </div>
-                <span style={{ fontSize: 9, color: colors.muted }}>选择猫咪</span>
-                <span style={{ fontSize: 8, color: colors.muted }}>点击观战</span>
+              <div key={slotNum} className={`slot active-slot ${cat ? 'filled' : ''}`}>
+                <div className="slot-label">🎯 {slotNum}</div>
+                {cat ? (
+                  <div className="slotted-cat" onClick={() => onWithdraw(cat)}>
+                    <div style={{
+                      width: 47, height: 47, borderRadius: '50%', overflow: 'hidden',
+                      border: `2px solid ${RARITY_COLORS[cat.rarity]}`,
+                      boxShadow: `0 0 16px ${RARITY_COLORS[cat.rarity]}30`
+                    }}>
+                      <img src={cat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: colors.ink }}>{cat.name}</div>
+                    <div style={{ fontSize: 7, color: RARITY_COLORS[cat.rarity], fontWeight: 600 }}>
+                      #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}
+                    </div>
+                    <div style={{ fontSize: 7, color: colors.orange, fontWeight: 800, marginTop: 1 }}>
+                      {ACTIVE_SKILLS[cat.breedId]?.icon} {ACTIVE_SKILLS[cat.breedId]?.name}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ width: 45, height: 45, borderRadius: '50%', border: '2px dashed rgba(253, 150, 68, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 20, color: 'rgba(253, 150, 68, 0.4)' }}>+</span>
+                    </div>
+                    <div style={{ fontSize: 8, color: colors.muted, fontWeight: 600 }}>选择猫咪</div>
+                    <div style={{ fontSize: 7, color: colors.muted, opacity: 0.8 }}>点击上阵</div>
+                  </>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 可上阵观战的猫咪列表 */}
-      {availableCats.length > 0 && (
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>
-            🏠 家园猫咪 · 点击观战
-          </div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
-            {availableCats.map(cat => {
-              const sk = BREED_SKILLS[cat.breedId] || BREED_SKILLS[cat.name];
-              return (
-                <div key={cat.serialId} onClick={() => onSpectatorDeploy(cat)} style={{
-                  flexShrink: 0,
-                  width: 90,
-                  borderRadius: 12,
-                  padding: '10px 8px',
-                  background: colors.card,
-                  border: `1px solid ${RARITY_COLORS[cat.rarity]}25`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                }}>
-                  <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: `2px solid ${RARITY_COLORS[cat.rarity]}40`,
-                  }}>
-                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: colors.ink }}>{cat.name}</span>
-                  <span style={{ fontSize: 8, color: colors.sub }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</span>
-                  {sk && sk.passive && (
-                    <div style={{
-                      fontSize: 7,
-                      padding: '2px 4px',
-                      borderRadius: 4,
-                      background: 'rgba(0,180,216,0.12)',
-                      color: '#00B4D8',
-                      textAlign: 'center',
-                    }}>
-                      {sk.passive}
-                    </div>
-                  )}
-                  <div style={{
-                    marginTop: 4,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    fontSize: 8,
-                    fontWeight: 600,
-                    background: 'rgba(0,180,216,0.15)',
-                    color: '#00B4D8',
-                  }}>
-                    点击观战
-                  </div>
-                </div>
-              );
-            })}
+      {/* 家园区 */}
+      <div style={{ padding: '4px 0', overflow: 'hidden' }}>
+        <div style={{ padding: '0 20px', marginBottom: 8, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, position: 'absolute', left: 20, color: colors.ink }}>🏠 家园猫咪</div>
+          <div style={{ fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, animation: 'pulse 2s infinite' }}>
+            <span style={{ color: colors.orange }}>↑ 向上拖 上阵出战</span>
+            <span style={{ color: '#fff', margin: '0 4px', opacity: 0.8 }}>｜</span>
+            <span style={{ color: colors.blue }}>↓ 向下拖 观战加成</span>
           </div>
         </div>
-      )}
+        
+        <div style={{ display: 'flex', gap: 12, padding: '4px 20px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {availableCats.map(cat => (
+            <div 
+              key={cat.serialId} 
+              className="cat-card-p9"
+              onMouseDown={(e) => handleDragStart(e, cat)}
+              onTouchStart={(e) => handleDragStart(e, cat)}
+            >
+              <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[cat.rarity]}40`, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+                <img src={cat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, textAlign: 'center', color: colors.ink }}>{cat.name}</div>
+              <div style={{ fontSize: 7, color: colors.muted, marginBottom: 2 }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</div>
+              <div style={{ fontSize: 7, padding: '2px 5px', borderRadius: 4, color: RARITY_COLORS[cat.rarity], background: RARITY_BG[cat.rarity] }}>{cat.rarity}</div>
+            </div>
+          ))}
+          {availableCats.length === 0 && (
+            <div style={{ width: '100%', textAlign: 'center', padding: '20px', fontSize: 12, color: colors.muted }}>暂无空闲猫咪</div>
+          )}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 9, color: '#FFD700', marginTop: 2 }}>点击卡牌即可卸下撤回</div>
+      </div>
 
-      {/* 空状态 */}
-      {spectatorCats.length === 0 && availableCats.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🥳</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: colors.ink, marginBottom: 4 }}>尚未配置观战阵容</div>
-          <div style={{ fontSize: 12, color: colors.sub }}>从家园选择猫咪来观战吧</div>
+      {/* 观战区 */}
+      <div className="zone-spectator" style={{ 
+        background: highlightZone === 'spectator' ? 'rgba(69, 183, 209, 0.2)' : '',
+        marginTop: 0, /* 让家园猫咪区和观战区之间紧凑一点 */
+      }}>
+        <div className="zone-title spectator-title" style={{ color: colors.blue, transform: 'translateY(-10px)' }}>
+          <span><span style={{ fontSize: 12 }}>👁️</span> <span style={{ fontWeight: 800 }}>观战区</span></span>
+          <span style={{ fontSize: 11, color: '#fff', fontWeight: 400, opacity: 0.4, marginLeft: 4 }}>猫咪被动技能将在游戏中为你提供加成</span>
+        </div>
+        <div className="slot-grid">
+          {[
+            { id: 1, unlocked: slot4Unlocked },
+            { id: 2, unlocked: slot5Unlocked },
+            { id: 3, unlocked: slot6Unlocked }
+          ].map(slot => {
+            const cat = spectatorCats.find(c => c.battleSpectator === slot.id);
+            return (
+              <div key={slot.id} className={`slot spectator-slot ${cat ? 'filled' : ''} ${!slot.unlocked ? 'locked' : ''}`}>
+                <div className="slot-label">👀 {slot.id + 3}</div>
+                {!slot.unlocked ? (
+                  <>
+                    <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.2)', marginBottom: 4 }}>🔒</div>
+                    <div style={{ fontSize: 9, color: colors.muted }}>待解锁</div>
+                  </>
+                ) : cat ? (
+                  <div className="slotted-cat" onClick={() => onSpectatorWithdraw(cat)}>
+                    <div style={{
+                      width: 47, height: 47, borderRadius: '50%', overflow: 'hidden',
+                      border: `2px solid ${RARITY_COLORS[cat.rarity]}`,
+                      boxShadow: `0 0 16px ${RARITY_COLORS[cat.rarity]}30`
+                    }}>
+                      <img src={cat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: colors.ink }}>{cat.name}</div>
+                    <div style={{ fontSize: 7, color: RARITY_COLORS[cat.rarity], fontWeight: 600 }}>
+                      #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}
+                    </div>
+                    <div style={{ fontSize: 7, color: colors.blue, fontWeight: 800, marginTop: 1 }}>
+                      {PASSIVE_SKILLS[cat.breedId]?.icon} {PASSIVE_SKILLS[cat.breedId]?.name}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ width: 45, height: 45, borderRadius: '50%', border: '2px dashed rgba(0, 180, 216, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 20, color: 'rgba(0, 180, 216, 0.4)' }}>+</span>
+                    </div>
+                    <div style={{ fontSize: 8, color: colors.muted, fontWeight: 600 }}>选择猫咪</div>
+                    <div style={{ fontSize: 7, color: colors.muted, opacity: 0.8 }}>点击观战</div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 拖拽克隆体 */}
+      {draggingCat && (
+        <div style={{
+          position: 'fixed',
+          left: startPos.current.x - 40,
+          top: startPos.current.y - 40 + dragOffset.y,
+          width: 81,
+          pointerEvents: 'none',
+          zIndex: 9999,
+          transform: 'scale(1.1)',
+        }}>
+          <div className="cat-card-p9" style={{ opacity: 0.9 }}>
+            <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[draggingCat.rarity]}40` }}>
+              <img src={draggingCat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, textAlign: 'center', color: colors.ink }}>{draggingCat.name}</div>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 
 /* ═══════════════════════════════════════
    CAT PAGE (Tab 3) — Battle + Spectator + Home + Bag + P6: 纪念册
@@ -1709,25 +1464,23 @@ useEffect(() => {
       </div>
 
       {/* P2: 备战区 - 出战席 + 观战区 */}
+      {/* P2: 备战区 - P9 统一布阵系统集成 */}
       {subTab === 'battle' && (
         <div>
-          {/* 出战席 - BattleArea组件已包含标题 */}
-          <BattleArea cats={battleCats} homeCats={homeCats} spectatorCats={spectatorCats} onDeploy={onDeploy} onWithdraw={onWithdraw} onCatClick={(cat) => onNavigate('catDetail', cat)} onSpectatorDeploy={onSpectatorDeploy} onSpectatorWithdraw={onSpectatorWithdraw} />
-          
-          {/* 观战区标题 */}
-          <div style={{ padding: '0 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#00B4D8', display: 'flex', alignItems: 'center', gap: 6 }}>
-              🥳 观战区
-              <span style={{ fontSize: 10, color: colors.sub, fontWeight: 400 }}>
-                {spectatorCats.length}/{spectatorSlots}格
-              </span>
-            </div>
-            <div style={{ fontSize: 10, color: colors.muted }}>
-              {slot4Unlocked ? (slot6Unlocked ? '全部解锁' : '部分解锁') : '待里程碑解锁'}
-            </div>
-          </div>
-          {/* 观战区组件 */}
-          <SpectatorArea cats={spectatorCats} homeCats={homeCats} onSpectatorDeploy={onSpectatorDeploy} onSpectatorWithdraw={onSpectatorWithdraw} onCatClick={(cat) => onNavigate('catDetail', cat)} slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked} />
+          {/* 统一布阵管理器 */}
+          <LineupManager 
+            battleCats={battleCats} 
+            spectatorCats={spectatorCats} 
+            homeCats={homeCats} 
+            onDeploy={onDeploy} 
+            onWithdraw={onWithdraw} 
+            onSpectatorDeploy={onSpectatorDeploy} 
+            onSpectatorWithdraw={onSpectatorWithdraw} 
+            onCatClick={(cat) => onNavigate('catDetail', cat)}
+            slot4Unlocked={slot4Unlocked}
+            slot5Unlocked={slot5Unlocked}
+            slot6Unlocked={slot6Unlocked}
+          />
         </div>
       )}
       {/* P2: 家园（原养成区） */}
@@ -2551,7 +2304,7 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
   const showBack = phase === 'back';
 
   return (
-    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background: `${colors.bg}dd`, backdropFilter:'blur(16px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:65 }} onClick={onClose}>
+    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background: 'rgba(0,0,0,0.75)', backdropFilter:'blur(16px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:65 }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ position:'relative', width:260, height:360, perspective:1000 }}>
         {/* Particles */}
         {phase === 'flip' && (
@@ -2575,13 +2328,12 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
           animation: phase === 'enter' ? 'slideUp 0.3s ease-out' : 'none',
         }}>
-          {/* FRONT — Cat image */}
           <div style={{
             position:'absolute', top:0, left:0, width:'100%', height:'100%',
             backfaceVisibility:'hidden', borderRadius:20, overflow:'hidden',
             border:`3px solid ${RARITY_COLORS[cat.rarity]}`,
             boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}30`,
-            background:`linear-gradient(145deg, ${RARITY_BG[cat.rarity]}, ${colors.bg})`,
+            background: colors.card,
             display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
           }}>
             {/* Gold sweep light */}
@@ -2611,13 +2363,12 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
             <div style={{ fontSize:10, color:colors.muted, marginTop:12, position:'relative', zIndex:1 }}>点击任意位置关闭</div>
           </div>
 
-          {/* BACK — Cat details */}
           <div style={{
             position:'absolute', top:0, left:0, width:'100%', height:'100%',
             backfaceVisibility:'hidden', borderRadius:20, overflow:'hidden',
             border:`3px solid ${RARITY_COLORS[cat.rarity]}`,
             boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
-            background:`linear-gradient(160deg, ${colors.bg2} 0%, ${colors.bg} 40%, ${colors.bg2} 100%)`,
+            background: colors.card,
             transform:'rotateY(180deg)',
             display:'flex', flexDirection:'column',
             opacity: showBack ? 1 : 0, transition:'opacity 0.3s',
@@ -2786,7 +2537,7 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
           {/* SSR大保底进度 */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:8 }}>
             <span style={{ fontSize:10, color:colors.muted }}>✨SSR</span>
-            <div style={{ width:120, height:6, borderRadius:3, background:'rgba(255,255,255,0.06)', overflow:'hidden', position:'relative' }}>
+            <div style={{ width:120, height:6, borderRadius:3, background: colors.bg2, overflow:'hidden', position:'relative' }}>
               <div style={{ 
                 height:'100%', 
                 width:`${Math.min(100, pityInfo.ssrProgress/80*100)}%`, 
@@ -2798,7 +2549,7 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
               {/* 递进概率标记点 */}
               {[20, 40, 60].map(mark => (
                 <div key={mark} style={{
-                  position:'absolute', left:`${mark/80*100}%`, top:0, bottom:0, width:1, background:'rgba(255,255,255,0.2)'
+                  position:'absolute', left:`${mark/80*100}%`, top:0, bottom:0, width:1, background: colors.cardBorder
                 }}/>
               ))}
             </div>
@@ -2812,7 +2563,7 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
           {/* SR小保底进度 */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
             <span style={{ fontSize:10, color:colors.muted }}>💎SR</span>
-            <div style={{ width:120, height:4, borderRadius:2, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+            <div style={{ width:120, height:4, borderRadius:2, background: colors.bg2, overflow:'hidden' }}>
               <div style={{ 
                 height:'100%', 
                 width:`${pityInfo.srProgress/pityInfo.srTotal*100}%`, 
@@ -2832,7 +2583,7 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
         <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
           <div style={{
             width:'90%', aspectRatio:'1', borderRadius:18, overflow:'hidden',
-            background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)',
+            background: colors.card, border:`1px solid ${colors.cardBorder}`,
             display:'flex', alignItems:'center', justifyContent:'center',
             position:'relative',
           }}>
@@ -2925,8 +2676,9 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
 
         <button onClick={handleGacha} disabled={isAnimating || bells < 1} style={{
           width:'100%', height:50, borderRadius:16,
-          background: (isAnimating || bells < 1) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
-          border:'none', cursor:(isAnimating||bells<1)?'not-allowed':'pointer',
+          background: (isAnimating || bells < 1) ? colors.bg2 : 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+          border: (isAnimating || bells < 1) ? `1px solid ${colors.border}` : 'none',
+          cursor:(isAnimating||bells<1)?'not-allowed':'pointer',
           fontSize:16, fontWeight:800,
           color:(isAnimating||bells<1)?colors.muted:'#fff',
           opacity:(isAnimating||bells<1)?0.6:1,
@@ -3200,7 +2952,7 @@ function AdoptConfirmModal({ cat, show, onConfirm, onCancel, canAdopt, homeCount
 if (!show || !cat) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onCancel}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
         <div style={{ width:64, height:64, borderRadius:'50%', overflow:'hidden', margin:'0 auto 14px', border:`2px solid ${RARITY_COLORS[cat.rarity]}50` }}>
           <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
             onError={e => { e.target.style.display='none'; }} />
@@ -3214,7 +2966,7 @@ if (!show || !cat) return null;
             : `家园已满(${homeCount}/${homeMaxSlots})，需要先送走一只猫才能领养新成员。`}
         </div>
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>取消</button>
+          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>取消</button>
           {canAdopt && (
             <button onClick={onConfirm} style={{ flex:1, height:40, borderRadius:12, background:`linear-gradient(135deg, ${colors.green}, #55EFC4)`, border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>领养它</button>
           )}
@@ -3229,16 +2981,16 @@ function ReleaseConfirmModal({ cat, show, onConfirm, onCancel }) {
 if (!show || !cat) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onCancel}>
-      <div onClick={e => e.stopPropagation()} style={{ width:290, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(255,107,107,0.3)', animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:290, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(255,107,107,0.3)', animation:'slideUp 0.3s ease-out' }}>
         <div style={{ fontSize:48, marginBottom:12 }}>😿</div>
-        <div style={{ fontSize:16, fontWeight:800, color:colors.red, marginBottom:8 }}>确定要送走{cat.name} #${String(cat.breedSerial || cat.serialId).padStart(3,'0')} 吗？</div>
-        <div style={{ fontSize:12, color:colors.sub, marginBottom:20, lineHeight:1.6 }}>
+        <div style={{ fontSize:16, fontWeight:800, color:colors.red, marginBottom:8 }}>确定要送走{cat.name} #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} 吗？</div>
+        <div style={{ fontSize:12, color:colors.sub, marginBottom:20, lineHeight:1.6, fontWeight:500 }}>
           它陪伴了你 {cat.daysAlive} 天，见证了 {cat.gamesWitnessed} 场消消乐。<br/>
           它的序列号将在 60 天后重新流通。<br/>
           这段记忆将永久消失。
         </div>
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>再想想</button>
+          <button onClick={onCancel} style={{ flex:1, height:40, borderRadius:12, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>再想想</button>
           <button onClick={onConfirm} style={{ flex:1, height:40, borderRadius:12, background:'linear-gradient(135deg, #FF6B6B, #E05555)', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>送去流浪</button>
         </div>
       </div>
@@ -3251,7 +3003,7 @@ function CheckInModal({ show, onClose }) {
 if (!show) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.4s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.4s ease-out' }}>
         <div style={{ fontSize:48, marginBottom:8 }}>🐾</div>
         <div style={{ fontSize:20, fontWeight:800, color:colors.ink, marginBottom:4 }}>签到成功！</div>
         <div style={{ fontSize:12, color:colors.sub, marginBottom:16 }}>新的一天，和猫咪一起加油</div>
@@ -3557,10 +3309,10 @@ function InfoModal({ show, title, children, onClose }) {
 if (!show) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:20, padding:'24px 20px', border:'1px solid rgba(255,255,255,0.1)', animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:20, padding:'24px 20px', border:`1px solid ${colors.border}`, animation:'slideUp 0.3s ease-out' }}>
         <div style={{ fontSize:14, fontWeight:700, color:colors.ink, marginBottom:12 }}>{title}</div>
         <div style={{ fontSize:12, color:colors.sub, lineHeight:1.6 }}>{children}</div>
-        <button onClick={onClose} style={{ marginTop:16, width:'100%', height:36, borderRadius:10, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.ink }}>知道了</button>
+        <button onClick={onClose} style={{ marginTop:16, width:'100%', height:36, borderRadius:10, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.ink }}>知道了</button>
       </div>
     </div>
   );
@@ -3595,7 +3347,7 @@ if (!show || !cat) return null;
   
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:320, maxHeight:'85%', overflowY:'auto', background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'24px 20px', border:`1px solid ${isGenesis ? 'rgba(253,150,68,0.4)' : 'rgba(255,255,255,0.1)'}`, animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:320, maxHeight:'85%', overflowY:'auto', background: colors.card, borderRadius:24, padding:'24px 20px', border:`1px solid ${isGenesis ? 'rgba(253,150,68,0.4)' : colors.border}`, animation:'slideUp 0.3s ease-out' }}>
         {/* P4: 序列号信息头部 */}
         <div style={{ textAlign:'center', marginBottom:16 }}>
           {/* 创世区特殊标记 */}
@@ -4390,7 +4142,7 @@ function App() {
   // P2: Find empty battle slot
   function findEmptyBattleSlot(battleCats) {
     const usedSlots = new Set(battleCats.map(c => c.battleSlot).filter(s => s != null));
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 3; i++) { // P9: 仅限1-3号位为主动位
       if (!usedSlots.has(i)) return i;
     }
     return null;
@@ -4749,11 +4501,11 @@ function App() {
           <MilestoneUnlockModal alert={milestoneAlert} onClose={() => setMilestoneAlert(null)} />
           {showLogoutConfirm && (
             <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:70 }} onClick={() => setShowLogoutConfirm(false)}>
-              <div onClick={e => e.stopPropagation()} style={{ width:290, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.3s ease-out' }}>
+              <div onClick={e => e.stopPropagation()} style={{ width:290, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${colors.border}`, animation:'slideUp 0.3s ease-out' }}>
                 <div style={{ fontSize:48, marginBottom:12 }}>👋</div>
                 <div style={{ fontSize:16, fontWeight:800, color:colors.ink, marginBottom:8 }}>确认要退出该账号吗？</div>
                 <div style={{ display:'flex', gap:10, marginTop:20 }}>
-                  <button onClick={() => setShowLogoutConfirm(false)} style={{ flex:1, height:40, borderRadius:12, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>取消</button>
+                  <button onClick={() => setShowLogoutConfirm(false)} style={{ flex:1, height:40, borderRadius:12, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>取消</button>
                   <button onClick={handleLogout} style={{ flex:1, height:40, borderRadius:12, background:'linear-gradient(135deg, #FF6B6B, #E05555)', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>确认</button>
                 </div>
               </div>

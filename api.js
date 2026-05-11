@@ -185,7 +185,7 @@ const MiaolegemiAPI = {
   /**
    * 部署猫咪（家园 → 出战席）
    * @param {string} catId - 猫咪ID
-   * @param {number} slot - 出战位 (1-4)
+   * @param {number} slot - 出战位 (1-3)
    * @returns {Promise<object>}
    */
   deployCat: async (catId, slot) => {
