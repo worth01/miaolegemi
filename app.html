@@ -1387,7 +1387,14 @@ function LineupManager({
    ═══════════════════════════════════════ */
 function CatPage({ cats, fish, onFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
 
-const [subTab, setSubTab] = useState(initialTab || 'battle');
+// 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
+const getInitialTab = () => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  const validTabs = ['battle', 'home', 'bag'];
+  return (tab && validTabs.includes(tab)) ? tab : (initialTab || 'battle');
+};
+const [subTab, setSubTab] = useState(getInitialTab);
 
 // 监听 initialTab 变化（只在首次和导航时更新，不干扰用户手动切换）
 useEffect(() => {
@@ -3683,7 +3690,13 @@ function App() {
   // State
   const [cats, setCats] = useState(loadState);
   const [bells, setBells] = useState(3);
-  const [activeTab, setActiveTab] = useState('home');
+  // 从URL参数决定默认tab: ?tab=battle/bag 时切换到cat标签页, ?tab=home 保持首页
+  const getInitialActiveTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    return (tab && ['battle', 'bag'].includes(tab)) ? 'cat' : 'home';
+  };
+  const [activeTab, setActiveTab] = useState(getInitialActiveTab);
   const [checkedIn, setCheckedIn] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
@@ -3778,8 +3791,16 @@ function App() {
           }
         }
       } catch (e) {
-        console.warn('Auth check timeout, using local mode');
+        console.warn('Auth check failed, using local mode');
       } finally {
+        // 如果没有在线用户，检查本地存储是否有数据
+        const saved = localStorage.getItem('miaolegemi_p0_v1');
+        const localData = saved ? JSON.parse(saved) : null;
+        if (!user && localData && localData.cats && localData.cats.length > 0) {
+          // 有本地数据，自动进入离线模式
+          setUser({ id: 'local', username: '本地用户', nickname: '铲屎官', bells: localData.bells || 3 });
+          setIsLocalMode(true);
+        }
         setAuthChecked(true);
       }
     };
@@ -4456,7 +4477,7 @@ function App() {
                 onSaveFromFarewell={handleSaveFromFarewell}
                 onDeploy={handleDeploy} onWithdraw={handleWithdraw}
                 onSpectatorDeploy={handleSpectatorDeploy} onSpectatorWithdraw={handleSpectatorWithdraw}
-                initialTab={activeTab === 'cathome' ? 'home' : bagTab}
+                initialTab={(new URLSearchParams(window.location.search).get('tab')) || (activeTab === 'cathome' ? 'home' : bagTab)}
                 baseSlots={baseSlots}
                 slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked}
               />

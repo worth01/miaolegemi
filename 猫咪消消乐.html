@@ -24,6 +24,8 @@
     @keyframes floatTile { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
     @keyframes sparkle { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:0.8;transform:scale(1.2)} }
     @keyframes btnPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    @keyframes freezePulse { 0%,100%{box-shadow:0 0 20px rgba(116,185,255,0.8),0 0 40px rgba(116,185,255,0.4),inset 0 1px 0 rgba(255,255,255,0.3)} 50%{box-shadow:0 0 30px rgba(116,185,255,1),0 0 60px rgba(116,185,255,0.6),inset 0 1px 0 rgba(255,255,255,0.5)} }
+    @keyframes frostRise { 0%{transform:translateY(0) scale(1);opacity:0.8} 100%{transform:translateY(-30px) scale(1.5);opacity:0} }
   </style>
 </head>
 <body>
@@ -56,45 +58,658 @@ const MATCH_COUNT = 3;
 const HALF = 30; // 层间偏移 = tileSize / 2
 
 /* ═══════════════════════════════════════
-   LEVEL CONFIGS
+   INTERFERENCE TYPES (干扰牌系统)
    ═══════════════════════════════════════ */
+const INTERFERENCE_TYPES = {
+  none: null,           // 无干扰牌
+  groom: {              // 舔毛牌 - 无法消除，占槽位
+    id: 'groom',
+    name: '舔毛牌',
+    emoji: '🧴',
+    color: '#FDCB6E',
+    effect: 'slot_block',  // 进入收集槽后占据槽位但不参与消除
+    desc: '无法消除，占用收集槽槽位'
+  },
+  freeze: {             // 冰冻牌 - 冻结收集槽第1格
+    id: 'freeze',
+    name: '冰冻牌',
+    emoji: '❄️',
+    color: '#74B9FF',
+    effect: 'freeze_first',  // 冻结收集槽第一格
+    desc: '蓝猫冻结了收集槽第1格，无法消除'
+  },
+  sticky: {             // 粘连牌 - 点击时连带相邻1张
+    id: 'sticky',
+    name: '粘连牌',
+    emoji: '🩹',
+    color: '#FD79A8',
+    effect: 'drag_adjacent',  // 点击时同时带入相邻1张牌
+    desc: '点击时同时带入相邻1张牌'
+  },
+  transform: {          // 三花牌 - 每3秒随机变换
+    id: 'transform',
+    name: '三花牌',
+    emoji: '🔮',
+    color: '#A29BFE',
+    effect: 'transform',  // 每3秒随机变换图案
+    desc: '每3秒随机变换图案'
+  },
+  danger: {             // 小狗牌 - 进入收集槽即失败
+    id: 'danger',
+    name: '小狗牌',
+    emoji: '🐶',
+    color: '#FF6B6B',
+    effect: 'instant_fail',  // 进入收集槽立即失败
+    desc: '进入收集槽即判定失败'
+  },
+  disguise: {           // 真身牌 - 伪装成普通牌
+    id: 'disguise',
+    name: '真身牌',
+    emoji: '🎭',
+    color: '#00CEC9',
+    effect: 'disguise',  // 外观伪装成普通牌，点击后露出真身
+    desc: '外观随机伪装成普通牌，点击后露出真身'
+  }
+};
+
+/* ═══════════════════════════════════════
+   BOARD TYPES (棋盘类型)
+   ═══════════════════════════════════════ */
+const BOARD_TYPES = {
+  standard: 'standard',     // 标准常规棋盘
+  catPaw: 'catPaw',          // 猫爪五指特殊造型棋盘
+  bone: 'bone',              // 骨头横放特殊造型棋盘
+  dual: 'dual'               // 左右对半分割双域特殊棋盘
+};
+
+// P4: 30关完整关卡配置
+// 卡牌种类索引: 0-猫铃铛, 1-猫粮碗, 2-饮水机, 3-储存桶, 4-猫砂盆, 5-宠物梳子, 6-猫抓板, 7-猫窝, 8-猫爬架, 9-猫罐头
 const LEVELS = {
+  // 第1关：教学关，维持现状
   1: {
-    name: '教学关',
-    typeIndices: [0, 3, 5], // 猫爪印、猫罐头、逗猫棒
+    name: '橘猫闲居',
+    breed: '橘猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 3, 5], // 猫铃铛、储存桶、宠物梳子（教学关3种）
     layers: [
       { layer: 0, cols: 8, rows: 3, offsetX: 0,       offsetY: 0 },
       { layer: 1, cols: 6, rows: 3, offsetX: HALF,    offsetY: HALF },
       { layer: 2, cols: 4, rows: 3, offsetX: HALF*2,  offsetY: HALF*2 },
     ],
     timedMode: false,
+    desc: '教学关，无任何特殊机制、无干扰牌，玩法简单直观'
   },
+  // 第2-10关：8种卡牌，48张
   2: {
-    name: '正式关',
-    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9种
+    name: '白猫清浴',
+    breed: '白猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.groom,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7], // 猫铃铛,猫粮碗,饮水机,储存桶,猫砂盆,宠物梳子,猫抓板,猫窝
     layers: [
-      { layer: 0, cols: 8, rows: 4, offsetX: 0,         offsetY: 0 },
-      { layer: 1, cols: 6, rows: 4, offsetX: HALF,      offsetY: HALF },
-      { layer: 2, cols: 4, rows: 3, offsetX: HALF*2,    offsetY: HALF*2 },
-      { layer: 3, cols: 2, rows: 2, offsetX: HALF*2.5,  offsetY: HALF*2.5 },
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },  // 12张
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF }, // 20张
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF }, // 12张
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 }, // 4张
     ],
+    totalCards: 48,
     timedMode: false,
+    desc: '舔毛牌无法被消除，占用收集槽槽位'
   },
   3: {
-    name: '周榜竞技关',
-    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9种
+    name: '蓝猫冰封',
+    breed: '蓝猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.freeze,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
     layers: [
-      { layer: 0, cols: 8, rows: 4, offsetX: 0,         offsetY: 0 },
-      { layer: 1, cols: 6, rows: 4, offsetX: HALF,      offsetY: HALF },
-      { layer: 2, cols: 4, rows: 3, offsetX: HALF*2,    offsetY: HALF*2 },
-      { layer: 3, cols: 2, rows: 2, offsetX: HALF*2.5,  offsetY: HALF*2.5 },
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
     ],
-    timedMode: true,
-    timeLimit: 120,
-    matchBonus: 5,
-    comboBonus: 3,
+    totalCards: 48,
+    timedMode: false,
+    desc: '冰冻牌触发后冻结收集槽第1格'
   },
+  4: {
+    name: '黑猫暗夜',
+    breed: '黑猫',
+    boardType: BOARD_TYPES.catPaw,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: [],
+    specialRule: 'zone_isolated',
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '猫爪五指特殊造型棋盘，五个区域互相隔离'
+  },
+  5: {
+    name: '布偶柔庭',
+    breed: '布偶猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.sticky,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
+  },
+  6: {
+    name: '三花灵苑',
+    breed: '三花猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.transform,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '三花牌每3秒随机变换图案'
+  },
+  7: {
+    name: '折耳静坪',
+    breed: '折耳猫',
+    boardType: BOARD_TYPES.bone,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: ['三花猫'],
+    specialRule: 'skill_ban',
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '横放骨头特殊造型棋盘，禁用三花猫技能'
+  },
+  8: {
+    name: '暹罗跃动',
+    breed: '暹罗猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.danger,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
+  },
+  9: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '真身牌外观随机伪装成普通牌，点击后露出真身'
+  },
+  10: {
+    name: '波斯双域',
+    breed: '波斯猫',
+    boardType: BOARD_TYPES.dual,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: [],
+    specialRule: 'dual_zone',
+    typeIndices: [0, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 4, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 48,
+    timedMode: false,
+    desc: '左右对半分割双域特殊棋盘'
+  },
+  // 第11-20关：9种卡牌，54张（+猫爬架）
+  11: {
+    name: '橘猫闲居',
+    breed: '橘猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.groom,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7], // 猫铃铛,猫爬架,猫粮碗,饮水机,储存桶,猫砂盆,宠物梳子,猫抓板,猫窝
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },  // 18张
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF }, // 20张
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF }, // 12张
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 }, // 4张
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '9种卡牌挑战'
+  },
+  12: {
+    name: '白猫清浴',
+    breed: '白猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '冰冻牌挑战'
+  },
+  13: {
+    name: '蓝猫冰封',
+    breed: '蓝猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.freeze,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '冰冻牌占据收集槽第一格'
+  },
+  14: {
+    name: '黑猫暗夜',
+    breed: '黑猫',
+    boardType: BOARD_TYPES.catPaw,
+    interference: INTERFERENCE_TYPES.sticky,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '粘连牌挑战'
+  },
+  15: {
+    name: '布偶柔庭',
+    breed: '布偶猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.transform,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '三花牌变换挑战'
+  },
+  16: {
+    name: '三花灵苑',
+    breed: '三花猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: ['三花猫'],
+    specialRule: 'skill_ban',
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '禁用三花猫技能'
+  },
+  17: {
+    name: '折耳静坪',
+    breed: '折耳猫',
+    boardType: BOARD_TYPES.bone,
+    interference: INTERFERENCE_TYPES.danger,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '小狗牌危险挑战'
+  },
+  18: {
+    name: '暹罗跃动',
+    breed: '暹罗猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '真身牌伪装挑战'
+  },
+  19: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.groom,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: 'dual_zone',
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '双域挑战'
+  },
+  20: {
+    name: '波斯双域',
+    breed: '波斯猫',
+    boardType: BOARD_TYPES.dual,
+    interference: INTERFERENCE_TYPES.freeze,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 8, 1, 2, 3, 4, 5, 6, 7],
+    layers: [
+      { layer: 0, cols: 6, rows: 3, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 54,
+    timedMode: false,
+    desc: '9种卡牌终极挑战'
+  },
+  // 第21-30关：10种卡牌，60张（+猫罐头）
+  21: {
+    name: '橘猫闲居',
+    breed: '橘猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.sticky,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9], // 猫铃铛,猫抓板,猫粮碗,饮水机,储存桶,猫砂盆,宠物梳子,猫爬架,猫窝,猫罐头
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },  // 24张
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF }, // 20张
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF }, // 12张
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 }, // 4张
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '10种卡牌挑战'
+  },
+  22: {
+    name: '白猫清浴',
+    breed: '白猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.transform,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '三花牌变换'
+  },
+  23: {
+    name: '蓝猫冰封',
+    breed: '蓝猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.freeze,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '冰冻牌占据收集槽第一格'
+  },
+  24: {
+    name: '黑猫暗夜',
+    breed: '黑猫',
+    boardType: BOARD_TYPES.catPaw,
+    interference: INTERFERENCE_TYPES.danger,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '小狗牌危险'
+  },
+  25: {
+    name: '布偶柔庭',
+    breed: '布偶猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '真身牌伪装'
+  },
+  26: {
+    name: '三花灵苑',
+    breed: '三花猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.groom,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: 'dual_zone',
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '双域挑战'
+  },
+  27: {
+    name: '折耳静坪',
+    breed: '折耳猫',
+    boardType: BOARD_TYPES.bone,
+    interference: INTERFERENCE_TYPES.freeze,
+    interferenceCount: 1,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '骨头造型棋盘'
+  },
+  28: {
+    name: '暹罗跃动',
+    breed: '暹罗猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.sticky,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '粘连牌挑战'
+  },
+  29: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.transform,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '三花牌终极变换'
+  },
+  30: {
+    name: '波斯双域',
+    breed: '波斯猫',
+    boardType: BOARD_TYPES.dual,
+    interference: INTERFERENCE_TYPES.none,
+    interferenceCount: 0,
+    disabledSkills: [],
+    specialRule: 'zone_isolated',
+    typeIndices: [0, 6, 1, 2, 3, 4, 5, 8, 7, 9],
+    layers: [
+      { layer: 0, cols: 6, rows: 4, offsetX: 0,       offsetY: 0 },
+      { layer: 1, cols: 5, rows: 4, offsetX: HALF,    offsetY: HALF },
+      { layer: 2, cols: 4, rows: 3, offsetX: HALF,    offsetY: HALF + HALF },
+      { layer: 3, cols: 2, rows: 2, offsetX: HALF*1.5, offsetY: HALF*1.5 },
+    ],
+    totalCards: 60,
+    timedMode: false,
+    desc: '10种卡牌终极挑战'
+  }
 };
+
+// P4: 关卡轮回机制 - 30关后循环
+function getLevelConfig(levelNum) {
+  // 轮回机制：第31关复刻第1关，第32关复刻第2关...
+  const cycleLevel = ((levelNum - 1) % 30) + 1;
+  return LEVELS[cycleLevel];
+}
+
+// 获取当前关卡显示数字（用于UI展示）
+function getDisplayLevel(levelNum) {
+  return levelNum;
+}
 
 // 计算棋盘像素尺寸（用于 canvas / board 容器）
 function getBoardBounds(layers) {
@@ -136,8 +751,26 @@ const CAT_TYPES = [
   { id: '猫窝',   img: 'cat/棋盘卡片/猫窝.png',   color: '#1ABC9C' },
 ];
 
+// P0: 干扰牌卡牌类型（特殊卡牌，不参与普通三消）
+const INTERFERENCE_CARDS = {
+  groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: '/assets/Textures/GroomCard.png' },
+  freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: '/assets/FreezeCard.png' },
+  sticky: { id: '__interference_sticky__', name: '粘连牌', emoji: '🩹', color: '#FD79A8', interference: 'sticky' },
+  transform: { id: '__interference_transform__', name: '三花牌', emoji: '🔮', color: '#A29BFE', interference: 'transform' },
+  danger: { id: '__interference_danger__', name: '小狗牌', emoji: '🐶', color: '#FF6B6B', interference: 'danger' },
+  disguise: { id: '__interference_disguise__', name: '真身牌', emoji: '🎭', color: '#00CEC9', interference: 'disguise' },
+};
+
 // 图片预加载 — 直接从 .b64 文件加载
 const _tileImages = {};
+
+// P0: 干扰牌图片预加载（使用Emoji渲染）
+function preloadInterferenceImages() {
+  Object.values(INTERFERENCE_CARDS).forEach(card => {
+    _tileImages[card.id] = { emoji: card.emoji, color: card.color, complete: true };
+  });
+}
+preloadInterferenceImages();
 let _imagesLoaded = false;
 function preloadImages() {
   if (_imagesLoaded) return;
@@ -470,10 +1103,80 @@ function getDailySeed() {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
+/* ═══════════════════════════════════════
+   P0: 异形棋盘布局生成
+   ═══════════════════════════════════════ */
+
+// 猫爪五指棋盘布局（黑猫暗夜关专用）
+function generateCatPawLayout() {
+  return [
+    // 大拇指
+    { layer: 0, cols: 2, rows: 3, offsetX: 0, offsetY: 0, zone: 'thumb' },
+    // 食指
+    { layer: 0, cols: 2, rows: 4, offsetX: 120, offsetY: -30, zone: 'index' },
+    // 中指
+    { layer: 0, cols: 2, rows: 5, offsetX: 240, offsetY: -60, zone: 'middle' },
+    // 无名指
+    { layer: 0, cols: 2, rows: 4, offsetX: 360, offsetY: -30, zone: 'ring' },
+    // 小拇指
+    { layer: 0, cols: 2, rows: 3, offsetX: 480, offsetY: 0, zone: 'pinky' },
+    // 第一层（中间部分）
+    { layer: 1, cols: 8, rows: 4, offsetX: 60, offsetY: 60, zone: 'palm' },
+  ];
+}
+
+// 骨头横放棋盘布局（折耳静坪关专用）
+function generateBoneLayout() {
+  return [
+    // 左端（骨头头）
+    { layer: 0, cols: 3, rows: 2, offsetX: 0, offsetY: 30, zone: 'bone_end' },
+    { layer: 1, cols: 3, rows: 2, offsetX: 30, offsetY: 60, zone: 'bone_end' },
+    // 中间（骨头身，密集区）
+    { layer: 0, cols: 6, rows: 4, offsetX: 90, offsetY: 0, zone: 'bone_body' },
+    { layer: 1, cols: 5, rows: 3, offsetX: 120, offsetY: 30, zone: 'bone_body' },
+    { layer: 2, cols: 4, rows: 2, offsetX: 150, offsetY: 60, zone: 'bone_body' },
+    // 右端（骨头尾）
+    { layer: 0, cols: 3, rows: 2, offsetX: 360, offsetY: 30, zone: 'bone_end' },
+    { layer: 1, cols: 3, rows: 2, offsetX: 330, offsetY: 60, zone: 'bone_end' },
+  ];
+}
+
+// 波斯双域棋盘布局（波斯双域关专用）
+function generateDualZoneLayout() {
+  return [
+    // 左侧蓝色区域
+    { layer: 0, cols: 4, rows: 4, offsetX: 0, offsetY: 0, zone: 'left_blue' },
+    { layer: 1, cols: 3, rows: 3, offsetX: 30, offsetY: 30, zone: 'left_blue' },
+    // 右侧绿色区域
+    { layer: 0, cols: 4, rows: 4, offsetX: 300, offsetY: 0, zone: 'right_green' },
+    { layer: 1, cols: 3, rows: 3, offsetX: 270, offsetY: 30, zone: 'right_green' },
+  ];
+}
+
+// 获取关卡棋盘布局
+function getLevelLayers(levelNum) {
+  const lv = getLevelConfig(levelNum);
+  if (!lv) return [];
+  
+  switch (lv.boardType) {
+    case BOARD_TYPES.catPaw:
+      return generateCatPawLayout();
+    case BOARD_TYPES.bone:
+      return generateBoneLayout();
+    case BOARD_TYPES.dual:
+      return generateDualZoneLayout();
+    default:
+      return lv.layers;
+  }
+}
+
 // 棋盘生成（按需求文档）
 function generateBoard(levelNum) {
-  const lv = LEVELS[levelNum];
-  const { typeIndices, layers } = lv;
+  const lv = getLevelConfig(levelNum);
+  if (!lv) return [];
+  
+  const { typeIndices } = lv;
+  const layers = getLevelLayers(levelNum);
   const rng = seededRandom(getDailySeed() + levelNum * 1000);
 
   // 1. 生成所有位置
@@ -481,7 +1184,7 @@ function generateBoard(levelNum) {
   layers.forEach(la => {
     for (let r = 0; r < la.rows; r++) {
       for (let c = 0; c < la.cols; c++) {
-        allSlots.push({ col: c, row: r, layer: la.layer });
+        allSlots.push({ col: c, row: r, layer: la.layer, zone: la.zone || 'default' });
       }
     }
   });
@@ -493,19 +1196,59 @@ function generateBoard(levelNum) {
   // 2. 分配类型
   const cards = assignTypes(slots, typeIndices, layers, rng);
 
-  // 3. 可解性校验（最多50次重试）
+  // 3. 添加干扰牌
+  const cardsWithInterference = addInterferenceCards(cards, lv, rng);
+
+  // 4. 可解性校验（最多50次重试）
   let attempts = 0;
-  let result = cards;
+  let result = cardsWithInterference;
   while (!isSolvable(result) && attempts < 50) {
     const retrySlots = shuffleArr(allSlots, rng).slice(0, total);
-    result = assignTypes(retrySlots, typeIndices, layers, rng);
+    const retryCards = assignTypes(retrySlots, typeIndices, layers, rng);
+    result = addInterferenceCards(retryCards, lv, rng);
     attempts++;
   }
 
-  // 4. 构建 offset map 供坐标计算
+  // 5. 构建 offset map 供坐标计算
   buildLayerOffsetMap(layers);
 
   return result;
+}
+
+// P0: 添加干扰牌
+function addInterferenceCards(cards, levelConfig, rng) {
+  if (!levelConfig.interference || levelConfig.interferenceCount === 0) {
+    return cards;
+  }
+
+  const interferenceType = levelConfig.interference.id;
+  const count = levelConfig.interferenceCount;
+  
+  // 获取可放置干扰牌的位置（顶层可点击的位置）
+  const maxLayer = Math.max(...cards.filter(c => !c.removed).map(c => c.layer || 0));
+  const topLayerCards = cards.filter(c => !c.removed && (c.layer || 0) === maxLayer);
+  
+  // 随机选择位置放置干扰牌
+  const shuffledTop = shuffleArr([...topLayerCards], rng);
+  const selectedCards = shuffledTop.slice(0, Math.min(count, shuffledTop.length));
+  
+  return cards.map(card => {
+    if (selectedCards.some(sc => sc.id === card.id)) {
+      return {
+        ...card,
+        type: `__interference_${interferenceType}__`,
+        isInterference: true,
+        interferenceType: interferenceType,
+        // 伪装牌特殊处理：先随机伪装成普通牌
+        disguisedAs: interferenceType === 'disguise' 
+          ? CAT_TYPES[Math.floor(rng() * CAT_TYPES.length)].id 
+          : null,
+        // 真身牌初始为伪装状态
+        revealed: interferenceType !== 'disguise',
+      };
+    }
+    return card;
+  });
 }
 
 // 类型分配：确保总数3的倍数、跨层分散、同层不相邻、顶层覆盖
@@ -561,6 +1304,7 @@ function assignTypes(slots, typeIndices, layers, rng) {
   return slots.map((s, i) => ({
     id: i, type: s.type,
     col: s.col, row: s.row, layer: s.layer,
+    zone: s.zone || 'default', // P0: 保留区域信息
     removed: false, inSlot: false, matched: false,
   }));
 }
@@ -727,6 +1471,11 @@ function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
   if (tile.removed) return null;
   const isInSlot = tile.inSlot;
 
+  // P5: 增强视觉 - 根据卡牌颜色生成渐变色
+  const cardGradient = `linear-gradient(145deg, ${cat.color}dd 0%, ${cat.color}88 50%, ${cat.color}44 100%)`;
+  const highlightBorder = highlighted ? '#FFD700' : (blocked ? 'rgba(255,255,255,0.08)' : cat.color + 'cc');
+  const highlightShadow = highlighted ? '0 0 20px 6px rgba(255,215,0,0.7)' : `0 4px 16px rgba(0,0,0,0.6), 0 0 12px ${cat.color}40, inset 0 1px 0 rgba(255,255,255,0.3)`;
+
   return (
     <div
       onClick={() => !blocked && !isInSlot && onClick(tile)}
@@ -734,54 +1483,83 @@ function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
         position: 'absolute',
         left: x, top: y,
         width: TILE_W, height: TILE_H,
-        borderRadius: 10,
+        borderRadius: 12,
         background: isInSlot
           ? 'rgba(108,92,231,0.15)'
           : blocked
             ? 'rgba(40,30,60,0.85)'
-            : 'rgba(255,255,255,0.95)',
-        border: `2.5px solid ${isInSlot ? 'rgba(108,92,231,0.3)' : highlighted ? '#FFD700' : blocked ? 'rgba(255,255,255,0.08)' : cat.color + '80'}`,
+            : cardGradient,
+        border: `2.5px solid ${highlightBorder}`,
         cursor: blocked || isInSlot ? 'not-allowed' : 'pointer',
         overflow: 'hidden',
         zIndex: tile.layer * 100 + tile.row * 10 + tile.col,
-        animation: `tileIn 0.4s ease-out ${animDelay}s both`,
+        animation: `tileIn 0.4s ease-out ${animDelay}s both, ${highlighted ? 'cardGlow 1.5s ease-in-out infinite' : ''}`,
         opacity: isInSlot ? 0.25 : blocked ? 0.4 : 1,
-        filter: isInSlot ? 'blur(1px) brightness(0.5)' : blocked ? 'brightness(0.3) saturate(0.2)' : `drop-shadow(0 2px 6px ${cat.color}40)`,
-        transition: 'transform 0.15s, box-shadow 0.15s',
-        boxShadow: highlighted ? '0 0 16px 4px rgba(255,215,0,0.6)' : blocked ? 'none' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`,
+        filter: isInSlot ? 'blur(1px) brightness(0.5)' : blocked ? 'brightness(0.3) saturate(0.2)' : `drop-shadow(0 2px 8px ${cat.color}50)`,
+        transition: 'transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease-out, border-color 0.2s ease',
+        boxShadow: highlighted ? highlightShadow : blocked ? 'none' : highlightShadow,
+        // P5: 添加内发光效果
+        backdropFilter: blocked ? 'brightness(0.5)' : 'none',
       }}
       onMouseEnter={e => {
         if (!blocked && !isInSlot) {
-          e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-          e.currentTarget.style.boxShadow = `0 6px 20px rgba(0,0,0,0.5), 0 0 14px ${cat.color}40`;
+          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+          e.currentTarget.style.boxShadow = `0 8px 25px rgba(0,0,0,0.6), 0 0 20px ${cat.color}60, inset 0 1px 0 rgba(255,255,255,0.4)`;
+          e.currentTarget.style.zIndex = 1000;
         }
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = highlighted ? '0 0 16px 4px rgba(255,215,0,0.6)' : `0 3px 12px rgba(0,0,0,0.5), 0 0 8px ${cat.color}25`;
+        e.currentTarget.style.zIndex = tile.layer * 100 + tile.row * 10 + tile.col;
+        e.currentTarget.style.boxShadow = highlighted ? '0 0 20px 6px rgba(255,215,0,0.7)' : `0 4px 16px rgba(0,0,0,0.6), 0 0 12px ${cat.color}40, inset 0 1px 0 rgba(255,255,255,0.3)`;
       }}
     >
       <img
         src={cat.img}
         alt={tile.type}
         style={{
-          width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8,
-          filter: blocked ? 'grayscale(1) brightness(0.3)' : 'none',
+          width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10,
+          filter: blocked ? 'grayscale(1) brightness(0.3)' : `saturate(1.1) brightness(1.05)`,
+          transition: 'filter 0.2s ease',
         }}
         onError={e => {
           e.target.style.display = 'none';
-          e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;font-weight:700;color:${cat.color}">${tile.type.slice(0,2)}</div>`;
+          e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5)">${tile.type.slice(0,2)}</div>`;
         }}
       />
+      {/* P5: 卡片高光层 */}
+      {!blocked && !isInSlot && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: '40%',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)',
+          borderRadius: '10px 10px 0 0',
+          pointerEvents: 'none',
+        }} />
+      )}
     </div>
   );
 }
 
 /* ═══════════════════════════════════════
-   COLLECTION SLOT (with 收集槽.png bg)
+   COLLECTION SLOT (with 收集槽.png bg) - P5: 增强版
    ═══════════════════════════════════════ */
-function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
+function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlot = null }) {
   const count = maxSlots;
+  const [slotAnim, setSlotAnim] = useState(null);
+
+  // P5: 检测新卡牌入场动画
+  useEffect(() => {
+    if (slot.length > 0) {
+      const lastItem = slot[slot.length - 1];
+      if (lastItem && !matching.includes(lastItem.uid)) {
+        setSlotAnim(lastItem.uid);
+        const timer = setTimeout(() => setSlotAnim(null), 400);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [slot, matching]);
 
   return (
     <div style={{
@@ -805,7 +1583,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
           }}
         />
       )}
-      {/* 槽位容器 — flex 均匀分布，靠左 */}
+      {/* 槽位容器 — flex 均匀分布 */}
       <div style={{
         position: 'relative', width: '100%', height: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'space-evenly',
@@ -813,22 +1591,103 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
       }}>
       {/* 槽位指示器 */}
       {Array.from({ length: count }).map((_, i) => {
-        const item = slot[i];
+        // 冰冻牌占据第一格，猫咪从第二格开始
+        const isFrozen = frozenSlot && i === 0;
+        const slotIndex = frozenSlot ? i - 1 : i;
+        const item = slotIndex >= 0 ? slot[slotIndex] : null;
         const isMatching = item && matching.includes(item.uid);
+        const isNewAnim = item && slotAnim === item.uid;
+        
         return (
           <div key={i} style={{
             width: 48, height: 58, borderRadius: 12,
             flexShrink: 0,
+            position: 'relative',
           }}>
+            {/* 冰冻牌 */}
+            {isFrozen ? (
+              <div style={{
+                width: '100%', height: '100%', borderRadius: 10,
+                overflow: 'hidden',
+                border: '2px solid #74B9FF',
+                boxShadow: '0 0 20px rgba(116,185,255,0.8), 0 0 40px rgba(116,185,255,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+                background: 'linear-gradient(145deg, rgba(116,185,255,0.4) 0%, rgba(180,220,255,0.2) 100%)',
+                animation: 'freezePulse 2s ease-in-out infinite',
+              }}>
+                {/* 冰冻牌贴图 */}
+                <img
+                  src="/assets/FreezeCard.png"
+                  alt="冰冻牌"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0 }}
+                  onError={e => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                {/* 冰层覆盖效果 */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  background: 'linear-gradient(180deg, rgba(200,240,255,0.4) 0%, rgba(116,185,255,0.2) 30%, rgba(180,220,255,0.1) 100%)',
+                  borderRadius: 10,
+                  pointerEvents: 'none',
+                }} />
+                {/* 冰晶闪烁点 */}
+                <div style={{
+                  position: 'absolute', top: 2, left: 2, width: 6, height: 6,
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                  animation: 'sparkle 1.5s ease-in-out infinite',
+                }} />
+                <div style={{
+                  position: 'absolute', top: 4, right: 4, width: 4, height: 4,
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                  animation: 'sparkle 1.8s ease-in-out infinite 0.3s',
+                }} />
+                <div style={{
+                  position: 'absolute', bottom: 6, left: 6, width: 5, height: 5,
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.85) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                  animation: 'sparkle 1.6s ease-in-out infinite 0.6s',
+                }} />
+                {/* 寒气飘散效果 */}
+                <div style={{
+                  position: 'absolute', top: '-10%', left: '20%', width: '15%', height: '20%',
+                  background: 'linear-gradient(180deg, rgba(200,240,255,0.6) 0%, transparent 100%)',
+                  borderRadius: '50%',
+                  animation: 'frostRise 2s ease-out infinite',
+                  filter: 'blur(2px)',
+                }} />
+                <div style={{
+                  position: 'absolute', top: '-10%', right: '25%', width: '12%', height: '15%',
+                  background: 'linear-gradient(180deg, rgba(200,240,255,0.5) 0%, transparent 100%)',
+                  borderRadius: '50%',
+                  animation: 'frostRise 2.2s ease-out infinite 0.5s',
+                  filter: 'blur(2px)',
+                }} />
+              </div>
+            ) : (
+              <>
+            {/* P5: 槽位光效 */}
+            {!item && (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 8, height: 8, borderRadius: '50%',
+                background: 'rgba(162,155,254,0.3)',
+                animation: 'sparkle 2s ease-in-out infinite',
+              }} />
+            )}
             {item ? (() => {
               const cat = CAT_TYPES.find(c => c.id === item.type);
               return (
                 <div style={{
                   width: '100%', height: '100%', borderRadius: 10,
                   overflow: 'hidden',
-                  border: `2px solid ${cat.color}70`,
-                  animation: isMatching ? 'matchPop 0.4s ease-out forwards' : 'toSlot 0.3s ease-out',
-                  boxShadow: isMatching ? `0 0 24px ${cat.color}` : `0 2px 8px rgba(0,0,0,0.3)`,
+                  border: `2px solid ${cat.color}90`,
+                  animation: isMatching ? 'matchPop 0.4s ease-out forwards' : isNewAnim ? 'toSlot 0.3s ease-out' : 'none',
+                  boxShadow: isMatching ? `0 0 30px ${cat.color}, 0 0 60px ${cat.color}50` : `0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)`,
+                  background: `linear-gradient(145deg, ${cat.color}33 0%, transparent 100%)`,
+                  transition: 'box-shadow 0.2s ease',
                 }}>
                   <img
                     src={cat.img}
@@ -836,17 +1695,28 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
                     onError={e => {
                       e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:9px;font-weight:700;color:${cat.color};background:rgba(0,0,0,0.3)">${item.type.slice(0,2)}</div>`;
+                      e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:9px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5)">${item.type.slice(0,2)}</div>`;
                     }}
                   />
+                  {/* P5: 消除高光 */}
+                  {isMatching && (
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 50%)',
+                      borderRadius: 10,
+                      pointerEvents: 'none',
+                    }} />
+                  )}
                 </div>
               );
             })() : (
               <div style={{
                 width: '100%', height: '100%', borderRadius: 10,
-                border: '1.5px dashed rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.02)',
+                border: '1.5px dashed rgba(255,255,255,0.1)',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
               }}/>
+            )}
+              </>
             )}
           </div>
         );
@@ -859,7 +1729,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true }) {
 // P5: PowerupButton 已移除，由猫咪技能按钮取代
 
 /* ═══════════════════════════════════════
-   RESULT OVERLAY — 结算页 P4: 界面调整
+   RESULT OVERLAY — 结算页 P5: 增强版界面
    ═══════════════════════════════════════ */
 function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fishMultiplier, timeLeft, catCount, cats, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
   if (gameState === GAME_PLAYING) return null;
@@ -867,160 +1737,304 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
   const isLose = gameState === GAME_LOSE;
   const showConfetti = isWin || isLevelComplete;
-  // 计算用时（假设游戏开始时记录）
-  const gameDuration = "12分钟"; // 简化处理
+  
+  // P5: 胜利/失败状态颜色
+  const statusColor = isLose ? '#FF6B6B' : '#00B894';
+  const statusGradient = isLose 
+    ? 'linear-gradient(135deg, #FF6B6B, #EE5A5A)'
+    : 'linear-gradient(135deg, #00B894, #55EFC4)';
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(15,10,30,0.6)', backdropFilter: 'blur(16px) saturate(1.2)',
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(15,10,30,0.75)', backdropFilter: 'blur(20px) saturate(1.3)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       zIndex: 500, animation: 'fadeIn 0.4s ease-out',
     }}>
-      {/* Modal - P4优化样式 */}
+      {/* P5: 胜利/失败背景光效 */}
       <div style={{
-        width: 360, borderRadius: 24,
-        background: 'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
-        border: '1px solid rgba(108,92,231,0.3)',
-        boxShadow: '0 8px 32px rgba(108,92,231,0.2)',
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        background: `radial-gradient(ellipse at 50% 30%, ${statusColor}20 0%, transparent 60%)`,
+        pointerEvents: 'none',
+      }} />
+      
+      {/* Modal - P5增强样式 */}
+      <div style={{
+        width: '90%', maxWidth: 340, borderRadius: 24,
+        background: 'linear-gradient(180deg, rgba(26,18,53,0.95) 0%, rgba(15,10,30,0.98) 100%)',
+        border: `1px solid ${statusColor}40`,
+        boxShadow: `0 12px 48px ${statusColor}30, 0 0 60px ${statusColor}10`,
         padding: '24px 20px',
-        animation: 'slideUp 0.4s ease-out',
+        animation: 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        {/* Title */}
-        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+        {/* P5: 顶部装饰光条 */}
+        <div style={{
+          position: 'absolute', top: 0, left: '10%', right: '10%',
+          height: 3,
+          background: statusGradient,
+          borderRadius: '0 0 4px 4px',
+          boxShadow: `0 0 20px ${statusColor}`,
+        }} />
+        
+        {/* Title - P5增强 */}
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          {/* P5: 状态图标 */}
           <div style={{
-            fontSize: 22, fontWeight: 900,
-            color: showConfetti ? '#00B894' : '#FF6B6B',
+            fontSize: 26, fontWeight: 900,
+            color: statusColor,
             letterSpacing: '-0.5px',
-            marginBottom: 4,
           }}>
-            {isLose ? '挑战失败' : '本局结算'}
+            
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.45)', marginTop: 4 }}>
+          <div style={{
+            fontSize: 26, fontWeight: 900,
+            color: statusColor,
+            letterSpacing: '-0.5px',
+            marginBottom: 6,
+            textShadow: `0 0 30px ${statusColor}50`,
+          }}>
+            {isLose ? '挑战失败' : isWin ? '恭喜通关！' : '关卡完成'}
+          </div>
+          <div style={{ 
+            fontSize: 13, 
+            color: 'rgba(240,237,255,0.5)', 
+            marginTop: 4,
+            background: statusGradient,
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
             {isLose ? '没关系，再接再厉！' : '恭喜你完成了本局游戏'}
           </div>
         </div>
 
-        {/* Stats - P4优化布局 */}
+        {/* Stats - P5优化布局 */}
         <div style={{
-          borderRadius: 16, padding: '16px', 
-          background: 'rgba(26,18,53,0.6)',
-          border: '1px solid rgba(108,92,231,0.15)',
-          marginBottom: 16,
+          borderRadius: 20, padding: '18px', 
+          background: 'linear-gradient(180deg, rgba(26,18,53,0.6) 0%, rgba(15,10,30,0.8) 100%)',
+          border: '1px solid rgba(108,92,231,0.2)',
+          marginBottom: 18,
+          position: 'relative',
+          overflow: 'hidden',
         }}>
+          {/* P5: 背景光效 */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+            background: 'linear-gradient(180deg, rgba(108,92,231,0.1) 0%, transparent 100%)',
+            pointerEvents: 'none',
+          }} />
+          
           {/* 第一行：得分和最大连击 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div style={{
-              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
-              background: 'rgba(15,10,30,0.5)',
+              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.6)',
+              border: '1px solid rgba(247,220,111,0.2)',
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🏆 得分</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#F7DC6F', letterSpacing: '-0.5px' }}>{score.toLocaleString()}</div>
-              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>分</div>
+              {/* P5: 图标背景 */}
+              <div style={{
+                position: 'absolute', top: 8, right: 8,
+                fontSize: 20, opacity: 0.3,
+              }}>🏆</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>得分</div>
+              <div style={{ 
+                fontSize: 24, fontWeight: 900, 
+                color: '#F7DC6F', 
+                letterSpacing: '-1px',
+                textShadow: '0 0 20px rgba(247,220,111,0.3)',
+              }}>{score.toLocaleString()}</div>
             </div>
             <div style={{
-              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
-              background: 'rgba(15,10,30,0.5)',
+              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.6)',
+              border: '1px solid rgba(255,107,107,0.2)',
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🔥 最大连击</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#FF6B6B', letterSpacing: '-0.5px' }}>{maxCombo}</div>
-              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>连消</div>
+              <div style={{
+                position: 'absolute', top: 8, right: 8,
+                fontSize: 20, opacity: 0.3,
+              }}>🔥</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>最大连击</div>
+              <div style={{ 
+                fontSize: 24, fontWeight: 900, 
+                color: '#FF6B6B', 
+                letterSpacing: '-1px',
+                textShadow: '0 0 20px rgba(255,107,107,0.3)',
+              }}>{maxCombo}</div>
             </div>
           </div>
           {/* 第二行：获得鱼干和用时 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{
-              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
-              background: 'rgba(15,10,30,0.5)',
+              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.6)',
+              border: '1px solid rgba(253,150,68,0.2)',
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>🐟 获得鱼干</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#FD9644', letterSpacing: '-0.5px' }}>+{Math.round(fishEarned * fishMultiplier)}</div>
-              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>条</div>
+              <div style={{
+                position: 'absolute', top: 8, right: 8,
+                fontSize: 20, opacity: 0.3,
+              }}>🐟</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>获得鱼干</div>
+              <div style={{ 
+                fontSize: 24, fontWeight: 900, 
+                color: '#FD9644', 
+                letterSpacing: '-1px',
+                textShadow: '0 0 20px rgba(253,150,68,0.3)',
+              }}>+{Math.round(fishEarned * fishMultiplier)}</div>
             </div>
             <div style={{
-              borderRadius: 12, padding: '12px 10px', textAlign: 'center',
-              background: 'rgba(15,10,30,0.5)',
+              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              background: 'rgba(15,10,30,0.6)',
+              border: `1px solid ${statusColor}30`,
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(240,237,255,0.45)', marginBottom: 4 }}>{isLose ? '🃏 剩余卡牌' : '⏱️ 用时'}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: isLose ? '#FF6B6B' : '#A29BFE', letterSpacing: '-0.5px' }}>
+              <div style={{
+                position: 'absolute', top: 8, right: 8,
+                fontSize: 20, opacity: 0.3,
+              }}>{isLose ? '🃏' : '⏱️'}</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>
+                {isLose ? '剩余卡牌' : '用时'}
+              </div>
+              <div style={{ 
+                fontSize: 24, fontWeight: 900, 
+                color: isLose ? '#FF6B6B' : '#A29BFE', 
+                letterSpacing: '-1px',
+                textShadow: `0 0 20px ${isLose ? 'rgba(255,107,107,0.3)' : 'rgba(162,155,254,0.3)'}`,
+              }}>
                 {isLose ? `${remaining}张` : `${String(Math.floor(timeLeft / 60)).padStart(2,'0')}:${String(timeLeft % 60).padStart(2,'0')}`}
               </div>
-              <div style={{ fontSize: 9, color: 'rgba(240,237,255,0.3)', marginTop: 2 }}>{isLose ? '' : '分钟'}</div>
             </div>
           </div>
         </div>
 
-        {/* Cat witnesses - P4优化 */}
+        {/* Cat witnesses - P5增强 */}
         {catCount > 0 && (
           <div style={{ 
-            marginBottom: 16, padding: '14px', 
-            background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(108,92,231,0.08) 100%)',
-            borderRadius: 14, border: '1px solid rgba(253,150,68,0.15)',
+            marginBottom: 18, padding: '16px', 
+            background: 'linear-gradient(135deg, rgba(253,150,68,0.1) 0%, rgba(108,92,231,0.1) 100%)',
+            borderRadius: 16, 
+            border: '1px solid rgba(253,150,68,0.2)',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#FD9644', textAlign: 'center', marginBottom: 10 }}>
+            <div style={{ 
+              fontSize: 12, fontWeight: 700, 
+              color: '#FD9644', textAlign: 'center', marginBottom: 12,
+              position: 'relative',
+            }}>
               🐱 这场游戏有 {catCount} 只猫参战了
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-              {cats.map(cat => (
-                <div key={cat.serialId} style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              {cats.map((cat, idx) => (
+                <div key={cat.serialId} style={{ 
+                  textAlign: 'center',
+                }}>
                   <div style={{ 
-                    width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', 
-                    border: '2px solid rgba(253,150,68,0.4)', margin: '0 auto 4px',
-                    boxShadow: '0 2px 8px rgba(253,150,68,0.2)',
+                    width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', 
+                    border: '2px solid rgba(253,150,68,0.5)', 
+                    margin: '0 auto 6px',
+                    boxShadow: '0 4px 12px rgba(253,150,68,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+                    background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)',
                   }}>
-                    <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    <img src={`cat/${cat.breed}.png`} alt={cat.breed} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={e => { e.target.style.display = 'none'; }} />
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(240,237,255,0.7)' }}>{cat.name}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,255,0.8)' }}>{cat.breed}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 周榜排名 - P4新增 */}
+        {/* 周榜排名 - P5增强 */}
         <div style={{ 
-          textAlign: 'center', marginBottom: 16, padding: '12px',
-          background: 'rgba(108,92,231,0.1)', borderRadius: 12,
-          border: '1px solid rgba(108,92,231,0.15)',
+          textAlign: 'center', marginBottom: 20, padding: '14px',
+          background: `linear-gradient(135deg, ${statusColor}10, ${statusColor}05)`,
+          borderRadius: 14,
+          border: `1px solid ${statusColor}25`,
+          position: 'relative',
+          overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)' }}>周榜排名</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#A29BFE' }}>#24</div>
+          <div style={{ fontSize: 12, color: 'rgba(240,237,255,0.5)', marginBottom: 4 }}>🏅 周榜排名</div>
+          <div style={{ 
+            fontSize: 22, fontWeight: 900, 
+            color: statusColor,
+            textShadow: `0 0 20px ${statusColor}50`,
+          }}>#24</div>
         </div>
 
-        {/* Actions - P4优化布局 */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        {/* Actions - P5增强 */}
+        <div style={{ display: 'flex', gap: 14 }}>
           {isLose ? (
             <>
-              <button onClick={onRetry} style={{
-                flex: 1, height: 44, borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-                cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.7)',
-              }}>再试一次</button>
+              <button 
+                onClick={onRetry} 
+                style={{
+                  flex: 1, height: 48, borderRadius: 14,
+                  background: 'rgba(255,255,255,0.08)', 
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  cursor: 'pointer',
+                  fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.8)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                再试一次
+              </button>
               <a href="app.html" style={{
-                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                flex: 1, height: 48, borderRadius: 14, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: statusGradient,
                 border: 'none', cursor: 'pointer', textDecoration: 'none',
-                fontSize: 13, fontWeight: 700, color: '#fff',
-                boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
+                fontSize: 14, fontWeight: 700, color: '#fff',
+                boxShadow: `0 6px 20px ${statusColor}40`,
+                transition: 'all 0.2s ease',
               }}>返回大厅</a>
             </>
           ) : (
             <>
               <a href="猫咪消消乐.html" style={{
-                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                flex: 1, height: 48, borderRadius: 14, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.08)', 
+                border: '1px solid rgba(255,255,255,0.15)',
                 cursor: 'pointer', textDecoration: 'none',
-                fontSize: 13, fontWeight: 600, color: 'rgba(240,237,255,0.7)',
-              }}>再玩一局</a>
+                fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.8)',
+                transition: 'all 0.2s ease',
+              }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >🎮 再玩一局</a>
               <a href="app.html" style={{
-                flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                flex: 1, height: 48, borderRadius: 14, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: statusGradient,
                 border: 'none', cursor: 'pointer', textDecoration: 'none',
-                fontSize: 13, fontWeight: 700, color: '#fff',
-                boxShadow: '0 4px 16px rgba(253,150,68,0.3)',
-              }}>返回大厅</a>
+                fontSize: 14, fontWeight: 700, color: '#fff',
+                boxShadow: `0 6px 20px ${statusColor}40`,
+                transition: 'all 0.2s ease',
+              }}>🏠 返回大厅</a>
             </>
           )}
         </div>
@@ -1032,12 +2046,16 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
 /* ═══════════════════════════════════════
    BATTLE PREPARATION PAGE (P1)
    ═══════════════════════════════════════ */
-function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
+function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, currentLevel = 1 }) {
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
   const activeSlots = [0, 1, 2].map(i => ({ breed: skillSlots[i], cat: cats[i] }));
   const passiveSlots = [3, 4, 5].map(i => ({ breed: skillSlots[i], cat: cats[i] }));
+
+  // P0: 获取干扰牌信息
+  const interference = levelConfig?.interference;
+  const hasInterference = interference && interference.id !== 'none';
 
   return (
     <div style={{
@@ -1055,10 +2073,79 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
         overflowY:'auto',
         animation:'slideUp 0.4s ease-out',
       }}>
+      {/* P0: 关卡信息头 */}
+      <div style={{ textAlign:'center', marginBottom:12 }}>
+        <div style={{ 
+          display:'inline-flex', alignItems:'center', gap:8,
+          background: 'rgba(253,150,68,0.12)', 
+          borderRadius:12, padding:'6px 16px',
+          cursor: 'pointer',
+        }}>
+          <span style={{ fontSize:14, fontWeight:800, color:'#FD9644' }}>
+            第{currentLevel}关
+          </span>
+          <span style={{ fontSize:16 }}>{levelConfig?.breed ? '🐱' : '❓'}</span>
+          <span style={{ fontSize:14, fontWeight:700, color:'#F0EDFF' }}>
+            {levelConfig?.name || '??关'}
+          </span>
+          <span onClick={onChangeLevel} style={{ fontSize:12, color:'#FD9644', cursor:'pointer' }}>
+            切换 →
+          </span>
+        </div>
+      </div>
+
+      {/* P0: 干扰牌警告 */}
+      {hasInterference && (
+        <div style={{ 
+          borderRadius:12, padding:'10px 14px', 
+          background:`${interference.color}10`, 
+          border:`1px solid ${interference.color}30`, 
+          marginBottom:12 
+        }}>
+          <div style={{ fontSize:13, fontWeight:700, color: interference.color, textAlign:'center', marginBottom:4 }}>
+            {interference.emoji} {interference.name}
+          </div>
+          <div style={{ fontSize:11, color:'rgba(240,237,255,0.6)', textAlign:'center' }}>
+            {interference.desc}
+          </div>
+          {levelConfig.interferenceCount > 0 && (
+            <div style={{ fontSize:10, color:'rgba(240,237,255,0.4)', textAlign:'center', marginTop:4 }}>
+              本关固定出现 {levelConfig.interferenceCount} 张
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* P0: 特殊规则提示 */}
+      {levelConfig?.specialRule === 'zone_isolated' && (
+        <div style={{ 
+          borderRadius:12, padding:'8px 14px', 
+          background:'rgba(108,92,231,0.1)', 
+          border:'1px solid rgba(108,92,231,0.2)', 
+          marginBottom:12 
+        }}>
+          <div style={{ fontSize:11, color:'#A29BFE', textAlign:'center' }}>
+            🐾 猫爪五指棋盘 · 各区域独立消除
+          </div>
+        </div>
+      )}
+      {levelConfig?.specialRule === 'dual_zone' && (
+        <div style={{ 
+          borderRadius:12, padding:'8px 14px', 
+          background:'rgba(0,206,201,0.1)', 
+          border:'1px solid rgba(0,206,201,0.2)', 
+          marginBottom:12 
+        }}>
+          <div style={{ fontSize:11, color:'#00CEC9', textAlign:'center' }}>
+            🏛️ 波斯双域 · 左右分割独立消除
+          </div>
+        </div>
+      )}
+
       {/* Timer info */}
       <div style={{ borderRadius:12, padding:'8px 14px', background:'rgba(108,92,231,0.06)', border:'1px solid rgba(108,92,231,0.1)', marginBottom:12 }}>
         <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', textAlign:'center' }}>
-          {levelConfig.timedMode ? `⏱️ ${levelConfig.timeLimit}秒倒计时 · 消除+${levelConfig.matchBonus}秒` : '🎮 休闲模式 · 无时间限制'}
+          {levelConfig?.timedMode ? `⏱️ ${levelConfig.timeLimit}秒倒计时 · 消除+${levelConfig.matchBonus || 5}秒` : '🎮 休闲模式 · 无时间限制'}
         </div>
       </div>
 
@@ -1073,7 +2160,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
         <>
           {/* Active skills */}
           <div style={{ width:'100%', marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#FD9644', marginBottom:8, textAlign:'center' }}>主动技能（1-3号位）</div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#FD9644', marginBottom:8, textAlign:'center' }}>⚔️ 出战席 · 主动技能</div>
             <div style={{ display:'flex', justifyContent:'center', gap:12 }}>
               {activeSlots.map((s, i) => {
                 const skill = s.breed ? CAT_SKILLS[s.breed] : null;
@@ -1095,11 +2182,13 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
                         </div>
                       </>
                     ) : (
-                      <div style={{
+                      <div onClick={() => window.location.href = 'app.html?tab=battle'} style={{
                         width:52, height:52, borderRadius:'50%', margin:'0 auto 4',
-                        border:'1px dashed rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:14, color:'rgba(255,255,255,0.15)',
-                      }}>+</div>
+                        border:'2px dashed rgba(253,150,68,0.4)', display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:18, color:'rgba(253,150,68,0.5)', cursor:'pointer',
+                        transition:'all 0.2s',
+                      }} onMouseEnter={e => { e.target.style.borderColor='rgba(253,150,68,0.8)'; e.target.style.color='rgba(253,150,68,0.9)'; }}
+                         onMouseLeave={e => { e.target.style.borderColor='rgba(253,150,68,0.4)'; e.target.style.color='rgba(253,150,68,0.5)'; }}>+</div>
                     )}
                   </div>
                 );
@@ -1109,7 +2198,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
 
           {/* Passive skills */}
           <div style={{ width:'100%', marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#6C5CE7', marginBottom:8, textAlign:'center' }}>被动加成（4-6号位）</div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#6C5CE7', marginBottom:8, textAlign:'center' }}>👁️ 观战区 · 被动加成</div>
             <div style={{ display:'flex', justifyContent:'center', gap:12 }}>
               {passiveSlots.map((s, i) => {
                 const eff = s.breed ? PASSIVE_EFFECTS[s.breed] : null;
@@ -1131,11 +2220,13 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
                         </div>
                       </>
                     ) : (
-                      <div style={{
+                      <div onClick={() => window.location.href = 'app.html?tab=battle'} style={{
                         width:52, height:52, borderRadius:'50%', margin:'0 auto 4',
-                        border:'1px dashed rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:14, color:'rgba(255,255,255,0.15)',
-                      }}>+</div>
+                        border:'2px dashed rgba(108,92,231,0.4)', display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:18, color:'rgba(108,92,231,0.5)', cursor:'pointer',
+                        transition:'all 0.2s',
+                      }} onMouseEnter={e => { e.target.style.borderColor='rgba(108,92,231,0.8)'; e.target.style.color='rgba(108,92,231,0.9)'; }}
+                         onMouseLeave={e => { e.target.style.borderColor='rgba(108,92,231,0.4)'; e.target.style.color='rgba(108,92,231,0.5)'; }}>+</div>
                     )}
                   </div>
                 );
@@ -1145,13 +2236,13 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
         </>
       ) : (
         <div style={{ textAlign:'center', padding:'20px', background:'rgba(255,255,255,0.03)', borderRadius:14, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <span style={{ fontSize:14, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧 🐱</span>
+          <span style={{ fontSize:14, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧！</span>
         </div>
       )}
 
       {/* Action buttons */}
       <div style={{ display:'flex', gap:10, marginTop:16 }}>
-        <a href="app.html" style={{
+        <a href="app.html?tab=home" style={{
           flex:1, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center',
           background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
           cursor:'pointer', textDecoration:'none',
@@ -1171,14 +2262,160 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig }) {
 }
 
 /* ═══════════════════════════════════════
+   P0: 关卡选择界面
+   ═══════════════════════════════════════ */
+function LevelSelect({ onSelectLevel, onBack }) {
+  // 从localStorage读取已解锁关卡（默认全部解锁供测试）
+  const [unlockedLevels, setUnlockedLevels] = useState(() => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_levels');
+      if (saved) {
+        const data = JSON.parse(saved);
+        return data.unlocked || [1]; // 默认第1关已解锁
+      }
+    } catch(e) {}
+    return [1];
+  });
+
+  // 解锁下一关
+  const unlockNextLevel = (levelNum) => {
+    const cycleLevel = ((levelNum - 1) % 10) + 1;
+    if (cycleLevel < 10 && !unlockedLevels.includes(cycleLevel + 1)) {
+      const newUnlocked = [...unlockedLevels, cycleLevel + 1];
+      setUnlockedLevels(newUnlocked);
+      try {
+        localStorage.setItem('miaolegemi_levels', JSON.stringify({ unlocked: newUnlocked }));
+      } catch(e) {}
+    }
+  };
+
+  // 关卡卡片颜色
+  const getLevelColor = (level) => {
+    if (level <= 3) return { bg: 'rgba(178,190,195,0.15)', border: 'rgba(178,190,195,0.3)', text: '#B2BEC3' };
+    if (level <= 6) return { bg: 'rgba(69,183,209,0.15)', border: 'rgba(69,183,209,0.3)', text: '#45B7D1' };
+    if (level <= 9) return { bg: 'rgba(108,92,231,0.15)', border: 'rgba(108,92,231,0.3)', text: '#A29BFE' };
+    return { bg: 'rgba(253,150,68,0.15)', border: 'rgba(253,150,68,0.3)', text: '#FD9644' };
+  };
+
+  return (
+    <div style={{
+      position:'fixed', top:0, left:0, right:0, bottom:0,
+      background:'rgba(15,10,30,0.85)', backdropFilter:'blur(16px)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      zIndex:150, animation:'fadeIn 0.4s ease-out',
+    }}>
+      <div style={{
+        width:'95%', maxWidth:400, maxHeight:'85vh', borderRadius:24,
+        background:'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
+        border:'1px solid rgba(108,92,231,0.3)',
+        padding:'20px 16px',
+        overflowY:'auto',
+        animation:'slideUp 0.4s ease-out',
+      }}>
+        {/* 标题 */}
+        <div style={{ textAlign:'center', marginBottom:20 }}>
+          <div style={{ fontSize:22, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px' }}>
+            🐱 选择关卡
+          </div>
+          <div style={{ fontSize:12, color:'rgba(240,237,255,0.5)', marginTop:4 }}>
+            前10关为基础常驻关卡，通关后循环复刻
+          </div>
+        </div>
+
+        {/* 关卡网格 */}
+        <div style={{ 
+          display:'grid', 
+          gridTemplateColumns:'repeat(5, 1fr)', 
+          gap:10,
+          marginBottom:20
+        }}>
+          {[1,2,3,4,5,6,7,8,9,10].map(level => {
+            const config = LEVELS[level];
+            const isUnlocked = unlockedLevels.includes(level);
+            const colors = getLevelColor(level);
+            
+            return (
+              <div 
+                key={level}
+                onClick={() => isUnlocked && onSelectLevel(level)}
+                style={{
+                  aspectRatio:'1',
+                  borderRadius:16,
+                  background: isUnlocked ? colors.bg : 'rgba(0,0,0,0.3)',
+                  border: `2px solid ${isUnlocked ? colors.border : 'rgba(255,255,255,0.05)'}`,
+                  display:'flex',
+                  flexDirection:'column',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                  opacity: isUnlocked ? 1 : 0.4,
+                  transition:'all 0.2s',
+                  padding:8,
+                  boxShadow: isUnlocked ? `0 4px 16px ${colors.border}30` : 'none',
+                }}
+              >
+                <div style={{ 
+                  fontSize:18, fontWeight:900, 
+                  color: isUnlocked ? colors.text : 'rgba(255,255,255,0.2)' 
+                }}>
+                  {isUnlocked ? level : '🔒'}
+                </div>
+                <div style={{ 
+                  fontSize:8, fontWeight:600,
+                  color: isUnlocked ? 'rgba(240,237,255,0.6)' : 'rgba(255,255,255,0.2)',
+                  marginTop:2,
+                  textAlign:'center',
+                  lineHeight:1.2,
+                }}>
+                  {config?.name?.slice(0, 2) || '??'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 关卡信息 */}
+        <div style={{
+          background:'rgba(255,255,255,0.03)',
+          borderRadius:12,
+          padding:12,
+          marginBottom:16,
+        }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#FD9644', marginBottom:8 }}>
+            📋 关卡说明
+          </div>
+          <div style={{ fontSize:11, color:'rgba(240,237,255,0.6)', lineHeight:1.6 }}>
+            <div>• 第1-10关为基础常驻关卡</div>
+            <div>• 每关固定坐镇猫咪和干扰牌</div>
+            <div>• 通关后自动循环复刻</div>
+            <div>• 干扰牌：舔毛/冰冻/粘连/三花/小狗/真身</div>
+          </div>
+        </div>
+
+        {/* 返回按钮 */}
+        <a href="app.html" style={{
+          display:'block',
+          height:44, borderRadius:14,
+          background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
+          cursor:'pointer', textDecoration:'none',
+          fontSize:14, fontWeight:600, color:'rgba(240,237,255,0.6)',
+          textAlign:'center', lineHeight:'44px',
+        }}>返回主页</a>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
    MAIN GAME COMPONENT
    ═══════════════════════════════════════ */
 function Game() {
   const [currentLevel, setCurrentLevel] = useState(1);
-  const levelConfig = LEVELS[currentLevel];
+  const levelConfig = getLevelConfig(currentLevel) || {};
   const [tiles, setTiles] = useState(() => generateBoard(1));
   const [slot, setSlot] = useState([]);
   const [tempStorage, setTempStorage] = useState([]);
+  const [frozenSlot, setFrozenSlot] = useState(null); // 冰冻牌占据收集槽第一格
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [moveCount, setMoveCount] = useState(0);
@@ -1189,8 +2426,30 @@ function Game() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [score, setScore] = useState(0);
   const lastMatchTimeRef = useRef(0);
-  const [phase, setPhase] = useState('prep'); // prep → playing
-  const nourishingCats = useRef([]);
+  const [phase, setPhase] = useState('playing'); // levelSelect → prep → playing
+  // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
+  const loadCatsFromStorage = () => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        // 出战席1-3号位：主动技能
+        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
+        // 观战区4-6号位：被动技能
+        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 4 && c.battleSpectator <= 6).sort((a, b) => a.battleSpectator - b.battleSpectator);
+        // 只显示备战区实际配置的猫咪
+        return [...battleCats, ...spectatorCats].filter(Boolean);
+      }
+    } catch(e) {}
+    return [];
+  };
+
+  const initialCats = loadCatsFromStorage();
+  const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
+  const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
+  const nourishingCats = useRef(initialCats); // 保持 ref 同步
+  const fixedBattleCats = useRef(initialCats.length > 0 ? initialCats : null); // 标记已加载
+  const shownBattlePrep = useRef(initialCats.length === 0); // 是否有猫咪（有猫咪才显示备战弹窗）
   const uidRef = useRef(0);
   const slotRef = useRef([]);
   const tempStorageRef = useRef([]);
@@ -1202,7 +2461,7 @@ function Game() {
   const [boardScale, setBoardScale] = useState(1);
 
   // P2: Timer system
-  const isTimed = levelConfig.timedMode;
+  const isTimed = levelConfig.timedMode || false;
   const [timeLeft, setTimeLeft] = useState(isTimed ? (levelConfig.timeLimit || 120) : 0);
   const [timerPaused, setTimerPaused] = useState(false);
   const [timerDelay, setTimerDelay] = useState(0);
@@ -1221,19 +2480,53 @@ function Game() {
   const highlightedTilesRef = useRef([]);
   useEffect(() => { highlightedTilesRef.current = highlightedTiles; }, [highlightedTiles]);
 
+  // 关卡选择回调
+  const handleLevelSelect = (level) => {
+    setCurrentLevel(level);
+    setPhase('prep');
+    setTiles(generateBoard(level));
+    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
+    const selectedConfig = getLevelConfig(level);
+    if (selectedConfig?.interference === INTERFERENCE_TYPES.freeze) {
+      const frozenCard = {
+        uid: 'frozen_' + (uidRef.current++),
+        type: '__interference_freeze__',
+        tileId: null,
+        frozen: true,
+      };
+      setFrozenSlot(frozenCard);
+    } else {
+      setFrozenSlot(null);
+    }
+  };
+
   // Load home cats and skill slots from localStorage (P3: updated to home from nurturing)
+  // P4: 固定阵容机制 - 只在第一次进入游戏时设置，后续关卡保持不变
   useEffect(() => {
+    // 如果已经有固定阵容，直接使用
+    if (fixedBattleCats.current !== null) {
+      nourishingCats.current = fixedBattleCats.current;
+      const slots = [];
+      for (let i = 0; i < 6; i++) {
+        slots.push(nourishingCats.current[i] ? nourishingCats.current[i].breedId : null);
+      }
+      setSkillSlots(slots);
+      return;
+    }
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
       if (saved) {
         const data = JSON.parse(saved);
-        // P3: 读取出战席猫咪（前4位）
-        const battleCats = (data.cats || []).filter(c => c.battleSlot != null).sort((a, b) => a.battleSlot - b.battleSlot);
-        // P3: 读取家园猫咪（5-6位为额外被动技能）
-        const homeCats = (data.cats || []).filter(c => c.location === 'home');
-        // 合并：前4个出战位 + 家园前2只
-        nourishingCats.current = [...battleCats, ...homeCats.slice(0, 2)];
-        // 构建技能槽位：0-2主动(1-3号位), 3-5被动(4号位+家园5-6)
+        // 出战席1-3号位：主动技能
+        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
+        // 观战区4-6号位：被动技能
+        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 4 && c.battleSpectator <= 6).sort((a, b) => a.battleSpectator - b.battleSpectator);
+        // 只显示备战区实际配置的猫咪，不填补
+        const cats = [...battleCats, ...spectatorCats].filter(Boolean);
+        // 保存固定阵容
+        fixedBattleCats.current = cats;
+        nourishingCats.current = cats;
+        // 构建技能槽位
         const slots = [];
         for (let i = 0; i < 6; i++) {
           slots.push(nourishingCats.current[i] ? nourishingCats.current[i].breedId : null);
@@ -1348,12 +2641,13 @@ function Game() {
   const boardHeight = boardH + 10;
   const totalTiles = tiles.length;
 
-  // Dynamic board scaling to fill available space
+  // Dynamic board scaling - 限制scale不超过1，确保棋盘始终完整显示在容器内
   useEffect(() => {
     const el = boardContainerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const s = Math.min(
+        1, // 限制最大scale=1，不放大棋盘
         el.clientWidth / boardWidth,
         el.clientHeight / boardHeight
       );
@@ -1410,7 +2704,10 @@ function Game() {
     if (gameState !== GAME_PLAYING) return;
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
-    if (slotRef.current.length >= SLOT_CAPACITY + slotBonus) return;
+    // 冰冻牌占据第一格，所以可用容量减1
+    const frozenOffset = frozenSlot ? 1 : 0;
+    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
+    if (slotRef.current.length >= effectiveCapacity) return;
 
     // Cancel any pending match cleanup from a previous match
     if (matchTimeoutRef.current) {
@@ -1574,12 +2871,13 @@ function Game() {
 
     switch (breedId) {
       case '橘猫': {
-        // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中
-        const toMove = slotRef.current.slice(0, 2);
+        // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中（跳过冰冻牌）
+        const startIdx = frozenSlot ? 1 : 0;
+        const toMove = slotRef.current.slice(startIdx, startIdx + 2);
         if (toMove.length === 0) break;
         setTempStorage(prev => [...toMove, ...prev]);
-        setSlot(prev => prev.slice(2));
-        setMoveHistory(h => h.slice(Math.max(0, h.length - 2)));
+        setSlot(prev => prev.slice(startIdx + 2));
+        setMoveHistory(h => h.slice(Math.max(0, h.length - toMove.length)));
         toMove.forEach(item => {
           setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
         });
@@ -1622,19 +2920,25 @@ function Game() {
         break;
       }
       case '布偶猫': {
-        // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中
-        const toMove = slotRef.current.slice(0, 3);
+        // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中（跳过冰冻牌）
+        const startIdx = frozenSlot ? 1 : 0;
+        const toMove = slotRef.current.slice(startIdx, startIdx + 3);
         if (toMove.length === 0) break;
         setTempStorage(prev => [...toMove, ...prev]);
-        setSlot(prev => prev.slice(3));
-        setMoveHistory(h => h.slice(Math.max(0, h.length - 3)));
+        setSlot(prev => prev.slice(startIdx + 3));
+        setMoveHistory(h => h.slice(Math.max(0, h.length - toMove.length)));
         toMove.forEach(item => {
           setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
         });
         break;
       }
       case '三花猫': {
-        // P3: 蹦跶 - 随机跳走2张干扰卡
+        // P3: 蹦跶 - 移除收集槽第一格的冰冻牌
+        if (frozenSlot) {
+          emitExplosion(100, 600, '#74B9FF');
+          setFrozenSlot(null);
+        }
+        // 原有功能：随机移除2张干扰卡
         const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
         if (candidates.length < 2) break;
         const shuffled = shuffleArr(candidates);
@@ -1817,6 +3121,18 @@ function Game() {
     setUsedSkills({ active0: false, active1: false, active2: false });
     setHighlightedTiles([]);
     setSlotBonus(0);
+    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
+    if (levelConfig.interference === INTERFERENCE_TYPES.freeze) {
+      const frozenCard = {
+        uid: 'frozen_' + (uidRef.current++),
+        type: '__interference_freeze__',
+        tileId: null,
+        frozen: true,
+      };
+      setFrozenSlot(frozenCard);
+    } else {
+      setFrozenSlot(null);
+    }
     // Reload cats
     try {
       const saved = localStorage.getItem('miaolegemi_p0_v1');
@@ -1865,6 +3181,18 @@ function Game() {
     setTimerPaused(false);
     timerPauseRef.current = false;
     setHighlightedTiles([]);
+    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
+    if (levelConfig.interference === INTERFERENCE_TYPES.freeze) {
+      const frozenCard = {
+        uid: 'frozen_' + (uidRef.current++),
+        type: '__interference_freeze__',
+        tileId: null,
+        frozen: true,
+      };
+      setFrozenSlot(frozenCard);
+    } else {
+      setFrozenSlot(null);
+    }
   };
 
   // P2: Extra restart from passive skills (三色守护/优雅步调)
@@ -1875,18 +3203,46 @@ function Game() {
 
   const handleNextLevel = () => {
     const nextLv = currentLevel + 1;
-    // If no next level exists, go back to home
-    if (!LEVELS[nextLv]) {
-      window.location.href = 'app.html';
+    const nextConfig = getLevelConfig(nextLv);
+    // P0: 关卡轮回机制 - 10关通关后循环复刻
+    // 如果没有下一关，重新从第1关开始
+    if (!nextConfig) {
+      setCurrentLevel(1);
+      setTiles(generateBoard(1));
+      setSlot([]);
+      setTempStorage([]);
+      setMatching([]);
+      setGameState(GAME_PLAYING);
+      setMoveCount(0);
+      setFishEarned(0);
+      setMaxCombo(0);
+      setScore(0);
+      const tl = getLevelConfig(1)?.timedMode ? (getLevelConfig(1).timeLimit || 120) : 0;
+      setTimeLeft(tl);
+      timeLeftRef.current = tl;
+      // 冰冻牌初始化
+      if (getLevelConfig(1)?.interference === INTERFERENCE_TYPES.freeze) {
+        const frozenCard = {
+          uid: 'frozen_' + (uidRef.current++),
+          type: '__interference_freeze__',
+          tileId: null,
+          frozen: true,
+        };
+        setFrozenSlot(frozenCard);
+      } else {
+        setFrozenSlot(null);
+      }
+      setTimerPaused(false);
+      setUsedSkills({ active0: false, active1: false, active2: false });
+      setHighlightedTiles([]);
       return;
     }
-    const nextConfig = LEVELS[nextLv];
     if (matchTimeoutRef.current) {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
     gameEndedRef.current = false;
-    setPhase('playing');
+    // P4: 保持 phase 不变，直接进入下一关（不再显示备战弹窗）
     setCurrentLevel(nextLv);
     setTiles(generateBoard(nextLv));
     setSlot([]);
@@ -1911,29 +3267,69 @@ function Game() {
     setUsedSkills({ active0: false, active1: false, active2: false });
     setHighlightedTiles([]);
     setSlotBonus(0);
-    try {
-      const saved = localStorage.getItem('miaolegemi_p0_v1');
-      if (saved) nourishingCats.current = (JSON.parse(saved).cats || []).filter(c => c.location === 'nurturing');
-    } catch(e) {}
+    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
+    if (nextConfig.interference === INTERFERENCE_TYPES.freeze) {
+      const frozenCard = {
+        uid: 'frozen_' + (uidRef.current++),
+        type: '__interference_freeze__',
+        tileId: null,
+        frozen: true,
+      };
+      setFrozenSlot(frozenCard);
+    } else {
+      setFrozenSlot(null);
+    }
+    // P4: 保持固定阵容，不重新读取
   };
 
   const remaining = tiles.filter(t => !t.removed && !t.inSlot).length;
   const progress = Math.round(((totalTiles - remaining) / totalTiles) * 100);
 
+  // P4: 关卡背景图映射（11-20关循环1-10关）
+  const getLevelBg = (level) => {
+    const bgMap = {
+      1: '/assets/Textures/bg.png',
+      2: '/assets/Textures/白猫清浴.png',
+      3: '/assets/Textures/bg.png',
+      4: '/assets/Textures/黑猫暗夜.png',
+      5: '/assets/Textures/bg.png',
+      6: '/assets/Textures/bg.png',
+      7: '/assets/Textures/折耳静坪.png',
+      8: '/assets/Textures/bg.png',
+      9: '/assets/Textures/bg.png',
+      10: '/assets/Textures/波斯双域.png',
+    };
+    const cycleLevel = ((level - 1) % 10) + 1; // 11关=1关, 12关=2关...
+    return bgMap[cycleLevel] || '/assets/Textures/bg.png';
+  };
+
   return (
     <div style={{
       height: '100%', position: 'relative',
       display: 'flex', flexDirection: 'column',
-      background: `url('cat/bg.png') center/cover no-repeat`,
+      background: `url('${getLevelBg(currentLevel)}') center/cover no-repeat`,
       backgroundBlendMode: 'overlay',
     }}>
-      {/* P1: Battle preparation page */}
-      {phase === 'prep' && (
+      {/* P0: 关卡选择页面 — 暂时禁用，直接进入第1关 */}
+      {/* {phase === 'levelSelect' && (
+        <LevelSelect
+          onSelectLevel={handleLevelSelect}
+          onBack={() => window.location.href = 'app.html'}
+        />
+      )} */}
+
+      {/* P1: Battle preparation page - 第一次进入时显示阵容 */}
+      {(phase === 'prep' || (phase === 'playing' && shownBattlePrep.current === false)) && (
         <BattlePrep
-          cats={nourishingCats.current}
+          cats={battleCats}
           skillSlots={skillSlots}
-          onStart={() => setPhase('playing')}
+          onStart={() => {
+            shownBattlePrep.current = true;
+            setBattlePrepVisible(false);
+          }}
           levelConfig={levelConfig}
+          currentLevel={currentLevel}
+          onChangeLevel={() => setPhase('levelSelect')}
         />
       )}
 
@@ -1942,68 +3338,215 @@ function Game() {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(15,10,30,0.35)',
         zIndex: 0,
+        display: phase === 'levelSelect' ? 'none' : 'block',
       }}/>
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
+        {/* 顶部渐变遮罩 */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 120,
+          background: 'linear-gradient(180deg, rgba(15,10,30,0.8) 0%, transparent 100%)',
+          pointerEvents: 'none', zIndex: 2,
+        }} />
+
         {/* ═══ HEADER ═══ */}
         <div style={{
-          padding: '46px 16px 8px',
+          padding: '48px 8px 4px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'relative', zIndex: 3,
+          gap: 4,
         }}>
           <a href="app.html" style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            textDecoration: 'none', color: 'rgba(240,237,255,0.6)', fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: 2,
+            textDecoration: 'none', color: 'rgba(240,237,255,0.7)', fontSize: 11, fontWeight: 500,
+            padding: '4px 8px',
+            borderRadius: 6,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            flexShrink: 0,
           }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
               <path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             返回
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: '#FD9644',
-              background: 'rgba(253,150,68,0.12)', padding: '2px 8px', borderRadius: 6,
-            }}>第{currentLevel}关 · {levelConfig.name}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: '#FD9644',
-              background: 'rgba(253,150,68,0.15)', padding: '2px 8px', borderRadius: 6,
-            }}>🐟 +{fishEarned}</span>
-            {phase === 'playing' && (
-              <span style={{
-                fontSize: 11, fontWeight: 700,
-                color: timerDelay > 0 ? '#55EFC4' : timeLeft <= 10 ? '#FF6B6B' : timerPaused ? '#55EFC4' : 'rgba(240,237,255,0.6)',
-                background: timerDelay > 0 ? 'rgba(0,184,148,0.15)' : timeLeft <= 10 ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.06)',
-                padding: '2px 8px', borderRadius: 6,
-              }}>
-                {timerDelay > 0 ? `🛡️ 免计时 ${timerDelay}s` : timerPaused ? '⏸️ ' : '⏱️ '}
-                {timerDelay === 0 && `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`}
+          
+          {/* 中心信息区 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 4,
+            flex: 1,
+            justifyContent: 'center',
+            minWidth: 0,
+          }}>
+            {/* 关卡信息 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 2,
+              padding: '3px 6px', borderRadius: 6,
+              background: 'rgba(253,150,68,0.15)',
+              border: '1px solid rgba(253,150,68,0.25)',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#FD9644' }}>
+                第{currentLevel}关 {levelConfig.name || ''}
               </span>
+            </div>
+            
+            {/* 鱼干计数 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 2,
+              padding: '3px 6px', borderRadius: 6,
+              background: 'rgba(253,150,68,0.1)',
+              border: '1px solid rgba(253,150,68,0.2)',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 10 }}>🐟</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#FD9644' }}>+{fishEarned}</span>
+            </div>
+            
+            {/* 计时器 */}
+            {phase === 'playing' && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 2,
+                padding: '3px 6px', borderRadius: 6,
+                background: timerDelay > 0 
+                  ? 'rgba(85,239,196,0.15)'
+                  : timeLeft <= 10 
+                    ? 'rgba(255,107,107,0.2)'
+                    : 'rgba(108,92,231,0.12)',
+                border: timerDelay > 0 
+                  ? '1px solid rgba(85,239,196,0.3)' 
+                  : timeLeft <= 10 
+                    ? '1px solid rgba(255,107,107,0.3)' 
+                    : '1px solid rgba(108,92,231,0.2)',
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 10 }}>
+                  {timerDelay > 0 ? '🛡️' : timeLeft <= 10 ? '⏰' : '⏱️'}
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700,
+                  color: timerDelay > 0 ? '#55EFC4' : timeLeft <= 10 ? '#FF6B6B' : '#A29BFE',
+                  animation: timeLeft <= 10 && timerDelay === 0 ? 'shake 0.5s ease-in-out infinite' : 'none',
+                }}>
+                  {timerDelay > 0 
+                    ? `${timerDelay}s` 
+                    : `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`}
+                </span>
+              </div>
             )}
           </div>
-          <button onClick={handleRestart} style={{
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 10, padding: '5px 10px', cursor: 'pointer',
-            fontSize: 11, fontWeight: 600, color: 'rgba(240,237,255,0.5)',
-          }}>重来</button>
+          
+          <button onClick={handleNextLevel} style={{
+            background: 'rgba(253,150,68,0.2)',
+            border: '1px solid rgba(253,150,68,0.3)',
+            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+            fontSize: 10, fontWeight: 700, color: '#FD9644',
+            display: 'flex', alignItems: 'center', gap: 2,
+            flexShrink: 0,
+          }}>
+            下一关
+            <span style={{ fontSize: 10 }}>→</span>
+          </button>
         </div>
 
-        {/* ═══ PROGRESS ═══ */}
-        <div style={{ padding: '0 16px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* P5: 干扰牌警告提示 - 增强 */}
+        {levelConfig.interference && levelConfig.interference.id !== 'none' && phase === 'playing' && (
           <div style={{
-            flex: 1, height: 5, borderRadius: 3,
-            background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+            padding: '8px 16px',
+            background: `linear-gradient(90deg, ${levelConfig.interference.color}15, transparent)`,
+            borderBottom: `1px solid ${levelConfig.interference.color}30`,
+            position: 'relative', zIndex: 3,
+            animation: 'fadeIn 0.3s ease-out',
           }}>
+            <span style={{ 
+              fontSize: 12, 
+              color: levelConfig.interference.color,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ fontSize: 16 }}>⚠️</span>
+              {levelConfig.interference.emoji} {levelConfig.interference.desc}
+            </span>
+          </div>
+        )}
+
+        {/* P5: 禁用技能警告 - 增强 */}
+        {levelConfig.disabledSkills && levelConfig.disabledSkills.length > 0 && phase === 'playing' && (
+          <div style={{
+            padding: '6px 16px',
+            background: 'linear-gradient(90deg, rgba(255,107,107,0.12), transparent)',
+            borderBottom: '1px solid rgba(255,107,107,0.2)',
+            position: 'relative', zIndex: 3,
+          }}>
+            <span style={{ 
+              fontSize: 11, 
+              color: '#FF6B6B',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ fontSize: 14 }}>🚫</span>
+              本关禁用：{levelConfig.disabledSkills.join('、')}的「蹦跶」
+            </span>
+          </div>
+        )}
+
+        {/* ═══ PROGRESS ═══ */}
+        <div style={{ 
+          padding: '0 16px 6px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 12,
+          position: 'relative', zIndex: 3,
+        }}>
+          {/* P5: 进度条容器 */}
+          <div style={{
+            flex: 1, 
+            height: 8, 
+            borderRadius: 6,
+            background: 'rgba(255,255,255,0.08)', 
+            overflow: 'hidden',
+            position: 'relative',
+            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+          }}>
+            {/* P5: 进度条光效 */}
             <div style={{
-              width: `${progress}%`, height: '100%', borderRadius: 3,
-              background: 'linear-gradient(90deg, #6C5CE7, #A29BFE)',
-              transition: 'width 0.3s',
+              position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              width: `${progress}%`, 
+              height: '100%', 
+              borderRadius: 6,
+              background: 'linear-gradient(90deg, #6C5CE7, #A29BFE, #FD79A8)',
+              transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             }}/>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(240,237,255,0.35)' }}>
-            {totalTiles - remaining}/{totalTiles} · {moveCount}步
-          </span>
+          
+          {/* P5: 统计信息 */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            flexShrink: 0,
+          }}>
+            <span style={{ 
+              fontSize: 11, 
+              color: 'rgba(240,237,255,0.5)',
+              fontWeight: 500,
+            }}>
+              <span style={{ color: '#A29BFE', fontWeight: 700 }}>{progress}</span>%
+            </span>
+            <span style={{ 
+              fontSize: 10, 
+              color: 'rgba(240,237,255,0.3)',
+              padding: '2px 6px',
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: 4,
+            }}>
+              {totalTiles - remaining}/{totalTiles} · {moveCount}步
+            </span>
+          </div>
         </div>
 
         {/* ═══ 被动技能通知横幅 ═══ */}
@@ -2041,16 +3584,19 @@ function Game() {
 
         {/* ═══ 棋盘 + 收集槽（紧贴） ═══ */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
-          {/* GAME BOARD */}
+          {/* GAME BOARD - 固定高度容器，棋盘在内部居中缩放 */}
           <div ref={boardContainerRef} style={{
-            height: 400, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 2,
-            overflow: 'hidden', opacity: gameState === GAME_PLAYING ? 1 : 0,
+            position: 'relative',
+            height: Math.min(400, Math.ceil(boardHeight * Math.min(boardScale, 1)) + 20),
+            overflow: 'hidden',
+            opacity: gameState === GAME_PLAYING ? 1 : 0,
           }}>
             <div style={{
-              position: 'relative',
+              position: 'absolute',
+              top: '50%', left: '50%',
+              transform: `translate(-50%, -50%) scale(${boardScale})`,
+              transformOrigin: 'center center',
               width: boardWidth, height: boardHeight,
-              transform: `scale(${boardScale})`,
-              transformOrigin: 'top left',
             }}>
               <canvas
                 ref={boardCanvasRef}
@@ -2075,8 +3621,8 @@ function Game() {
             fishEarned={fishEarned}
             fishMultiplier={fishMultiplier}
             timeLeft={timeLeft}
-            catCount={nourishingCats.current.length}
-            cats={nourishingCats.current}
+            catCount={skillSlots.filter((s, i) => i < 3 && s).length}
+            cats={skillSlots.slice(0, 3).filter(s => s).map((breed, idx) => ({ serialId: `active-${idx}`, breed }))}
             extraRestarts={extraRestarts}
             onRestart={handleRestart}
             onRetry={handleRetry}
@@ -2094,7 +3640,7 @@ function Game() {
           )}
           {/* 收集槽 — 临时存放层下方 6px，靠左 */}
           <div style={{ padding: '0 2px 0 2px', marginTop: tempStorage.length > 0 ? 6 : 4 }}>
-            <CollectionSlot slot={slot} matching={matching} />
+            <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} />
           </div>
         </div>
 

@@ -4,7 +4,7 @@
  */
 
 // API配置
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 const TOKEN_KEY = 'miaolegemi_token';
 
 // Token管理
