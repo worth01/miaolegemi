@@ -119,10 +119,47 @@
     .cat-card-p9.on-field { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
     .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* ===== 喵了个咪 · 星形粒子背景层 ===== */
+    .star-bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .star-bg-grid {
+      position: absolute;
+      inset: 0;
+      height: 33.3%;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1.5px, transparent 1.5px);
+      background-size: 35px 35px;
+      mask-image: linear-gradient(to right, #000 0%, #000 37.5%, transparent 37.5%, transparent 62.5%, #000 62.5%, #000 100%),
+                  linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 0%, #000 37.5%, transparent 37.5%, transparent 62.5%, #000 62.5%, #000 100%),
+                          linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, transparent 100%);
+      mask-size: 100% 100%, 100% 100%;
+      -webkit-mask-size: 100% 100%, 100% 100%;
+    }
+    .star-bg-layer .star {
+      position: absolute;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+    @keyframes starPulseBg {
+      0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 10px currentColor); transform: scale(1); }
+      50% { opacity: 1; filter: drop-shadow(0 0 28px currentColor) drop-shadow(0 0 48px currentColor); transform: scale(1.1); }
+    }
+    @keyframes starFloatBg {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      33% { transform: translateY(-6px) translateX(3px); }
+      66% { transform: translateY(-3px) translateX(-2px); }
+    }
   </style>
 </head>
 <body>
-<div id="root"></div>
+
+<div id="root" style="position:relative;z-index:1;"></div>
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
@@ -717,10 +754,36 @@ function getHoursSinceFeed(cat) {
    iOS FRAME
    ═══════════════════════════════════════ */
 function IosFrame({ children }) {
+  const STAR_COLORS = [
+    { color: '#a78bfa', gradient: 'linear-gradient(135deg, #c4b5fd 0%, #7c3aed 50%, #5b21b6 100%)' },
+    { color: '#f472b6', gradient: 'linear-gradient(135deg, #f9a8d4 0%, #db2777 100%)' },
+    { color: '#22c55e', gradient: 'linear-gradient(135deg, #86efac 0%, #16a34a 100%)' },
+    { color: '#fbbf24', gradient: 'linear-gradient(135deg, #fde68a 0%, #d97706 100%)' },
+    { color: '#60a5fa', gradient: 'linear-gradient(135deg, #93c5fd 0%, #2563eb 100%)' },
+  ];
+  const stars = Array.from({ length: 5 }, (_, i) => {
+    const colorInfo = STAR_COLORS[i % STAR_COLORS.length];
+    const size = 20 + Math.random() * 30;
+    const top = 2 + Math.random() * 28;
+    const left = Math.random() < 0.5 ? Math.random() * 30 : 70 + Math.random() * 28;
+    const animDelay = Math.random() * 2;
+    return { size, top, left, color: colorInfo.color, gradient: colorInfo.gradient, animDelay };
+  });
 
 return (
     <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)' }}>
       <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:colors.bg }}>
+        <div className="star-bg-layer">
+          <div className="star-bg-grid"></div>
+          {stars.map((s, i) => (
+            <div key={i} className="star" style={{
+              width: s.size, height: s.size,
+              left: `${s.left}%`, top: `${s.top}%`,
+              color: s.color, background: s.gradient,
+              animation: `starPulseBg ${1.6 + Math.random() * 0.6}s ease-in-out infinite ${s.animDelay}s, starFloatBg ${3 + Math.random() * 1.5}s ease-in-out infinite ${s.animDelay}s`
+            }} />
+          ))}
+        </div>
         <div style={{ position:'absolute', top:12, left:'50%', transform:'translateX(-50%)', width:126, height:36, background:'#000', borderRadius:999, zIndex:30 }}/>
         {children}
         <div style={{ position:'absolute', bottom:10, left:'50%', transform:'translateX(-50%)', width:134, height:5, background:'rgba(240,237,255,0.35)', borderRadius:999, zIndex:25 }}/>
@@ -942,9 +1005,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
                     background: colors.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}25`,
                     display:'flex', flexDirection:'column', alignItems:'center', gap:3,
                   }}>
-                    <div style={{ position:'absolute', top:-6, left:'50%', transform:'translateX(-50%)', fontSize:7, color: colors.orange }}>
-                      🎯{slot}
-                    </div>
+                    
                     <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}40` }}>
                       <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
                         onError={e => { e.target.style.display='none'; }} />
