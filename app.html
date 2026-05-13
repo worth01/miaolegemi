@@ -146,6 +146,11 @@
       clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
       filter: drop-shadow(0 0 12px currentColor);
     }
+    .star-bg-layer .star-1 { left: 8%; top: 15%; width: 48px; height: 48px; color: #a78bfa; background: linear-gradient(135deg, #c4b5fd 0%, #7c3aed 50%, #5b21b6 100%); animation: starPulseBg 2s ease-in-out infinite, starFloatBg 4s ease-in-out infinite; }
+    .star-bg-layer .star-2 { right: 18%; top: 18%; width: 32px; height: 32px; color: #f472b6; background: linear-gradient(135deg, #f9a8d4 0%, #db2777 100%); animation: starPulseBg 1.8s ease-in-out infinite 0.4s, starFloatBg 3.5s ease-in-out infinite 0.6s; }
+    .star-bg-layer .star-3 { right: 10%; top: 25%; width: 36px; height: 36px; color: #22c55e; background: linear-gradient(135deg, #86efac 0%, #16a34a 100%); animation: starPulseBg 2.2s ease-in-out infinite 0.8s, starFloatBg 4.2s ease-in-out infinite 1.2s; }
+    .star-bg-layer .star-4 { left: 5%; top: 30%; width: 26px; height: 26px; color: #fbbf24; background: linear-gradient(135deg, #fde68a 0%, #d97706 100%); animation: starPulseBg 2s ease-in-out infinite 1.2s, starFloatBg 3.8s ease-in-out infinite 0.3s; }
+    .star-bg-layer .star-5 { right: 28%; top: 35%; width: 22px; height: 22px; color: #60a5fa; background: linear-gradient(135deg, #93c5fd 0%, #2563eb 100%); animation: starPulseBg 1.6s ease-in-out infinite 0.2s, starFloatBg 3.2s ease-in-out infinite 0.8s; }
     @keyframes starPulseBg {
       0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 10px currentColor); transform: scale(1); }
       50% { opacity: 1; filter: drop-shadow(0 0 28px currentColor) drop-shadow(0 0 48px currentColor); transform: scale(1.1); }
@@ -761,28 +766,17 @@ function IosFrame({ children }) {
     { color: '#fbbf24', gradient: 'linear-gradient(135deg, #fde68a 0%, #d97706 100%)' },
     { color: '#60a5fa', gradient: 'linear-gradient(135deg, #93c5fd 0%, #2563eb 100%)' },
   ];
-  const stars = Array.from({ length: 5 }, (_, i) => {
-    const colorInfo = STAR_COLORS[i % STAR_COLORS.length];
-    const size = 20 + Math.random() * 30;
-    const top = 2 + Math.random() * 28;
-    const left = Math.random() < 0.5 ? Math.random() * 30 : 70 + Math.random() * 28;
-    const animDelay = Math.random() * 2;
-    return { size, top, left, color: colorInfo.color, gradient: colorInfo.gradient, animDelay };
-  });
 
 return (
     <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)' }}>
       <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:colors.bg }}>
         <div className="star-bg-layer">
           <div className="star-bg-grid"></div>
-          {stars.map((s, i) => (
-            <div key={i} className="star" style={{
-              width: s.size, height: s.size,
-              left: `${s.left}%`, top: `${s.top}%`,
-              color: s.color, background: s.gradient,
-              animation: `starPulseBg ${1.6 + Math.random() * 0.6}s ease-in-out infinite ${s.animDelay}s, starFloatBg ${3 + Math.random() * 1.5}s ease-in-out infinite ${s.animDelay}s`
-            }} />
-          ))}
+          <div className="star star-1"></div>
+          <div className="star star-2"></div>
+          <div className="star star-3"></div>
+          <div className="star star-4"></div>
+          <div className="star star-5"></div>
         </div>
         <div style={{ position:'absolute', top:12, left:'50%', transform:'translateX(-50%)', width:126, height:36, background:'#000', borderRadius:999, zIndex:30 }}/>
         {children}
@@ -980,6 +974,23 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
       {/* Featured Cat Rotation */}
       <FeaturedCat cats={cats} onNavigate={onNavigate} />
 
+      {/* Game entrance */}
+      <div style={{ padding:'14px 20px 0' }}>
+        <button onClick={() => { window.location.href = '猫咪消消乐.html'; }} style={{
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+          width:'100%', height:52, borderRadius:16,
+          background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
+          border:'none', cursor:'pointer',
+          fontSize:16, fontWeight:800, color:'#fff',
+          boxShadow:'0 8px 28px rgba(253,150,68,0.3)',
+        }}>
+          <span style={{ fontSize:22 }}>🎮</span>
+          开始乐消消
+          <span style={{ fontSize:11, fontWeight:500, opacity:0.8 }}>赚鱼干</span>
+        </button>
+        <div style={{ textAlign:'center', fontSize:10, color:colors.muted, marginTop:6 }}>今日已获得 {todayFish} 条鱼干</div>
+      </div>
+
       {/* P2: 出战席预览 */}
       <div style={{ padding:'14px 20px 0' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
@@ -1116,23 +1127,6 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
           </div>
           {!checkedIn && <span style={{ fontSize:14, fontWeight:700, color:colors.purpleLight }}>签到 →</span>}
         </div>
-      </div>
-
-      {/* Game entrance */}
-      <div style={{ padding:'14px 20px 0' }}>
-        <button onClick={() => { window.location.href = '猫咪消消乐.html'; }} style={{
-          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-          width:'100%', height:52, borderRadius:16,
-          background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
-          border:'none', cursor:'pointer',
-          fontSize:16, fontWeight:800, color:'#fff',
-          boxShadow:'0 8px 28px rgba(253,150,68,0.3)',
-        }}>
-          <span style={{ fontSize:22 }}>🎮</span>
-          去打消消乐
-          <span style={{ fontSize:11, fontWeight:500, opacity:0.8 }}>赚鱼干</span>
-        </button>
-        <div style={{ textAlign:'center', fontSize:10, color:colors.muted, marginTop:6 }}>今日已获得 {todayFish} 条鱼干</div>
       </div>
 
       {/* Recent cat bag reminder */}
@@ -2201,7 +2195,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
                 }}>🐟 喂食 +5亲密度 (-1条鱼干)</button>
               ) : (
                 <div style={{ textAlign:'center', fontSize:11, color:colors.muted }}>
-                  {fish < 1 ? '鱼干不足，去打消消乐获得' : '喂食可提升亲密度'}
+                  {fish < 1 ? '鱼干不足，去打乐消消获得' : '喂食可提升亲密度'}
                 </div>
               )}
             </>
