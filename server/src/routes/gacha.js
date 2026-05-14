@@ -5,7 +5,29 @@ const auth = require('../middleware/auth');
 const prisma = new PrismaClient();
 const router = Router();
 
-const PERSONALITY_WORDS = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '黏糊'];
+const PERSONALITY_WORDS = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'];
+
+const BREED_DEFAULT_PERSONALITIES = {
+  '橘猫': '吃货',
+  '黑猫': '胆大',
+  '白猫': '高冷',
+  '蓝猫': '懒散',
+  '布偶猫': '狡黠',
+  '三花猫': '胆小',
+  '暹罗猫': '独行',
+  '无毛猫': '话痨',
+  '波斯猫': '黏人',
+  '折耳猫': '傲娇',
+};
+
+function randomPersonality() {
+  const shuffled = [...PERSONALITY_WORDS].sort(() => Math.random() - 0.5);
+  return shuffled[0];
+}
+
+function getDefaultPersonality(catName) {
+  return BREED_DEFAULT_PERSONALITIES[catName] || '傲娇';
+}
 
 // 抽取一只猫（通用逻辑）
 async function pullCat(userId, forceSpeciesId) {
@@ -166,7 +188,7 @@ router.post('/pull', auth, async (req, res) => {
       });
     }
 
-    const personality = randomPersonality();
+    const personality = getDefaultPersonality(selected.name);
 
     // 创建玩家猫咪
     const cat = await prisma.playerCat.create({

@@ -10,6 +10,7 @@ import catRoutes from './routes/cats.js';
 import gachaRoutes from './routes/gacha.js';
 import gameRoutes from './routes/game.js';
 import userRoutes from './routes/user.js';
+import personalityRoutes from './routes/personalities.js';
 
 // 加载环境变量
 dotenv.config();
@@ -22,7 +23,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? 'https://your-domain.com' 
-    : 'http://localhost:5173',
+    : ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
@@ -46,6 +47,7 @@ app.use('/api/cats', catRoutes);
 app.use('/api/gacha', gachaRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/personalities', personalityRoutes);
 
 // 启动服务器
 app.listen(PORT, () => {

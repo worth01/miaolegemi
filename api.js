@@ -4,7 +4,7 @@
  */
 
 // API配置
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:3001/api';
 const TOKEN_KEY = 'miaolegemi_token';
 
 // Token管理
@@ -385,6 +385,18 @@ const MiaolegemiAPI = {
    * @returns {Promise<any>}
    */
   delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
+
+  // ═══════════════════════════════════════
+  // 工具方法
+  // ═══════════════════════════════════════
+
+  /**
+   * 清理猫咪性格数据（修正旧数据）
+   * @returns {Promise<{success: boolean, message: string, details: Array}>}
+   */
+  cleanupCatPersonalities: async () => {
+    return request('/cats/cleanup-personalities', { method: 'POST' });
+  },
 };
 
 // 导出

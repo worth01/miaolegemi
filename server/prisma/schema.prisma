@@ -1,6 +1,3 @@
-// P5: 喵了个咪数据库Schema
-// 基于设计文档 v3.2
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,192 +7,134 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 用户相关
-// ═══════════════════════════════════════════════════════════════
-
-model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  password  String
-  nickname  String   // 随机猫名
-  pityCount Int      @default(0) // 保底计数
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 关联
-  cats        PlayerCat[]
-  fishLedger  FishLedger[]
-  gameSessions GameSession[]
-  lineages    CatLineage[]       @relation("OwnerLineages")
-  firstOwned   CatSerialRegistry[] @relation("FirstOwner")
-  currentOwned CatSerialRegistry[] @relation("CurrentOwner")
-
-  @@map("users")
+model cat_lineage {
+  id                  String              @id
+  serialId            String
+  ownerId             String
+  nickname            String
+  daysLived           Int                 @default(0)
+  fishSpent           Int                 @default(0)
+  bestCombo           Int                 @default(0)
+  intimacy            Int                 @default(0)
+  releaseType         String              @default("主动送走")
+  dateLeft            DateTime
+  createdAt           DateTime            @default(now())
+  users               users               @relation(fields: [ownerId], references: [id])
+  cat_serial_registry cat_serial_registry @relation(fields: [serialId], references: [id])
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 猫咪种类（12种静态数据）
-// ═══════════════════════════════════════════════════════════════
+model cat_serial_registry {
+  id                                              String        @id
+  speciesId                                       Int
+  serialNumber                                    Int
+  status                                          String        @default("available")
+  currentOwnerId                                  String?
+  firstOwnerId                                    String?
+  availableAfter                                  DateTime?
+  createdAt                                       DateTime      @default(now())
+  cat_lineage                                     cat_lineage[]
+  users_cat_serial_registry_currentOwnerIdTousers users?        @relation("cat_serial_registry_currentOwnerIdTousers", fields: [currentOwnerId], references: [id])
+  users_cat_serial_registry_firstOwnerIdTousers   users?        @relation("cat_serial_registry_firstOwnerIdTousers", fields: [firstOwnerId], references: [id])
+  cat_species                                     cat_species   @relation(fields: [speciesId], references: [id])
+  player_cats                                     player_cats?
 
-model CatSpecies {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique // 橘猫、黑猫、布偶猫等
-  rarity       String   // N/R/SR/SSR
-  activeSkill  Json     // 主动技能描述
-  passiveSkill Json     // 被动技能描述
-  weight       Int      // 抽卡权重
-  description  String   // 猫咪描述
-
-  // 关联
-  serials CatSerialRegistry[]
-
-  @@map("cat_species")
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 序列号注册表（全局唯一编号）
-// ═══════════════════════════════════════════════════════════════
-
-model CatSerialRegistry {
-  id             String   @id @default(uuid())
-  speciesId      Int
-  serialNumber   Int      // 种类内唯一编号
-  status         String   @default("available") // available/adopted/wandering/cooling
-  currentOwnerId String?
-  firstOwnerId   String?  // 初次发现者（永久记录）
-  availableAfter DateTime? // 冷却结束时间
-  createdAt      DateTime @default(now())
-
-  // 关联
-  species     CatSpecies  @relation(fields: [speciesId], references: [id])
-  currentOwner User?      @relation("CurrentOwner", fields: [currentOwnerId], references: [id])
-  firstOwner   User?      @relation("FirstOwner", fields: [firstOwnerId], references: [id])
-  playerCat    PlayerCat?
-  lineages     CatLineage[]
-
-  // 组合唯一约束：种类+编号
   @@unique([speciesId, serialNumber])
-  @@map("cat_serial_registry")
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 玩家持有的猫
-// ═══════════════════════════════════════════════════════════════
-
-model PlayerCat {
-  id           String    @id @default(uuid())
-  ownerId      String
-  serialId     String    @unique
-  location     String    @default("bag") // bag/home/battle/wandering/memorial
-  slotPosition Int?      // 出战席(1-3)或观战区(4-6)槽位，包裹区为null
-  bagExpiresAt DateTime? // 包裹区到期时间
-  acquiredAt   DateTime  @default(now())
-  personality  Json      // 性格词数组
-  intimacy     Int       @default(0) // 亲密度0-100
-  lastFedAt    DateTime?
-  gamesWitnessed Int     @default(0)
-  bestCombo    Int       @default(0)
-  fishSpent    Int       @default(0)
-  daysAlive    Int       @default(0)
-  releasedAt   DateTime? // 送走时间
-  coolingUntil DateTime? // 冷却截止时间
-  updatedAt    DateTime  @updatedAt
-
-  // 关联
-  owner   User             @relation(fields: [ownerId], references: [id])
-  serial  CatSerialRegistry @relation(fields: [serialId], references: [id])
-
-  @@map("player_cats")
+model cat_species {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique
+  rarity              String
+  activeSkill         Json
+  passiveSkill        Json
+  weight              Int
+  description         String
+  cat_serial_registry cat_serial_registry[]
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 历史血统记录
-// ═══════════════════════════════════════════════════════════════
-
-model CatLineage {
-  id          String   @id @default(uuid())
-  serialId    String
-  ownerId     String
-  nickname    String   // 主人昵称快照
-  daysLived   Int      @default(0)
-  fishSpent   Int      @default(0)
-  bestCombo   Int      @default(0)
-  intimacy    Int      @default(0)
-  releaseType String   @default("主动送走")
-  dateLeft    DateTime
-  createdAt   DateTime @default(now())
-
-  // 关联
-  serial CatSerialRegistry @relation(fields: [serialId], references: [id])
-  owner  User               @relation("OwnerLineages", fields: [ownerId], references: [id])
-
-  @@map("cat_lineage")
+model cat_personalities {
+  id              Int    @id @default(autoincrement())
+  personalityId   Int    @unique
+  name            String @unique
+  effectType      String
+  effectDesc      String
+  affectsFish     Boolean
+  createdAt       DateTime @default(now())
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 鱼干账本
-// ═══════════════════════════════════════════════════════════════
-
-model FishLedger {
-  id        String   @id @default(uuid())
-  userId    String
-  amount    Int      // 正=收入，负=支出
-  reason    String   // elimination/retreat/gacha/expansion/feed
-  relatedId String?  // 关联id
-  createdAt DateTime @default(now())
-
-  // 关联
-  user User @relation(fields: [userId], references: [id])
-
-  @@map("fish_ledger")
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 游戏记录
-// ═══════════════════════════════════════════════════════════════
-
-model GameSession {
-  id           String   @id @default(uuid())
-  playerId     String
-  boardDate    DateTime @db.Date
-  score        Int
-  fishEarned   Int
-  activeCats   Json     // 出战猫咪阵容快照
-  comboCount   Int      @default(0)
-  duration     Int      @default(0) // 持续时间（秒）
-  createdAt    DateTime @default(now())
-
-  // 关联
-  player User @relation(fields: [playerId], references: [id])
-
-  @@map("game_sessions")
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 每日棋盘种子
-// ═══════════════════════════════════════════════════════════════
-
-model DailyBoard {
+model daily_boards {
   date DateTime @id @db.Date
   seed BigInt
-
-  @@map("daily_boards")
 }
 
-// ═══════════════════════════════════════════════════════════════
-// 用户里程碑
-// ═══════════════════════════════════════════════════════════════
+model fish_ledger {
+  id        String   @id
+  userId    String
+  amount    Int
+  reason    String
+  relatedId String?
+  createdAt DateTime @default(now())
+  users     users    @relation(fields: [userId], references: [id])
+}
 
-model UserMilestone {
-  id       String   @id @default(uuid())
-  userId   String   @unique
-  totalGames Int    @default(0)
-  totalFish Int     @default(0)
-  maxCombo  Int     @default(0)
-  catsOwned Int     @default(0)
-  catsReleased Int  @default(0)
-  updatedAt DateTime @updatedAt
+model game_sessions {
+  id         String   @id
+  playerId   String
+  boardDate  DateTime @db.Date
+  score      Int
+  fishEarned Int
+  activeCats Json
+  comboCount Int      @default(0)
+  duration   Int      @default(0)
+  createdAt  DateTime @default(now())
+  users      users    @relation(fields: [playerId], references: [id])
+}
 
-  @@map("user_milestones")
+model player_cats {
+  id                  String              @id
+  ownerId             String
+  serialId            String              @unique
+  location            String              @default("bag")
+  slotPosition        Int?
+  bagExpiresAt        DateTime?
+  acquiredAt          DateTime            @default(now())
+  personality         Json
+  intimacy            Int                 @default(0)
+  lastFedAt           DateTime?
+  gamesWitnessed      Int                 @default(0)
+  bestCombo           Int                 @default(0)
+  fishSpent           Int                 @default(0)
+  daysAlive           Int                 @default(0)
+  releasedAt          DateTime?
+  coolingUntil        DateTime?
+  updatedAt           DateTime
+  users               users               @relation(fields: [ownerId], references: [id])
+  cat_serial_registry cat_serial_registry @relation(fields: [serialId], references: [id])
+}
+
+model user_milestones {
+  id           String   @id
+  userId       String   @unique
+  totalGames   Int      @default(0)
+  totalFish    Int      @default(0)
+  maxCombo     Int      @default(0)
+  catsOwned    Int      @default(0)
+  catsReleased Int      @default(0)
+  updatedAt    DateTime
+}
+
+model users {
+  id                                                            String                @id
+  username                                                      String                @unique
+  password                                                      String
+  nickname                                                      String
+  pityCount                                                     Int                   @default(0)
+  createdAt                                                     DateTime              @default(now())
+  updatedAt                                                     DateTime
+  cat_lineage                                                   cat_lineage[]
+  cat_serial_registry_cat_serial_registry_currentOwnerIdTousers cat_serial_registry[] @relation("cat_serial_registry_currentOwnerIdTousers")
+  cat_serial_registry_cat_serial_registry_firstOwnerIdTousers   cat_serial_registry[] @relation("cat_serial_registry_firstOwnerIdTousers")
+  fish_ledger                                                   fish_ledger[]
+  game_sessions                                                 game_sessions[]
+  player_cats                                                   player_cats[]
 }

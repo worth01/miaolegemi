@@ -20,6 +20,7 @@
         getCats: () => Promise.resolve([]),
         login: () => Promise.reject('offline'),
         register: () => Promise.reject('offline'),
+        cleanupCatPersonalities: () => Promise.resolve({ success: true, message: '离线模式无需清理' }),
       };
     }
   </script>
@@ -420,7 +421,112 @@ const BREEDS = [
   { id: '幸运猫', img: 'cat/幸运猫.png', rarity: 'SSR', desc: '招财进宝，好运连连' },
   { id: '星空猫', img: 'cat/星空猫.png', rarity: 'SSR', desc: '星空之子，宇宙中最闪耀的存在' },
 ];
-const PERSONALITIES = ['傲娇','吃货','黏人','胆小','好奇','佛系','社牛','高冷','软萌','元气','慵懒','呆萌','话痨','醋精','撒娇'];
+// P7: 性格枚举（10种标准性格，按需求文档）
+const PERSONALITIES = ['傲娇','吃货','胆小','黏人','高冷','话痨','懒散','胆大','独行','狡黠'];
+// P7: 性格ID映射
+const PERSONALITY_TO_ID = {
+  '傲娇': 1, '吃货': 2, '胆小': 3, '黏人': 4, '高冷': 5,
+  '话痨': 6, '懒散': 7, '胆大': 8, '独行': 9, '狡黠': 10,
+};
+// P7: 性格效果描述
+const PERSONALITY_DESCRIPTIONS = {
+  '傲娇': '主动技能冷却缩减',
+  '吃货': '额外鱼干百分比加成',
+  '胆小': '干扰牌负面效果减免',
+  '黏人': '关卡容错续命',
+  '高冷': '普通消除得分加成',
+  '话痨': '释放技能额外得分',
+  '懒散': '关卡限时延长',
+  '胆大': '危险牌惩罚减免',
+  '独行': '单人出战收益加成',
+  '狡黠': '额外鱼干上限提升',
+};
+
+// P7: 亲密度等级配置
+const INTIMACY_LEVELS = {
+  1: { name: '陌生', min: 0, max: 20, color: '#B2BEC3' },
+  2: { name: '初识', min: 20, max: 40, color: '#74B9FF' },
+  3: { name: '熟悉', min: 40, max: 60, color: '#55EFC4' },
+  4: { name: '亲密', min: 60, max: 80, color: '#FD79A8' },
+  5: { name: '挚爱', min: 80, max: 100, color: '#FF4757' },
+};
+
+// P7: 获取亲密度等级
+function getIntimacyLevel(intimacy) {
+  if (intimacy >= 80) return 5;
+  if (intimacy >= 60) return 4;
+  if (intimacy >= 40) return 3;
+  if (intimacy >= 20) return 2;
+  return 1;
+}
+
+// P7: 亲密度效果配置
+const INTIMACY_EFFECTS = {
+  1: { skillUses: 1, bonusPercent: 5, extraFishLimit: 0 },
+  2: { skillUses: 1, bonusPercent: 10, extraFishLimit: 0 },
+  3: { skillUses: 2, bonusPercent: 15, extraFishLimit: 1 },
+  4: { skillUses: 3, bonusPercent: 20, extraFishLimit: 1 },
+  5: { skillUses: 3, bonusPercent: 30, extraFishLimit: 2 },
+};
+// P7: 获取亲密度等级效果描述
+function getIntimacyEffectDesc(personality, level) {
+  const eff = INTIMACY_EFFECTS[level] || INTIMACY_EFFECTS[1];
+  const personalityEffect = {
+    '傲娇': `技能CD缩减${level * 10}%`,
+    '吃货': `额外鱼干+${eff.bonusPercent}%`,
+    '胆小': `干扰牌效果减免${level * 5}%`,
+    '黏人': level >= 4 ? `容错续命` : `容错概率${level * 5}%`,
+    '高冷': `消除得分+${level * 5}%`,
+    '话痨': `技能额外得分+${level * 5}%`,
+    '懒散': `关卡限时+${level * 2}秒`,
+    '胆大': `危险牌惩罚减免${level * 5}%`,
+    '独行': `单人出战+${level * 10}%`,
+    '狡黠': `额外鱼干上限+${eff.extraFishLimit}`,
+  };
+  return personalityEffect[personality] || `${level}`;
+}
+
+// P7: 猫咪默认性格配置（按需求文档猫咪基础配置表）
+const BREED_DEFAULT_PERSONALITIES = {
+  '橘猫': '吃货',       // 性格ID: 2
+  '黑猫': '胆大',       // 性格ID: 8
+  '白猫': '高冷',       // 性格ID: 5
+  '蓝猫': '懒散',       // 性格ID: 7
+  '布偶猫': '狡黠',     // 性格ID: 10
+  '三花猫': '胆小',     // 性格ID: 3
+  '暹罗猫': '独行',     // 性格ID: 9
+  '无毛猫': '话痨',     // 性格ID: 6
+  '波斯猫': '黏人',     // 性格ID: 4
+  '折耳猫': '傲娇',     // 性格ID: 1
+  '星空猫': '高冷',     // 性格ID: 5
+  '幸运猫': '吃货',     // 性格ID: 2
+};
+// P7: 获取猫咪默认性格（单一性格）
+function getDefaultPersonality(breedId) {
+  return BREED_DEFAULT_PERSONALITIES[breedId] || '傲娇';
+}
+
+// P7: 性格清洗——将非标准性格映射到标准性格
+const PERSONALITY_CLEAN_MAP = {
+  // 旧词库中的非标准值 → 标准性格
+  '软萌牡牛': '傲娇',
+  '黏糊': '黏人',
+  '高冷酷酷': '高冷',
+};
+const STANDARD_PERSONALITIES = new Set(['傲娇','吃货','胆小','黏人','高冷','话痨','懒散','胆大','独行','狡黠']);
+function sanitizePersonality(raw, breedId) {
+  if (!raw) return getDefaultPersonality(breedId);
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  if (STANDARD_PERSONALITIES.has(val)) return val;
+  // 尝试从清洗映射中找
+  if (PERSONALITY_CLEAN_MAP[val]) return PERSONALITY_CLEAN_MAP[val];
+  // 模糊匹配：包含标准性格关键词的旧值
+  for (const std of STANDARD_PERSONALITIES) {
+    if (val.includes(std)) return std;
+  }
+  // 兜底：返回品种默认性格
+  return getDefaultPersonality(breedId);
+}
 
 /* ═══════════════════════════════════════
    P3: 猫咪技能系统（设计文档 v3.1）
@@ -533,7 +639,7 @@ function makeCatInstance(breedId, rarity, personality, bagExpiresDays = 30) {
     rarity: rarity || breed.rarity,
     img: breed.img,
     desc: breed.desc,
-    personality: personality || [PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)], PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)]],
+    personality: personality || (BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇'),
     status: 'alive',
     // P2: 三区位置 - bag(包裹区) / home(家园) / battle(出战席) / memorial(纪念册)
     location: 'bag',
@@ -945,7 +1051,7 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
           )}
         </div>
         <div style={{ fontSize:10, color:colors.sub, marginTop:2 }}>{cat.desc}</div>
-        <div style={{ fontSize:10, color:colors.muted, marginTop:1 }}>{cat.personality.join(' · ')} · {cat.location === 'home' ? '🏠家园' : `包裹区 · ${getRemainingDays(cat)}天后离开`}</div>
+        <div style={{ fontSize:10, color:colors.muted, marginTop:1 }}>{sanitizePersonality(cat.personality, cat.breedId || '橘猫')} · {cat.location === 'home' ? '🏠家园' : `包裹区 · ${getRemainingDays(cat)}天后离开`}</div>
       </div>
       {/* dots */}
       {allCats.length > 1 && (
@@ -1652,7 +1758,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
                   )}
                 </div>
                 <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
-                  性格：{cat.personality.join(' · ')}
+                  性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
                 </div>
                 
                 {/* P2: 亲密度进度条 */}
@@ -1810,7 +1916,7 @@ if (cats.length === 0) {
                   <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
                 </div>
                 <div style={{ fontSize:11, color:colors.sub, marginBottom:3 }}>
-                  性格：{cat.personality.join(' · ')}
+                  性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
                 </div>
                 <div style={{ fontSize:11, fontWeight:600, color: isUrgent ? colors.red : colors.sub }}>
                   ⏰ 还有 {daysLeft} 天会离开
@@ -1882,7 +1988,7 @@ return (
                 <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
               </div>
               <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
-                性格：{cat.personality.join(' · ')}
+                性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
               </div>
               <div style={{ fontSize:11, color:colors.muted }}>
                 ✨ 陪伴 {cat.daysAlive || 0} 天
@@ -2113,7 +2219,9 @@ const cat = cats.find(c => c.serialId === catSerialId);
           )}
         </div>
         <div style={{ fontSize:12, color:colors.sub, marginTop:6, lineHeight:1.5 }}>{cat.desc}</div>
-        <div style={{ fontSize:12, color:colors.sub, marginTop:2 }}>性格：{cat.personality.join(' · ')}</div>
+        <div style={{ fontSize:12, color:colors.sub, marginTop:2 }}>
+          性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}·{PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')] || ''}
+        </div>
         {cat.battleSlot != null && (
           <div style={{ marginTop: 6 }}>
             <span style={{ fontSize:10, fontWeight:700, padding:'4px 12px', borderRadius:999, background: 'rgba(253,150,68,0.15)', color: colors.orange }}>
@@ -2140,21 +2248,85 @@ const cat = cats.find(c => c.serialId === catSerialId);
                 <span>❤️</span> 亲密度 {intimacy}/100
               </div>
               
-              {/* 亲密度进度条 */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ width:'100%', height:8, borderRadius:4, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
-                  <div style={{ 
-                    height:'100%', 
-                    width:`${intimacy}%`, 
-                    borderRadius:4, 
-                    background: intimacy >= 80 ? 'linear-gradient(90deg, #FD79A8, #FDA7DF)' : intimacy >= 50 ? '#FD79A8' : '#B2BEC3',
-                    transition:'width 0.3s',
-                  }}/>
+              {/* P7: 5段式亲密度进度条 */}
+              <div style={{ marginBottom: 12 }}>
+                {/* 进度条容器 */}
+                <div style={{ 
+                  width:'100%', 
+                  height:12, 
+                  borderRadius:6, 
+                  background:'rgba(255,255,255,0.06)', 
+                  overflow:'hidden',
+                  display:'flex',
+                  gap:'2px',
+                  padding:'2px',
+                  boxSizing:'border-box',
+                }}>
+                  {[1,2,3,4,5].map(level => {
+                    const levelConfig = INTIMACY_LEVELS[level];
+                    const isFilled = intimacy >= levelConfig.min;
+                    const progressInLevel = isFilled 
+                      ? Math.min(100, ((intimacy - levelConfig.min) / (levelConfig.max - levelConfig.min)) * 100)
+                      : 0;
+                    return (
+                      <div key={level} style={{ 
+                        flex:1, 
+                        borderRadius:4, 
+                        background: isFilled ? levelConfig.color : 'rgba(255,255,255,0.08)',
+                        transition:'all 0.3s',
+                        position:'relative',
+                        overflow:'hidden',
+                      }}>
+                        {/* 填充效果 */}
+                        {isFilled && (
+                          <div style={{
+                            position:'absolute',
+                            left:0, top:0, bottom:0,
+                            width:`${progressInLevel}%`,
+                            background:'rgba(255,255,255,0.3)',
+                            transition:'width 0.3s',
+                          }}/>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between', marginTop:4 }}>
-                  <span style={{ fontSize:9, color:colors.muted }}>加成 {Math.floor(intimacy)}%</span>
-                  <span style={{ fontSize:9, color:colors.muted }}>{intimacy >= 80 ? '✨ 满级加成' : intimacy >= 50 ? '💕 中级加成' : '💭 初级加成'}</span>
+                
+                {/* 等级标签 */}
+                <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, marginBottom:4 }}>
+                  {Object.values(INTIMACY_LEVELS).map((level, idx) => (
+                    <span key={idx} style={{ 
+                      fontSize:8, 
+                      color: intimacy >= level.min ? level.color : colors.muted,
+                      fontWeight: intimacy >= level.min ? 700 : 400,
+                    }}>{level.name}</span>
+                  ))}
                 </div>
+                
+                {/* 当前等级效果描述 - 左边技能次数，右边性格·亲密等级 */}
+                {(() => {
+                  const currentLevel = getIntimacyLevel(intimacy);
+                  const currentLevelConfig = INTIMACY_LEVELS[currentLevel];
+                  const eff = INTIMACY_EFFECTS[currentLevel] || INTIMACY_EFFECTS[1];
+                  return (
+                    <div style={{ 
+                      display:'flex', 
+                      justifyContent:'space-between',
+                      alignItems:'center',
+                      padding:'6px 8px',
+                      background:`${currentLevelConfig.color}15`,
+                      borderRadius:6,
+                      border:`1px solid ${currentLevelConfig.color}30`,
+                    }}>
+                      <span style={{ fontSize:10, color: colors.sub }}>
+                        技能使用次数{currentLevel <= 2 ? 1 : currentLevel === 3 ? 2 : 3}次
+                      </span>
+                      <span style={{ fontSize:11, fontWeight:700, color: currentLevelConfig.color }}>
+                        {sanitizePersonality(cat.personality, cat.breedId || '橘猫')}·{currentLevelConfig.name}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 技能栏 */}
@@ -2449,14 +2621,14 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
                 <div style={{ fontSize:9, fontWeight:700, color:colors.muted, letterSpacing:1, marginBottom:4 }}>简介</div>
                 <div style={{ fontSize:11, color:colors.sub, lineHeight:1.5 }}>{cat.desc}</div>
               </div>
-              <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:9, fontWeight:700, color:colors.muted, letterSpacing:1, marginBottom:4 }}>性格</div>
-                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                  {cat.personality.map((p, i) => (
-                    <span key={i} style={{ fontSize:10, fontWeight:600, color:colors.ink, padding:'2px 10px', borderRadius:6, background:'rgba(108,92,231,0.12)', border:'1px solid rgba(108,92,231,0.2)' }}>{p}</span>
-                  ))}
+                <div style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:colors.muted, letterSpacing:1, marginBottom:4 }}>性格</div>
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:10, fontWeight:600, color:colors.ink, padding:'2px 10px', borderRadius:6, background:'rgba(108,92,231,0.12)', border:'1px solid rgba(108,92,231,0.2)' }}>
+                      {sanitizePersonality(cat.personality, cat.breedId || '橘猫')}{PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')] ? `·${PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')]}` : ''}
+                    </span>
+                  </div>
                 </div>
-              </div>
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:9, fontWeight:700, color:colors.muted, letterSpacing:1, marginBottom:4 }}>位置</div>
                 <span style={{ fontSize:10, fontWeight:600, padding:'2px 10px', borderRadius:6,
@@ -2557,7 +2729,7 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
       rarity: breed.rarity,
       img: breed.img,
       desc: breed.desc,
-      personality: [PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)], PERSONALITIES[Math.floor(Math.random()*PERSONALITIES.length)]],
+      personality: BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇',
       serialId: globalSerialId + 1,
       breedSerial: breedSerialCounters[breed.id] || 1,
       triggeredPity, // 标记是否触发保底
@@ -2846,7 +3018,9 @@ const nurturing = cats.filter(c => c.location === 'home');
           </div>
         </div>
         {onLogout && (
-          <div onClick={onLogout} style={{ cursor:'pointer', padding:'6px 12px', borderRadius:8, border:`1px solid ${colors.cardBorder}`, fontSize:11, color:colors.sub }}>退出</div>
+          <div style={{ display:'flex', gap:6, padding:'0 20px 12px' }}>
+            <div onClick={onLogout} style={{ cursor:'pointer', padding:'6px 12px', borderRadius:8, border:`1px solid ${colors.cardBorder}`, fontSize:11, color:colors.sub }}>退出登录</div>
+          </div>
         )}
       </div>
 
@@ -2971,7 +3145,7 @@ const nurturing = cats.filter(c => c.location === 'home');
                       <span style={{ fontSize:9, fontWeight:600, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
                     </div>
                     <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
-                      性格：{cat.personality?.join(' · ') || '-'}
+                      性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px 8px' }}>
                       <div style={{ fontSize:10, color:colors.muted }}>✨ 陪伴 {cat.daysAlive || 0} 天</div>
@@ -3297,13 +3471,13 @@ function MemorialDetailModal({ cat, show, onClose }) {
         </div>
 
         {/* Personality */}
-        {cat.personality && cat.personality.length > 0 && (
+        {cat.personality && sanitizePersonality(cat.personality, cat.breedId || '橘猫') && (
           <div style={{ marginBottom:16 }}>
             <div style={{ fontSize:11, fontWeight:600, color:colors.sub, marginBottom:6 }}>性格</div>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-              {cat.personality.map(p => (
-                <span key={p} style={{ fontSize:10, padding:'3px 8px', borderRadius:6, background:'rgba(108,92,231,0.15)', color:colors.purpleLight }}>{p}</span>
-              ))}
+              <span style={{ fontSize:10, padding:'3px 8px', borderRadius:6, background:'rgba(108,92,231,0.15)', color:colors.purpleLight }}>
+                {sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
+              </span>
             </div>
           </div>
         )}
@@ -3588,7 +3762,7 @@ if (!show || !cat) return null;
         </div>
         <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:RARITY_COLORS[cat.rarity], marginBottom:4 }}>{cat.rarity}</div>
         <div style={{ fontSize:18, fontWeight:800, color:colors.ink, marginBottom:2 }}>{cat.name} · #{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</div>
-        <div style={{ fontSize:11, color:colors.sub, marginBottom:6 }}>性格：{cat.personality.join(' · ')}</div>
+        <div style={{ fontSize:11, color:colors.sub, marginBottom:6 }}>性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}</div>
         <div style={{ fontSize:11, fontWeight:600, color:colors.green, marginBottom:20 }}>✅ 已放入包裹区 · 30天内记得领养</div>
         <button onClick={onClose} style={{ width:'100%', height:40, borderRadius:12, background:`linear-gradient(135deg, ${RARITY_COLORS[cat.rarity]}, ${RARITY_COLORS[cat.rarity]}CC)`, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'#fff' }}>收下啦</button>
       </div>
@@ -3823,7 +3997,7 @@ function App() {
                 rarity: c.serial?.species?.rarity || 'N',
                 img: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).img,
                 desc: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).desc,
-                personality: Array.isArray(c.personality) ? c.personality : [],
+                personality: sanitizePersonality(c.personality, c.serial?.species?.name || '橘猫'),
                 status: computeCatStatus({ location: c.location, lastFedAt: c.lastFedAt }),
                 location: c.location, createdAt: new Date(c.createdAt).getTime(),
                 bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
@@ -3947,7 +4121,7 @@ function App() {
                 rarity: c.serial?.species?.rarity || 'N',
                 img: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).img,
                 desc: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).desc,
-                personality: Array.isArray(c.personality) ? c.personality : [],
+                personality: sanitizePersonality(c.personality, c.serial?.species?.name || '橘猫'),
                 status: computeCatStatus({ location: c.location, lastFedAt: c.lastFedAt }),
                 location: c.location, createdAt: new Date(c.createdAt).getTime(),
                 bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
@@ -4393,7 +4567,7 @@ function App() {
           serialId: c.id, breedSerial: c.serial.serialNumber,
           breedId: breed.id, name: breed.id, rarity: c.serial.species.rarity,
           img: breed.img, desc: breed.desc,
-          personality: Array.isArray(c.personality) ? c.personality : [],
+          personality: sanitizePersonality(c.personality, breed.id),
           status: 'alive', location: 'bag', createdAt: Date.now(),
           bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : Date.now() + 30*86400000,
           adoptedAt: null, expiresAt: null, lastFedAt: null,
@@ -4451,7 +4625,13 @@ function App() {
       setShowPreBattle(true);
     } else {
       setActiveTab(tab);
-      if (subTab) setBagTab(subTab);
+      if (subTab) {
+        setBagTab(subTab);
+        // 设置URL参数以确保CatPage能获取正确的subTab
+        const url = new URL(window.location);
+        url.searchParams.set('tab', subTab);
+        window.history.replaceState({}, '', url);
+      }
     }
   }, []);
 

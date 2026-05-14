@@ -5,11 +5,30 @@ const auth = require('../middleware/auth');
 const prisma = new PrismaClient();
 const router = Router();
 
-const PERSONALITY_WORDS = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '黏糊'];
+const PERSONALITY_WORDS = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'];
+
+const BREED_DEFAULT_PERSONALITIES = {
+  '橘猫': '吃货',
+  '黑猫': '胆大',
+  '白猫': '高冷',
+  '蓝猫': '懒散',
+  '布偶猫': '狡黠',
+  '三花猫': '胆小',
+  '暹罗猫': '独行',
+  '无毛猫': '话痨',
+  '波斯猫': '黏人',
+  '折耳猫': '傲娇',
+  '星空猫': '高冷',
+  '幸运猫': '吃货',
+};
 
 function randomPersonality() {
   const shuffled = [...PERSONALITY_WORDS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 2);
+  return shuffled[0];
+}
+
+function getDefaultPersonality(catName) {
+  return BREED_DEFAULT_PERSONALITIES[catName] || '傲娇';
 }
 
 // 获取家园猫咪
@@ -254,6 +273,56 @@ router.get('/memorial', auth, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: '获取纪念册失败' });
+  }
+});
+
+// 清理猫咪性格数据（将旧数据修正为标准性格）
+router.post('/cleanup-personalities', auth, async (req, res) => {
+  try {
+    const VALID_PERSONALITIES = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'];
+
+    // 获取所有猫咪，带品种信息
+    const cats = await prisma.playerCat.findMany({
+      where: { ownerId: req.user.id },
+      include: { serial: { include: { species: true } } },
+    });
+
+    let cleanedCount = 0;
+    const updates = [];
+
+    for (const cat of cats) {
+      const rawPersonality = cat.personality;
+      // 检查是否是有效性格
+      const isValid = VALID_PERSONALITIES.includes(rawPersonality);
+
+      if (!isValid && rawPersonality) {
+        // 获取品种对应的默认性格
+        const breedName = cat.serial?.species?.name;
+        const correctPersonality = BREED_DEFAULT_PERSONALITIES[breedName] || '傲娇';
+
+        await prisma.playerCat.update({
+          where: { id: cat.id },
+          data: { personality: correctPersonality },
+        });
+
+        updates.push({
+          catId: cat.id,
+          catName: breedName,
+          old: rawPersonality,
+          new: correctPersonality,
+        });
+        cleanedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `已清理 ${cleanedCount} 只猫咪的性格数据`,
+      details: updates,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: '清理失败' });
   }
 });
 

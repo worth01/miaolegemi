@@ -16,6 +16,19 @@ const CAT_SPECIES = [
   { name: '幸运猫', rarity: 'SSR', weight: 5,  activeSkill: { name: '洗牌',   desc: '重新打乱当前棋盘所有卡牌' },                 passiveSkill: { name: '福星',   desc: '鱼干+40%' } },
 ];
 
+const CAT_PERSONALITIES = [
+  { personalityId: 1, name: '傲娇', effectType: '主动技能冷却缩减', effectDesc: '技能CD更快，可更频繁释放', affectsFish: false },
+  { personalityId: 2, name: '吃货', effectType: '额外鱼干百分比加成', effectDesc: '按好感度等级提升额外鱼干收益', affectsFish: true },
+  { personalityId: 3, name: '胆小', effectType: '干扰牌负面效果减免', effectDesc: '降低冰冻、舔毛、变身、真身牌等干扰影响', affectsFish: false },
+  { personalityId: 4, name: '黏人', effectType: '关卡容错续命', effectDesc: '提升失误缓冲，降低关卡失败概率', affectsFish: false },
+  { personalityId: 5, name: '高冷', effectType: '普通消除得分加成', effectDesc: '基础三消消除获得更高分数', affectsFish: false },
+  { personalityId: 6, name: '话痨', effectType: '释放技能额外得分', effectDesc: '每次使用主动技能时，额外追加对局分数', affectsFish: false },
+  { personalityId: 7, name: '懒散', effectType: '关卡限时延长', effectDesc: '计时类关卡增加可操作总时长', affectsFish: false },
+  { personalityId: 8, name: '胆大', effectType: '危险牌惩罚减免', effectDesc: '减少小狗牌、操作失误的扣分与失败判定', affectsFish: false },
+  { personalityId: 9, name: '独行', effectType: '单人出战收益加成', effectDesc: '仅上阵该猫咪1只时，得分/收益提升', affectsFish: true },
+  { personalityId: 10, name: '狡黠', effectType: '额外鱼干上限提升', effectDesc: '按好感度等级提高本局额外鱼干上限', affectsFish: true },
+];
+
 async function main() {
   console.log('Seeding cat_species...');
   for (const cat of CAT_SPECIES) {
@@ -25,8 +38,19 @@ async function main() {
       create: cat,
     });
   }
-  const count = await prisma.catSpecies.count();
-  console.log(`Done. ${count} cat species in database.`);
+  const speciesCount = await prisma.catSpecies.count();
+  console.log(`Done. ${speciesCount} cat species in database.`);
+
+  console.log('Seeding cat_personalities...');
+  for (const p of CAT_PERSONALITIES) {
+    await prisma.catPersonalities.upsert({
+      where: { personalityId: p.personalityId },
+      update: p,
+      create: p,
+    });
+  }
+  const personalityCount = await prisma.catPersonalities.count();
+  console.log(`Done. ${personalityCount} cat personalities in database.`);
 }
 
 main()

@@ -49,6 +49,241 @@
 const { useState, useEffect, useCallback, useRef } = React;
 
 /* ═══════════════════════════════════════
+   P7: 性格系统配置（鱼干与性格系统需求）
+   ═══════════════════════════════════════ */
+
+// 性格枚举定义（10种性格）
+const PERSONALITY_ENUM = {
+  1: '傲娇',
+  2: '吃货',
+  3: '胆小',
+  4: '黏人',
+  5: '高冷',
+  6: '话痨',
+  7: '懒散',
+  8: '胆大',
+  9: '独行',
+  10: '狡黠',
+};
+
+// 性格名称到ID的映射
+const PERSONALITY_TO_ID = Object.fromEntries(
+  Object.entries(PERSONALITY_ENUM).map(([id, name]) => [name, parseInt(id)])
+);
+
+// 性格效果类型
+const PERSONALITY_EFFECT_TYPES = {
+  傲娇: '主动技能冷却缩减',   // 主动技能冷却缩减
+  吃货: '额外鱼干百分比加成',                // 额外鱼干百分比加成
+  胆小: '干扰牌负面效果减免',   // 干扰牌负面效果减免
+  黏人: '关卡容错续命',               // 关卡容错续命
+  高冷: '普通消除得分加成',              // 普通消除得分加成
+  话痨: '释放技能额外得分',         // 释放技能额外得分
+  懒散: '关卡限时延长',           // 关卡限时延长
+  胆大: '危险牌惩罚减免',         // 危险牌惩罚减免
+  独行: '单人出战收益加成',               // 单人出战收益加成
+  狡黠: '额外鱼干上限提升',          // 额外鱼干上限提升
+};
+
+// 性格描述
+const PERSONALITY_DESCRIPTIONS = {
+  傲娇: '技能CD更快，可更频繁释放',
+  吃货: '按亲密度等级提升额外鱼干收益',
+  胆小: '降低冰冻、舔毛、变身、真身牌等干扰影响',
+  黏人: '提升失误缓冲，降低关卡失败概率',
+  高冷: '基础三消消除获得更高分数',
+  话痨: '每次使用主动技能时，额外追加对局分数',
+  懒散: '计时类关卡增加可操作总时长',
+  胆大: '减少小狗牌、操作失误的扣分与失败判定',
+  独行: '仅上阵该猫咪1只时，得分/收益提升',
+  狡黠: '按亲密度等级提高本局额外鱼干上限',
+};
+
+/* ═══════════════════════════════════════
+   P7: 亲密度系统配置（5阶统一规则）
+   ═══════════════════════════════════════ */
+
+// 亲密度枚举
+const INTIMACY_LEVEL_ENUM = {
+  1: '陌生',
+  2: '初识',
+  3: '熟悉',
+  4: '亲密',
+  5: '挚爱',
+};
+
+// 亲密度名称到等级映射
+const INTIMACY_TO_LEVEL = Object.fromEntries(
+  Object.entries(INTIMACY_LEVEL_ENUM).map(([level, name]) => [name, parseInt(level)])
+);
+
+// 亲密度等级效果配置
+const INTIMACY_EFFECTS = {
+  // 等级: { skillUses: 技能使用次数, personalityBonus: 性格加成比例, extraFishLimit: 狡黠额外上限, special: 专属效果描述 }
+  1: { // 陌生
+    skillUses: 1,
+    personalityBonus: 0.05,      // +5%
+    extraFishLimit: 0,          // +0
+    cooldownReduction: 0.1,     // 傲娇：冷却小幅缩减
+    extraLifeChance: 0,         // 黏人：无
+  },
+  2: { // 初识
+    skillUses: 1,
+    personalityBonus: 0.10,     // +10%
+    extraFishLimit: 0,          // +0
+    cooldownReduction: 0.2,     // 傲娇：冷却中等缩减
+    extraLifeChance: 0.05,      // 黏人：小概率豁免1次失误
+  },
+  3: { // 熟悉
+    skillUses: 2,
+    personalityBonus: 0.15,     // +15%
+    extraFishLimit: 1,          // +1
+    cooldownReduction: 0.3,     // 傲娇：冷却明显缩减
+    extraLifeChance: 0,         // 黏人：每局自带1次隐性容错（通过extraLife实现）
+  },
+  4: { // 亲密
+    skillUses: 3,
+    personalityBonus: 0.20,     // +20%
+    extraFishLimit: 1,          // +1
+    cooldownReduction: 0.4,     // 傲娇：冷却大幅缩减
+    extraLife: 1,                // 黏人：每局固定豁免1次失误
+  },
+  5: { // 挚爱
+    skillUses: 3,
+    personalityBonus: 0.30,     // +30%
+    extraFishLimit: 2,          // +2
+    cooldownReduction: 0.5,     // 傲娇：冷却最大缩减
+    extraLife: 1,               // 黏人：每局额外免费续命1次
+  },
+};
+
+/* ═══════════════════════════════════════
+   P7: 鱼干经济系统配置（核心规则）
+   ═══════════════════════════════════════ */
+
+const FISH_ECONOMY = {
+  // 基础鱼干规则
+  baseFish: {
+    comboRequired: 6,      // 每6次三消获得1个基础鱼干
+    maxPerGame: 3,         // 每局基础鱼干上限 = 3个
+  },
+  // 额外鱼干规则
+  extraFish: {
+    defaultMax: 2,         // 默认每局额外鱼干上限 = 2个
+    maxWithClever: 4,      // 狡黠猫最高额外上限 = 4个（挚爱狡黠猫）
+  },
+  // 总上限
+  totalMaxPerGame: 7,      // 单局总鱼干最高上限 = 7个（3基础+4额外）
+};
+
+/**
+ * P7: 计算本局获得的鱼干数量
+ * @param {number} comboCount - 本局有效三消次数
+ * @param {number} totalBonusRatio - 总加成比例（所有来源加成之和）
+ * @param {boolean} hasCleverCat - 是否有狡黠性格猫咪上阵
+ * @param {number} cleverCatLevel - 狡黠猫亲密度等级（1-5）
+ * @returns {object} { baseFish, extraFish, totalFish }
+ */
+function calculateFishReward(comboCount, totalBonusRatio, hasCleverCat = false, cleverCatLevel = 1) {
+  // 步骤1: 计算基础鱼干数量（向下取整，每6次三消得1个）
+  const baseFish = Math.floor(comboCount / FISH_ECONOMY.baseFish.comboRequired);
+  const cappedBaseFish = Math.min(baseFish, FISH_ECONOMY.baseFish.maxPerGame);
+  
+  // 步骤2: 确保加成比例为非负数
+  const safeBonusRatio = Math.max(0, totalBonusRatio);
+  
+  // 步骤3: 计算额外鱼干数量
+  const extraFishBeforeCap = Math.floor(cappedBaseFish * safeBonusRatio);
+  
+  // 步骤4: 计算额外鱼干上限
+  let extraFishLimit = FISH_ECONOMY.extraFish.defaultMax;
+  if (hasCleverCat) {
+    const cleverBonus = INTIMACY_EFFECTS[cleverCatLevel]?.extraFishLimit || 0;
+    extraFishLimit = FISH_ECONOMY.extraFish.defaultMax + cleverBonus;
+    extraFishLimit = Math.min(extraFishLimit, FISH_ECONOMY.extraFish.maxWithClever);
+  }
+  
+  // 步骤5: 修正额外鱼干数量（不能超过上限）
+  const finalExtraFish = Math.min(extraFishBeforeCap, extraFishLimit);
+  
+  // 步骤6: 计算总鱼干
+  const totalFish = cappedBaseFish + finalExtraFish;
+  
+  return {
+    baseFish: cappedBaseFish,
+    extraFish: finalExtraFish,
+    totalFish: Math.min(totalFish, FISH_ECONOMY.totalMaxPerGame),
+    extraFishLimit,
+  };
+}
+
+/**
+ * P7: 根据猫咪性格计算总鱼干加成比例
+ * @param {string} personality - 猫咪性格，如 '吃货'
+ * @param {number} intimacyLevel - 亲密度等级（1-5）
+ * @returns {number} 加成比例（如 0.15 表示 +15%）
+ */
+function calculatePersonalityBonus(personality, intimacyLevel) {
+  if (!personality) return 0;
+  
+  const effects = INTIMACY_EFFECTS[intimacyLevel] || INTIMACY_EFFECTS[1];
+  
+  // 吃货性格：额外鱼干百分比加成
+  if (personality === '吃货') {
+    return effects.personalityBonus;
+  }
+  
+  return 0;
+}
+
+/**
+ * P7: 获取亲密度等级名称
+ * @param {number} intimacy - 亲密度数值（0-100）
+ * @returns {string} 亲密度等级名称
+ */
+function getIntimacyLevelName(intimacy) {
+  if (intimacy < 20) return INTIMACY_LEVEL_ENUM[1]; // 陌生
+  if (intimacy < 40) return INTIMACY_LEVEL_ENUM[2]; // 初识
+  if (intimacy < 60) return INTIMACY_LEVEL_ENUM[3]; // 熟悉
+  if (intimacy < 80) return INTIMACY_LEVEL_ENUM[4]; // 亲密
+  return INTIMACY_LEVEL_ENUM[5]; // 挚爱
+}
+
+/**
+ * P7: 获取亲密度等级数值
+ * @param {number} intimacy - 亲密度数值（0-100）
+ * @returns {number} 亲密度等级（1-5）
+ */
+function getIntimacyLevel(intimacy) {
+  if (intimacy < 20) return 1;
+  if (intimacy < 40) return 2;
+  if (intimacy < 60) return 3;
+  if (intimacy < 80) return 4;
+  return 5;
+}
+
+/**
+ * P7: 获取性格标签的颜色
+ * @param {string} personality - 性格名称
+ * @returns {string} CSS颜色值
+ */
+function getPersonalityColor(personality) {
+  const colors = {
+    傲娇: '#E74C3C',
+    吃货: '#E67E22',
+    胆小: '#3498DB',
+    黏人: '#E91E63',
+    高冷: '#9B59B6',
+    话痨: '#1ABC9C',
+    懒散: '#95A5A6',
+    胆大: '#D35400',
+    独行: '#2C3E50',
+    狡黠: '#F39C12',
+  };
+  return colors[personality] || '#95A5A6';
+}
+
+/* ═══════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════ */
 const TILE_W = 50; // iOS适配：50px确保6行8列在375px设备上缩放约91%
@@ -353,15 +588,19 @@ const INTERFERENCE_TYPES = {
     emoji: '🧴',
     color: '#FDCB6E',
     effect: 'slot_block',  // 进入收集槽后占据槽位但不参与消除
-    desc: '无法消除，占用收集槽槽位'
+    desc: '进入收集槽后无法被消除',
+    card_id: 'interfere_groom_001',
+    img: '/assets/Textures/GroomCard.png',
   },
-  freeze: {             // 冰冻牌 - 冻结收集槽第1格
+  freeze: {             // 冰冻牌 - 冻结收集槽前N格（N由关卡配置freeze_grid_count决定，默认1）
     id: 'freeze',
     name: '冰冻牌',
     emoji: '❄️',
     color: '#74B9FF',
-    effect: 'freeze_first',  // 冻结收集槽第一格
-    desc: '蓝猫冻结了收集槽第1格，无法消除'
+    effect: 'freeze_grid',  // 冻结收集槽前N格
+    desc: '冰冻牌冻结收集槽前N格，无法消除',
+    card_id: 'interfere_freeze_001',
+    img: '/assets/Textures/FreezeCard.png',
   },
   sticky: {             // 粘连牌 - 点击时连带相邻1张
     id: 'sticky',
@@ -369,7 +608,8 @@ const INTERFERENCE_TYPES = {
     emoji: '🩹',
     color: '#FD79A8',
     effect: 'drag_adjacent',  // 点击时同时带入相邻1张牌
-    desc: '点击时同时带入相邻1张牌'
+    desc: '点击时连带上下左右1张牌一同进入收集槽',
+    card_id: 'interfere_stick_001',
   },
   transform: {          // 三花牌 - 每3秒随机变换
     id: 'transform',
@@ -437,14 +677,14 @@ const LEVELS = {
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 2,
+    interferenceCount: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '蝴蝶形状特殊造型棋盘，舔毛牌无法被消除'
+    desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
   },
   3: {
     name: '蓝猫冰封',
@@ -452,6 +692,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.freeze,
     interferenceCount: 1,
+    freeze_card_enable: 1,   // 冰冻牌开关：1=开启，0=关闭，优先级高于名称匹配
+    freeze_grid_count: 1,     // 冻结格子数，当前固定1
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -480,6 +722,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,     // 粘连牌开关：1=开启，0=关闭
+    stick_card_count: 2,      // 本局粘连牌生成数量，优先级高于全局默认
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -577,7 +821,7 @@ const LEVELS = {
     name: '白猫清浴',
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
-    interference: INTERFERENCE_TYPES.freeze,
+    interference: INTERFERENCE_TYPES.groom,
     interferenceCount: 1,
     disabledSkills: [],
     specialRule: null,
@@ -585,7 +829,7 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '蝴蝶形状特殊造型棋盘，冰冻牌占据收集槽第一格'
+    desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
   },
   13: {
     name: '蓝猫冰封',
@@ -593,6 +837,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.freeze,
     interferenceCount: 1,
+    freeze_card_enable: 1,
+    freeze_grid_count: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -607,6 +853,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.love,
     interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,
+    stick_card_count: 2,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -619,15 +867,17 @@ const LEVELS = {
     name: '布偶柔庭',
     breed: '布偶猫',
     boardType: BOARD_TYPES.standard,
-    interference: INTERFERENCE_TYPES.transform,
+    interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,
+    stick_card_count: 2,
     disabledSkills: [],
     specialRule: null,
     layers: [
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '三花牌变换挑战'
+    desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
   },
   16: {
     name: '三花灵苑',
@@ -683,7 +933,7 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '沙漏形状特殊造型棋盘，舔毛牌无法被消除'
+    desc: '沙漏形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
   },
   20: {
     name: '波斯双域',
@@ -691,6 +941,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.persia,
     interference: INTERFERENCE_TYPES.freeze,
     interferenceCount: 1,
+    freeze_card_enable: 1,
+    freeze_grid_count: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -707,27 +959,29 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,
+    stick_card_count: 2,
     disabledSkills: [],
     specialRule: null,
     layers: [
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '10种卡牌挑战'
+    desc: '10种卡牌挑战，粘连牌连带效果'
   },
   22: {
     name: '白猫清浴',
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
-    interference: INTERFERENCE_TYPES.transform,
-    interferenceCount: 2,
+    interference: INTERFERENCE_TYPES.groom,
+    interferenceCount: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '蝴蝶形状特殊造型棋盘，三花牌每3秒变换'
+    desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
   },
   23: {
     name: '蓝猫冰封',
@@ -735,6 +989,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.freeze,
     interferenceCount: 1,
+    freeze_card_enable: 1,
+    freeze_grid_count: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -761,15 +1017,17 @@ const LEVELS = {
     name: '布偶柔庭',
     breed: '布偶猫',
     boardType: BOARD_TYPES.standard,
-    interference: INTERFERENCE_TYPES.disguise,
+    interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,
+    stick_card_count: 2,
     disabledSkills: [],
     specialRule: null,
     layers: [
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '真身牌伪装'
+    desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
   },
   26: {
     name: '三花灵苑',
@@ -791,6 +1049,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.diamond,
     interference: INTERFERENCE_TYPES.freeze,
     interferenceCount: 1,
+    freeze_card_enable: 1,
+    freeze_grid_count: 1,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -805,6 +1065,8 @@ const LEVELS = {
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.sticky,
     interferenceCount: 2,
+    stick_card_enable: 1,
+    stick_card_count: 2,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -848,6 +1110,20 @@ function getLevelConfig(levelNum) {
   // 轮回机制：第31关复刻第1关，第32关复刻第2关...
   const cycleLevel = ((levelNum - 1) % 30) + 1;
   return LEVELS[cycleLevel];
+}
+
+// 判断某关卡是否应触发冰冻牌
+// 规则：1) 配置开关 freeze_card_enable 优先级最高（0=强制关闭，1=开启）
+//       2) 无配置开关时，关卡名称包含「蓝猫冰封」关键词则触发
+//       3) 需同时配置了 INTERFERENCE_TYPES.freeze 干扰才生效
+function shouldTriggerFreeze(levelConfig) {
+  if (!levelConfig) return false;
+  if (levelConfig.interference !== INTERFERENCE_TYPES.freeze) return false;
+  // 配置开关优先级最高
+  if (levelConfig.freeze_card_enable === 0) return false; // 强制关闭
+  if (levelConfig.freeze_card_enable === 1) return true;  // 强制开启
+  // 无配置开关时，根据关卡名称关键词匹配
+  return levelConfig.name && levelConfig.name.includes('蓝猫冰封');
 }
 
 // 获取当前关卡显示数字（用于UI展示）
@@ -906,9 +1182,9 @@ const CAT_TYPES = [
 
 // P0: 干扰牌卡牌类型（特殊卡牌，不参与普通三消）
 const INTERFERENCE_CARDS = {
-  groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: '/assets/Textures/GroomCard.png' },
-  freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: '/assets/FreezeCard.png' },
-  sticky: { id: '__interference_sticky__', name: '粘连牌', emoji: '🩹', color: '#FD79A8', interference: 'sticky' },
+  groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: '/assets/Textures/GroomCard.png', card_id: 'interfere_groom_001' },
+  freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: '/assets/Textures/FreezeCard.png', card_id: 'interfere_freeze_001' },
+  sticky: { id: '__interference_sticky__', name: '粘连牌', emoji: '🩹', color: '#FD79A8', interference: 'sticky', card_id: 'interfere_stick_001' },
   transform: { id: '__interference_transform__', name: '三花牌', emoji: '🔮', color: '#A29BFE', interference: 'transform' },
   danger: { id: '__interference_danger__', name: '小狗牌', emoji: '🐶', color: '#FF6B6B', interference: 'danger' },
   disguise: { id: '__interference_disguise__', name: '真身牌', emoji: '🎭', color: '#00CEC9', interference: 'disguise' },
@@ -922,10 +1198,18 @@ CAT_TYPES.forEach(ct => {
   _tileImages[ct.id] = { color: ct.color, complete: false };
 });
 
-// P0: 干扰牌图片预加载（使用Emoji渲染）
+// P0: 干扰牌图片预加载（使用Emoji渲染，舔毛牌额外加载PNG贴图）
 function preloadInterferenceImages() {
   Object.values(INTERFERENCE_CARDS).forEach(card => {
     _tileImages[card.id] = { emoji: card.emoji, color: card.color, complete: true };
+    // 尝试加载PNG贴图（如舔毛牌、冰冻牌等有img路径的）
+    if (card.img) {
+      const img = new Image();
+      img.src = card.img;
+      img.onload = () => {
+        _tileImages[card.id] = img; // 加载成功替换为真正的Image对象
+      };
+    }
   });
 }
 preloadInterferenceImages();
@@ -1091,7 +1375,12 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
   });
 
   sorted.forEach(tile => {
-    const cat = CAT_TYPES.find(c => c.id === tile.type);
+    // 查找卡牌视觉定义：先找普通牌，再找干扰牌
+    let cat = CAT_TYPES.find(c => c.id === tile.type);
+    if (!cat && tile.isInterference) {
+      const iCard = INTERFERENCE_CARDS[tile.interferenceType];
+      if (iCard) cat = iCard;
+    }
     if (!cat) return;
     const x = tileX(tile);
     const y = tileY(tile);
@@ -1143,6 +1432,31 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     ctx.lineWidth = isHighlighted ? 3 : 2.5;
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.stroke();
+
+    // 粘连牌专属特效：边缘胶水风格半透明边框
+    if (tile.isInterference && tile.interferenceType === 'sticky' && !isBlocked && !isInSlot) {
+      ctx.save();
+      // 外层胶水光晕
+      ctx.strokeStyle = 'rgba(253,121,168,0.5)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([6, 3]);
+      roundRect(ctx, x - 1, y - 1, TILE_W + 2, TILE_H + 2, 11);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 内层半透明填充
+      ctx.fillStyle = 'rgba(253,121,168,0.08)';
+      roundRect(ctx, x, y, TILE_W, TILE_H, 10);
+      ctx.fill();
+      // 四角胶水圆点
+      const dotPositions = [[x + 5, y + 5], [x + TILE_W - 5, y + 5], [x + 5, y + TILE_H - 5], [x + TILE_W - 5, y + TILE_H - 5]];
+      dotPositions.forEach(([dx, dy]) => {
+        ctx.beginPath();
+        ctx.arc(dx, dy, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(253,121,168,0.7)';
+        ctx.fill();
+      });
+      ctx.restore();
+    }
 
     // 高亮光晕
     if (isHighlighted) {
@@ -1236,6 +1550,27 @@ const PASSIVE_EFFECTS = {
   '星空猫': { passive: '观星', desc: '时刻祝福你，增加幸运触发', type: 'luck', value: 0.05 },
   '幸运猫': { passive: '福星', desc: '鱼干+40%', type: 'fishBonus', value: 0.4 },
 };
+
+// P7: 猫咪默认性格配置（按需求文档猫咪基础配置表）- 单一性格
+const BREED_DEFAULT_PERSONALITIES = {
+  '橘猫': '吃货',       // 性格ID: 2 - 额外鱼干百分比加成
+  '黑猫': '胆大',       // 性格ID: 8 - 危险牌惩罚减免
+  '白猫': '高冷',       // 性格ID: 5 - 普通消除得分加成
+  '蓝猫': '懒散',       // 性格ID: 7 - 关卡限时延长
+  '布偶猫': '狡黠',     // 性格ID: 10 - 额外鱼干上限提升
+  '三花猫': '胆小',     // 性格ID: 3 - 干扰牌负面效果减免
+  '暹罗猫': '独行',     // 性格ID: 9 - 单人出战收益加成
+  '无毛猫': '话痨',     // 性格ID: 6 - 释放技能额外得分
+  '波斯猫': '黏人',     // 性格ID: 4 - 关卡容错续命
+  '折耳猫': '傲娇',     // 性格ID: 1 - 主动技能冷却缩减
+  '星空猫': '高冷',     // 性格ID: 5 - 普通消除得分加成
+  '幸运猫': '吃货',     // 性格ID: 2 - 额外鱼干百分比加成
+};
+
+// P7: 获取猫咪默认性格（单一性格）
+function getDefaultPersonality(breedId) {
+  return BREED_DEFAULT_PERSONALITIES[breedId] || '傲娇';
+}
 
 /* ═══════════════════════════════════════
    BOARD GENERATION
@@ -1500,14 +1835,48 @@ function addInterferenceCards(cards, levelConfig, rng) {
   const interferenceType = levelConfig.interference.id;
   const count = levelConfig.interferenceCount;
   
+  // 冰冻牌不出现在棋盘上，直接占据收集槽前N格（freeze_grid_count），无需在棋盘上生成
+  if (interferenceType === 'freeze') {
+    return cards;
+  }
+  
   // 获取可放置干扰牌的位置（顶层可点击的位置）
   const maxLayer = Math.max(...cards.filter(c => !c.removed).map(c => c.layer || 0));
   const topLayerCards = cards.filter(c => !c.removed && (c.layer || 0) === maxLayer);
+  
+  // 粘连牌特殊约束：两张牌之间至少间隔1格，避免相邻
+  if (interferenceType === 'sticky') {
+    const stickyCount = levelConfig.stick_card_count || count || 2;
+    const selectedCards = [];
+    const shuffledTop = shuffleArr([...topLayerCards], rng);
+    
+    for (const card of shuffledTop) {
+      if (selectedCards.length >= stickyCount) break;
+      // 检查与已选中的粘连牌是否相邻（上下左右，曼哈顿距离=1）
+      const isAdjacent = selectedCards.some(sc =>
+        Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1
+      );
+      if (!isAdjacent) {
+        selectedCards.push(card);
+      }
+    }
+    // 若顶层空间不足以放置所有粘连牌（间隔约束），降级到不限制间隔
+    if (selectedCards.length < stickyCount) {
+      const fallbackSelected = shuffledTop.slice(0, Math.min(stickyCount, shuffledTop.length));
+      return applyInterferenceToCards(cards, fallbackSelected, interferenceType, rng);
+    }
+    return applyInterferenceToCards(cards, selectedCards, interferenceType, rng);
+  }
   
   // 随机选择位置放置干扰牌
   const shuffledTop = shuffleArr([...topLayerCards], rng);
   const selectedCards = shuffledTop.slice(0, Math.min(count, shuffledTop.length));
   
+  return applyInterferenceToCards(cards, selectedCards, interferenceType, rng);
+}
+
+// 将干扰牌属性应用到选中的卡牌
+function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
   return cards.map(card => {
     if (selectedCards.some(sc => sc.id === card.id)) {
       return {
@@ -1822,7 +2191,7 @@ function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
 /* ═══════════════════════════════════════
    COLLECTION SLOT (with 收集槽.png bg) - P5: 增强版
    ═══════════════════════════════════════ */
-function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlot = null }) {
+function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlot = null, groomSlots = [], freezeOverride = false, freezeGridCount = 1 }) {
   const count = maxSlots;
   const [slotAnim, setSlotAnim] = useState(null);
 
@@ -1868,11 +2237,12 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
       }}>
       {/* 槽位指示器 */}
       {Array.from({ length: count }).map((_, i) => {
-        // 冰冻牌占据第一格，猫咪从第二格开始
-        const isFrozen = frozenSlot && i === 0;
-        const slotIndex = frozenSlot ? i - 1 : i;
+        // 冰冻牌占据前N格（freezeGridCount），猫咪从第N+1格开始
+        const isFrozen = frozenSlot && i < freezeGridCount && !freezeOverride;
+        const slotIndex = (frozenSlot && !freezeOverride) ? i - freezeGridCount : i;
         const item = slotIndex >= 0 ? slot[slotIndex] : null;
-        const isMatching = item && matching.includes(item.uid);
+        const isGroom = item && item.isGroom;
+        const isMatching = item && !isGroom && matching.includes(item.uid);
         const isNewAnim = item && slotAnim === item.uid;
         
         return (
@@ -1893,9 +2263,9 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
               }}>
                 {/* 冰冻牌贴图 */}
                 <img
-                  src="/assets/FreezeCard.png"
+                  src="/assets/Textures/FreezeCard.png"
                   alt="冰冻牌"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', top: 0, left: 0 }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: 8 }}
                   onError={e => {
                     e.target.style.display = 'none';
                   }}
@@ -1956,6 +2326,36 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
             )}
             {item ? (() => {
               const cat = CAT_TYPES.find(c => c.id === item.type);
+              // 舔毛牌：显示特殊样式（不可消除标记）
+              if (isGroom) {
+                return (
+                  <div style={{
+                    width: '100%', height: '100%', borderRadius: 10,
+                    overflow: 'hidden',
+                    border: '2px solid #FDCB6E',
+                    boxShadow: '0 0 16px rgba(253,203,110,0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+                    background: 'linear-gradient(145deg, rgba(253,203,110,0.4) 0%, rgba(253,203,110,0.15) 100%)',
+                    animation: isNewAnim ? 'toSlot 0.3s ease-out' : 'none',
+                    position: 'relative',
+                  }}>
+                    <img
+                      src="/assets/Textures/GroomCard.png"
+                      alt="舔毛牌"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: 8 }}
+                      onError={e => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    {/* 舔毛牌占位标记 */}
+                    <div style={{
+                      position: 'absolute', bottom: 1, right: 1,
+                      fontSize: 7, fontWeight: 700, color: '#FDCB6E',
+                      background: 'rgba(0,0,0,0.5)', borderRadius: 3,
+                      padding: '1px 3px', lineHeight: 1,
+                    }}>🔒</div>
+                  </div>
+                );
+              }
               return (
                 <div style={{
                   width: '100%', height: '100%', borderRadius: 10,
@@ -2007,13 +2407,19 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
 
 /* ═══════════════════════════════════════
    RESULT OVERLAY — 结算页 P5: 增强版界面
+   P7: 更新为新的鱼干计算系统
    ═══════════════════════════════════════ */
-function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fishMultiplier, timeLeft, catCount, cats, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
+function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fishMultiplier, timeLeft, catCount, cats, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
   if (gameState === GAME_PLAYING) return null;
   const isWin = gameState === GAME_WIN;
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
   const isLose = gameState === GAME_LOSE;
   const showConfetti = isWin || isLevelComplete;
+  
+  // P7: 计算本局最终鱼干
+  const fishCalc = calculateFishReward(comboCount || 0, (fishMultiplier || 1) - 1, false, 1);
+  const finalFish = fishCalc.totalFish;
+  const actualBonusRatio = (fishMultiplier || 1) - 1;
   
   // P5: 胜利/失败状态颜色
   const statusColor = isLose ? '#FF6B6B' : '#00B894';
@@ -2164,7 +2570,12 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, fishEarned, fish
                 color: '#FD9644', 
                 letterSpacing: '-1px',
                 textShadow: '0 0 20px rgba(253,150,68,0.3)',
-              }}>+{Math.round(fishEarned * fishMultiplier)}</div>
+              }}>+{finalFish}
+                {/* P7: 显示加成来源 */}
+                {actualBonusRatio > 0 && (
+                  <span style={{ fontSize: 12, fontWeight: 500 }}> (含+{Math.round(fishCalc.extraFish)}加成)</span>
+                )}
+              </div>
             </div>
             <div style={{
               borderRadius: 14, padding: '14px 12px', textAlign: 'center',
@@ -2507,6 +2918,12 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                             onError={e => { e.target.style.display='none'; }} />
                         </div>
                         <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF' }}>{s.cat.name}</div>
+                        {/* P7: 显示性格标签 */}
+                        {s.cat.personality && (
+                          <div style={{ fontSize:8, color: getPersonalityColor(s.cat.personality), marginTop:1 }}>
+                            {s.cat.personality}·{PERSONALITY_EFFECT_TYPES[s.cat.personality] || ''}
+                          </div>
+                        )}
                         <div style={{ fontSize:9, color:'#FD9644', marginTop:1 }}>
                           {skill ? `${skill.icon} ${skill.active}` : '???'}
                         </div>
@@ -2545,6 +2962,12 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                             onError={e => { e.target.style.display='none'; }} />
                         </div>
                         <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF' }}>{s.cat.name}</div>
+                        {/* P7: 显示性格标签 */}
+                        {s.cat.personality && (
+                          <div style={{ fontSize:8, color: getPersonalityColor(s.cat.personality), marginTop:1 }}>
+                            {s.cat.personality}·{PERSONALITY_EFFECT_TYPES[s.cat.personality] || ''}
+                          </div>
+                        )}
                         <div style={{ fontSize:9, color:'#A29BFE', marginTop:1 }}>
                           {eff ? `${eff.passive}` : '无加成'}
                         </div>
@@ -2745,14 +3168,50 @@ function Game() {
   const [tiles, setTiles] = useState(() => generateBoard(1));
   const [slot, setSlot] = useState([]);
   const [tempStorage, setTempStorage] = useState([]);
-  const [frozenSlot, setFrozenSlot] = useState(null); // 冰冻牌占据收集槽第一格
+  const [frozenSlot, setFrozenSlot] = useState(null); // 冰冻牌占据收集槽前N格（N=freeze_grid_count）
+  const [groomSlots, setGroomSlots] = useState([]); // 舔毛牌：进入收集槽后永久占位，无法消除
+  const [groomToast, setGroomToast] = useState(false); // 舔毛牌首次进入收集槽提示
+  const [freezeToast, setFreezeToast] = useState(''); // 冰冻牌提示文案（空=不显示）
+  const [stickyToast, setStickyToast] = useState(''); // 粘连牌提示文案（空=不显示）
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
+  // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
+  useEffect(() => {
+    if (frozenSlot && !freezeBlockOverride) {
+      const gridCount = levelConfig.freeze_grid_count || 1;
+      const gridText = gridCount > 1 ? `前${gridCount}格` : '第一格';
+      const startText = gridCount > 1 ? `第${gridCount + 1}格` : '第二格';
+      setFreezeToast(`❄️ 冰冻牌已冻结收集槽${gridText}，卡牌只能从${startText}开始放入！`);
+      const t = setTimeout(() => setFreezeToast(''), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [frozenSlot]);
+  // 异常处理：冰冻牌冻结后，如果收集槽有效容量为0，直接判定失败
+  useEffect(() => {
+    if (frozenSlot && !freezeBlockOverride && gameState === GAME_PLAYING) {
+      const frozenOffset = levelConfig.freeze_grid_count || 1;
+      const groomOffset = groomSlots.length;
+      const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset - groomOffset;
+      if (effectiveCapacity <= 0) {
+        // 收集槽已被冰冻牌完全冻结，无法继续游戏
+        setFreezeToast('❄️ 收集槽已被冰冻牌完全冻结，无法继续游戏！');
+        setTimeout(() => {
+          setFreezeToast('');
+          setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+          setSlot([]);
+          setGroomSlots([]);
+          setTempStorage([]);
+          setGameState(GAME_LOSE);
+        }, 2000);
+      }
+    }
+  }, [frozenSlot, freezeBlockOverride, gameState]);
   // P5: 旧道具状态已移除，由 usedSkills 取代
   // P1: fish & combo tracking
-  const [fishEarned, setFishEarned] = useState(0);
+  // P7: 鱼干系统重做 - 使用三消次数追踪（每6次三消=1基础鱼干）
+  const [comboCount, setComboCount] = useState(0);  // P7: 三消次数
   const [maxCombo, setMaxCombo] = useState(0);
   const [score, setScore] = useState(0);
   const lastMatchTimeRef = useRef(0);
@@ -2776,6 +3235,15 @@ function Game() {
 
   const initialCats = loadCatsFromStorage();
   const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
+  // 冰冻牌减免：胆小性格高好感度下，冰冻牌冻结效果失效（组件级计算，影响UI渲染和游戏逻辑）
+  const freezeBlockOverride = frozenSlot && battleCats.some(c => {
+    const pers = c?.personality || getDefaultPersonality(c?.breedId || '');
+    if (pers !== '胆小') return false;
+    const intimacy = c?.intimacy || 0;
+    return getIntimacyLevel(intimacy) >= 4;
+  });
+  // 冰冻牌冻结格数：从关卡配置读取 freeze_grid_count，默认1
+  const freezeGridCount = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
   const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
   const nourishingCats = useRef(initialCats); // 保持 ref 同步
   const fixedBattleCats = useRef(initialCats.length > 0 ? initialCats : null); // 标记已加载
@@ -2815,9 +3283,10 @@ function Game() {
     setCurrentLevel(level);
     setPhase('prep');
     setTiles(generateBoard(level));
-    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
+    setGroomSlots([]);
+    // 冰冻牌：根据触发规则判断是否生成（名称匹配+配置开关优先）
     const selectedConfig = getLevelConfig(level);
-    if (selectedConfig?.interference === INTERFERENCE_TYPES.freeze) {
+    if (shouldTriggerFreeze(selectedConfig)) {
       const frozenCard = {
         uid: 'frozen_' + (uidRef.current++),
         type: '__interference_freeze__',
@@ -2894,6 +3363,7 @@ function Game() {
   }, [phase, gameState, isTimed]);
 
   // P3: Apply passive skills on game start (v3.1 updated)
+  // P7: 更新为新的鱼干计算系统
   useEffect(() => {
     if (phase !== 'playing') return;
     let delay = 0;
@@ -2903,21 +3373,39 @@ function Game() {
     let luck = 0;
     const slots = skillSlots;
 
+    // P7: 新增性格加成计算
+    let totalPersonalityBonus = 0;      // 性格加成总和
+    let hasCleverCat = false;           // 是否有狡黠性格猫咪
+    let cleverCatLevel = 1;            // 狡黠猫亲密度等级
+
     // Passive slots 3-5 (position 4 + home 5-6) apply global effects
     for (let i = 3; i < 6; i++) {
       const breed = slots[i];
       if (!breed) continue;
       const eff = PASSIVE_EFFECTS[breed];
       if (!eff) continue;
+      
+      // P7: 获取猫咪性格和亲密度
+      const cat = battleCats[i];
+      const personality = cat?.personality || getDefaultPersonality(breed);
+      const intimacy = cat?.intimacy || 0;
+      const intimacyLevel = getIntimacyLevel(intimacy);
+      
       switch (eff.type) {
         case 'timerDelay': delay = Math.max(delay, eff.value); break;
-        case 'fishBonus': fMult += eff.value; break;
+        case 'fishBonus': fMult += eff.value; break; // 猫咪自带鱼干被动
         case 'extraRestart': restarts += eff.value; break;
-        case 'tempSlot': tempSlotB = Math.max(tempSlotB, eff.value); break; // P3: 临时存放槽位
+        case 'tempSlot': tempSlotB = Math.max(tempSlotB, eff.value); break;
         case 'autoRemove': {
-          // P3: 每局自动移出1张干扰卡（顶层卡）
           setTimeout(() => {
             setTiles(prev => {
+              // 优先移除棋盘上的干扰卡（含舔毛牌）
+              const interferenceOnBoard = prev.filter(t => !t.removed && !t.inSlot && t.isInterference);
+              if (interferenceOnBoard.length > 0) {
+                const topInterference = interferenceOnBoard.reduce((a, b) => b.layer > a.layer ? b : a);
+                return prev.map(t => t.id === topInterference.id ? { ...t, removed: true } : t);
+              }
+              // 无干扰卡时移除最顶层卡牌
               const candidates = prev.filter(t => !t.removed && !t.inSlot);
               if (candidates.length === 0) return prev;
               const maxLayer = Math.max(...candidates.map(t => t.layer));
@@ -2928,21 +3416,33 @@ function Game() {
           }, 300);
           break;
         }
-        case 'autoHint': {
-          // P3: 开局立即消除1组可消除组合
-          break;
+        case 'autoHint': break;
+        case 'edgeVision': break;
+        case 'luck': luck += eff.value; break;
+      }
+      
+      // P7: 计算性格加成
+      const personalityBonus = calculatePersonalityBonus(personality, intimacyLevel);
+      totalPersonalityBonus += personalityBonus;
+      
+      // P7: 检测狡黠性格
+      if (personality === '狡黠') {
+        hasCleverCat = true;
+        if (intimacyLevel > cleverCatLevel) {
+          cleverCatLevel = intimacyLevel;
         }
-        case 'edgeVision': break; // P3: 被遮挡的卡牌仍以半透明显示（实现于isTileBlocked）
-        case 'luck': luck += eff.value; break; // P3: 星空猫观星
       }
     }
-    timerDelayRef.current = delay;
-    setFishMultiplier(fMult);
-    setExtraRestarts(restarts);
-    setSlotBonus(tempSlotB); // P3: 临时存放槽位加成
-
-    // P3: 星空猫观星 - 幸运触发（暂不实现复杂逻辑）
     
+    // P7: 计算总加成比例 = 猫咪自带鱼干被动 + 性格加成
+    const totalBonusRatio = (fMult - 1) + totalPersonalityBonus; // fMult包含基础1
+    const fishCalc = calculateFishReward(0, totalBonusRatio, hasCleverCat, cleverCatLevel);
+    
+    timerDelayRef.current = delay;
+    setFishMultiplier(1 + totalBonusRatio); // 保持向后兼容
+    setExtraRestarts(restarts);
+    setSlotBonus(tempSlotB);
+
     // P3: 白猫醒目 - 开局自动消除1组
     if (slots.slice(3, 6).some(b => b && PASSIVE_EFFECTS[b]?.type === 'autoHint')) {
       setTimeout(() => {
@@ -2953,7 +3453,6 @@ function Game() {
           const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 3);
           if (pairType) {
             const toRemove = avail.filter(t => t.type === pairType).slice(0, 3);
-            // 自动消除动画
             toRemove.forEach(t => {
               const cat = CAT_TYPES.find(c => c.id === t.type);
               if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
@@ -3036,10 +3535,67 @@ function Game() {
     if (gameState !== GAME_PLAYING) return;
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
-    // 冰冻牌占据第一格，所以可用容量减1
-    const frozenOffset = frozenSlot ? 1 : 0;
-    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
-    if (slotRef.current.length >= effectiveCapacity) return;
+
+    // 舔毛牌：判断是否为舔毛牌
+    const isGroomCard = tile.isInterference && tile.interferenceType === 'groom';
+    // 粘连牌：判断是否为粘连牌
+    const isStickyCard = tile.isInterference && tile.interferenceType === 'sticky';
+    // 胆小性格减免：检查是否有高好感度胆小猫（适用于所有干扰牌：舔毛、冰冻、粘连等）
+    const hasCowardlyCat = battleCats.some(c => {
+      const pers = c?.personality || getDefaultPersonality(c?.breedId || '');
+      if (pers !== '胆小') return false;
+      const intimacy = c?.intimacy || 0;
+      const level = getIntimacyLevel(intimacy);
+      return level >= 4; // 亲密(4)及以上，干扰牌负面效果减免
+    });
+    const groomBlockOverride = isGroomCard && hasCowardlyCat;
+    const stickyBlockOverride = isStickyCard && hasCowardlyCat; // 胆小减免：粘连牌仅自身入槽
+    // freezeBlockOverride 使用组件级计算（影响CollectionSlot渲染和容量计算）
+
+    // 粘连牌：寻找上下左右相邻的可点击卡牌（优先级：上→下→左→右）
+    let stickyAdjacentTile = null;
+    if (isStickyCard && !stickyBlockOverride) {
+      const directions = [
+        { dr: -1, dc: 0 },  // 上
+        { dr: 1, dc: 0 },   // 下
+        { dr: 0, dc: -1 },  // 左
+        { dr: 0, dc: 1 },   // 右
+      ];
+      const allTiles = tilesRef.current;
+      for (const { dr, dc } of directions) {
+        const adjacent = allTiles.find(t =>
+          !t.removed && !t.inSlot && t.row === tile.row + dr && t.col === tile.col + dc && t.layer === tile.layer && !isTileBlocked(t, allTiles)
+        );
+        if (adjacent) {
+          stickyAdjacentTile = adjacent;
+          break;
+        }
+      }
+    }
+
+    // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
+    const frozenOffset = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
+    const groomOffset = groomSlots.length; // 舔毛牌每张占据1个槽位
+    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset - groomOffset;
+    
+    // 粘连牌容量校验：需同时放入粘连牌+被连带的卡牌，剩余容量不足则直接失败
+    const stickyBatchSize = stickyAdjacentTile ? 2 : 1; // 连带1张=2，无连带=1
+    if (isStickyCard && !stickyBlockOverride) {
+      if (slotRef.current.length + stickyBatchSize > effectiveCapacity) {
+        // 容量不足，触发失败
+        setStickyToast('🩹 收集槽容量不足，无法放入卡牌！');
+        setTimeout(() => {
+          setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+          setSlot([]);
+          setGroomSlots([]);
+          setTempStorage([]);
+          setGameState(GAME_LOSE);
+        }, 800);
+        return;
+      }
+    } else {
+      if (slotRef.current.length >= effectiveCapacity) return;
+    }
 
     // Cancel any pending match cleanup from a previous match
     if (matchTimeoutRef.current) {
@@ -3048,9 +3604,153 @@ function Game() {
     }
 
     const uid = ++uidRef.current;
-    const slotItem = { uid, type: tile.type, tileId: tile.id };
+    const slotItem = { uid, type: tile.type, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride };
+
+    // 粘连牌首次点击提示
+    if (isStickyCard && !stickyBlockOverride && !stickyAdjacentTile && groomSlots.length === 0 && !window._stickyToastShown) {
+      // 粘连牌无相邻牌，仅自身入槽，不显示连带提示
+    }
+    if (isStickyCard && !stickyBlockOverride && stickyAdjacentTile) {
+      setStickyToast('🩹 粘连牌已连带1张卡牌进入收集槽，额外消耗1个槽位！');
+      window._stickyToastShown = true;
+      setTimeout(() => { setStickyToast(''); window._stickyToastShown = false; }, 1000);
+    }
+
+    // 舔毛牌首次进入收集槽提示
+    if (isGroomCard && !groomBlockOverride && groomSlots.length === 0) {
+      setGroomToast(true);
+      setTimeout(() => setGroomToast(false), 1000);
+    }
+
+    // 舔毛牌进入收集槽后，标记为永久占位
+    if (isGroomCard && !groomBlockOverride) {
+      setGroomSlots(prev => [...prev, { uid, type: tile.type, tileId: tile.id }]);
+    }
 
     // Mark tile as in-slot (not yet matched — stays on board dimmed)
+    // 粘连牌：同时标记被连带的相邻卡牌
+    if (isStickyCard && stickyAdjacentTile && !stickyBlockOverride) {
+      const uid2 = ++uidRef.current;
+      const adjacentSlotItem = { uid: uid2, type: stickyAdjacentTile.type, tileId: stickyAdjacentTile.id, isGroom: false };
+      setTiles(prev => prev.map(t =>
+        (t.id === tile.id || t.id === stickyAdjacentTile.id) ? { ...t, inSlot: true } : t
+      ));
+      setMoveCount(m => m + 2); // 粘连牌+被连带牌各算1步
+      setMoveHistory(h => [...h,
+        { uid, type: tile.type, tileId: tile.id, tile: tilesRef.current.find(t => t.id === tile.id) },
+        { uid: uid2, type: stickyAdjacentTile.type, tileId: stickyAdjacentTile.id, tile: tilesRef.current.find(t => t.id === stickyAdjacentTile.id) },
+      ]);
+
+      // Compute next slot with both cards for match detection
+      const nextSlotWithBoth = [...slotRef.current, slotItem, adjacentSlotItem];
+      const curTemp2 = tempStorageRef.current;
+      const combined2 = [...curTemp2, ...nextSlotWithBoth];
+      // 检查被连带的牌是否触发三消
+      const stickyType = tile.type;
+      const adjacentType = stickyAdjacentTile.type;
+      const stickySameType = combined2.filter(s => s.type === stickyType && !s.isGroom);
+      const adjacentSameType = combined2.filter(s => s.type === adjacentType && !s.isGroom);
+
+      // 优先检查被连带的牌的三消（因为它是后入槽的）
+      let matchResult = null;
+      if (adjacentSameType.length >= MATCH_COUNT) {
+        matchResult = { type: adjacentType, sameType: adjacentSameType, nextSlot: nextSlotWithBoth };
+      } else if (stickyType !== adjacentType && stickySameType.length >= MATCH_COUNT) {
+        matchResult = { type: stickyType, sameType: stickySameType, nextSlot: nextSlotWithBoth };
+      }
+
+      if (matchResult) {
+        const tempMatches = curTemp2.filter(s => s.type === matchResult.type && !s.isGroom);
+        const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
+        const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
+        const allMatchUids = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.uid);
+        setSlot(nextSlotWithBoth);
+        setMatching(allMatchUids);
+
+        const catDef = CAT_TYPES.find(c => c.id === matchResult.type);
+        const pColor = catDef ? catDef.color : '#FFD700';
+        matchResult.sameType.slice(0, MATCH_COUNT).forEach(s => {
+          const mt = tilesRef.current.find(t => t.id === s.tileId);
+          if (!mt) return;
+          emitExplosion(tileX(mt) + TILE_W/2, tileY(mt) + TILE_H/2, pColor);
+        });
+
+        setComboCount(c => c + 1);
+        const now = Date.now();
+        const isCombo = (now - lastMatchTimeRef.current) < 2000;
+        lastMatchTimeRef.current = now;
+        setScore(prev => {
+          let pts = 10;
+          if (isCombo) pts += 5;
+          return prev + pts;
+        });
+        setMaxCombo(c => Math.max(c, matchResult.sameType.filter(s => s.type === matchResult.type).length));
+
+        if (isTimed) {
+          const bonus = (levelConfig.matchBonus || 5) + (isCombo ? (levelConfig.comboBonus || 3) : 0);
+          setTimeLeft(t => t + bonus);
+          timeLeftRef.current += bonus;
+        }
+
+        const matchType = matchResult.type;
+        const matchedTileIds = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
+        matchTimeoutRef.current = setTimeout(() => {
+          setTempStorage(prev => {
+            let removed = 0;
+            return prev.filter(s => {
+              if (s.type === matchType && !s.isGroom && removed < tempRemoveCount) { removed++; return false; }
+              return true;
+            });
+          });
+          setSlot(prev => {
+            let toRemove = slotRemoveCount;
+            return prev.filter(s => {
+              if (s.type === matchType && !s.isGroom && toRemove > 0) { toRemove--; return false; }
+              return true;
+            });
+          });
+          setMoveHistory(prev => {
+            let rem = slotRemoveCount;
+            return prev.filter(m => {
+              if (m.type === matchType && rem > 0) { rem--; return false; }
+              return true;
+            });
+          });
+          setTiles(prev => prev.map(t =>
+            matchedTileIds.includes(t.id) ? { ...t, removed: true, inSlot: false } : t
+          ));
+          setTiles(prev => {
+            if (prev.filter(t => !t.removed).length === 0) {
+              const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+              if (slotEmpty) setScore(s => s + 200);
+              setTimeout(() => {
+                if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);
+                else setGameState(GAME_WIN);
+              }, 300);
+            }
+            return prev;
+          });
+          setMatching([]);
+        }, 400);
+      } else if (nextSlotWithBoth.length >= effectiveCapacity) {
+        setSlot(nextSlotWithBoth);
+        setTimeout(() => {
+          const typeCounts = {};
+          nextSlotWithBoth.filter(s => !s.isGroom).forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
+          if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
+            setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+            setSlot([]);
+            setGroomSlots([]);
+            setTempStorage([]);
+            setGameState(GAME_LOSE);
+          }
+        }, 300);
+      } else {
+        setSlot(nextSlotWithBoth);
+      }
+      return; // 粘连牌批量入槽已完成，退出函数
+    }
+
     setTiles(prev => prev.map(t => t.id === tile.id ? { ...t, inSlot: true } : t));
     setMoveCount(m => m + 1);
     setMoveHistory(h => [...h, { uid, type: tile.type, tileId: tile.id, tile: tilesRef.current.find(t => t.id === tile.id) }]);
@@ -3059,11 +3759,12 @@ function Game() {
     const nextSlot = [...slotRef.current, slotItem];
     const curTemp = tempStorageRef.current;
     const combined = [...curTemp, ...nextSlot];
-    const sameType = combined.filter(s => s.type === tile.type);
+    // 舔毛牌不参与三消匹配（除非胆小减免）
+    const sameType = combined.filter(s => s.type === tile.type && !s.isGroom);
 
     if (sameType.length >= MATCH_COUNT) {
       // Cross-slot match: prioritize removing from tempStorage first
-      const tempMatches = curTemp.filter(s => s.type === tile.type);
+      const tempMatches = curTemp.filter(s => s.type === tile.type && !s.isGroom);
       const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
       const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
       const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
@@ -3086,8 +3787,8 @@ function Game() {
         }
       }
 
-      // P1: track fish earnings, scoring, and max combo
-      setFishEarned(f => f + 1);
+      // P7: 追踪三消次数（鱼干在结算时根据规则计算）
+      setComboCount(c => c + 1);
       const now = Date.now();
       const isCombo = (now - lastMatchTimeRef.current) < 2000;
       lastMatchTimeRef.current = now;
@@ -3112,19 +3813,19 @@ function Game() {
       const matchType = tile.type;
       const matchedTileIds = sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
       matchTimeoutRef.current = setTimeout(() => {
-        // Remove matched tiles from tempStorage
+        // Remove matched tiles from tempStorage（跳过舔毛牌）
         setTempStorage(prev => {
           let removed = 0;
           return prev.filter(s => {
-            if (s.type === matchType && removed < tempRemoveCount) { removed++; return false; }
+            if (s.type === matchType && !s.isGroom && removed < tempRemoveCount) { removed++; return false; }
             return true;
           });
         });
-        // Remove matched tiles from slot
+        // Remove matched tiles from slot（跳过舔毛牌）
         setSlot(prev => {
           let toRemove = slotRemoveCount;
           return prev.filter(s => {
-            if (s.type === matchType && toRemove > 0) { toRemove--; return false; }
+            if (s.type === matchType && !s.isGroom && toRemove > 0) { toRemove--; return false; }
             return true;
           });
         });
@@ -3158,15 +3859,17 @@ function Game() {
         });
         setMatching([]);
       }, 400);
-    } else if (nextSlot.length >= SLOT_CAPACITY + slotBonus) {
+    } else if (nextSlot.length >= effectiveCapacity) {
+      // 收集槽已满（含舔毛牌占位），判定失败
       setSlot(nextSlot);
       setTimeout(() => {
         const typeCounts = {};
-        nextSlot.forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
+        nextSlot.filter(s => !s.isGroom).forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
         if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
           // Slot full with no match — restore all in-slot tiles to board
           setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
           setSlot([]);
+          setGroomSlots([]);
           setTempStorage([]);
           setGameState(GAME_LOSE);
         }
@@ -3174,7 +3877,7 @@ function Game() {
     } else {
       setSlot(nextSlot);
     }
-  }, [gameState, slotBonus]);
+  }, [gameState, slotBonus, frozenSlot, groomSlots, battleCats]);
 
   // P5: 旧道具处理函数已移除，功能由 executeSkill 取代
 
@@ -3203,12 +3906,16 @@ function Game() {
 
     switch (breedId) {
       case '橘猫': {
-        // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中（跳过冰冻牌）
-        const startIdx = frozenSlot ? 1 : 0;
-        const toMove = slotRef.current.slice(startIdx, startIdx + 2);
+        // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中（跳过冰冻牌和舔毛牌）
+        const startIdx = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
+        const nonGroomItems = slotRef.current.slice(startIdx).filter(s => !s.isGroom);
+        const toMove = nonGroomItems.slice(0, 2);
         if (toMove.length === 0) break;
+        // 从slot中移除非舔毛牌
+        let movedCount = 0;
+        const movedUids = new Set(toMove.map(s => s.uid));
+        setSlot(prev => prev.filter(s => !movedUids.has(s.uid)));
         setTempStorage(prev => [...toMove, ...prev]);
-        setSlot(prev => prev.slice(startIdx + 2));
         setMoveHistory(h => h.slice(Math.max(0, h.length - toMove.length)));
         toMove.forEach(item => {
           setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
@@ -3216,15 +3923,22 @@ function Game() {
         break;
       }
       case '黑猫': {
-        // P3: 撤回 - 撤销上一步操作
+        // P3: 撤回 - 撤销上一步操作（跳过舔毛牌，舔毛牌无法撤回）
         if (slotRef.current.length === 0) break;
         if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
         setMatching([]);
-        const last = slotRef.current[slotRef.current.length - 1];
-        if (last) {
-          const tileExists = tilesRef.current.some(t => t.id === last.tileId && t.removed);
-          if (tileExists) setTiles(prev => prev.map(t => t.id === last.tileId ? { ...t, removed: false, inSlot: false } : t));
-          setSlot(prev => prev.slice(0, -1));
+        // 从末尾找到最近一张非舔毛牌
+        let lastNonGroom = null;
+        for (let i = slotRef.current.length - 1; i >= 0; i--) {
+          if (!slotRef.current[i].isGroom) {
+            lastNonGroom = slotRef.current[i];
+            break;
+          }
+        }
+        if (lastNonGroom) {
+          const tileExists = tilesRef.current.some(t => t.id === lastNonGroom.tileId && t.removed);
+          if (tileExists) setTiles(prev => prev.map(t => t.id === lastNonGroom.tileId ? { ...t, removed: false, inSlot: false } : t));
+          setSlot(prev => prev.filter(s => s.uid !== lastNonGroom.uid));
           setMoveHistory(h => h.slice(0, -1));
         }
         break;
@@ -3252,46 +3966,58 @@ function Game() {
         break;
       }
       case '布偶猫': {
-        // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中（跳过冰冻牌）
-        const startIdx = frozenSlot ? 1 : 0;
-        const toMove = slotRef.current.slice(startIdx, startIdx + 3);
-        if (toMove.length === 0) break;
-        setTempStorage(prev => [...toMove, ...prev]);
-        setSlot(prev => prev.slice(startIdx + 3));
-        setMoveHistory(h => h.slice(Math.max(0, h.length - toMove.length)));
-        toMove.forEach(item => {
+        // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中（跳过冰冻牌和舔毛牌）
+        const startIdx = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
+        const nonGroomItems3 = slotRef.current.slice(startIdx).filter(s => !s.isGroom);
+        const toMove3 = nonGroomItems3.slice(0, 3);
+        if (toMove3.length === 0) break;
+        const movedUids3 = new Set(toMove3.map(s => s.uid));
+        setSlot(prev => prev.filter(s => !movedUids3.has(s.uid)));
+        setTempStorage(prev => [...toMove3, ...prev]);
+        setMoveHistory(h => h.slice(Math.max(0, h.length - toMove3.length)));
+        toMove3.forEach(item => {
           setTiles(prev => prev.map(t => t.id === item.tileId ? { ...t, inSlot: false } : t));
         });
         break;
       }
       case '三花猫': {
-        // P3: 蹦跶 - 移除收集槽第一格的冰冻牌
-        if (frozenSlot) {
+        // P3: 蹦跶 - 移除收集槽的冰冻牌（仅胆小减免生效时才可移除，否则无法移出）
+        if (frozenSlot && freezeBlockOverride) {
           emitExplosion(100, 600, '#74B9FF');
           setFrozenSlot(null);
         }
-        // 原有功能：随机移除2张干扰卡
-        const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
-        if (candidates.length < 2) break;
-        const shuffled = shuffleArr(candidates);
-        const removed = shuffled.slice(0, 2);
+        // 优先跳走棋盘上的干扰卡（含舔毛牌），其次随机移除2张
+        const interferenceCandidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current) && t.isInterference);
+        const normalCandidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
+        let removed = [];
+        // 优先移除干扰卡
+        const shuffledInterference = shuffleArr(interferenceCandidates);
+        removed.push(...shuffledInterference.slice(0, 2));
+        // 不够2张时，从普通牌补充
+        if (removed.length < 2) {
+          const shuffledNormal = shuffleArr(normalCandidates.filter(c => !removed.some(r => r.id === c.id)));
+          removed.push(...shuffledNormal.slice(0, 2 - removed.length));
+        }
         removed.forEach(t => {
-          const cat = CAT_TYPES.find(c => c.id === t.type);
-          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+          const groomCard = INTERFERENCE_CARDS[t.interferenceType];
+          const cat = groomCard || CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color || '#FD79A8');
         });
         setTiles(prev => prev.map(t => removed.some(r => r.id === t.id) ? { ...t, removed: true } : t));
         break;
       }
       case '暹罗猫': {
-        // P3: 瞬移 - 将收集槽3张卡打乱放回棋盘
-        const count = Math.min(slotRef.current.length, 3);
+        // P3: 瞬移 - 将收集槽3张卡打乱放回棋盘（跳过舔毛牌，舔毛牌无法被移出）
+        const nonGroomSlotItems = slotRef.current.filter(s => !s.isGroom);
+        const count = Math.min(nonGroomSlotItems.length, 3);
         if (count === 0) break;
         if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
         setMatching([]);
-        const restoreItems = slotRef.current.slice(-count);
+        const restoreItems = nonGroomSlotItems.slice(-count);
+        const restoreUids = new Set(restoreItems.map(s => s.uid));
+        setSlot(prev => prev.filter(s => !restoreUids.has(s.uid)));
+        setMoveHistory(h => h.slice(Math.max(0, h.length - count)));
         const shuffledRestore = shuffleArr(restoreItems);
-        setSlot(prev => prev.slice(0, -count));
-        setMoveHistory(h => h.slice(0, -count));
         shuffledRestore.forEach((item, idx) => {
           const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && isTileBlocked(t, tilesRef.current));
           if (candidates.length > 0) {
@@ -3316,18 +4042,26 @@ function Game() {
         break;
       }
       case '折耳猫': {
-        // P3: 听声 - 撤销前2步，同时不计入失败次数
+        // P3: 听声 - 撤销前2步，同时不计入失败次数（跳过舔毛牌，舔毛牌无法撤回）
         let removed = 0;
-        while (removed < 2 && slotRef.current.length > 0) {
+        let attempts = 0;
+        while (removed < 2 && attempts < slotRef.current.length) {
+          attempts++;
           if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
           setMatching([]);
-          const last = slotRef.current[slotRef.current.length - 1];
-          if (last) {
-            const tileExists = tilesRef.current.some(t => t.id === last.tileId && t.removed);
-            if (tileExists) setTiles(prev => prev.map(t => t.id === last.tileId ? { ...t, removed: false, inSlot: false } : t));
-            setSlot(prev => prev.slice(0, -1));
-            setMoveHistory(h => h.slice(0, -1));
+          // 从末尾找到非舔毛牌
+          let lastNonGroom2 = null;
+          for (let i = slotRef.current.length - 1; i >= 0; i--) {
+            if (!slotRef.current[i].isGroom) {
+              lastNonGroom2 = slotRef.current[i];
+              break;
+            }
           }
+          if (!lastNonGroom2) break;
+          const tileExists = tilesRef.current.some(t => t.id === lastNonGroom2.tileId && t.removed);
+          if (tileExists) setTiles(prev => prev.map(t => t.id === lastNonGroom2.tileId ? { ...t, removed: false, inSlot: false } : t));
+          setSlot(prev => prev.filter(s => s.uid !== lastNonGroom2.uid));
+          setMoveHistory(h => h.slice(0, -1));
           removed++;
         }
         break;
@@ -3340,8 +4074,9 @@ function Game() {
         const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, 3);
         if (topTiles.length === 0) break;
         topTiles.forEach(t => {
-          const cat = CAT_TYPES.find(c => c.id === t.type);
-          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+          const iCard = t.isInterference ? INTERFERENCE_CARDS[t.interferenceType] : null;
+          const cat = iCard || CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color || '#FD79A8');
         });
         setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
         setTimeout(() => {
@@ -3361,8 +4096,9 @@ function Game() {
         const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, tempCount);
         if (topTiles.length === 0) break;
         topTiles.forEach(t => {
-          const cat = CAT_TYPES.find(c => c.id === t.type);
-          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
+          const iCard = t.isInterference ? INTERFERENCE_CARDS[t.interferenceType] : null;
+          const cat = iCard || CAT_TYPES.find(c => c.id === t.type);
+          if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color || '#FD79A8');
         });
         setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
         setTempStorage([]);
@@ -3384,11 +4120,15 @@ function Game() {
   };
 
   // P1: write fish earnings to localStorage when game ends
+  // P7: 更新为新的鱼干计算系统
   const gameEndedRef = useRef(false);
   useEffect(() => {
-    if (gameState !== GAME_PLAYING && fishEarned > 0 && !gameEndedRef.current) {
+    if (gameState !== GAME_PLAYING && !gameEndedRef.current) {
       gameEndedRef.current = true;
-      const finalFish = Math.round(fishEarned * fishMultiplier);
+      
+      // P7: 使用新的鱼干计算公式（基于已有的fishMultiplier）
+      const fishCalc = calculateFishReward(comboCount || 0, (fishMultiplier || 1) - 1, false, 1);
+      const finalFish = fishCalc.totalFish;
 
       // Send to API if online
       if (MiaolegemiAPI && MiaolegemiAPI.isLoggedIn()) {
@@ -3433,11 +4173,13 @@ function Game() {
     setTiles(generateBoard(currentLevel));
     setSlot([]);
     setTempStorage([]);
+    setGroomSlots([]);
+    setStickyToast('');
     setMatching([]);
     setGameState(GAME_PLAYING);
     setMoveCount(0);
     setMoveHistory([]);
-    setFishEarned(0);
+    setComboCount(0); // P7: 重置三消次数
     setMaxCombo(0);
     setScore(0);
     lastMatchTimeRef.current = 0;
@@ -3453,8 +4195,8 @@ function Game() {
     setUsedSkills({ active0: false, active1: false, active2: false });
     setHighlightedTiles([]);
     setSlotBonus(0);
-    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
-    if (levelConfig.interference === INTERFERENCE_TYPES.freeze) {
+    // 冰冻牌：根据触发规则判断是否生成
+    if (shouldTriggerFreeze(levelConfig)) {
       const frozenCard = {
         uid: 'frozen_' + (uidRef.current++),
         type: '__interference_freeze__',
@@ -3489,20 +4231,22 @@ function Game() {
         localStorage.setItem('miaolegemi_p0_v1', JSON.stringify(data));
       }
     } catch(e) {}
-    // 重来 = 保留棋盘，清空收集槽
+    // 重来 = 重新生成棋盘（含粘连牌等干扰牌），清空收集槽
     if (matchTimeoutRef.current) {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
     gameEndedRef.current = false;
-    setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+    setTiles(generateBoard(currentLevel));
     setSlot([]);
     setTempStorage([]);
+    setGroomSlots([]);
+    setStickyToast('');
     setMatching([]);
     setGameState(GAME_PLAYING);
     setMoveCount(0);
     setMoveHistory([]);
-    setFishEarned(0);
+    setComboCount(0); // P7: 重置三消次数
     setMaxCombo(0);
     setScore(0);
     lastMatchTimeRef.current = 0;
@@ -3513,8 +4257,8 @@ function Game() {
     setTimerPaused(false);
     timerPauseRef.current = false;
     setHighlightedTiles([]);
-    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
-    if (levelConfig.interference === INTERFERENCE_TYPES.freeze) {
+    // 冰冻牌：根据触发规则判断是否生成
+    if (shouldTriggerFreeze(levelConfig)) {
       const frozenCard = {
         uid: 'frozen_' + (uidRef.current++),
         type: '__interference_freeze__',
@@ -3543,17 +4287,19 @@ function Game() {
       setTiles(generateBoard(1));
       setSlot([]);
       setTempStorage([]);
+      setGroomSlots([]);
+      setStickyToast('');
       setMatching([]);
       setGameState(GAME_PLAYING);
       setMoveCount(0);
-      setFishEarned(0);
+      setComboCount(0); // P7: 重置三消次数
       setMaxCombo(0);
       setScore(0);
       const tl = getLevelConfig(1)?.timedMode ? (getLevelConfig(1).timeLimit || 120) : 0;
       setTimeLeft(tl);
       timeLeftRef.current = tl;
       // 冰冻牌初始化
-      if (getLevelConfig(1)?.interference === INTERFERENCE_TYPES.freeze) {
+      if (shouldTriggerFreeze(getLevelConfig(1))) {
         const frozenCard = {
           uid: 'frozen_' + (uidRef.current++),
           type: '__interference_freeze__',
@@ -3579,11 +4325,13 @@ function Game() {
     setTiles(generateBoard(nextLv));
     setSlot([]);
     setTempStorage([]);
+    setGroomSlots([]);
+    setStickyToast('');
     setMatching([]);
     setGameState(GAME_PLAYING);
     setMoveCount(0);
     setMoveHistory([]);
-    setFishEarned(0);
+    setComboCount(0); // P7: 重置三消次数
     setMaxCombo(0);
     setScore(0);
     lastMatchTimeRef.current = 0;
@@ -3599,8 +4347,8 @@ function Game() {
     setUsedSkills({ active0: false, active1: false, active2: false });
     setHighlightedTiles([]);
     setSlotBonus(0);
-    // 冰冻牌：关卡有冰冻干扰时自动占据收集槽第一格
-    if (nextConfig.interference === INTERFERENCE_TYPES.freeze) {
+    // 冰冻牌：根据触发规则判断是否生成
+    if (shouldTriggerFreeze(nextConfig)) {
       const frozenCard = {
         uid: 'frozen_' + (uidRef.current++),
         type: '__interference_freeze__',
@@ -3736,7 +4484,7 @@ function Game() {
               flexShrink: 0,
             }}>
               <span style={{ fontSize: 10 }}>🐟</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#FD9644' }}>+{fishEarned}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#FD9644' }}>+{Math.floor(comboCount / 6)}</span>
             </div>
             
             {/* 计时器 */}
@@ -3950,8 +4698,8 @@ function Game() {
             remaining={remaining}
             score={score}
             maxCombo={maxCombo}
-            fishEarned={fishEarned}
-            fishMultiplier={fishMultiplier}
+            comboCount={comboCount} // P7: 三消次数
+            fishMultiplier={fishMultiplier} // P7: 鱼干加成倍数
             timeLeft={timeLeft}
             catCount={skillSlots.filter((s, i) => i < 3 && s).length}
             cats={skillSlots.slice(0, 3).filter(s => s).map((breed, idx) => ({ serialId: `active-${idx}`, breed }))}
@@ -3966,15 +4714,60 @@ function Game() {
         </div>
 
         {/* ═══ 临时存放层 + 收集槽（技能栏上方）═══ */}
-        <div style={{ padding: '0 2px' }}>
+        <div style={{ padding: '0 2px', position: 'relative' }}>
           {tempStorage.length > 0 && (
             <div style={{ marginBottom: 4 }}>
               <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3} showBg={false} />
             </div>
           )}
           <div style={{ marginTop: tempStorage.length > 0 ? 6 : 0 }}>
-            <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} />
+            <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} groomSlots={groomSlots} freezeOverride={freezeBlockOverride} freezeGridCount={freezeGridCount} />
           </div>
+          {/* 舔毛牌进入收集槽提示 */}
+          {groomToast && (
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              bottom: 100, zIndex: 300,
+              background: 'linear-gradient(135deg, rgba(253,203,110,0.95), rgba(243,156,18,0.9))',
+              color: '#fff', padding: '8px 18px', borderRadius: 20,
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 16px rgba(253,203,110,0.5)',
+              animation: 'fadeIn 0.2s ease-out',
+              pointerEvents: 'none',
+            }}>
+              🧴 舔毛牌进入收集槽，无法被消除！
+            </div>
+          )}
+          {/* 冰冻牌冻结收集槽提示 */}
+          {freezeToast && (
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              bottom: 100, zIndex: 300,
+              background: 'linear-gradient(135deg, rgba(116,185,255,0.95), rgba(9,132,227,0.9))',
+              color: '#fff', padding: '8px 18px', borderRadius: 20,
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 16px rgba(116,185,255,0.5)',
+              animation: 'fadeIn 0.2s ease-out',
+              pointerEvents: 'none',
+            }}>
+              {freezeToast}
+            </div>
+          )}
+          {/* 粘连牌连带效果提示 */}
+          {stickyToast && (
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              bottom: 100, zIndex: 300,
+              background: 'linear-gradient(135deg, rgba(253,121,168,0.95), rgba(232,67,147,0.9))',
+              color: '#fff', padding: '8px 18px', borderRadius: 20,
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 16px rgba(253,121,168,0.5)',
+              animation: 'fadeIn 0.2s ease-out',
+              pointerEvents: 'none',
+            }}>
+              {stickyToast}
+            </div>
+          )}
         </div>
 
         {/* ═══ 技能栏（底部）═══ P3: 显示猫咪头像+技能名+位置标签 */}

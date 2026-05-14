@@ -24,8 +24,28 @@ const CAT_WEIGHTS = [
 
 // 性格词库
 const PERSONALITIES = [
-  '傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '黏糊'
+  '傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'
 ];
+
+// 品种默认性格
+const BREED_DEFAULT_PERSONALITIES: Record<string, string> = {
+  '橘猫': '吃货',
+  '黑猫': '胆大',
+  '白猫': '高冷',
+  '蓝猫': '懒散',
+  '布偶猫': '狡黠',
+  '三花猫': '胆小',
+  '暹罗猫': '独行',
+  '无毛猫': '话痨',
+  '波斯猫': '黏人',
+  '折耳猫': '傲娇',
+  '星空猫': '高冷',
+  '幸运猫': '吃货',
+};
+
+function getDefaultPersonality(catName: string): string {
+  return BREED_DEFAULT_PERSONALITIES[catName] || '傲娇';
+}
 
 // 抽卡（单抽）
 router.post('/pull', authMiddleware, async (req, res) => {
@@ -143,9 +163,8 @@ router.post('/pull', authMiddleware, async (req, res) => {
         return newSerial;
       });
 
-      // 随机性格
-      const shuffledPersonality = [...PERSONALITIES].sort(() => Math.random() - 0.5);
-      const selectedPersonality = shuffledPersonality.slice(0, 2);
+      // 随机性格（单一性格）
+      const selectedPersonality = getDefaultPersonality(catName);
 
       // 创建猫咪实例
       const cat = await prisma.playerCat.create({
@@ -341,5 +360,55 @@ function getCatDescription(catName: string): string {
   };
   return descs[catName] || '一只可爱的猫咪';
 }
+
+// 清理猫咪性格数据（将旧数据修正为标准性格）
+router.post('/cleanup-personalities', authMiddleware, async (req, res) => {
+  try {
+    const VALID_PERSONALITIES = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'];
+
+    // 获取所有猫咪，带品种信息
+    const cats = await prisma.playerCat.findMany({
+      where: { ownerId: req.user!.userId },
+      include: { serial: { include: { species: true } } },
+    });
+
+    let cleanedCount = 0;
+    const updates = [];
+
+    for (const cat of cats) {
+      const rawPersonality = cat.personality;
+      // 检查是否是有效性格
+      const isValid = VALID_PERSONALITIES.includes(rawPersonality);
+
+      if (!isValid && rawPersonality) {
+        // 获取品种对应的默认性格
+        const breedName = cat.serial?.species?.name;
+        const correctPersonality = BREED_DEFAULT_PERSONALITIES[breedName || ''] || '傲娇';
+
+        await prisma.playerCat.update({
+          where: { id: cat.id },
+          data: { personality: correctPersonality },
+        });
+
+        updates.push({
+          catId: cat.id,
+          catName: breedName,
+          old: rawPersonality,
+          new: correctPersonality,
+        });
+        cleanedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `已清理 ${cleanedCount} 只猫咪的性格数据`,
+      details: updates,
+    });
+  } catch (error: any) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({ error: '清理失败' });
+  }
+});
 
 export default router;
