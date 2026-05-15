@@ -70,7 +70,7 @@ router.get('/profile', auth, async (req, res) => {
     const releasedCount = await prisma.playerCat.count({
       where: { ownerId: req.user.id, location: 'memorial', releasedAt: { not: null } },
     });
-    if (releasedCount >= 3) titles.push('猫星摆渡人');
+    if (releasedCount >= 3) titles.push('猫咪绝情者');
 
     res.json({
       id: user.id,

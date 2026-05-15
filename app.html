@@ -1546,7 +1546,7 @@ function LineupManager({
 /* ═══════════════════════════════════════
    CAT PAGE (Tab 3) — Battle + Spectator + Home + Bag + P6: 纪念册
    ═══════════════════════════════════════ */
-function CatPage({ cats, fish, onFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
+function CatPage({ cats, fish, onFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
 
 // 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
 const getInitialTab = () => {
@@ -1653,10 +1653,10 @@ useEffect(() => {
       )}
       {/* P2: 家园（原养成区） */}
       {subTab === 'home' && (
-        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} />
+        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} />
       )}
       {subTab === 'bag' && (
-        <BagArea cats={bagCats} homeCount={homeCats.length} homeMaxSlots={homeMaxSlots} onAdopt={onAdopt} onNavigate={onNavigate} />
+        <BagArea cats={bagCats} homeCount={homeCats.length} homeMaxSlots={homeMaxSlots} onAdopt={onAdopt} onNavigate={onNavigate} onDiscard={onDiscard} />
       )}
     </div>
   );
@@ -1666,7 +1666,7 @@ useEffect(() => {
    P2: HOME AREA (家园) + P6: 告别仪式 - P4: 界面调整
    家园槽位卡片：添加被动技能标签、批量补满按钮、上场按钮
    ═══════════════════════════════════════ */
-function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onRelease, onNavigate, onSaveFromFarewell, onDeploy, totalAdopted, maxDaysAlive }) {
+function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive }) {
 
 const allSlots = Array.from({ length: homeMaxSlots });
 
@@ -1691,7 +1691,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
 
         if (!cat) {
           return (
-            <div key={i} style={{
+            <div key={`slot-empty-${i}`} style={{
               borderRadius:18, padding:'16px', marginBottom:12,
               background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(108,92,231,0.2)',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8, minHeight:100,
@@ -1716,7 +1716,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
         const canBeDeployed = cat.battleSlot == null && cat.battleSpectator == null;
 
         return (
-          <div key={cat.serialId} style={{
+          <div key={`slot-cat-${cat.serialId}`} style={{
             borderRadius:18, padding:'14px', marginBottom:12,
             background: cat.pendingRelease 
               ? 'linear-gradient(135deg, rgba(255,107,107,0.08) 0%, rgba(255,200,200,0.05) 100%)' 
@@ -1818,11 +1818,11 @@ const allSlots = Array.from({ length: homeMaxSlots });
                     ? `💚 挽留 (${cat.saveCost}🐟)` 
                     : `鱼干不足 (需要${cat.saveCost}🐟)`}
                 </button>
-                <button onClick={() => {}} style={{
-                  padding:'0 14px', height:36, borderRadius:10, border:'1px solid rgba(255,107,107,0.2)',
-                  background:'rgba(255,107,107,0.08)', cursor:'pointer',
-                  fontSize:11, fontWeight:600, color:colors.muted,
-                }}>等待离开</button>
+                <button onClick={() => onImmediateRelease && onImmediateRelease(cat)} style={{
+                  padding:'0 14px', height:36, borderRadius:10, border:'1px solid rgba(255,107,107,0.3)',
+                  background:'linear-gradient(135deg, #FF6B6B, #E05555)', cursor:'pointer',
+                  fontSize:11, fontWeight:700, color:'#fff',
+                }}>立即送走</button>
               </div>
             ) : (
               <div style={{ display:'flex', gap:8, marginTop:10 }}>
@@ -1880,7 +1880,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
 /* ═══════════════════════════════════════
    BAG AREA
    ═══════════════════════════════════════ */
-function BagArea({ cats, homeCount, homeMaxSlots, onAdopt, onNavigate }) {
+function BagArea({ cats, homeCount, homeMaxSlots, onAdopt, onNavigate, onDiscard }) {
 
 if (cats.length === 0) {
     return (
@@ -1933,6 +1933,11 @@ if (cats.length === 0) {
               }}>
                 {canAdopt ? `领养(${homeCount}/${homeMaxSlots})` : `已满(${homeCount}/${homeMaxSlots})`}
               </button>
+              <button onClick={() => onDiscard && onDiscard(cat)} style={{
+                padding:'0 14px', height:34, borderRadius:10, border:'1px solid rgba(255,107,107,0.25)',
+                background:'rgba(255,107,107,0.08)', cursor:'pointer',
+                fontSize:11, fontWeight:600, color:colors.red,
+              }}>丢弃</button>
             </div>
           </div>
         );
@@ -1978,8 +1983,8 @@ return (
               <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.5)' }}
                 onError={e => { e.target.style.display='none'; }} />
               {/* 猫咪已离去标识 */}
-              <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <span style={{ fontSize:20 }}>🌈</span>
+              <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.3)' }}>
+                <span style={{ position:'absolute', top:2, right:4, fontSize:14 }}>🕊️</span>
               </div>
             </div>
             <div style={{ flex:1 }}>
@@ -3113,10 +3118,9 @@ const nurturing = cats.filter(c => c.location === 'home');
       <div style={{ padding:'12px 20px 0' }}>
         <div style={{ borderRadius:16, padding:'14px', background:colors.card, border:`1px solid rgba(108,92,231,0.15)` }}>
           {/* 纪念册头部 */}
-          <div style={{ textAlign:'center', marginBottom:16, padding:'12px', background:'linear-gradient(180deg, rgba(108,92,231,0.1) 0%, rgba(108,92,231,0.02) 100%)', borderRadius:12 }}>
-            <div style={{ fontSize:24, marginBottom:4 }}>🫶</div>
-            <div style={{ fontSize:13, fontWeight:600, color:colors.ink }}>已陪伴过 {memorial.length} 只猫咪</div>
-            <div style={{ fontSize:11, color:colors.sub, marginTop:2 }}>它们永远留在主人的记忆里</div>
+          <div style={{ marginBottom:16, padding:'12px', background:'linear-gradient(180deg, rgba(108,92,231,0.1) 0%, rgba(108,92,231,0.02) 100%)', borderRadius:12 }}>
+            <div style={{ fontSize:12, fontWeight:800, color:colors.ink, marginBottom:4 }}>🫶 纪念册</div>
+            <div style={{ fontSize:10, color:colors.sub }}>已陪伴过 {memorial.length} 只猫咪 · 它们永远留在主人的记忆里</div>
           </div>
           
           {memorial.length === 0 ? (
@@ -3135,8 +3139,8 @@ const nurturing = cats.filter(c => c.location === 'home');
                   <div style={{ width:60, height:60, borderRadius:12, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}30`, flexShrink:0, position:'relative' }}>
                     <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.4)' }}
                       onError={e => { e.target.style.display='none'; }} />
-                    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.25)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <span style={{ fontSize:18 }}>🌈</span>
+                    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.25)' }}>
+                      <span style={{ position:'absolute', top:2, right:4, fontSize:12 }}>🕊️</span>
                     </div>
                   </div>
                   <div style={{ flex:1 }}>
@@ -3403,7 +3407,7 @@ function FarewellCeremony({ cat, show, onDone }) {
             {cat.name} · #{String(cat.breedSerial || cat.serialId).padStart(3,'0')}
           </div>
           <div style={{ fontSize:18, fontWeight:800, color:colors.ink, marginBottom:8 }}>
-            踏上了去猫星的旅途
+            踏上了流浪的旅途
           </div>
           <div style={{ fontSize:12, color:colors.sub, lineHeight:1.8 }}>
             陪伴了你 {cat.daysAlive} 天<br/>
@@ -3419,9 +3423,9 @@ function FarewellCeremony({ cat, show, onDone }) {
       {/* Done phase - summary */}
       {phase >= 3 && (
         <div style={{ textAlign:'center', animation:'farewellFadeIn 0.5s ease-out' }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>🌈</div>
+          <div style={{ fontSize:48, marginBottom:12 }}>🕊️</div>
           <div style={{ fontSize:16, fontWeight:800, color:colors.ink, marginBottom:6 }}>
-            {cat.name} 已到达猫星
+            {cat.name} 正在流浪
           </div>
           <div style={{ fontSize:12, color:colors.sub, marginBottom:20 }}>
             它的序列号将在 60 天后重新流通
@@ -3453,13 +3457,13 @@ function MemorialDetailModal({ cat, show, onClose }) {
         </div>
         <div style={{ textAlign:'center', marginBottom:16 }}>
           <div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.name} · #{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</div>
-          <div style={{ fontSize:11, color:colors.muted, marginTop:2 }}>已安息 · {cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : ''}</div>
+          <div style={{ fontSize:11, color:colors.muted, marginTop:2 }}>已离开 · {cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : ''}</div>
         </div>
 
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
           {[
-            { label:'在世天数', value:cat.daysAlive, color:colors.purpleLight },
+            { label:'陪伴天数', value:cat.daysAlive, color:colors.purpleLight },
             { label:'见证游戏', value:cat.gamesWitnessed, color:colors.blue },
             { label:'最大连击', value:cat.bestCombo+'连消', color:colors.orange },
           ].map(s => (
@@ -3497,7 +3501,7 @@ function MemorialDetailModal({ cat, show, onClose }) {
               <div key={i} style={{ padding:'8px 10px', background:colors.card, borderRadius:10, marginBottom:6 }}>
                 <div style={{ fontSize:11, fontWeight:600, color:colors.ink }}>第{i+1}任 · {o.name}</div>
                 <div style={{ fontSize:10, color:colors.sub, marginTop:2 }}>
-                  在世 {o.daysAlive} 天 · 花费 {o.fishSpent || 0} 条鱼干 · 最大连击 {o.bestCombo || 0} 连消
+                  陪伴 {o.daysAlive} 天 · 花费 {o.fishSpent || 0} 条鱼干 · 最大连击 {o.bestCombo || 0} 连消
                 </div>
                 {o.dateLeft && <div style={{ fontSize:9, color:colors.muted, marginTop:2 }}>{o.dateLeft} {o.isCurrent ? '至今' : '离开'}</div>}
               </div>
@@ -3937,6 +3941,8 @@ function App() {
   const [showGachaResult, setShowGachaResult] = useState(false);
   const [bagTab, setBagTab] = useState(null);
   const [gachaDone, setGachaDone] = useState(false);
+  // 通用确认弹窗
+  const [confirmModal, setConfirmModal] = useState(null); // { emoji, title, message, onConfirm }
   const [pityCount, setPityCount] = useState(47); // 保底计数器 max 80
   const [activeTitle, setActiveTitle] = useState(loadSavedTitle);
   const [lineageCat, setLineageCat] = useState(null);
@@ -3955,6 +3961,11 @@ function App() {
   const [memorialDetailCat, setMemorialDetailCat] = useState(null);
   const [titleUnlockToast, setTitleUnlockToast] = useState(null);
   const prevTitlesRef = useRef(new Set());
+
+  // 通用确认弹窗辅助函数
+  const showConfirmModal = useCallback(({ emoji, title, message, onConfirm }) => {
+    setConfirmModal({ emoji, title, message, onConfirm });
+  }, []);
   
   // P6: Ref for executeRealRelease to use in interval
   const executeRealReleaseRef = useRef(null);
@@ -3970,17 +3981,16 @@ function App() {
   // Auth: check token on mount (with 5s timeout)
   useEffect(() => {
     const initAuth = async () => {
+      // 创建独立的超时 Promise，避免复用导致 unhandled rejection
+      const createTimeout = (ms) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), ms)
+      );
       try {
-        // 5秒超时
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        );
-        
         if (MiaolegemiAPI.isLoggedIn()) {
           try {
             const profile = await Promise.race([
               MiaolegemiAPI.getProfile(),
-              timeoutPromise
+              createTimeout(5000)
             ]);
             setUser(profile);
             setBells(profile.bells);
@@ -3988,7 +3998,7 @@ function App() {
             // Load cats from API
             const apiCats = await Promise.race([
               MiaolegemiAPI.getCats(),
-              timeoutPromise
+              createTimeout(5000)
             ]);
             if (apiCats.length > 0) {
               const mapped = apiCats.map(c => ({
@@ -4271,7 +4281,7 @@ function App() {
     if (totalAdopted >= 20) currentTitles.add('猫咪守护者');
     if (cats.some(c => c.daysAlive >= 180)) currentTitles.add('老铲屎官');
     const memorialCount = cats.filter(c => c.location === 'memorial').length;
-    if (memorialCount >= 3) currentTitles.add('猫星摆渡人');
+    if (memorialCount >= 3) currentTitles.add('猫咪绝情者');
     if (cats.some(c => c.isGenesis && (c.location === 'home' || c.location === 'bag'))) currentTitles.add('初代发现者');
 
     if (prevTitlesRef.current.size > 0) {
@@ -4365,29 +4375,63 @@ function App() {
     setAdoptTarget(null);
   }, [adoptTarget, isLocalMode, user]);
 
-  // P2: Handle deploy (家园 → 出战席)
+  // P2: Handle deploy (家园 → 出战席/观战席)
   const handleDeploy = useCallback((cat) => {
     const battleCats = cats.filter(c => c.battleSlot != null);
     const targetSlot = findEmptyBattleSlot(battleCats);
     
-    if (targetSlot === null) {
-      alert('出战席已满！');
+    if (targetSlot !== null) {
+      // 出战席有空位，直接上场
+      const newBattleCats = [...battleCats, { ...cat, battleSlot: targetSlot }];
+      const conflict = validateBattleLineup(newBattleCats.filter(c => c.battleSlot != null));
+      if (!conflict.valid) {
+        alert(`⚠️ ${conflict.conflict[0].name} 和 ${conflict.conflict[1].name} 性格不合，不能同时出战！`);
+        return;
+      }
+      setCats(prev => prev.map(c => {
+        if (c.serialId !== cat.serialId) return c;
+        return { ...c, battleSlot: targetSlot };
+      }));
       return;
     }
     
-    // 检查猫咪不和冲突
-    const newBattleCats = [...battleCats, { ...cat, battleSlot: targetSlot }];
-    const conflict = validateBattleLineup(newBattleCats.filter(c => c.battleSlot != null));
-    if (!conflict.valid) {
-      alert(`⚠️ ${conflict.conflict[0].name} 和 ${conflict.conflict[1].name} 性格不合，不能同时出战！`);
+    // 出战席已满，检查观战席
+    const spectatorCats = cats.filter(c => c.battleSpectator != null);
+    const maxSpectatorSlots = slot4Unlocked ? (slot6Unlocked ? 3 : slot5Unlocked ? 2 : 1) : 0;
+    const hasSpectatorSpace = spectatorCats.length < maxSpectatorSlots && maxSpectatorSlots > 0;
+    
+    if (hasSpectatorSpace) {
+      // 出战席已满但观战席有空位，弹窗确认
+      showConfirmModal({
+        emoji: '👁️',
+        title: '出战席已满',
+        message: `"出战席"已满，是否前往"观战区"观战？`,
+        onConfirm: () => {
+          // 找到空观战槽位
+          const usedSlots = new Set(spectatorCats.map(c => c.battleSpectator).filter(s => s != null));
+          let targetSpectatorSlot = null;
+          for (let i = 1; i <= 3; i++) {
+            if (!usedSlots.has(i)) { targetSpectatorSlot = i; break; }
+          }
+          if (targetSpectatorSlot !== null) {
+            setCats(prev => prev.map(c => {
+              if (c.serialId !== cat.serialId) return c;
+              return { ...c, battleSpectator: targetSpectatorSlot };
+            }));
+          }
+        },
+      });
       return;
     }
     
-    setCats(prev => prev.map(c => {
-      if (c.serialId !== cat.serialId) return c;
-      return { ...c, battleSlot: targetSlot };
-    }));
-  }, [cats]);
+    // 出战席和观战席都满了
+    showConfirmModal({
+      emoji: '😔',
+      title: '备战区已满',
+      message: '出战席和观战席都已满，无法上场。',
+      onConfirm: () => {},
+    });
+  }, [cats, slot4Unlocked, slot5Unlocked, slot6Unlocked, showConfirmModal]);
 
   // P2: Find empty battle slot
   function findEmptyBattleSlot(battleCats) {
@@ -4475,22 +4519,36 @@ function App() {
       return;
     }
     
-    if (!window.confirm(`确定花费 ${cat.saveCost} 鱼干挽留 ${cat.name}？它将留在家园。`)) return;
-    
-    // 扣除鱼干
-    setFish(prev => prev - cat.saveCost);
-    
-    // 取消告别仪式状态
-    setCats(prev => prev.map(c => {
-      if (c.serialId !== cat.serialId) return c;
-      return {
-        ...c,
-        pendingRelease: false,
-        farewellStartedAt: null,
-        canBeSaved: false,
-      };
-    }));
-  }, [fish]);
+    showConfirmModal({
+      emoji: '💚',
+      title: '确认挽留',
+      message: `花费 ${cat.saveCost} 鱼干挽留 ${cat.name}？它将留在家园。`,
+      onConfirm: () => {
+        // 扣除鱼干
+        fishLedger.push({ type: 'spend', amount: cat.saveCost, desc: `${cat.name}挽留`, time: Date.now() });
+        try {
+          const key = 'miaolegemi_p0_v1';
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const data = JSON.parse(saved);
+            data.fishLedger = fishLedger;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+        } catch(e) {}
+        // 取消告别仪式状态
+        setCats(prev => prev.map(c => {
+          if (c.serialId !== cat.serialId) return c;
+          return {
+            ...c,
+            pendingRelease: false,
+            farewellStartedAt: null,
+            canBeSaved: false,
+          };
+        }));
+      },
+    });
+    return;
+  }, [fish, showConfirmModal]);
 
   // P6: 执行真正的送走（24小时后调用）
   const executeRealRelease = useCallback(async (cat) => {
@@ -4542,17 +4600,38 @@ function App() {
     executeRealReleaseRef.current = executeRealRelease;
   }, [executeRealRelease]);
 
+  // P6: 立即送走 — 跳过24小时等待，直接进入告别画面
+  const handleImmediateRelease = useCallback((cat) => {
+    if (!cat) return;
+    showConfirmModal({
+      emoji: '😿',
+      title: '确认立即送走',
+      message: `${cat.name}将直接离开家园去流浪，不可挽回。`,
+      onConfirm: () => {
+        setFarewellCat(cat);
+        setShowFarewell(true);
+      },
+    });
+  }, [showConfirmModal]);
+
   // Handle discard — remove cat from bag permanently
   const handleDiscard = useCallback(async (cat) => {
     if (!cat) return;
-    if (!isLocalMode && cat._apiId) {
-      try {
-        await MiaolegemiAPI.releaseCat(cat._apiId);
-      } catch (e) { alert(e.message); return; }
-    }
-    setCats(prev => prev.filter(c => c.serialId !== cat.serialId));
-    setFlipCardCat(null);
-  }, [isLocalMode]);
+    showConfirmModal({
+      emoji: '🗑️',
+      title: '确认丢弃',
+      message: `${cat.name}将被直接丢弃，不可找回。`,
+      onConfirm: async () => {
+        if (!isLocalMode && cat._apiId) {
+          try {
+            await MiaolegemiAPI.releaseCat(cat._apiId);
+          } catch (e) { alert(e.message); return; }
+        }
+        setCats(prev => prev.filter(c => c.serialId !== cat.serialId));
+        setFlipCardCat(null);
+      },
+    });
+  }, [isLocalMode, showConfirmModal]);
 
   // Handle gacha — breedId/rarity pre-rolled by GachaPage for animation sync
   // 支持新参数: breedId, rarity, newPityCount, triggeredPity
@@ -4710,6 +4789,8 @@ function App() {
                 onFeed={handleFeed} onAdopt={handleAdopt}
                 onRelease={handleRelease} onNavigate={handleNavigate}
                 onSaveFromFarewell={handleSaveFromFarewell}
+                onImmediateRelease={handleImmediateRelease}
+                onDiscard={handleDiscard}
                 onDeploy={handleDeploy} onWithdraw={handleWithdraw}
                 onSpectatorDeploy={handleSpectatorDeploy} onSpectatorWithdraw={handleSpectatorWithdraw}
                 initialTab={(new URLSearchParams(window.location.search).get('tab')) || (activeTab === 'cathome' ? 'home' : bagTab)}
@@ -4767,9 +4848,27 @@ function App() {
               </div>
             </div>
           )}
+          {/* 通用确认弹窗 */}
+          {confirmModal && (
+            <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:80 }} onClick={() => setConfirmModal(null)}>
+              <div onClick={e => e.stopPropagation()} style={{ width:290, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${colors.border}`, animation:'slideUp 0.3s ease-out' }}>
+                <div style={{ fontSize:48, marginBottom:12 }}>{confirmModal.emoji}</div>
+                <div style={{ fontSize:16, fontWeight:800, color:colors.ink, marginBottom:8 }}>{confirmModal.title}</div>
+                <div style={{ fontSize:12, color:colors.sub, marginBottom:4 }}>{confirmModal.message}</div>
+                <div style={{ display:'flex', gap:10, marginTop:20 }}>
+                  <button onClick={() => setConfirmModal(null)} style={{ flex:1, height:40, borderRadius:12, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.muted }}>取消</button>
+                  <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn && fn(); }} style={{ flex:1, height:40, borderRadius:12, background:'linear-gradient(135deg, #FF6B6B, #E05555)', border:'none', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>确认</button>
+                </div>
+              </div>
+            </div>
+          )}
           <CatCardFlipModal cat={flipCardCat} show={!!flipCardCat} onClose={() => setFlipCardCat(null)} onDiscard={handleDiscard} />
           {/* P5: Farewell ceremony */}
-          <FarewellCeremony cat={farewellCat} show={showFarewell} onDone={() => { setShowFarewell(false); setFarewellCat(null); }} />
+          <FarewellCeremony cat={farewellCat} show={showFarewell} onDone={() => {
+            // 告别动画结束后，执行真正送走
+            if (farewellCat) executeRealRelease(farewellCat);
+            setShowFarewell(false); setFarewellCat(null);
+          }} />
           {/* P5: Memorial detail */}
           <MemorialDetailModal cat={memorialDetailCat} show={!!memorialDetailCat} onClose={() => setMemorialDetailCat(null)} />
           {/* P5: Title unlock toast */}
