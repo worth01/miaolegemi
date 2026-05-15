@@ -598,7 +598,7 @@ const INTERFERENCE_TYPES = {
     emoji: '❄️',
     color: '#74B9FF',
     effect: 'freeze_grid',  // 冻结收集槽前N格
-    desc: '冰冻牌冻结收集槽前N格，无法消除',
+    desc: '冰冻牌冻结收集槽第一格，无法消除',
     card_id: 'interfere_freeze_001',
     img: '/assets/Textures/FreezeCard.png',
   },
@@ -1185,7 +1185,7 @@ const INTERFERENCE_CARDS = {
   groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: '/assets/Textures/GroomCard.png', card_id: 'interfere_groom_001' },
   freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: '/assets/Textures/FreezeCard.png', card_id: 'interfere_freeze_001' },
   sticky: { id: '__interference_sticky__', name: '粘连牌', emoji: '🩹', color: '#FD79A8', interference: 'sticky', card_id: 'interfere_stick_001' },
-  transform: { id: '__interference_transform__', name: '三花牌', emoji: '🔮', color: '#A29BFE', interference: 'transform' },
+  transform: { id: '__interference_transform__', name: '三花牌', emoji: '🔮', color: '#A29BFE', interference: 'transform', card_id: 'interfere_sanhua_001' },
   danger: { id: '__interference_danger__', name: '小狗牌', emoji: '🐶', color: '#FF6B6B', interference: 'danger' },
   disguise: { id: '__interference_disguise__', name: '真身牌', emoji: '🎭', color: '#00CEC9', interference: 'disguise' },
 };
@@ -1455,6 +1455,30 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
         ctx.fillStyle = 'rgba(253,121,168,0.7)';
         ctx.fill();
       });
+      ctx.restore();
+    }
+
+    // 三花牌专属特效：棋盘上显示🔮角标 + 变身时光效
+    if (tile.isInterference && tile.interferenceType === 'transform' && !isBlocked && !isInSlot) {
+      // 变身动画光效
+      if (tile.transformAnimating) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(162,155,254,0.25)';
+        roundRect(ctx, x, y, TILE_W, TILE_H, 10);
+        ctx.fill();
+        // 变身闪烁边框
+        ctx.strokeStyle = 'rgba(162,155,254,0.8)';
+        ctx.lineWidth = 3;
+        roundRect(ctx, x - 1, y - 1, TILE_W + 2, TILE_H + 2, 11);
+        ctx.stroke();
+        ctx.restore();
+      }
+      // 右上角🔮角标
+      ctx.save();
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText('🔮', x + TILE_W - 3, y + 2);
       ctx.restore();
     }
 
@@ -1844,15 +1868,15 @@ function addInterferenceCards(cards, levelConfig, rng) {
   const maxLayer = Math.max(...cards.filter(c => !c.removed).map(c => c.layer || 0));
   const topLayerCards = cards.filter(c => !c.removed && (c.layer || 0) === maxLayer);
   
-  // 粘连牌特殊约束：两张牌之间至少间隔1格，避免相邻
-  if (interferenceType === 'sticky') {
-    const stickyCount = levelConfig.stick_card_count || count || 2;
+  // 粘连牌/三花牌特殊约束：两张牌之间至少间隔1格，避免相邻
+  if (interferenceType === 'sticky' || interferenceType === 'transform') {
+    const iCount = interferenceType === 'sticky' ? (levelConfig.stick_card_count || count || 2) : (levelConfig.transform_card_count || count || 2);
     const selectedCards = [];
     const shuffledTop = shuffleArr([...topLayerCards], rng);
     
     for (const card of shuffledTop) {
-      if (selectedCards.length >= stickyCount) break;
-      // 检查与已选中的粘连牌是否相邻（上下左右，曼哈顿距离=1）
+      if (selectedCards.length >= iCount) break;
+      // 检查与已选中的牌是否相邻（上下左右，曼哈顿距离=1）
       const isAdjacent = selectedCards.some(sc =>
         Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1
       );
@@ -1860,9 +1884,9 @@ function addInterferenceCards(cards, levelConfig, rng) {
         selectedCards.push(card);
       }
     }
-    // 若顶层空间不足以放置所有粘连牌（间隔约束），降级到不限制间隔
-    if (selectedCards.length < stickyCount) {
-      const fallbackSelected = shuffledTop.slice(0, Math.min(stickyCount, shuffledTop.length));
+    // 若顶层空间不足以放置所有干扰牌（间隔约束），降级到不限制间隔
+    if (selectedCards.length < iCount) {
+      const fallbackSelected = shuffledTop.slice(0, Math.min(iCount, shuffledTop.length));
       return applyInterferenceToCards(cards, fallbackSelected, interferenceType, rng);
     }
     return applyInterferenceToCards(cards, selectedCards, interferenceType, rng);
@@ -1881,9 +1905,12 @@ function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
     if (selectedCards.some(sc => sc.id === card.id)) {
       return {
         ...card,
-        type: `__interference_${interferenceType}__`,
+        // 粘连牌/三花牌保留原始type（可参与三消），其他干扰牌替换type
+        ...(interferenceType !== 'sticky' && interferenceType !== 'transform' ? { type: `__interference_${interferenceType}__` } : {}),
         isInterference: true,
         interferenceType: interferenceType,
+        // 三花牌：记录初始type（供变身逻辑使用）
+        originalType: interferenceType === 'transform' ? card.type : undefined,
         // 伪装牌特殊处理：先随机伪装成普通牌
         disguisedAs: interferenceType === 'disguise' 
           ? CAT_TYPES[Math.floor(rng() * CAT_TYPES.length)].id 
@@ -2109,13 +2136,25 @@ function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
 /* ═══════════════════════════════════════
    TILE COMPONENT
    ═══════════════════════════════════════ */
-function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
-  const cat = CAT_TYPES.find(c => c.id === tile.type);
+function Tile({ tile, blocked, onClick, animDelay, highlighted, transformLockedIds }) {
+  let cat = CAT_TYPES.find(c => c.id === tile.type);
+  // 干扰牌type不在CAT_TYPES中（groom/danger/disguise），从INTERFERENCE_CARDS查找
+  if (!cat && tile.type && tile.type.startsWith('__interference_')) {
+    const iKey = tile.type.replace('__interference_', '').replace('__', '');
+    cat = INTERFERENCE_CARDS[iKey] || null;
+  }
   const x = tileX(tile);
   const y = tileY(tile);
 
   if (tile.removed) return null;
+  if (!cat) return null; // 未知卡牌类型，安全跳过
   const isInSlot = tile.inSlot;
+  // 非transform的干扰牌（groom/danger/disguise等）用emoji渲染，没有img
+  const isOldInterferenceTile = tile.type && tile.type.startsWith('__interference_') && cat;
+  // 三花牌在棋盘上显示（不在收集槽中）
+  const isTransformOnBoard = tile.isInterference && tile.interferenceType === 'transform' && !isInSlot;
+  // 三花牌正在变身
+  const isTransformAnim = tile.transformAnimating;
 
   // P5: 增强视觉 - 根据卡牌颜色生成渐变色
   const cardGradient = `linear-gradient(145deg, ${cat.color}dd 0%, ${cat.color}88 50%, ${cat.color}44 100%)`;
@@ -2160,19 +2199,46 @@ function Tile({ tile, blocked, onClick, animDelay, highlighted }) {
         e.currentTarget.style.boxShadow = highlighted ? '0 0 20px 6px rgba(255,215,0,0.7)' : `0 4px 16px rgba(0,0,0,0.6), 0 0 12px ${cat.color}40, inset 0 1px 0 rgba(255,255,255,0.3)`;
       }}
     >
+      {isOldInterferenceTile ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 24, filter: blocked ? 'grayscale(1) brightness(0.3)' : 'none' }}>
+          {cat.emoji}
+        </div>
+      ) : (
       <img
         src={cat.img}
         alt={tile.type}
         style={{
           width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10,
           filter: blocked ? 'grayscale(1) brightness(0.3)' : `saturate(1.1) brightness(1.05)`,
-          transition: 'filter 0.2s ease',
+          transition: 'filter 0.2s ease, opacity 0.2s ease',
+          opacity: isTransformAnim ? 0.5 : 1,
         }}
         onError={e => {
           e.target.style.display = 'none';
           e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5)">${tile.type.slice(0,2)}</div>`;
         }}
       />
+      )}
+      {/* 三花牌专属角标（棋盘上显示，收集槽中不显示） */}
+      {isTransformOnBoard && (
+        <div style={{
+          position: 'absolute', top: 2, right: 2,
+          fontSize: 10, lineHeight: 1,
+          background: 'rgba(162,155,254,0.7)',
+          borderRadius: 4, padding: '1px 3px',
+          pointerEvents: 'none',
+        }}>🔮</div>
+      )}
+      {/* 三花牌变身动画光效 */}
+      {isTransformAnim && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'linear-gradient(135deg, rgba(162,155,254,0.4) 0%, rgba(162,155,254,0.1) 50%, rgba(162,155,254,0.3) 100%)',
+          borderRadius: 10,
+          pointerEvents: 'none',
+          animation: 'sparkle 0.2s ease-in-out',
+        }} />
+      )}
       {/* P5: 卡片高光层 */}
       {!blocked && !isInSlot && (
         <div style={{
@@ -2325,7 +2391,13 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
               }} />
             )}
             {item ? (() => {
-              const cat = CAT_TYPES.find(c => c.id === item.type);
+              let cat = CAT_TYPES.find(c => c.id === item.type);
+              // 干扰牌（三花/小狗/真身等）type不在CAT_TYPES中，从INTERFERENCE_CARDS查找
+              if (!cat && item.type && item.type.startsWith('__interference_')) {
+                const iKey = item.type.replace('__interference_', '').replace('__', '');
+                cat = INTERFERENCE_CARDS[iKey] || null;
+              }
+              if (!cat) return null; // 未知卡牌类型，安全跳过
               // 舔毛牌：显示特殊样式（不可消除标记）
               if (isGroom) {
                 return (
@@ -2356,6 +2428,9 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                   </div>
                 );
               }
+              // 干扰牌（小狗/真身等，type以__interference_开头）用emoji渲染
+              // 三花牌保留原始type，走普通卡牌路径（入槽后无特殊标记，可正常三消）
+              const isOldInterferenceSlot = item.type && item.type.startsWith('__interference_') && cat;
               return (
                 <div style={{
                   width: '100%', height: '100%', borderRadius: 10,
@@ -2366,6 +2441,11 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                   background: `linear-gradient(145deg, ${cat.color}33 0%, transparent 100%)`,
                   transition: 'box-shadow 0.2s ease',
                 }}>
+                  {isOldInterferenceSlot ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 20 }}>
+                      {cat.emoji}
+                    </div>
+                  ) : (
                   <img
                     src={cat.img}
                     alt={item.type}
@@ -2375,6 +2455,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                       e.target.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:9px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5)">${item.type.slice(0,2)}</div>`;
                     }}
                   />
+                  )}
                   {/* P5: 消除高光 */}
                   {isMatching && (
                     <div style={{
@@ -2383,6 +2464,13 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                       borderRadius: 10,
                       pointerEvents: 'none',
                     }} />
+                  )}
+                  {/* 粘连牌在收集槽中的角标标记 */}
+                  {item.interferenceType === 'sticky' && (
+                    <div style={{
+                      position: 'absolute', top: 1, left: 1,
+                      fontSize: 8, lineHeight: 1,
+                    }}>🩹</div>
                   )}
                 </div>
               );
@@ -3173,6 +3261,8 @@ function Game() {
   const [groomToast, setGroomToast] = useState(false); // 舔毛牌首次进入收集槽提示
   const [freezeToast, setFreezeToast] = useState(''); // 冰冻牌提示文案（空=不显示）
   const [stickyToast, setStickyToast] = useState(''); // 粘连牌提示文案（空=不显示）
+  const [transformToast, setTransformToast] = useState(''); // 三花牌提示文案（空=不显示）
+  const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [moveCount, setMoveCount] = useState(0);
@@ -3208,7 +3298,99 @@ function Game() {
       }
     }
   }, [frozenSlot, freezeBlockOverride, gameState]);
-  // P5: 旧道具状态已移除，由 usedSkills 取代
+
+  // ═══ 三花牌：全局3秒变身计时器 ═══
+  // 胆小性格减免：高好感度下，三花牌变换间隔从3秒延长至6秒
+  const transformIntervalRef = useRef(null); // 全局变身计时器ID
+
+  useEffect(() => {
+    // 仅在有transform类型干扰牌且游戏进行中且未暂停时启动
+    const hasTransformCards = tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'transform');
+    if (!hasTransformCards || gameState !== GAME_PLAYING || timerPaused) {
+      if (transformIntervalRef.current) { clearInterval(transformIntervalRef.current); transformIntervalRef.current = null; }
+      return;
+    }
+
+    // 计算变身间隔（胆小减免：3秒→6秒）
+    const hasCowardlyTransform = battleCats.some(c => {
+      const pers = c?.personality || getDefaultPersonality(c?.breedId || '');
+      if (pers !== '胆小') return false;
+      const intimacy = c?.intimacy || 0;
+      return getIntimacyLevel(intimacy) >= 4;
+    });
+    const intervalMs = (hasCowardlyTransform ? 6 : 3) * 1000;
+
+    // 首次进入三花关卡提示（1.5秒）
+    if (!window._transformToastShown) {
+      setTransformToast('🔮 三花牌已出现，每' + (hasCowardlyTransform ? '6' : '3') + '秒会变换一次图案，打乱你的匹配节奏！');
+      window._transformToastShown = true;
+      setTimeout(() => { setTransformToast(''); }, 1500);
+    }
+
+    // 全局变身逻辑
+    const doTransform = () => {
+      const activeTransformTiles = tilesRef.current.filter(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'transform');
+      if (activeTransformTiles.length === 0) {
+        clearInterval(transformIntervalRef.current);
+        transformIntervalRef.current = null;
+        return;
+      }
+
+      // 收集当前关卡棋盘上所有普通卡牌的type（变身范围）
+      const normalTypes = [...new Set(tilesRef.current.filter(t => !t.removed && !t.inSlot && !t.isInterference).map(t => t.type))];
+      if (normalTypes.length === 0) return;
+
+      const lockedIds = [];
+
+      setTiles(prev => prev.map(t => {
+        if (t.removed || t.inSlot || !t.isInterference || t.interferenceType !== 'transform') return t;
+
+        // 随机选择新type，避免与当前type相同
+        let newType = t.type;
+        let attempts = 0;
+        do {
+          newType = normalTypes[Math.floor(Math.random() * normalTypes.length)];
+          attempts++;
+        } while (newType === t.type && normalTypes.length > 1 && attempts < 20);
+
+        // 平衡校验：变换后不能与相邻牌凑成三消
+        // 检查同层同行/列相邻的同type牌数量
+        const sameLayerTiles = tilesRef.current.filter(tt => !tt.removed && !tt.inSlot && tt.id !== t.id && tt.layer === t.layer);
+        let checkAttempts = 0;
+        while (checkAttempts < 30) {
+          const adjacent = sameLayerTiles.filter(tt =>
+            (Math.abs(tt.row - t.row) <= 1 && tt.col === t.col) ||
+            (Math.abs(tt.col - t.col) <= 1 && tt.row === t.row)
+          );
+          const sameTypeAdjacent = adjacent.filter(tt => tt.type === newType);
+          // 三消需要3张同type，如果相邻只有0-1张同type，安全
+          // 如果相邻2张以上同type，可能凑成三消，重新随机
+          if (sameTypeAdjacent.length < 2) break;
+          // 重新随机
+          newType = normalTypes[Math.floor(Math.random() * normalTypes.length)];
+          checkAttempts++;
+        }
+
+        lockedIds.push(t.id);
+        return { ...t, type: newType, transformAnimating: true };
+      }));
+
+      // 变身锁定：0.2秒内不可点击/匹配
+      if (lockedIds.length > 0) {
+        setTransformLocked(lockedIds);
+        setTimeout(() => {
+          setTransformLocked([]);
+          setTiles(prev => prev.map(t => lockedIds.includes(t.id) ? { ...t, transformAnimating: false } : t));
+        }, 200);
+      }
+    };
+
+    transformIntervalRef.current = setInterval(doTransform, intervalMs);
+    return () => {
+      if (transformIntervalRef.current) { clearInterval(transformIntervalRef.current); transformIntervalRef.current = null; }
+    };
+  }, [gameState, tiles, battleCats, timerPaused]);
+
   // P1: fish & combo tracking
   // P7: 鱼干系统重做 - 使用三消次数追踪（每6次三消=1基础鱼干）
   const [comboCount, setComboCount] = useState(0);  // P7: 三消次数
@@ -3536,6 +3718,13 @@ function Game() {
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
 
+    // 三花牌变身锁定：变身动画期间不可点击
+    if (transformLocked.includes(tile.id)) {
+      setTransformToast('🔮 卡牌正在变换，暂时无法操作！');
+      setTimeout(() => setTransformToast(''), 1000);
+      return;
+    }
+
     // 舔毛牌：判断是否为舔毛牌
     const isGroomCard = tile.isInterference && tile.interferenceType === 'groom';
     // 粘连牌：判断是否为粘连牌
@@ -3604,7 +3793,7 @@ function Game() {
     }
 
     const uid = ++uidRef.current;
-    const slotItem = { uid, type: tile.type, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride };
+    const slotItem = { uid, type: tile.type, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride, interferenceType: tile.isInterference ? tile.interferenceType : null };
 
     // 粘连牌首次点击提示
     if (isStickyCard && !stickyBlockOverride && !stickyAdjacentTile && groomSlots.length === 0 && !window._stickyToastShown) {
@@ -3877,7 +4066,7 @@ function Game() {
     } else {
       setSlot(nextSlot);
     }
-  }, [gameState, slotBonus, frozenSlot, groomSlots, battleCats]);
+  }, [gameState, slotBonus, frozenSlot, groomSlots, battleCats, transformLocked]);
 
   // P5: 旧道具处理函数已移除，功能由 executeSkill 取代
 
@@ -4175,6 +4364,10 @@ function Game() {
     setTempStorage([]);
     setGroomSlots([]);
     setStickyToast('');
+    setTransformToast('');
+    setTransformLocked([]);
+    window._transformToastShown = false;
+    if (transformIntervalRef.current) { clearInterval(transformIntervalRef.current); transformIntervalRef.current = null; }
     setMatching([]);
     setGameState(GAME_PLAYING);
     setMoveCount(0);
@@ -4289,6 +4482,10 @@ function Game() {
       setTempStorage([]);
       setGroomSlots([]);
       setStickyToast('');
+      setTransformToast('');
+      setTransformLocked([]);
+      window._transformToastShown = false;
+      if (transformIntervalRef.current) { clearInterval(transformIntervalRef.current); transformIntervalRef.current = null; }
       setMatching([]);
       setGameState(GAME_PLAYING);
       setMoveCount(0);
@@ -4327,6 +4524,10 @@ function Game() {
     setTempStorage([]);
     setGroomSlots([]);
     setStickyToast('');
+    setTransformToast('');
+    setTransformLocked([]);
+    window._transformToastShown = false;
+    if (transformIntervalRef.current) { clearInterval(transformIntervalRef.current); transformIntervalRef.current = null; }
     setMatching([]);
     setGameState(GAME_PLAYING);
     setMoveCount(0);
@@ -4735,7 +4936,7 @@ function Game() {
               animation: 'fadeIn 0.2s ease-out',
               pointerEvents: 'none',
             }}>
-              🧴 舔毛牌进入收集槽，无法被消除！
+              舔毛牌进入收集槽，无法被消除！
             </div>
           )}
           {/* 冰冻牌冻结收集槽提示 */}
@@ -4766,6 +4967,21 @@ function Game() {
               pointerEvents: 'none',
             }}>
               {stickyToast}
+            </div>
+          )}
+          {/* 三花牌提示 */}
+          {transformToast && (
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              bottom: 100, zIndex: 300,
+              background: 'linear-gradient(135deg, rgba(162,155,254,0.95), rgba(108,92,231,0.9))',
+              color: '#fff', padding: '8px 18px', borderRadius: 20,
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 16px rgba(162,155,254,0.5)',
+              animation: 'fadeIn 0.2s ease-out',
+              pointerEvents: 'none',
+            }}>
+              {transformToast}
             </div>
           )}
         </div>
