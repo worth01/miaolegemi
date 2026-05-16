@@ -170,6 +170,38 @@
 const { useState, useEffect, useRef, useCallback } = React;
 
 /* ═══════════════════════════════════════
+   合规：协议同意状态管理
+   ═══════════════════════════════════════ */
+const AGREEMENT_VERSION = 1; // 协议版本号，更新协议后需递增
+const AGREEMENT_KEY = 'miaolegemi_agreement_v1';
+const GUEST_MODE_KEY = 'miaolegemi_guest_mode';
+
+function getAgreementStatus() {
+  try {
+    const data = JSON.parse(localStorage.getItem(AGREEMENT_KEY));
+    return data || { agreed: false, version: 0, agreedAt: null };
+  } catch { return { agreed: false, version: 0, agreedAt: null }; }
+}
+
+function setAgreementStatus() {
+  localStorage.setItem(AGREEMENT_KEY, JSON.stringify({
+    agreed: true, version: AGREEMENT_VERSION, agreedAt: Date.now()
+  }));
+}
+
+function isGuestMode() {
+  try { return JSON.parse(localStorage.getItem(GUEST_MODE_KEY)) === true; } catch { return false; }
+}
+
+function setGuestMode() {
+  localStorage.setItem(GUEST_MODE_KEY, 'true');
+}
+
+function clearGuestMode() {
+  localStorage.removeItem(GUEST_MODE_KEY);
+}
+
+/* ═══════════════════════════════════════
    DESIGN TOKENS
    ═══════════════════════════════════════ */
 const CD = {
@@ -1546,7 +1578,7 @@ function LineupManager({
 /* ═══════════════════════════════════════
    CAT PAGE (Tab 3) — Battle + Spectator + Home + Bag + P6: 纪念册
    ═══════════════════════════════════════ */
-function CatPage({ cats, fish, onFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
+function CatPage({ cats, fish, onFeed, onBatchFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
 
 // 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
 const getInitialTab = () => {
@@ -1653,7 +1685,7 @@ useEffect(() => {
       )}
       {/* P2: 家园（原养成区） */}
       {subTab === 'home' && (
-        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} />
+        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onBatchFeed={onBatchFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} />
       )}
       {subTab === 'bag' && (
         <BagArea cats={bagCats} homeCount={homeCats.length} homeMaxSlots={homeMaxSlots} onAdopt={onAdopt} onNavigate={onNavigate} onDiscard={onDiscard} />
@@ -1666,7 +1698,7 @@ useEffect(() => {
    P2: HOME AREA (家园) + P6: 告别仪式 - P4: 界面调整
    家园槽位卡片：添加被动技能标签、批量补满按钮、上场按钮
    ═══════════════════════════════════════ */
-function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive }) {
+function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onBatchFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive }) {
 
 const allSlots = Array.from({ length: homeMaxSlots });
 
@@ -1837,7 +1869,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
                 </button>
                 {/* 批量补满按钮 */}
                 {intimacy < 100 && (
-                  <button onClick={() => onFeed(cat)} disabled={!canFullFeed(intimacy)} style={{
+                  <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={!canFullFeed(intimacy)} style={{
                     padding:'0 10px', height:32, borderRadius:8, border:'none', cursor: canFullFeed(intimacy)?'pointer':'not-allowed',
                     fontSize:10, fontWeight:700,
                     background: canFullFeed(intimacy) ? 'rgba(253,150,68,0.15)' : 'rgba(255,255,255,0.03)',
@@ -2037,10 +2069,10 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
   const battleCats = cats.filter(c => c.battleSlot != null && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
   // 筛选观战区猫咪
   const spectatorCats = cats.filter(c => c.battleSpectator != null).sort((a, b) => a.battleSpectator - b.battleSpectator);
-  
+
   // 计算已解锁的观战席数量
   const spectatorSlots = slot4Unlocked ? (slot6Unlocked ? 3 : slot5Unlocked ? 2 : 1) : 0;
-  
+
   // 获取今日日期
   const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -2165,7 +2197,7 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
 /* ═══════════════════════════════════════
    CAT DETAIL PAGE
    ═══════════════════════════════════════ */
-function CatDetailPage({ cats, catSerialId, onBack, onFeed, onRelease, onAdopt, onShowLineage, fish, homeCount, homeMaxSlots }) {
+function CatDetailPage({ cats, catSerialId, onBack, onFeed, onBatchFeed, onRelease, onAdopt, onShowLineage, fish, homeCount, homeMaxSlots }) {
 
 const cat = cats.find(c => c.serialId === catSerialId);
   if (!cat) return null;
@@ -2176,6 +2208,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
   const canFeed = fish >= 1 && cat.location === 'home';
   const canAdopt = cat.location === 'bag' && homeCount < homeMaxSlots;
   const lastFedHours = cat.lastFedAt ? Math.floor((Date.now() - cat.lastFedAt) / 3600000) : 999;
+  const calcFullFeedCost = (currentIntimacy) => Math.ceil((100 - currentIntimacy) / 5);
 
   return (
     <div style={{ paddingBottom: 0 }}>
@@ -2365,11 +2398,21 @@ const cat = cats.find(c => c.serialId === catSerialId);
                 <span style={{ fontSize:11, fontWeight:600, color:colors.ink }}>{lastFedHours}小时前</span>
               </div>
               {canFeed ? (
-                <button onClick={() => onFeed(cat)} style={{
-                  width:'100%', height:36, borderRadius:10, border:'none', cursor:'pointer',
-                  background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
-                  fontSize:13, fontWeight:700, color:'#fff',
-                }}>🐟 喂食 +5亲密度 (-1条鱼干)</button>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={() => onFeed(cat)} style={{
+                    flex:1, height:36, borderRadius:10, border:'none', cursor:'pointer',
+                    background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+                    fontSize:13, fontWeight:700, color:'#fff',
+                  }}>🐟 喂食 +5 (-1🐟)</button>
+                  {intimacy < 100 && (
+                    <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={fish < calcFullFeedCost(intimacy)} style={{
+                      padding:'0 14px', height:36, borderRadius:10, border:'none', cursor: fish >= calcFullFeedCost(intimacy) ? 'pointer' : 'not-allowed',
+                      fontSize:12, fontWeight:700,
+                      background: fish >= calcFullFeedCost(intimacy) ? 'rgba(253,150,68,0.2)' : 'rgba(255,255,255,0.05)',
+                      color: fish >= calcFullFeedCost(intimacy) ? colors.orange : colors.muted,
+                    }}>补满 ({calcFullFeedCost(intimacy)}🐟)</button>
+                  )}
+                </div>
               ) : (
                 <div style={{ textAlign:'center', fontSize:11, color:colors.muted }}>
                   {fish < 1 ? '鱼干不足，去打乐消消获得' : '喂食可提升亲密度'}
@@ -2988,10 +3031,14 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
 /* ═══════════════════════════════════════
    PROFILE PAGE (Tab 4)
    ═══════════════════════════════════════ */
-function ProfilePage({ cats, fish, bells, activeTitle, onEquipTitle, maxSlots, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, totalAdopted, user, isLocalMode, onLogout, onMemorialClick }) {
+function ProfilePage({ cats, fish, bells, activeTitle, onEquipTitle, maxSlots, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, totalAdopted, user, isLocalMode, guestMode, onLogout, onLogin, onViewPrivacy, onViewAgreement, onMemorialClick }) {
 
 const nurturing = cats.filter(c => c.location === 'home');
   const memorial = cats.filter(c => c.location === 'memorial');
+  const [memorialPage, setMemorialPage] = useState(1);
+  const MEMORIAL_PAGE_SIZE = 5;
+  const memorialTotalPages = Math.max(1, Math.ceil(memorial.length / MEMORIAL_PAGE_SIZE));
+  const memorialPageCats = memorial.slice((memorialPage - 1) * MEMORIAL_PAGE_SIZE, memorialPage * MEMORIAL_PAGE_SIZE);
   const longestCat = [...cats].sort((a,b) => b.daysAlive - a.daysAlive)[0];
   const lowestSerial = [...cats].sort((a,b) => a.serialId - b.serialId)[0];
   const totalFishSpent = cats.reduce((s,c) => s + c.fishSpent, 0);
@@ -3018,8 +3065,9 @@ const nurturing = cats.filter(c => c.location === 'home');
           <div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{user?.nickname || '铲屎官'}</div>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
             <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:6, background:'rgba(108,92,231,0.2)', color:colors.purpleLight }}>{activeTitle || '无称号'}</span>
-            {!isLocalMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(0,184,148,0.15)', color:colors.green }}>在线</span>}
-            {isLocalMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(253,150,68,0.15)', color:colors.orange }}>离线</span>}
+            {!isLocalMode && !guestMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(0,184,148,0.15)', color:colors.green }}>在线</span>}
+            {isLocalMode && !guestMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(253,150,68,0.15)', color:colors.orange }}>离线</span>}
+            {guestMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(253,150,68,0.2)', color:colors.orange }}>🏷️ 游客</span>}
           </div>
         </div>
         {onLogout && (
@@ -3128,58 +3176,137 @@ const nurturing = cats.filter(c => c.location === 'home');
               暂无已离开的猫咪
             </div>
           ) : (
-            memorial.map(cat => (
-              <div key={cat.serialId} onClick={() => onMemorialClick && onMemorialClick(cat)} style={{
-                borderRadius:14, padding:'12px', marginBottom:10,
-                background:colors.card, border:`1px solid rgba(108,92,231,0.12)`,
-                position:'relative', cursor:'pointer',
-                filter:'grayscale(0.2)',
-              }}>
-                <div style={{ display:'flex', gap:12 }}>
-                  <div style={{ width:60, height:60, borderRadius:12, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}30`, flexShrink:0, position:'relative' }}>
-                    <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.4)' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                    <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.25)' }}>
-                      <span style={{ position:'absolute', top:2, right:4, fontSize:12 }}>🕊️</span>
-                    </div>
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
-                      <span style={{ fontSize:14, fontWeight:700, color:colors.ink }}>{cat.name}</span>
-                      <span style={{ fontSize:9, fontWeight:600, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
-                    </div>
-                    <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
-                      性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
-                    </div>
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px 8px' }}>
-                      <div style={{ fontSize:10, color:colors.muted }}>✨ 陪伴 {cat.daysAlive || 0} 天</div>
-                      <div style={{ fontSize:10, color:colors.muted }}>🎮 见证 {cat.gamesWitnessed || 0} 场</div>
-                      <div style={{ fontSize:10, color:colors.muted }}>🏆 最佳 {cat.bestCombo || 0} 连消</div>
-                      <div style={{ fontSize:10, color:colors.muted }}>⏰ {cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : '-'} 离去</div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 血统记录 */}
-                {cat.lineage && cat.lineage.length > 0 && (
-                  <div style={{ marginTop:10, padding:'8px', background:'rgba(108,92,231,0.06)', borderRadius:8 }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:colors.purpleLight, marginBottom:4 }}>血统记录</div>
-                    {cat.lineage.slice(-2).map((owner, i) => (
-                      <div key={i} style={{ fontSize:10, color:colors.sub }}>
-                        {owner.name} → {owner.daysAlive}天
+            <>
+              {memorialPageCats.map(cat => (
+                <div key={cat.serialId} onClick={() => onMemorialClick && onMemorialClick(cat)} style={{
+                  borderRadius:14, padding:'12px', marginBottom:10,
+                  background:colors.card, border:`1px solid rgba(108,92,231,0.12)`,
+                  position:'relative', cursor:'pointer',
+                  filter:'grayscale(0.2)',
+                }}>
+                  <div style={{ display:'flex', gap:12 }}>
+                    <div style={{ width:60, height:60, borderRadius:12, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}30`, flexShrink:0, position:'relative' }}>
+                      <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.4)' }}
+                        onError={e => { e.target.style.display='none'; }} />
+                      <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.25)' }}>
+                        <span style={{ position:'absolute', top:2, right:4, fontSize:12 }}>🕊️</span>
                       </div>
-                    ))}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+                        <span style={{ fontSize:14, fontWeight:700, color:colors.ink }}>{cat.name}</span>
+                        <span style={{ fontSize:9, fontWeight:600, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+                      </div>
+                      <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
+                        性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2px 8px' }}>
+                        <div style={{ fontSize:10, color:colors.muted }}>✨ 陪伴 {cat.daysAlive || 0} 天</div>
+                        <div style={{ fontSize:10, color:colors.muted }}>🎮 见证 {cat.gamesWitnessed || 0} 场</div>
+                        <div style={{ fontSize:10, color:colors.muted }}>🏆 最佳 {cat.bestCombo || 0} 连消</div>
+                        <div style={{ fontSize:10, color:colors.muted }}>⏰ {cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : '-'} 离去</div>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
+
+                  {/* 血统记录 */}
+                  {cat.lineage && cat.lineage.length > 0 && (
+                    <div style={{ marginTop:10, padding:'8px', background:'rgba(108,92,231,0.06)', borderRadius:8 }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:colors.purpleLight, marginBottom:4 }}>血统记录</div>
+                      {cat.lineage.slice(-2).map((owner, i) => (
+                        <div key={i} style={{ fontSize:10, color:colors.sub }}>
+                          {owner.name} → {owner.daysAlive}天
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {/* 分页控件 */}
+              {memorialTotalPages > 1 && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, padding:'8px 0 4px' }}>
+                  <button onClick={() => setMemorialPage(p => Math.max(1, p - 1))} disabled={memorialPage <= 1} style={{
+                    height:28, borderRadius:8, padding:'0 12px',
+                    background: memorialPage <= 1 ? 'transparent' : colors.card,
+                    border:`1px solid ${colors.cardBorder}`,
+                    cursor: memorialPage <= 1 ? 'default' : 'pointer',
+                    fontSize:11, fontWeight:600,
+                    color: memorialPage <= 1 ? colors.muted : colors.ink,
+                    opacity: memorialPage <= 1 ? 0.4 : 1,
+                  }}>← 上一页</button>
+                  <span style={{ fontSize:11, color:colors.sub, fontWeight:500 }}>
+                    {memorialPage} / {memorialTotalPages}
+                  </span>
+                  <button onClick={() => setMemorialPage(p => Math.min(memorialTotalPages, p + 1))} disabled={memorialPage >= memorialTotalPages} style={{
+                    height:28, borderRadius:8, padding:'0 12px',
+                    background: memorialPage >= memorialTotalPages ? 'transparent' : colors.card,
+                    border:`1px solid ${colors.cardBorder}`,
+                    cursor: memorialPage >= memorialTotalPages ? 'default' : 'pointer',
+                    fontSize:11, fontWeight:600,
+                    color: memorialPage >= memorialTotalPages ? colors.muted : colors.ink,
+                    opacity: memorialPage >= memorialTotalPages ? 0.4 : 1,
+                  }}>下一页 →</button>
+                </div>
+              )}
+            </>
           )}
-          
+
           <div style={{ textAlign:'center', padding:'16px 0 4px', color:colors.muted, fontSize:11 }}>
-            ✨ 永远记得每一段陪伴✨ 
+            ✨ 永远记得每一段陪伴✨
           </div>
         </div>
       </div>
+
+      {/* 合规：游客模式说明 & 重新授权入口 */}
+      {guestMode && (
+        <div style={{ padding:'12px 20px 0' }}>
+          <div style={{ borderRadius:16, padding:'14px', background:'rgba(253,150,68,0.1)', border:'1px solid rgba(253,150,68,0.2)' }}>
+            <div style={{ fontSize:12, fontWeight:700, color:colors.orange, marginBottom:6 }}>🏷️ 游客模式</div>
+            <div style={{ fontSize:11, color:colors.sub, lineHeight:1.6, marginBottom:10 }}>
+              您当前以游客模式体验游戏，游戏数据仅保存在本地缓存中，卸载后数据将丢失。云端同步、排行榜、社交互动等功能暂不可用。
+            </div>
+            <button onClick={onLogin} style={{
+              width:'100%', height:36, borderRadius:10, border:'none', cursor:'pointer',
+              background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+              color:'#fff', fontSize:13, fontWeight:600,
+            }}>重新授权登录</button>
+          </div>
+        </div>
+      )}
+
+      {/* 合规：隐私政策 & 用户协议入口 */}
+      <div style={{ padding:'12px 20px 0' }}>
+        <div style={{ borderRadius:16, padding:'14px', background:colors.card, border:`1px solid ${colors.cardBorder}` }}>
+          <div style={{ fontSize:12, fontWeight:700, color:colors.ink, marginBottom:10 }}>📋 关于我们</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <div onClick={onViewPrivacy} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer', padding:'8px 0', borderBottom:`1px solid ${colors.cardBorder}` }}>
+              <span style={{ fontSize:13, color:colors.ink }}>📜 隐私政策</span>
+              <span style={{ fontSize:13, color:colors.muted }}>→</span>
+            </div>
+            <div onClick={onViewAgreement} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer', padding:'8px 0', borderBottom:`1px solid ${colors.cardBorder}` }}>
+              <span style={{ fontSize:13, color:colors.ink }}>📄 用户服务协议</span>
+              <span style={{ fontSize:13, color:colors.muted }}>→</span>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:`1px solid ${colors.cardBorder}` }}>
+              <span style={{ fontSize:13, color:colors.ink }}>🏢 运营主体</span>
+              <span style={{ fontSize:12, color:colors.sub }}>木延星科技有限公司</span>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0' }}>
+              <span style={{ fontSize:13, color:colors.ink }}>📧 联系我们</span>
+              <span style={{ fontSize:12, color:colors.sub }}>137005952@qq.com</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 合规：游客模式下提示数据丢失风险 */}
+      {guestMode && (
+        <div style={{ padding:'12px 20px', textAlign:'center' }}>
+          <div style={{ fontSize:10, color:colors.muted, lineHeight:1.6 }}>
+            ⚠️ 游客模式下，您的游戏数据仅保存在本地缓存中<br/>卸载小程序后数据将丢失，建议登录同步数据
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3775,6 +3902,311 @@ if (!show || !cat) return null;
 }
 
 /* ═══════════════════════════════════════
+   合规：隐私政策页面
+   ═══════════════════════════════════════ */
+function PrivacyPolicyPage({ onBack }) {
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:colors.bg }}>
+      <div style={{ padding:'12px 20px', borderBottom:`1px solid ${colors.cardBorder}`, flexShrink:0, display:'flex', alignItems:'center', gap:12 }}>
+        <div onClick={onBack} style={{
+          height:32, borderRadius:10, padding:'0 14px',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:colors.card, border:`1px solid ${colors.cardBorder}`,
+          cursor:'pointer', fontSize:12, fontWeight:600, color:colors.sub,
+          flexShrink:0,
+          marginTop: 35,
+        }}>← 返回</div>
+        
+      </div>
+      <div style={{ flex:1, overflowY:'auto', padding:'16px 20px 40px', fontSize:13, lineHeight:1.8, color:colors.sub, userSelect:'text', WebkitUserSelect:'text' }}>
+        <p style={{ color:colors.ink, fontWeight:700, fontSize:14, marginBottom:16 }}>喵呜乐消消 隐私政策</p>
+        <p style={{ color:colors.muted, fontSize:11, marginBottom:20 }}>更新日期：2026年05月16日<br/>生效日期：2026年05月16日</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>一、信息的收集</p>
+        <p>我们仅在本游戏为您提供服务所必需时，收集您的以下信息：</p>
+        <p>1. <span style={{ fontWeight:600, color:colors.ink }}>微信头像、昵称</span>：用于您的游戏账号展示、排行榜显示、社交互动功能。仅在您主动点击「同意并登录」按钮后，通过微信官方授权接口获取。您拒绝授权不影响基础游戏体验。</p>
+        <p>2. <span style={{ fontWeight:600, color:colors.ink }}>游戏数据</span>：包括您的游戏进度、关卡得分、猫咪养成数据、道具使用记录。这些数据保存在您的微信本地缓存和我们的后端服务器中。</p>
+        <p>3. <span style={{ fontWeight:600, color:colors.ink }}>设备信息</span>：我们仅收集必要的基础设备信息（设备型号、操作系统版本、微信版本），用于适配不同手机屏幕、解决兼容性问题。我们<strong>不会</strong>收集您的IMEI、MAC地址、通讯录、短信、位置信息等敏感权限。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>二、信息的使用</p>
+        <p>我们收集的信息仅用于以下目的：</p>
+        <p>1. 为您提供游戏服务，包括：保存游戏进度、同步云端数据、展示排行榜；</p>
+        <p>2. 优化游戏体验，包括：修复游戏bug、适配不同设备、提升游戏性能；</p>
+        <p>3. 保障游戏安全，包括：检测外挂、脚本等违规行为，维护游戏公平性。</p>
+        <p>我们<strong>不会</strong>将您的个人信息用于任何其他目的，不会进行用户画像、自动化决策，不会出售、出租您的个人信息给任何第三方。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>三、信息的存储与保护</p>
+        <p>1. 您的游戏数据存储在微信本地缓存和我们的后端服务器中。后端服务器位于中华人民共和国境内，采用加密传输（HTTPS）和加密存储技术保护您的数据安全。</p>
+        <p>2. 您可以在游戏内的「设置」页面，随时查看、修改您的个人信息。您注销账号后，我们将在30天内删除您的所有个人信息，法律法规另有要求的除外。</p>
+        <p>3. 我们建立了完善的数据安全管理制度，定期进行安全评估和漏洞修复，防止数据泄露、丢失、篡改。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>四、信息的共享与披露</p>
+        <p>我们承诺，未经您的明确同意，<strong>不会</strong>向任何第三方共享、转让、披露您的个人信息，除非：</p>
+        <p>1. 法律法规要求我们披露（如法院、公安机关等国家机关依法要求）；</p>
+        <p>2. 为保护我们、您或其他用户的合法权益所必需；</p>
+        <p>3. 您主动要求我们共享您的信息（如排行榜展示）。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>五、您的权利</p>
+        <p>根据《中华人民共和国个人信息保护法》，您享有以下权利：</p>
+        <p>1. <strong>知情权</strong>：了解我们收集、使用您个人信息的目的、方式、范围；</p>
+        <p>2. <strong>查阅权</strong>：查看我们收集的您的个人信息；</p>
+        <p>3. <strong>更正权</strong>：要求我们更正不准确的个人信息；</p>
+        <p>4. <strong>删除权</strong>：在您注销账号、撤回授权后，要求我们删除您的个人信息；</p>
+        <p>5. <strong>撤回同意权</strong>：您可以在微信「设置-个人信息与权限」中撤回对本游戏的授权。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>六、儿童隐私保护</p>
+        <p>本游戏面向所有年龄段的用户，我们特别重视对儿童个人信息的保护。若您是14周岁以下的儿童，请在监护人的陪同下阅读本隐私政策，并在监护人同意后使用本游戏服务。我们不会主动收集14周岁以下儿童的个人信息。若我们发现自己收集了未满14周岁儿童的个人信息，将立即删除。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>七、游客模式说明</p>
+        <p>您可以选择以游客模式体验本游戏，游客模式下：</p>
+        <p>1. 您可以正常体验三消关卡玩法，无时间限制；</p>
+        <p>2. 您的游戏进度、数据仅保存在微信本地缓存中，卸载小程序后数据将丢失；</p>
+        <p>3. 您无法使用以下功能：云端数据同步、排行榜、社交互动、道具充值、猫咪养成的高阶功能。您可以在游戏内的「设置」页面，随时完成微信授权，升级为完整功能模式，同步您的游戏数据。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>八、本隐私政策的更新</p>
+        <p>我们可能会根据国家法律法规、微信平台要求的变更，适时更新本隐私政策。更新后，我们会通过游戏内弹窗、公告等方式提前7天通知您。若您在更新后继续使用本游戏，即视为您已阅读、理解并同意更新后的隐私政策。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>九、联系我们</p>
+        <p>若您对本隐私政策有任何疑问、投诉、建议，可通过以下方式联系我们：</p>
+        <p>运营主体：木延星科技有限公司</p>
+        <p>联系邮箱：137005952@qq.com</p>
+
+        <p style={{ marginTop:32, color:colors.muted, fontSize:11 }}>本隐私政策最终解释权归木延星科技有限公司所有。</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   合规：用户服务协议页面
+   ═══════════════════════════════════════ */
+function UserAgreementPage({ onBack }) {
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:colors.bg }}>
+      <div style={{ padding:'12px 20px', borderBottom:`1px solid ${colors.cardBorder}`, flexShrink:0, display:'flex', alignItems:'center', gap:12 }}>
+        <div onClick={onBack} style={{
+          height:32, borderRadius:10, padding:'0 14px',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:colors.card, border:`1px solid ${colors.cardBorder}`,
+          cursor:'pointer', fontSize:12, fontWeight:600, color:colors.sub,
+          flexShrink:0,
+          marginTop: 35,
+        }}>← 返回</div>
+        
+      </div>
+      <div style={{ flex:1, overflowY:'auto', padding:'16px 20px 40px', fontSize:13, lineHeight:1.8, color:colors.sub, userSelect:'text', WebkitUserSelect:'text' }}>
+        <p style={{ color:colors.ink, fontWeight:700, fontSize:14, marginBottom:16 }}>喵呜乐消消 用户服务协议</p>
+        <p style={{ color:colors.muted, fontSize:11, marginBottom:20 }}>更新日期：2026年05月16日<br/>生效日期：2025年05月16日</p>
+        <p>欢迎您使用微信小程序「喵呜乐消消」（以下简称「本游戏」）。本协议是您与本游戏运营主体（以下简称「我们」）之间，关于您使用本游戏服务所签订的合法有效协议。请您在使用本游戏前，仔细阅读本协议的全部内容，您点击「同意并进入」按钮、使用本游戏服务，即视为您已完整阅读、理解并同意本协议的全部条款，与我们签订本协议。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>一、服务内容</p>
+        <p>1. 本游戏是一款猫咪主题的休闲三消类微信小程序游戏，我们为您提供的服务包括：三消关卡玩法、猫咪养成系统、游戏内道具服务、广告服务、社交互动服务、游戏数据同步服务等。</p>
+        <p>2. 我们有权根据游戏运营情况，调整、更新、暂停、终止部分或全部游戏服务，调整前会通过游戏内公告、弹窗等方式提前通知您。</p>
+        <p>3. 本游戏仅支持您在微信小程序平台内，以个人非商业用途使用，禁止您将本游戏用于任何商业、盈利、侵权、违法违规用途。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>二、账号注册与使用</p>
+        <p>1. 本游戏采用微信账号登录体系，您主动点击「同意并登录」按钮后，可通过微信授权创建您的游戏账号，游戏账号的所有权归我们所有，您仅获得个人使用权限。</p>
+        <p>2. 您应妥善保管您的游戏账号、微信账号信息，禁止您将游戏账号出售、出租、转借、赠与给任何第三方使用，由此产生的所有损失、责任，均由您自行承担。</p>
+        <p>3. 若您发现您的游戏账号被他人盗用、非法使用，应立即通过微信安全中心冻结您的微信账号，并通过下方的联系方式联系我们，我们会协助您处理相关问题。</p>
+        <p>4. 我们有权根据本协议的约定，对违规使用的游戏账号，采取警告、限制功能、封禁账号、终止服务等处理措施，无需提前通知您。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>三、用户行为规范</p>
+        <p>您在使用本游戏过程中，必须遵守国家法律法规、微信小程序平台运营规范、本协议的约定，禁止实施以下行为：</p>
+        <p>1. 使用外挂、脚本、作弊器、修改器等非法工具，修改游戏数据、刷分、刷道具、刷鱼干，破坏游戏公平性；</p>
+        <p>2. 恶意攻击、辱骂、骚扰其他玩家、游戏运营人员，传播违法、违规、色情、暴力、恐怖、侵权的内容；</p>
+        <p>3. 侵犯本游戏的知识产权，包括但不限于：复制、传播、修改游戏内的美术资源、音乐、代码、玩法设计，制作、传播游戏外挂、私服；</p>
+        <p>4. 利用游戏漏洞、bug，获取非法利益、破坏游戏秩序，发现游戏漏洞后未及时向我们反馈，反而利用漏洞牟利；</p>
+        <p>5. 以任何方式干扰、破坏本游戏的正常运行，包括但不限于：DDoS攻击、恶意提交大量无效数据、干扰游戏服务器运行；</p>
+        <p>6. 其他违反国家法律法规、微信平台规范、本协议约定的行为。</p>
+        <p>若您实施了上述违规行为，我们有权根据情节严重程度，采取警告、限制游戏功能、封禁账号、清空游戏数据、终止服务、上报相关部门等处理措施，由此产生的所有损失、责任，均由您自行承担，我们无需向您退还任何费用、赔偿任何损失。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>四、知识产权</p>
+        <p>1. 本游戏内的所有内容，包括但不限于：美术资源、角色形象、卡牌设计、场景画面、音乐音效、游戏代码、玩法设计、商标、标识等，所有知识产权均归我们或我们的授权方所有，受国家知识产权相关法律法规保护。</p>
+        <p>2. 您仅获得本游戏的个人非商业、非排他性的使用权限，未经我们书面授权，您不得复制、传播、修改、改编、发行、展示本游戏的任何内容，不得将本游戏的内容用于任何商业、盈利用途。</p>
+        <p>3. 若您侵犯了本游戏的知识产权，我们有权立即终止您的游戏服务，封禁您的账号，并追究您的全部法律责任，要求您赔偿我们的全部损失。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>五、服务的中断与终止</p>
+        <p>1. 我们有权在以下情况下，中断、暂停、终止本游戏的部分或全部服务：</p>
+        <p style={{ paddingLeft:12 }}>- 游戏服务器维护、升级、优化，提前通过游戏内公告通知您；</p>
+        <p style={{ paddingLeft:12 }}>- 不可抗力因素，包括但不限于：自然灾害、战争、政府行为、网络故障、电力故障等，导致服务无法正常运行；</p>
+        <p style={{ paddingLeft:12 }}>- 您违反本协议的约定，实施违规行为，我们暂停、终止您的账号服务；</p>
+        <p style={{ paddingLeft:12 }}>- 游戏运营调整、业务终止，提前30天通过游戏内公告、微信公众号等方式通知您。</p>
+        <p>2. 服务中断、终止后，您的游戏数据、账号信息将按法律法规要求的期限保存，业务终止后，我们会按法律法规要求删除您的相关数据。</p>
+        <p>3. 因不可抗力、游戏维护、您的违规行为导致的服务中断、终止，我们无需向您承担任何赔偿责任，无需退还任何费用。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>六、免责声明</p>
+        <p>1. 本游戏服务按「现状」提供，我们不做任何明示或暗示的担保，包括但不限于：游戏服务的连续性、稳定性、安全性、准确性，游戏玩法、内容的适用性、无错误、无漏洞。</p>
+        <p>2. 因不可抗力、第三方服务故障、您的设备故障、网络故障、您的违规操作、第三方侵权行为，导致您的游戏数据丢失、账号封禁、财产损失、游戏体验不佳，我们无需向您承担任何赔偿责任。</p>
+        <p>3. 本游戏内的所有虚拟道具、虚拟货币（鱼干），均为游戏内的虚拟物品，无任何现实货币价值，我们不提供任何虚拟物品的现金兑换、退款服务，法律法规另有要求的除外。</p>
+        <p>4. 本游戏内的广告服务，由第三方广告商提供，我们不对广告内容的真实性、准确性、合法性做任何担保，您因广告内容产生的任何损失、纠纷，均与我们无关，您应直接与广告商协商解决。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>七、协议的修改</p>
+        <p>我们有权根据国家法律法规的更新、游戏运营的调整，适时修改本协议的条款。修改后的协议，会通过本游戏内的公告、弹窗等方式提前7天通知您，修改后的协议自通知期满之日起生效。若您在协议修改后继续使用本游戏服务，即视为您已阅读、理解并同意修改后的协议条款。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>八、争议解决</p>
+        <p>本协议的签订、履行、解释、争议解决，均适用中华人民共和国大陆地区的法律法规。若您与我们之间因本协议、本游戏服务产生任何争议、纠纷，双方应首先友好协商解决；协商不成的，任何一方均有权向我们运营主体所在地的人民法院提起诉讼。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>九、其他条款</p>
+        <p>1. 本协议的任何条款被认定为无效、不可执行，不影响其他条款的法律效力。</p>
+        <p>2. 我们未行使本协议约定的任何权利、未追究您的任何违约责任，不视为我们对该权利、违约责任的放弃，我们仍有权在后续行使相关权利、追究违约责任。</p>
+        <p>3. 本协议的所有标题，仅为方便阅读而设置，不影响本协议条款的解释、法律效力。</p>
+
+        <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>十、联系我们</p>
+        <p>若您对本协议有任何疑问、投诉、建议，可通过以下方式联系我们：</p>
+        <p>运营主体：木延星科技有限公司</p>
+        <p>联系邮箱：137005952@QQ.com</p>
+
+        <p style={{ marginTop:32, color:colors.muted, fontSize:11 }}>本用户服务协议最终解释权归木延星科技有限公司所有。</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   合规：首次启动协议确认弹窗
+   ═══════════════════════════════════════ */
+function AgreementModal({ show, onAgree, onReject, onViewPrivacy, onViewAgreement }) {
+  if (!show) return null;
+  return (
+    <div style={{
+      position:'absolute', top:0, left:0, right:0, bottom:0,
+      background:'rgba(0,0,0,0.85)', backdropFilter:'blur(16px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      zIndex:100, padding:24,
+    }}>
+      <div style={{
+        width:'100%', maxWidth:340,
+        background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        borderRadius:24, padding:'32px 24px 24px',
+        border:'1px solid rgba(108,92,231,0.3)',
+        boxShadow:'0 0 80px rgba(108,92,231,0.2)',
+        animation:'slideUp 0.4s ease-out',
+      }}>
+        <div style={{ fontSize:40, marginBottom:12, textAlign:'center' }}>🐱</div>
+        <div style={{ fontSize:20, fontWeight:800, color:colors.ink, marginBottom:8, textAlign:'center' }}>
+          欢迎使用喵呜乐消消
+        </div>
+        <div style={{ fontSize:12, color:colors.sub, marginBottom:20, lineHeight:1.8, textAlign:'center' }}>
+          为了给您提供完整的游戏服务，我们需要您确认并同意
+          <span onClick={onViewPrivacy} style={{ color:colors.blue, cursor:'pointer', textDecoration:'underline', fontWeight:600 }}>《隐私政策》</span>
+          和
+          <span onClick={onViewAgreement} style={{ color:colors.blue, cursor:'pointer', textDecoration:'underline', fontWeight:600 }}>《用户服务协议》</span>
+          。我们将严格按照相关法律法规，保护您的个人信息安全与合法权益。
+        </div>
+
+        <button onClick={onAgree} style={{
+          width:'100%', height:48, borderRadius:14, border:'none', cursor:'pointer',
+          background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+          color:'#fff', fontSize:16, fontWeight:700, marginBottom:10,
+          boxShadow:'0 4px 20px rgba(108,92,231,0.4)',
+          transition:'all 0.2s',
+        }}>同意并进入</button>
+
+        <button onClick={onReject} style={{
+          width:'100%', height:44, borderRadius:14, border:`1px solid ${colors.cardBorder}`, cursor:'pointer',
+          background:'transparent', color:colors.muted, fontSize:14, fontWeight:500,
+          transition:'all 0.2s',
+        }}>拒绝</button>
+
+        <div style={{ marginTop:16, textAlign:'center' }}>
+          <span onClick={onViewPrivacy} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline', marginRight:12 }}>《隐私政策》</span>
+          <span onClick={onViewAgreement} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline' }}>《用户服务协议》</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   合规：登录授权弹窗（含游客模式入口）
+   ═══════════════════════════════════════ */
+function LoginAuthModal({ show, onAuthorize, onGuest, onViewPrivacy, onViewAgreement, loading }) {
+  if (!show) return null;
+  return (
+    <div style={{
+      position:'absolute', top:0, left:0, right:0, bottom:0,
+      background:'rgba(0,0,0,0.8)', backdropFilter:'blur(12px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      zIndex:100, padding:24,
+    }}>
+      <div style={{
+        width:'100%', maxWidth:340,
+        background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        borderRadius:24, padding:'32px 24px 24px',
+        border:'1px solid rgba(108,92,231,0.3)',
+        boxShadow:'0 0 80px rgba(108,92,231,0.2)',
+        animation:'slideUp 0.4s ease-out',
+      }}>
+        <div style={{ fontSize:40, marginBottom:12, textAlign:'center' }}>🔐</div>
+        <div style={{ fontSize:20, fontWeight:800, color:colors.ink, marginBottom:8, textAlign:'center' }}>
+          微信登录授权
+        </div>
+        <div style={{ fontSize:12, color:colors.sub, marginBottom:20, lineHeight:1.8, padding:'0 8px' }}>
+          为了给您提供完整的游戏服务，包括保存您的游戏进度、关卡得分、猫咪养成数据，我们需要获取您的微信头像、昵称信息。
+          <br/><br/>
+          我们将严格按照
+          <span onClick={onViewPrivacy} style={{ color:colors.blue, cursor:'pointer', textDecoration:'underline', fontWeight:600 }}>《隐私政策》</span>
+          和
+          <span onClick={onViewAgreement} style={{ color:colors.blue, cursor:'pointer', textDecoration:'underline', fontWeight:600 }}>《用户服务协议》</span>
+          保护您的个人信息，不会用于其他用途。
+        </div>
+
+        <button onClick={onAuthorize} disabled={loading} style={{
+          width:'100%', height:48, borderRadius:14, border:'none', cursor:'pointer',
+          background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+          color:'#fff', fontSize:16, fontWeight:700, marginBottom:10,
+          opacity: loading ? 0.6 : 1,
+          boxShadow:'0 4px 20px rgba(108,92,231,0.4)',
+          transition:'all 0.2s',
+        }}>{loading ? '授权中...' : '同意并登录'}</button>
+
+        <button onClick={onGuest} style={{
+          width:'100%', height:44, borderRadius:14, border:`1px solid ${colors.cardBorder}`, cursor:'pointer',
+          background:'transparent', color:colors.sub, fontSize:14, fontWeight:500,
+          transition:'all 0.2s',
+        }}>拒绝（游客模式体验）</button>
+
+        <div style={{ marginTop:12, padding:'8px 12px', borderRadius:8, background:'rgba(253,150,68,0.08)', border:'1px solid rgba(253,150,68,0.15)' }}>
+          <div style={{ fontSize:10, color:colors.orange, lineHeight:1.6 }}>
+            💡 游客模式下可正常体验三消关卡，但无法使用云端同步、排行榜、社交互动、道具充值等功能，游戏数据仅保存在本地。
+          </div>
+        </div>
+
+        <div style={{ marginTop:16, textAlign:'center' }}>
+          <span onClick={onViewPrivacy} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline', marginRight:12 }}>《隐私政策》</span>
+          <span onClick={onViewAgreement} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline' }}>《用户服务协议》</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   合规：游客模式横幅提示
+   ═══════════════════════════════════════ */
+function GuestModeBanner({ onLogin }) {
+  return (
+    <div style={{
+      margin:'8px 16px', padding:'10px 16px',
+      borderRadius:12,
+      background:'rgba(253,150,68,0.12)', border:'1px solid rgba(253,150,68,0.25)',
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      gap:8,
+    }}>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:colors.orange, marginBottom:2 }}>🏷️ 游客模式</div>
+        <div style={{ fontSize:10, color:colors.sub }}>数据仅保存在本地，卸载后丢失</div>
+      </div>
+      <button onClick={onLogin} style={{
+        padding:'6px 14px', borderRadius:8, border:'none', cursor:'pointer',
+        background:`linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+        color:'#fff', fontSize:11, fontWeight:600, whiteSpace:'nowrap',
+      }}>登录同步</button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
    TAB BAR
    ═══════════════════════════════════════ */
 function TabBar({ active, onChange }) {
@@ -3808,7 +4240,7 @@ const tabs = [
 /* ═══════════════════════════════════════
    LOGIN / REGISTER PAGE
    ═══════════════════════════════════════ */
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -3905,6 +4337,16 @@ function LoginPage({ onLogin }) {
           width:'100%', padding:'10px', borderRadius:12, border:`1px solid ${colors.cardBorder}`, cursor:'pointer',
           background:'transparent', color:colors.sub, fontSize:13,
         }}>📦 离线模式（数据仅保存在本机）</button>
+
+        {/* 合规：隐私政策 & 用户协议链接 */}
+        <div style={{ marginTop:16, textAlign:'center' }}>
+          <span onClick={onViewPrivacy} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline', marginRight:12 }}>
+            《隐私政策》
+          </span>
+          <span onClick={onViewAgreement} style={{ color:colors.blue, cursor:'pointer', fontSize:11, textDecoration:'underline' }}>
+            《用户服务协议》
+          </span>
+        </div>
       </div>
       </div>
     </div>
@@ -3915,6 +4357,16 @@ function LoginPage({ onLogin }) {
    MAIN APP
    ═══════════════════════════════════════ */
 function App() {
+  // 合规：协议同意状态
+  const [agreementStatus, setAgreementStatusState] = useState(getAgreementStatus);
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
+  const [showLoginAuthModal, setShowLoginAuthModal] = useState(false);
+  const [loginAuthLoading, setLoginAuthLoading] = useState(false);
+  // 合规：页面路由（隐私政策/用户协议/设置）
+  const [currentPage, setCurrentPage] = useState(null); // 'privacy' | 'agreement' | null
+  const [guestMode, setGuestMode] = useState(isGuestMode);
+  const [guestToast, setGuestToast] = useState(null); // toast message for guest mode
+
   // Auth state
   const [user, setUser] = useState(null);
   const [isLocalMode, setIsLocalMode] = useState(false);
@@ -4046,12 +4498,120 @@ function App() {
     initAuth();
   }, []);
 
+  // 合规：auth check完成后检查协议同意状态
+  useEffect(() => {
+    if (!authChecked) return;
+    const status = getAgreementStatus();
+    // 未同意或协议版本过低，需要重新确认
+    if (!status.agreed || status.version < AGREEMENT_VERSION) {
+      setShowAgreementModal(true);
+    }
+  }, [authChecked]);
+
+  // 合规：游客模式toast自动消失
+  useEffect(() => {
+    if (guestToast) {
+      const timer = setTimeout(() => setGuestToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [guestToast]);
+
   const handleLogin = (userData, localMode) => {
     setUser(userData);
     setIsLocalMode(localMode);
     if (!localMode) {
       setBells(userData.bells || 3);
+      setGuestMode(false);
+      clearGuestMode();
     }
+  };
+
+  // 合规：协议同意处理
+  const handleAgreeAgreement = () => {
+    setAgreementStatus();
+    setShowAgreementModal(false);
+    setAgreementStatusState(getAgreementStatus());
+  };
+
+  const handleRejectAgreement = () => {
+    // 模拟退出小程序的逻辑 - 在web环境下关闭窗口或显示提示
+    if (window.WeixinJSBridge) {
+      // 微信环境尝试退出
+      try { wx && wx.exitMiniProgram && wx.exitMiniProgram(); } catch(e) {}
+    }
+    // Web fallback: 关闭窗口
+    window.close();
+    // 如果无法关闭，显示退出提示
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0F0A1E;color:#F0EDFF;font-family:sans-serif;text-align:center;padding:40px;"><div><div style="font-size:48px;margin-bottom:16px;">👋</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">感谢关注喵呜乐消消</div><div style="font-size:13px;opacity:0.6;">您需要同意协议才能使用游戏服务<br/>请关闭本页面</div></div></div>';
+  };
+
+  // 合规：登录授权弹窗
+  const handleShowLoginAuth = () => {
+    setShowLoginAuthModal(true);
+  };
+
+  const handleAuthorizeLogin = async () => {
+    setLoginAuthLoading(true);
+    try {
+      if (window.wx && window.wx.getUserProfile) {
+        // 微信环境：调用 getUserProfile
+        window.wx.getUserProfile({
+          desc: '用于游戏账号展示和社交互动',
+          success: (res) => {
+            const userInfo = res.userInfo;
+            const userData = {
+              id: 'wx_' + Date.now(),
+              username: userInfo.nickName || '微信用户',
+              nickname: userInfo.nickName || '铲屎官',
+              avatar: userInfo.avatarUrl || '',
+              bells: 3,
+            };
+            handleLogin(userData, false);
+            setShowLoginAuthModal(false);
+            setLoginAuthLoading(false);
+            setGuestToast('✅ 登录成功！游戏数据将同步到云端');
+          },
+          fail: () => {
+            // 用户取消授权，进入游客模式
+            handleGuestMode();
+            setLoginAuthLoading(false);
+          }
+        });
+      } else {
+        // 非微信环境：模拟授权
+        const userData = {
+          id: 'local_' + Date.now(),
+          username: '在线用户',
+          nickname: '铲屎官',
+          bells: 3,
+        };
+        handleLogin(userData, false);
+        setShowLoginAuthModal(false);
+        setLoginAuthLoading(false);
+        setGuestToast('✅ 登录成功！');
+      }
+    } catch (e) {
+      handleGuestMode();
+      setLoginAuthLoading(false);
+    }
+  };
+
+  const handleGuestMode = () => {
+    setGuestMode(true);
+    setGuestMode();
+    setShowLoginAuthModal(false);
+    // 如果还没有用户，创建一个本地游客账号
+    if (!user) {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      const localData = saved ? JSON.parse(saved) : null;
+      if (localData && localData.cats && localData.cats.length > 0) {
+        setUser({ id: 'guest', username: '游客', nickname: '铲屎官', bells: localData.bells || 3 });
+      } else {
+        setUser({ id: 'guest', username: '游客', nickname: '铲屎官', bells: 3 });
+      }
+      setIsLocalMode(true);
+    }
+    setGuestToast('您已拒绝授权，将以游客模式体验游戏，部分功能将无法使用');
   };
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -4324,6 +4884,31 @@ function App() {
         intimacy: newIntimacy, // P2: 亲密度更新
         fishSpent: (c.fishSpent || 0) + 1, 
         daysAlive: (c.daysAlive || 0) + 1,
+        status: 'alive',
+      };
+    }));
+  }, [isLocalMode]);
+
+  // P0: Handle batch feed (批量补满亲密度)
+  const handleBatchFeed = useCallback(async (cat) => {
+    const currentIntimacy = cat.intimacy || 0;
+    if (currentIntimacy >= 100) return;
+    const feedsNeeded = Math.ceil((100 - currentIntimacy) / INTIMACY_PER_FEED);
+    if (getFishBalance() < feedsNeeded && isLocalMode) return;
+    if (!isLocalMode && cat._apiId) {
+      try {
+        await MiaolegemiAPI.batchFeedCat && MiaolegemiAPI.batchFeedCat(cat._apiId);
+      } catch (e) { alert(e.message); return; }
+    }
+    fishLedger.push({ type: 'spend', amount: feedsNeeded, desc: `${cat.name}批量补满`, time: Date.now() });
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        lastFedAt: Date.now(),
+        lastOnlineAt: Date.now(),
+        intimacy: INTIMACY_MAX,
+        fishSpent: (c.fishSpent || 0) + feedsNeeded,
         status: 'alive',
       };
     }));
@@ -4716,21 +5301,52 @@ function App() {
 
   colors = theme === 'light' ? CL : CD;
 
-  // Show login page if not authenticated
-  if (authChecked && !user) {
+  // Show loading
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ color:'#F0EDFF', fontSize:14 }}>加载中...</div>
+      </div>
+    );
+  }
+
+  // 合规：隐私政策独立页面
+  if (currentPage === 'privacy') {
     return (
       <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
         <IosFrame>
-          <LoginPage onLogin={handleLogin} />
+          <PrivacyPolicyPage onBack={() => setCurrentPage(null)} />
         </IosFrame>
       </div>
     );
   }
 
-  if (!authChecked) {
+  // 合规：用户服务协议独立页面
+  if (currentPage === 'agreement') {
     return (
-      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <div style={{ color:'#F0EDFF', fontSize:14 }}>加载中...</div>
+      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
+        <IosFrame>
+          <UserAgreementPage onBack={() => setCurrentPage(null)} />
+        </IosFrame>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (authChecked && !user) {
+    return (
+      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
+        <IosFrame>
+          <LoginPage onLogin={handleLogin} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} />
+        </IosFrame>
+        {/* 合规：协议确认弹窗覆盖在登录页上 */}
+        <AgreementModal
+          show={showAgreementModal}
+          onAgree={handleAgreeAgreement}
+          onReject={handleRejectAgreement}
+          onViewPrivacy={() => setCurrentPage('privacy')}
+          onViewAgreement={() => setCurrentPage('agreement')}
+        />
       </div>
     );
   }
@@ -4757,6 +5373,9 @@ function App() {
             </div>
           </div>
 
+          {/* 合规：游客模式横幅 */}
+          {guestMode && <GuestModeBanner onLogin={handleShowLoginAuth} />}
+
           {/* Currency bar */}
           <CurrencyBar
             fish={fish} bells={bells}
@@ -4776,6 +5395,7 @@ function App() {
                 catSerialId={selectedCat?.serialId}
                 onBack={() => { setShowCatDetail(false); setSelectedCat(null); }}
                 onFeed={handleFeed}
+                onBatchFeed={handleBatchFeed}
                 onRelease={handleRelease}
                 onAdopt={handleAdopt}
                 onShowLineage={(cat) => setLineageCat(cat)}
@@ -4786,7 +5406,7 @@ function App() {
             ) : (activeTab === 'cat' || activeTab === 'cathome') ? (
               <CatPage
                 cats={cats} fish={fish}
-                onFeed={handleFeed} onAdopt={handleAdopt}
+                onFeed={handleFeed} onBatchFeed={handleBatchFeed} onAdopt={handleAdopt}
                 onRelease={handleRelease} onNavigate={handleNavigate}
                 onSaveFromFarewell={handleSaveFromFarewell}
                 onImmediateRelease={handleImmediateRelease}
@@ -4808,7 +5428,7 @@ function App() {
             ) : activeTab === 'game' ? (
               <GachaPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} />
             ) : (
-              <ProfilePage cats={cats} fish={fish} bells={bells} activeTitle={activeTitle} onEquipTitle={setActiveTitle} maxSlots={maxSlots} baseSlots={baseSlots} slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked} totalAdopted={totalAdopted} user={user} isLocalMode={isLocalMode} onLogout={() => setShowLogoutConfirm(true)} onMemorialClick={setMemorialDetailCat} />
+              <ProfilePage cats={cats} fish={fish} bells={bells} activeTitle={activeTitle} onEquipTitle={setActiveTitle} maxSlots={maxSlots} baseSlots={baseSlots} slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked} totalAdopted={totalAdopted} user={user} isLocalMode={isLocalMode} guestMode={guestMode} onLogout={() => setShowLogoutConfirm(true)} onLogin={handleShowLoginAuth} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} onMemorialClick={setMemorialDetailCat} />
             )}
           </div>
 
@@ -4873,6 +5493,33 @@ function App() {
           <MemorialDetailModal cat={memorialDetailCat} show={!!memorialDetailCat} onClose={() => setMemorialDetailCat(null)} />
           {/* P5: Title unlock toast */}
           <TitleUnlockToast title={titleUnlockToast} show={!!titleUnlockToast} onDone={() => setTitleUnlockToast(null)} />
+          {/* 合规：协议确认弹窗 */}
+          <AgreementModal
+            show={showAgreementModal}
+            onAgree={handleAgreeAgreement}
+            onReject={handleRejectAgreement}
+            onViewPrivacy={() => setCurrentPage('privacy')}
+            onViewAgreement={() => setCurrentPage('agreement')}
+          />
+          {/* 合规：登录授权弹窗 */}
+          <LoginAuthModal
+            show={showLoginAuthModal}
+            onAuthorize={handleAuthorizeLogin}
+            onGuest={handleGuestMode}
+            onViewPrivacy={() => setCurrentPage('privacy')}
+            onViewAgreement={() => setCurrentPage('agreement')}
+            loading={loginAuthLoading}
+          />
+          {/* 合规：游客模式toast */}
+          {guestToast && (
+            <div style={{
+              position:'absolute', bottom:100, left:'50%', transform:'translateX(-50%)',
+              background:'rgba(0,0,0,0.85)', color:'#fff', fontSize:12, fontWeight:500,
+              padding:'10px 20px', borderRadius:20, zIndex:90,
+              animation:'slideUp 0.3s ease-out',
+              whiteSpace:'nowrap',
+            }}>{guestToast}</div>
+          )}
         </div>
       </IosFrame>
     </div>
