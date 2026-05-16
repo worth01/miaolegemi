@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>喵呜乐消消 · 通勤打卡+猫咪养成</title>
+  <title>喵呜乐消消·养好猫·闯难关</title>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
@@ -28,23 +28,14 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { font-family: 'Noto Sans SC', -apple-system, sans-serif; }
-    @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(108,92,231,0.3)} 50%{box-shadow:0 0 40px rgba(108,92,231,0.6)} }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-2px)} 80%{transform:translateX(2px)} }
     @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
     @keyframes slideUp { 0%{transform:translateY(30px);opacity:0} 100%{transform:translateY(0);opacity:1} }
     @keyframes coinPop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3);opacity:1} 100%{transform:scale(1);opacity:1} }
-    @keyframes bellRing { 0%{transform:rotate(0)} 20%{transform:rotate(-20deg)} 40%{transform:rotate(20deg)} 60%{transform:rotate(-10deg)} 80%{transform:rotate(10deg)} 100%{transform:rotate(0)} }
-    @keyframes adoptPop { 0%{transform:scale(0);opacity:0} 50%{transform:scale(1.3);opacity:1} 70%{transform:scale(0.9)} 100%{transform:scale(1);opacity:1} }
-    @keyframes barShine { 0%{background-position:-200% center} 100%{background-position:200% center} }
-    @keyframes hungerFloat { 0%{transform:translateY(0) scale(0);opacity:0} 30%{transform:translateY(-14px) scale(1);opacity:1} 70%{transform:translateY(-28px) scale(1);opacity:0.8} 100%{transform:translateY(-36px) scale(0);opacity:0} }
-    @keyframes starvingGlow { 0%,100%{box-shadow:0 0 6px #FD9644} 50%{box-shadow:0 0 16px #FD9644, 0 0 24px rgba(253,150,68,0.6)} }
-    @keyframes packingFlash { 0%,100%{box-shadow:0 0 8px #FF6B6B;opacity:1} 50%{box-shadow:0 0 20px #FF6B6B, 0 0 32px rgba(255,107,107,0.7);opacity:0.6} }
     @keyframes goldSweep { 0%{left:-100%;opacity:0} 20%{left:-100%;opacity:1} 50%{left:100%;opacity:1} 51%{left:100%;opacity:0} 100%{left:100%;opacity:0} }
     @keyframes particleFly { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0} }
     @keyframes catJumpOut { 0%{transform:translateY(0) scale(0.3);opacity:0} 30%{transform:translateY(-30px) scale(1.2);opacity:1} 50%{transform:translateY(-50px) scale(1);opacity:1} 65%{transform:translateY(-20px) scale(0.95)} 78%{transform:translateY(-42px) scale(1.05)} 90%{transform:translateY(-35px) scale(1)} 100%{transform:translateY(-40px) scale(1);opacity:1} }
-    @keyframes catLand { 0%{transform:translateY(-40px) scale(1)} 40%{transform:translateY(10px) scale(1.15)} 60%{transform:translateY(-5px) scale(0.95)} 80%{transform:translateY(2px) scale(1.02)} 100%{transform:translateY(0) scale(1)} }
     @keyframes ringPulse { 0%{transform:scale(0);opacity:0.8} 100%{transform:scale(2.5);opacity:0} }
     @keyframes bellShake { 0%{transform:rotate(0) scale(1)} 10%{transform:rotate(-18deg) scale(1.08)} 20%{transform:rotate(16deg) scale(1.05)} 30%{transform:rotate(-14deg) scale(1.06)} 40%{transform:rotate(12deg) scale(1.04)} 50%{transform:rotate(-10deg) scale(1.03)} 60%{transform:rotate(8deg) scale(1.02)} 70%{transform:rotate(-6deg) scale(1.01)} 80%{transform:rotate(4deg)} 90%{transform:rotate(-2deg)} 100%{transform:rotate(0) scale(1)} }
     @keyframes farewellFadeIn { 0%{opacity:0} 100%{opacity:1} }
@@ -116,8 +107,6 @@
       cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
       position: relative; user-select: none; touch-action: none;
     }
-    .cat-card-p9.dragging { opacity: 0.8; transform: scale(1.1); z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-    .cat-card-p9.on-field { opacity: 0.4; filter: grayscale(0.5); pointer-events: none; }
     .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
@@ -381,38 +370,12 @@ function doGacha(pityCount) {
   };
 }
 
-// ═══════════════════════════════════════
-// 原来的抽卡逻辑（兼容模式，保留用于对比）
-// ═══════════════════════════════════════
-function doGachaOld(pityCount) {
-  const roll = Math.random() * 100;
-  let rarity;
-  if (pityCount + 1 >= 80) {
-    rarity = 'SSR';
-  } else if (roll < 2) {
-    rarity = 'SSR';
-  } else if (roll < 7) {
-    rarity = 'SR';
-  } else if (roll < 25) {
-    rarity = 'R';
-  } else {
-    rarity = 'N';
-  }
-  const pool = BREEDS.filter(b => b.rarity === rarity);
-  const breed = pool[Math.floor(Math.random() * pool.length)];
-  return {
-    breed,
-    rarity,
-    newPityCount: rarity === 'SSR' ? 0 : pityCount + 1,
-  };
-}
 
 /* ═══════════════════════════════════════
    P2: 亲密度系统
    ═══════════════════════════════════════ */
 const INTIMACY_MAX = 100;
 const INTIMACY_PER_FEED = 5;
-const INTIMACY_DECAY_PER_DAY = 1;
 
 function getIntimacyColor(intimacy) {
   if (intimacy >= 80) return { bar: '#FD79A8', bg: 'rgba(253,121,168,0.2)' };
@@ -420,21 +383,6 @@ function getIntimacyColor(intimacy) {
   if (intimacy >= 20) return { bar: '#B2BEC3', bg: 'rgba(178,190,195,0.15)' };
   return { bar: '#B2BEC3', bg: 'rgba(178,190,195,0.1)' };
 }
-
-function computeIntimacy(cat) {
-  // 亲密度 = 初始0 + 喂食累计 - 衰减
-  if (!cat || cat.location !== 'home') return 0;
-  const baseIntimacy = cat.intimacy || 0;
-  // 计算衰减：每次登录衰减（离线不衰减）
-  const lastOnline = cat.lastOnlineAt || cat.adoptedAt || Date.now();
-  const daysSinceOnline = Math.floor((Date.now() - lastOnline) / 86400000);
-  const decay = Math.min(baseIntimacy, daysSinceOnline * INTIMACY_DECAY_PER_DAY);
-  return Math.max(0, baseIntimacy - decay);
-}
-
-// 旧的状态系统保留兼容
-const STATUS_ICONS = { alive: '🟢', hungry: '🟡', starving: '🟠', packing: '🔴' };
-const STATUS_LABELS = { alive: '正常', hungry: '饥饿中', starving: '严重饥饿', packing: '收拾行李' };
 
 /* ═══════════════════════════════════════
    BREED / PERSONALITY DATA
@@ -454,14 +402,6 @@ const BREEDS = [
   { id: '星空猫', img: 'cat/星空猫.png', rarity: 'SSR', desc: '星空之子，宇宙中最闪耀的存在' },
 ];
 // P7: 性格枚举（10种标准性格，按需求文档）
-const PERSONALITIES = ['傲娇','吃货','胆小','黏人','高冷','话痨','懒散','胆大','独行','狡黠'];
-// P7: 性格ID映射
-const PERSONALITY_TO_ID = {
-  '傲娇': 1, '吃货': 2, '胆小': 3, '黏人': 4, '高冷': 5,
-  '话痨': 6, '懒散': 7, '胆大': 8, '独行': 9, '狡黠': 10,
-};
-// P7: 性格效果描述
-const PERSONALITY_DESCRIPTIONS = {
   '傲娇': '主动技能冷却缩减',
   '吃货': '额外鱼干百分比加成',
   '胆小': '干扰牌负面效果减免',
@@ -500,24 +440,6 @@ const INTIMACY_EFFECTS = {
   4: { skillUses: 3, bonusPercent: 20, extraFishLimit: 1 },
   5: { skillUses: 3, bonusPercent: 30, extraFishLimit: 2 },
 };
-// P7: 获取亲密度等级效果描述
-function getIntimacyEffectDesc(personality, level) {
-  const eff = INTIMACY_EFFECTS[level] || INTIMACY_EFFECTS[1];
-  const personalityEffect = {
-    '傲娇': `技能CD缩减${level * 10}%`,
-    '吃货': `额外鱼干+${eff.bonusPercent}%`,
-    '胆小': `干扰牌效果减免${level * 5}%`,
-    '黏人': level >= 4 ? `容错续命` : `容错概率${level * 5}%`,
-    '高冷': `消除得分+${level * 5}%`,
-    '话痨': `技能额外得分+${level * 5}%`,
-    '懒散': `关卡限时+${level * 2}秒`,
-    '胆大': `危险牌惩罚减免${level * 5}%`,
-    '独行': `单人出战+${level * 10}%`,
-    '狡黠': `额外鱼干上限+${eff.extraFishLimit}`,
-  };
-  return personalityEffect[personality] || `${level}`;
-}
-
 // P7: 猫咪默认性格配置（按需求文档猫咪基础配置表）
 const BREED_DEFAULT_PERSONALITIES = {
   '橘猫': '吃货',       // 性格ID: 2
@@ -630,11 +552,7 @@ const BOARD_ITEMS = [
   { id: 'bow',     name: '蝴蝶结', emoji: '🎀', color: '#A29BFE', weight: 1 },
 ];
 
-// 第一关固定3种类型（入门）
-const LEVEL1_ITEMS = BOARD_ITEMS.slice(0, 3);
-// 第二关开始9种全开
-const LEVEL2_ITEMS = BOARD_ITEMS;
-const CAT_NAMES = ['团子','麻薯','年糕','汤圆','豆沙','芝麻','奶盖','布丁','蛋挞','泡芙','芋圆','栗子','豆花','椰果','仙草','奶酪'];
+
 
 /* ═══════════════════════════════════════
    GAME STATE (simulated backend)
@@ -888,10 +806,6 @@ function getRemainingDays(cat) {
   return 0;
 }
 
-function getHoursSinceFeed(cat) {
-  if (!cat.lastFedAt) return 999;
-  return Math.floor((Date.now() - cat.lastFedAt) / 3600000);
-}
 
 /* ═══════════════════════════════════════
    iOS FRAME
@@ -1976,89 +1890,6 @@ if (cats.length === 0) {
       })}
     </div>
   );
-}
-
-/* ═══════════════════════════════════════
-   P6: MEMORIAL AREA (纪念册)
-   ═══════════════════════════════════════ */
-function MemorialArea({ cats, onNavigate }) {
-
-if (cats.length === 0) {
-  return (
-    <div style={{ padding:'40px 20px', textAlign:'center' }}>
-      <div style={{ fontSize:48, marginBottom:12 }}>🕯️</div>
-      <div style={{ fontSize:14, fontWeight:600, color:colors.ink, marginBottom:4 }}>纪念册空空如也</div>
-      <div style={{ fontSize:12, color:colors.sub }}>曾陪伴你的猫咪将永远留在这里</div>
-    </div>
-  );
-}
-
-return (
-  <div style={{ padding:'8px 20px 0' }}>
-    {/* 纪念册头部 */}
-    <div style={{ textAlign:'center', marginBottom:16, padding:'12px', background:'linear-gradient(180deg, rgba(108,92,231,0.1) 0%, rgba(108,92,231,0.02) 100%)', borderRadius:16 }}>
-      <div style={{ fontSize:24, marginBottom:4 }}>🕯️</div>
-      <div style={{ fontSize:13, fontWeight:600, color:colors.ink }}>已陪伴 {cats.length} 只猫咪</div>
-      <div style={{ fontSize:11, color:colors.sub, marginTop:2 }}>它们依然留在主人的记忆里</div>
-    </div>
-    
-    {cats.map(cat => {
-      return (
-        <div key={cat.serialId} onClick={() => onNavigate('catDetail', cat)} style={{
-          borderRadius:16, padding:'12px', marginBottom:10,
-          background:colors.card, border:`1px solid rgba(108,92,231,0.15)`,
-          position:'relative', cursor:'pointer',
-          filter:'grayscale(0.3)',
-        }}>
-          <div style={{ display:'flex', gap:12 }}>
-            <div style={{ width:64, height:64, borderRadius:14, overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}30`, flexShrink:0, position:'relative' }}>
-              <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'grayscale(0.5)' }}
-                onError={e => { e.target.style.display='none'; }} />
-              {/* 猫咪已离去标识 */}
-              <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.3)' }}>
-                <span style={{ position:'absolute', top:2, right:4, fontSize:14 }}>🕊️</span>
-              </div>
-            </div>
-            <div style={{ flex:1 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                <span style={{ fontSize:14, fontWeight:800, color:colors.muted }}>{cat.name}</span>
-                <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
-              </div>
-              <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
-                性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
-              </div>
-              <div style={{ fontSize:11, color:colors.muted }}>
-                ✨ 陪伴 {cat.daysAlive || 0} 天
-              </div>
-              <div style={{ fontSize:10, color:colors.muted, marginTop:2 }}>
-                🏆 最佳连击 {cat.bestCombo || 0} 连消 · 🎮 见证 {cat.gamesWitnessed || 0} 场消消乐
-              </div>
-              <div style={{ fontSize:10, color:colors.muted, marginTop:2 }}>
-                ⏰ {cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : ''} 离去
-              </div>
-            </div>
-          </div>
-          
-          {/* 血统记录预览 */}
-          {cat.lineage && cat.lineage.length > 0 && (
-            <div style={{ marginTop:10, padding:'8px', background:'rgba(108,92,231,0.05)', borderRadius:8 }}>
-              <div style={{ fontSize:10, fontWeight:600, color:colors.purpleLight, marginBottom:4 }}>血统记录</div>
-              {cat.lineage.slice(-2).map((owner, i) => (
-                <div key={i} style={{ fontSize:10, color:colors.sub }}>
-                  {owner.name} → {owner.daysAlive}天
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })}
-    
-    <div style={{ textAlign:'center', padding:'20px', color:colors.muted, fontSize:11 }}>
-      🕯️ 永远记得每一段陪伴 🕯️
-    </div>
-  </div>
-);
 }
 
 /* ═══════════════════════════════════════
@@ -4054,7 +3885,7 @@ function UserAgreementPage({ onBack }) {
         <p style={{ fontWeight:700, color:colors.ink, marginTop:20, marginBottom:8 }}>十、联系我们</p>
         <p>若您对本协议有任何疑问、投诉、建议，可通过以下方式联系我们：</p>
         <p>运营主体：木延星科技有限公司</p>
-        <p>联系邮箱：137005952@QQ.com</p>
+        <p>联系邮箱：137005952@qq.com</p>
 
         <p style={{ marginTop:32, color:colors.muted, fontSize:11 }}>本用户服务协议最终解释权归木延星科技有限公司所有。</p>
       </div>
