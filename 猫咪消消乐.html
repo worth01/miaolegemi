@@ -29,6 +29,8 @@
     @keyframes dangerPulse { 0%,100%{box-shadow:0 0 6px rgba(255,80,80,0.25),0 0 12px rgba(255,80,80,0.15)} 50%{box-shadow:0 0 14px rgba(255,80,80,0.55),0 0 28px rgba(255,80,80,0.35)} }
     @keyframes glassShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
     @keyframes disguiseReveal { 0%{opacity:0.3;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
+    @keyframes timerBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+    @keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
   </style>
 </head>
 <body>
@@ -563,16 +565,55 @@ const LAYER_CONFIG = {
   '21-30': { 0: 26, 1: 22, 2: 12 },
 };
 
-// 异形棋盘点位数量配置（用于限制卡牌数量）
+// 异形棋盘最大放牌数（须为3的倍数；实际值由 getMaxCardsForBoard 按坐标数动态计算）
 const BOARD_COUNTS = {
-  'love': 26,      // 爱心棋盘：26个点位
-  'diamond': 22,   // 菱形棋盘：22个点位
-  'persia': 32,    // 波斯双域棋盘：32个点位
-  'butterfly': 32, // 蝴蝶棋盘：32个点位
-  'petal': 30,     // 花瓣棋盘：30个点位
-  'hourglass': 30, // 沙漏棋盘：30个点位
-  'standard': 48,  // 标准棋盘：48个点位
+  'love': 30,
+  'diamond': 24,
+  'persia': 42,
+  'butterfly': 30,
+  'petal': 30,
+  'hourglass': 36,
+  'standard': 48,
 };
+
+// 异形棋盘最多放牌数 = min(关卡配置总数, floor(坐标数/3)*3)
+function getMaxCardsForBoard(boardType, boardCoordCount, levelNum) {
+  const base = getLayerConfig(levelNum);
+  const baseTotal = base[0] + base[1] + base[2];
+  if (boardType === 'standard') return baseTotal;
+  const shapeCap = Math.floor(boardCoordCount / 3) * 3;
+  const namedCap = BOARD_COUNTS[boardType] || shapeCap;
+  return Math.min(baseTotal, shapeCap, namedCap);
+}
+
+// 构建均衡牌池：每种牌恰好3张，共 cardCount 张（cardCount 须为3的倍数）
+function buildBalancedTypePool(cardCount, availableTypes, rng) {
+  const groups = cardCount / 3;
+  const types = shuffleArr([...availableTypes], rng);
+  const pool = [];
+  for (let g = 0; g < groups; g++) {
+    const t = types[g % types.length];
+    pool.push(t, t, t);
+  }
+  return shuffleCardPool(pool, rng);
+}
+
+// 三消匹配用类型（三花牌变身不改匹配类型，仅改显示）
+function getTileMatchType(tile) {
+  if (!tile) return '';
+  if (tile.isInterference && tile.interferenceType === 'transform') {
+    return tile.originalType || tile.type;
+  }
+  return tile.type;
+}
+
+function getTileDisplayType(tile) {
+  if (!tile) return '';
+  if (tile.isInterference && tile.interferenceType === 'transform' && tile.displayType) {
+    return tile.displayType;
+  }
+  return tile.visualType || tile.type;
+}
 
 function getLayerConfig(levelNum) {
   if (levelNum >= 1 && levelNum <= 10) return LAYER_CONFIG['1-10'];
@@ -687,7 +728,7 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
+    desc: '蝴蝶棋盘 · 棋盘上有1张🧴舔毛牌（金边标记），入槽后永久占位，不能与同款三消'
   },
   3: {
     name: '蓝猫冰封',
@@ -1116,11 +1157,44 @@ const LEVELS = {
   }
 };
 
+// 关卡倒计时配置（第1关不限时；2-30关按难度分段，31关起轮回复用）
+function getLevelTimeConfig(levelNum) {
+  const n = ((levelNum - 1) % 30) + 1;
+  if (n === 1) return { timedMode: false, timeLimit: 0 };
+  let timeLimit = 120;
+  if (n <= 3) timeLimit = 150;       // 2-3关 2分30秒
+  else if (n <= 6) timeLimit = 120;  // 4-6关 2分钟
+  else if (n <= 10) timeLimit = 105; // 7-10关 1分45秒
+  else if (n <= 20) timeLimit = 120; // 11-20关 2分钟
+  else timeLimit = 135;              // 21-30关 2分15秒
+  return { timedMode: true, timeLimit };
+}
+
+function formatTimeLimitDisplay(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function countRemainingBoardTiles(tiles) {
+  return tiles.filter(
+    t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom'))
+  ).length;
+}
+
+function getTimerVisualState(timeLeft, timerDelay, isTimed) {
+  if (!isTimed || timerDelay > 0) return 'idle';
+  if (timeLeft <= 3) return 'critical';
+  if (timeLeft <= 10) return 'danger';
+  if (timeLeft <= 30) return 'warn';
+  return 'normal';
+}
+
 // P4: 关卡轮回机制 - 30关后循环
 function getLevelConfig(levelNum) {
   // 轮回机制：第31关复刻第1关，第32关复刻第2关...
   const cycleLevel = ((levelNum - 1) % 30) + 1;
-  return LEVELS[cycleLevel];
+  return { ...LEVELS[cycleLevel], ...getLevelTimeConfig(levelNum) };
 }
 
 // 判断某关卡是否应触发冰冻牌
@@ -1405,7 +1479,7 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
 
   sorted.forEach(tile => {
     // 查找卡牌视觉定义：先找普通牌，再找干扰牌
-    let cat = CAT_TYPES.find(c => c.id === (tile.visualType || tile.type));
+    let cat = CAT_TYPES.find(c => c.id === getTileDisplayType(tile));
     if (!cat && tile.isInterference) {
       const iCard = INTERFERENCE_CARDS[tile.interferenceType];
       if (iCard) cat = iCard;
@@ -1480,7 +1554,7 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
 
     // 图片
     // 真身牌：未暴露用伪装层图片，暴露后用原始牌图片（去壳后就是普通牌）
-    let imgKey = tile.visualType || tile.type;
+    let imgKey = getTileDisplayType(tile);
     let disguiseImgKey = null; // 伪装层图片key（暴露动画期间用于淡出）
     if (isDisguiseOnBoard && tile.disguisedAs) {
       imgKey = tile.disguisedAs; // 未暴露：渲染伪装层图片
@@ -1572,6 +1646,20 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.textAlign = 'right';
       ctx.textBaseline = 'top';
       ctx.fillText('🔮', x + TILE_W - 3, y + 2);
+      ctx.restore();
+    }
+
+    // 舔毛牌专属标记：金边 + 🧴角标（保留原图案，提示入槽后无法消除）
+    if (tile.isInterference && tile.interferenceType === 'groom' && !isBlocked && !isInSlot) {
+      ctx.save();
+      ctx.strokeStyle = '#FDCB6E';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, x - 1, y - 1, TILE_W + 2, TILE_H + 2, 11);
+      ctx.stroke();
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText('🧴', x + TILE_W - 2, y + 2);
       ctx.restore();
     }
 
@@ -1886,17 +1974,10 @@ function generateBoard(levelNum) {
   const boardCoords = getBoardCoordsByType(boardType);
   const boardCoordCount = boardCoords.length;
 
-  // 获取棋盘类型名称
-  const boardTypeName = Object.keys(BOARD_TYPES).find(k => BOARD_TYPES[k] === boardType) || 'standard';
-  const maxCardsForBoard = BOARD_COUNTS[boardTypeName] || 48;
-
   // 2. 获取层配置和卡牌池
   const baseLayerConfig = getLayerConfig(levelNum);
-  // 限制总卡牌数量不超过棋盘有效点位数量
-  const totalCards = Math.min(
-    baseLayerConfig[0] + baseLayerConfig[1] + baseLayerConfig[2],
-    maxCardsForBoard
-  );
+  // 限制总卡牌数量为3的倍数，且不超过异形棋盘有效格数
+  const totalCards = getMaxCardsForBoard(boardType, boardCoordCount, levelNum);
   
   // 按比例分配各层卡牌数量（确保总和等于总卡牌数）
   const totalBase = baseLayerConfig[0] + baseLayerConfig[1] + baseLayerConfig[2];
@@ -1906,12 +1987,7 @@ function generateBoard(levelNum) {
     2: totalCards - Math.floor(baseLayerConfig[0] * totalCards / totalBase) - Math.floor(baseLayerConfig[1] * totalCards / totalBase)
   };
   
-  let cardPool = getCardPoolByLevel(levelNum);
-
-  // 3. Fisher-Yates 洗牌
-  cardPool = shuffleCardPool(cardPool, rng);
-
-  // 4. 生成三层槽位
+  // 3. 生成三层槽位
   // - 异形棋盘：按顺序选取，形成目标形状
   // - 标准棋盘：随机选取，保持随机分布
   const allSlots = [];
@@ -1970,43 +2046,46 @@ function generateBoard(levelNum) {
       });
       return cards;
     } else {
-      return assignTypesFromPool(slots, cardPool, rand);
+      return assignTypesFromPool(slots, levelNum, rand);
     }
   }
 
-  const cards = assignCardsForSlots(allSlots, lv, rng);
-
-  // 6. 添加干扰牌
-  const cardsWithInterference = addInterferenceCards(cards, lv, rng);
-
-  // 7. 可解性校验（最多50次重试）
+  // 4. 生成可解牌局（重试直到可解或达到上限）
+  const MAX_BOARD_ATTEMPTS = 200;
   let attempts = 0;
-  let result = cardsWithInterference;
-  while (!isSolvable(result) && attempts < 50) {
-    cardPool = shuffleCardPool(getCardPoolByLevel(levelNum), rng);
-    const retrySlots = [];
-    let retryCoordIndex = 0;
+  let result = null;
+  while (attempts < MAX_BOARD_ATTEMPTS) {
+    const trySlots = [];
+    let tryCoordIndex = 0;
     for (let layer = 0; layer <= 2; layer++) {
       const count = layerConfig[layer];
       for (let i = 0; i < count; i++) {
         let coord;
         if (isShapedBoard) {
-          coord = boardCoords[(retryCoordIndex + attempts * 3) % boardCoordCount];
+          coord = boardCoords[(tryCoordIndex + attempts * 3) % boardCoordCount];
         } else {
           coord = boardCoords[Math.floor(rng() * boardCoordCount)];
         }
-        retrySlots.push({
+        trySlots.push({
           row: coord.row,
           col: coord.col,
           layer: layer,
-          zone: 'default'
+          zone: 'default',
         });
-        retryCoordIndex++;
+        tryCoordIndex++;
       }
     }
-    const retryCards = assignCardsForSlots(retrySlots, lv, rng);
-    result = addInterferenceCards(retryCards, lv, rng);
+    const tryCards = addInterferenceCards(assignCardsForSlots(trySlots, lv, rng), lv, rng);
+    if (isSolvable(tryCards)) {
+      result = tryCards;
+      break;
+    }
     attempts++;
+  }
+  if (!result) {
+    // 兜底：仍用最后一次分配（理论上极少触发）
+    result = addInterferenceCards(assignCardsForSlots(allSlots, lv, rng), lv, rng);
+    console.warn(`[generateBoard] 关卡${levelNum} 在${MAX_BOARD_ATTEMPTS}次内未找到可解布局，已使用末次生成`);
   }
 
   // 8. 构建 offset map 供坐标计算（基础偏移确保在棋盘内，边距留出偏移空间）
@@ -2020,48 +2099,56 @@ function generateBoard(levelNum) {
   return result;
 }
 
-// 从牌池分配类型（确保必通关）
-function assignTypesFromPool(slots, cardPool, rng) {
-  // 直接按顺序从洗好的牌池分配
-  const cardCount = Math.min(slots.length, cardPool.length);
-  
-  // 按层排序（底层先，高层后）
-  const sortedSlots = [...slots].sort((a, b) => b.layer - a.layer);
-  
-  // 顶层需要包含所有种类
-  const layerConfig = getLayerConfig(1); // 获取层配置
-  const topLayerCount = layerConfig[2];
-  const topLayerSlots = sortedSlots.filter(s => s.layer === 2).slice(0, topLayerCount);
-  
-  // 确保顶层包含所有种类（取前N张，N为种类数）
-  const typeCount = Math.min(topLayerCount, cardPool.length);
-  const topTypes = cardPool.slice(0, typeCount);
-  
-  // 将顶层的卡牌类型设为牌池前N张
-  topLayerSlots.forEach((slot, i) => {
-    slot.type = topTypes[i] || cardPool[i % cardPool.length];
-  });
-  
-  // 剩余卡牌按顺序分配
-  let poolIndex = typeCount;
-  sortedSlots.forEach(slot => {
-    if (!slot.type && poolIndex < cardPool.length) {
-      slot.type = cardPool[poolIndex++];
+// 从牌池分配类型：每种牌恰好3张，并尽量跨层分散
+function assignTypesFromPool(slots, levelNum, rng) {
+  const cardCount = slots.length;
+  const uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+  const balancedPool = buildBalancedTypePool(cardCount, uniqueTypes, rng);
+
+  // 按类型分组（每组3张同型）
+  const typeGroups = [];
+  for (let i = 0; i < balancedPool.length; i += 3) {
+    typeGroups.push(balancedPool[i]);
+  }
+
+  const slotList = slots.map(s => ({ ...s }));
+  const assigned = new Set();
+
+  typeGroups.forEach(type => {
+    const groupSlots = [];
+    const usedLayers = new Set();
+    // 优先从不同层各取一张
+    for (const s of slotList) {
+      if (assigned.has(s)) continue;
+      if (groupSlots.length === 0 || !usedLayers.has(s.layer)) {
+        groupSlots.push(s);
+        usedLayers.add(s.layer);
+        assigned.add(s);
+        if (groupSlots.length >= 3) break;
+      }
     }
-  });
-  
-  // 补充未分配的卡牌类型
-  slots.forEach(slot => {
-    if (!slot.type) {
-      slot.type = cardPool[Math.floor(rng() * cardPool.length)];
+    for (const s of slotList) {
+      if (groupSlots.length >= 3) break;
+      if (!assigned.has(s)) {
+        groupSlots.push(s);
+        assigned.add(s);
+      }
     }
+    groupSlots.slice(0, 3).forEach(s => { s.type = type; });
   });
 
-  return slots.map((s, i) => ({
-    id: i, type: s.type,
-    col: s.col, row: s.row, layer: s.layer,
+  enforceNoAdjacent(slotList, [{ layer: 0 }, { layer: 1 }, { layer: 2 }]);
+
+  return slotList.map((s, i) => ({
+    id: i,
+    type: s.type,
+    col: s.col,
+    row: s.row,
+    layer: s.layer,
     zone: s.zone || 'default',
-    removed: false, inSlot: false, matched: false,
+    removed: false,
+    inSlot: false,
+    matched: false,
   }));
 }
 
@@ -2139,6 +2226,37 @@ function addInterferenceCards(cards, levelConfig, rng) {
     return applyInterferenceToCards(cards, selectedCards, interferenceType, rng);
   }
   
+  // 舔毛牌：替换3张同型牌为1张舔毛牌，保持牌池3的倍数
+  if (interferenceType === 'groom') {
+    const shuffledTop = shuffleArr([...topLayerCards], rng);
+    const typeCounts = {};
+    cards.forEach(c => { if (!c.removed) typeCounts[c.type] = (typeCounts[c.type] || 0) + 1; });
+    // 优先从拥有6张以上的牌型中选取（避免完全消除一种牌型）
+    const richTopCards = shuffledTop.filter(c => (typeCounts[c.type] || 0) >= 6);
+    const selected = (richTopCards.length > 0
+      ? richTopCards[Math.floor(rng() * richTopCards.length)]
+      : shuffledTop[Math.floor(rng() * shuffledTop.length)]);
+    // 找到同类型的另外2张牌并移除，保持该类型剩余3的倍数
+    const sameTypeOthers = cards.filter(c =>
+      !c.removed && c.type === selected.type && c.id !== selected.id
+    );
+    const removeIds = new Set(sameTypeOthers.slice(0, 2).map(c => c.id));
+    return cards
+      .filter(c => !removeIds.has(c.id))
+      .map(card => {
+        if (card.id === selected.id) {
+          return {
+            ...card,
+            type: `__interference_${interferenceType}__`,
+            isInterference: true,
+            interferenceType: interferenceType,
+            revealed: true,
+          };
+        }
+        return card;
+      });
+  }
+
   // 随机选择位置放置干扰牌
   const shuffledTop = shuffleArr([...topLayerCards], rng);
   const selectedCards = shuffledTop.slice(0, Math.min(count, shuffledTop.length));
@@ -2179,12 +2297,13 @@ function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
     if (selectedCards.some(sc => sc.id === card.id)) {
       return {
         ...card,
-        // 粘连牌/三花牌保留原始type（可参与三消）；小狗牌改为__interference_danger__以便专属渲染
+        // 粘连/三花保留原始type；舔毛/小狗等改为__interference_xxx__以便专属渲染
         ...(interferenceType !== 'sticky' && interferenceType !== 'transform'
           ? { type: `__interference_${interferenceType}__` } : {}),
         isInterference: true,
         interferenceType: interferenceType,
         originalType: (interferenceType === 'transform' || interferenceType === 'danger') ? card.type : undefined,
+        displayType: interferenceType === 'transform' ? card.type : undefined,
         revealed: true,
       };
     }
@@ -2265,47 +2384,70 @@ function enforceNoAdjacent(slots, layers) {
   });
 }
 
-// 可解性校验（贪心模拟）
+// 可解性校验（贪心模拟，含舔毛牌占槽）
 function isSolvable(cards) {
-  // 小狗牌不参与可解性判断（它不是用来消除的，而是需要避免的危险牌）
-  // 真身牌保留原始type，可正常三消，参与可解性校验
-  const excludeCards = cards.filter(c => 
-    (c.isInterference && c.interferenceType === 'danger')
+  // 小狗牌/舔毛牌不参与可解性判断（无法消除，不要求从棋盘消除）
+  const excludeIds = new Set(
+    cards.filter(c => c.isInterference && (c.interferenceType === 'danger' || c.interferenceType === 'groom')).map(c => c.id)
   );
-  const excludeIds = new Set(excludeCards.map(c => c.id));
-  // 排除小狗牌后进行可解性校验
-  // 真身牌参与校验时，用原始type（已经是原始type，因为生成时不改变）
-  const remaining = cards.filter(c => !excludeIds.has(c.id)).map(c => ({ ...c, removed: false }));
+  const remaining = cards
+    .filter(c => !excludeIds.has(c.id))
+    .map(c => ({ ...c, removed: false }));
   const slots = new Array(SLOT_CAPACITY).fill(null);
+
+  const matchTypeOf = (c) => getTileMatchType(c);
+  const isGroomTile = (c) => c.isInterference && c.interferenceType === 'groom';
+
+  const compactSlots = () => {
+    const filled = slots.filter(s => s !== null);
+    slots.fill(null);
+    filled.forEach((s, idx) => { slots[idx] = s; });
+  };
+
+  const tryMatchInSlots = () => {
+    for (let i = 0; i <= slots.length - 3; i++) {
+      const a = slots[i], b = slots[i + 1], c = slots[i + 2];
+      if (a && b && c && !a.isGroom && !b.isGroom && !c.isGroom &&
+          a.type === b.type && a.type === c.type) {
+        slots[i] = slots[i + 1] = slots[i + 2] = null;
+        compactSlots();
+        return true;
+      }
+    }
+    return false;
+  };
 
   while (true) {
     const clickable = remaining.filter(c => !c.removed && !isTileBlockedSolvable(c, remaining));
     if (clickable.length === 0) break;
 
+    const mt = (c) => matchTypeOf(c);
     let picked = clickable.find(c => {
-      const count = slots.filter(s => s && s.type === c.type).length;
-      return count >= 2;
+      if (isGroomTile(c)) return false;
+      const t = mt(c);
+      return slots.filter(s => s && !s.isGroom && s.type === t).length >= 2;
     });
-    if (!picked) picked = clickable[0];
+    if (!picked) {
+      picked = clickable.find(c => !isGroomTile(c)) || clickable[0];
+    }
 
     const slotIdx = slots.indexOf(null);
     if (slotIdx === -1) return false;
-    slots[slotIdx] = { type: picked.type };
+
+    const groom = isGroomTile(picked);
+    slots[slotIdx] = { type: groom ? picked.type : mt(picked), isGroom: groom };
     picked.removed = true;
 
-    for (let i = 0; i <= slots.length - 3; i++) {
-      if (slots[i] && slots[i+1] && slots[i+2] &&
-          slots[i].type === slots[i+1].type && slots[i].type === slots[i+2].type) {
-        slots[i] = slots[i+1] = slots[i+2] = null;
-        const filled = slots.filter(s => s !== null);
-        slots.fill(null);
-        filled.forEach((s, idx) => slots[idx] = s);
-        break;
-      }
+    let matched = true;
+    while (matched) {
+      matched = tryMatchInSlots();
     }
   }
-  // 小狗牌已排除，只需剩余普通牌全部消除即可判定可解
-  return remaining.every(c => c.removed);
+
+  // 普通牌须全部消除；小狗牌/舔毛牌可留在棋盘
+  return remaining
+    .filter(c => !(c.isInterference && (c.interferenceType === 'danger' || c.interferenceType === 'groom')))
+    .every(c => c.removed);
 }
 
 function calcOverlap(tile, allTiles) {
@@ -2415,7 +2557,7 @@ function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
    TILE COMPONENT
    ═══════════════════════════════════════ */
 function Tile({ tile, blocked, onClick, animDelay, highlighted, transformLockedIds }) {
-  let cat = CAT_TYPES.find(c => c.id === (tile.visualType || tile.type));
+  let cat = CAT_TYPES.find(c => c.id === getTileDisplayType(tile));
   // 干扰牌type不在CAT_TYPES中（groom/danger/disguise），从INTERFERENCE_CARDS查找
   if (!cat && tile.type && tile.type.startsWith('__interference_')) {
     const iKey = tile.type.replace('__interference_', '').replace('__', '');
@@ -2802,11 +2944,12 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                     />
                     {/* 舔毛牌占位标记 */}
                     <div style={{
-                      position: 'absolute', bottom: 1, right: 1,
-                      fontSize: 7, fontWeight: 700, color: '#FDCB6E',
-                      background: 'rgba(0,0,0,0.5)', borderRadius: 3,
-                      padding: '1px 3px', lineHeight: 1,
-                    }}>🔒</div>
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      fontSize: 8, fontWeight: 800, color: '#fff',
+                      background: 'rgba(243,156,18,0.92)', borderRadius: 3,
+                      padding: '2px 0', lineHeight: 1.2, textAlign: 'center',
+                    }}>舔毛·占位</div>
+                    <div style={{ position: 'absolute', top: 2, right: 2, fontSize: 10 }}>🧴</div>
                   </div>
                 );
               }
@@ -3372,7 +3515,9 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       {/* Timer info */}
       <div style={{ borderRadius:12, padding:'8px 14px', background:'rgba(108,92,231,0.06)', border:'1px solid rgba(108,92,231,0.1)', marginBottom:12 }}>
         <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', textAlign:'center' }}>
-          {levelConfig?.timedMode ? `⏱️ ${levelConfig.timeLimit}秒倒计时 · 消除+${levelConfig.matchBonus || 5}秒` : '🎮 休闲模式 · 无时间限制'}
+          {levelConfig?.timedMode
+            ? `⏱️ ${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时 · 时间到未清完即失败`
+            : '🎮 教学关 · 无时间限制'}
         </div>
       </div>
 
@@ -3677,8 +3822,7 @@ function Game() {
   useEffect(() => {
     if (frozenSlot && !freezeBlockOverride && gameState === GAME_PLAYING) {
       const frozenOffset = levelConfig.freeze_grid_count || 1;
-      const groomOffset = groomSlots.length;
-      const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset - groomOffset;
+      const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
       if (effectiveCapacity <= 0) {
         // 收集槽已被冰冻牌完全冻结，无法继续游戏
         setFreezeToast('❄️ 收集槽已被冰冻牌完全冻结，无法继续游戏！');
@@ -3735,7 +3879,7 @@ function Game() {
   // ═══ 波斯双域开局提示（2秒轻量提示） ═══
   useEffect(() => {
     if (currentLevel === 10 && gameState === GAME_PLAYING && !window._areaToastShown) {
-      setAreaToast('本关为双域玩法！蓝色域卡牌仅能和蓝色域匹配，绿色域卡牌仅能和绿色域匹配，跨区域无法消除哦～');
+      setAreaToast('双域玩法：蓝色和绿色区域的卡牌，跨区域无法消除哦～');
       window._areaToastShown = true;
       const t = setTimeout(() => { setAreaToast(''); }, 2000);
       return () => clearTimeout(t);
@@ -3799,16 +3943,15 @@ function Game() {
       setTiles(prev => prev.map(t => {
         if (t.removed || t.inSlot || !t.isInterference || t.interferenceType !== 'transform') return t;
 
-        // 随机选择新type，避免与当前type相同
-        let newType = t.type;
+        // 仅变换显示图案，匹配类型保持 originalType 不变
+        const currentDisplay = t.displayType || t.type;
+        let newDisplay = currentDisplay;
         let attempts = 0;
         do {
-          newType = normalTypes[Math.floor(Math.random() * normalTypes.length)];
+          newDisplay = normalTypes[Math.floor(Math.random() * normalTypes.length)];
           attempts++;
-        } while (newType === t.type && normalTypes.length > 1 && attempts < 20);
+        } while (newDisplay === currentDisplay && normalTypes.length > 1 && attempts < 20);
 
-        // 平衡校验：变换后不能与相邻牌凑成三消
-        // 检查同层同行/列相邻的同type牌数量
         const sameLayerTiles = tilesRef.current.filter(tt => !tt.removed && !tt.inSlot && tt.id !== t.id && tt.layer === t.layer);
         let checkAttempts = 0;
         while (checkAttempts < 30) {
@@ -3816,17 +3959,14 @@ function Game() {
             (Math.abs(tt.row - t.row) <= 1 && tt.col === t.col) ||
             (Math.abs(tt.col - t.col) <= 1 && tt.row === t.row)
           );
-          const sameTypeAdjacent = adjacent.filter(tt => tt.type === newType);
-          // 三消需要3张同type，如果相邻只有0-1张同type，安全
-          // 如果相邻2张以上同type，可能凑成三消，重新随机
+          const sameTypeAdjacent = adjacent.filter(tt => getTileDisplayType(tt) === newDisplay);
           if (sameTypeAdjacent.length < 2) break;
-          // 重新随机
-          newType = normalTypes[Math.floor(Math.random() * normalTypes.length)];
+          newDisplay = normalTypes[Math.floor(Math.random() * normalTypes.length)];
           checkAttempts++;
         }
 
         lockedIds.push(t.id);
-        return { ...t, type: newType, transformAnimating: true };
+        return { ...t, displayType: newDisplay, transformAnimating: true };
       }));
 
       // 变身锁定：0.2秒内不可点击/匹配
@@ -3942,6 +4082,7 @@ function Game() {
   const [timeLeft, setTimeLeft] = useState(isTimed ? (levelConfig.timeLimit || 120) : 0);
   const [timerPaused, setTimerPaused] = useState(false);
   const [timerDelay, setTimerDelay] = useState(0);
+  const timerVisual = getTimerVisualState(timeLeft, timerDelay, isTimed);
   const timerPauseRef = useRef(null); // timeout for auto-resume
   const timerDelayRef = useRef(0); // seconds to delay before counting starts
   const timeLeftRef = useRef(isTimed ? (levelConfig.timeLimit || 120) : 0);
@@ -4039,14 +4180,18 @@ function Game() {
       }
       if (timeLeftRef.current <= 0) {
         clearInterval(interval);
-        // 超时 → 按当前分数结算（不是直接失败）
-        setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+        const remaining = countRemainingBoardTiles(tilesRef.current);
+        if (remaining > 0) {
+          setGameState(GAME_LOSE);
+        } else {
+          setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+        }
         return;
       }
       setTimeLeft(t => Math.max(0, t - 1));
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, gameState, isTimed]);
+  }, [phase, gameState, isTimed, currentLevel]);
 
   // P3: Apply passive skills on game start (v3.1 updated)
   // P7: 更新为新的鱼干计算系统
@@ -4129,16 +4274,19 @@ function Game() {
     setExtraRestarts(restarts);
     setSlotBonus(tempSlotB);
 
-    // P3: 白猫醒目 - 开局自动消除1组
+    // P3: 白猫醒目 - 开局自动消除1组（仅普通牌，不破坏干扰牌与牌型平衡）
     if (slots.slice(3, 6).some(b => b && PASSIVE_EFFECTS[b]?.type === 'autoHint')) {
       setTimeout(() => {
         setTiles(prev => {
-          const avail = prev.filter(t => !t.removed && !isTileBlocked(t, prev));
+          const avail = prev.filter(t => !t.removed && !t.inSlot && !t.isInterference && !isTileBlocked(t, prev));
           const typeCounts = {};
-          avail.forEach(t => { typeCounts[t.type] = (typeCounts[t.type] || 0) + 1; });
+          avail.forEach(t => {
+            const mt = getTileMatchType(t);
+            typeCounts[mt] = (typeCounts[mt] || 0) + 1;
+          });
           const pairType = Object.keys(typeCounts).find(k => typeCounts[k] >= 3);
           if (pairType) {
-            const toRemove = avail.filter(t => t.type === pairType).slice(0, 3);
+            const toRemove = avail.filter(t => getTileMatchType(t) === pairType).slice(0, 3);
             toRemove.forEach(t => {
               const cat = CAT_TYPES.find(c => c.id === t.type);
               if (cat) emitExplosion(tileX(t) + TILE_W/2, tileY(t) + TILE_H/2, cat.color);
@@ -4325,13 +4473,6 @@ function Game() {
         });
         setMaxCombo(c => Math.max(c, sameType.filter(s => s.type === slotItemType).length));
 
-        // 计时奖励
-        if (isTimed) {
-          const bonus = (levelConfig.matchBonus || 5) + (isCombo ? (levelConfig.comboBonus || 3) : 0);
-          setTimeLeft(t => t + bonus);
-          timeLeftRef.current += bonus;
-        }
-
         const matchedTileIds = sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
         matchTimeoutRef.current = setTimeout(() => {
           setTiles(prev => prev.map(t => matchedTileIds.includes(t.id) ? { ...t, removed: true, matched: false } : t));
@@ -4384,8 +4525,7 @@ function Game() {
 
     // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
     const frozenOffset = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
-    const groomOffset = groomSlots.length; // 舔毛牌每张占据1个槽位
-    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset - groomOffset;
+    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
     
     // 粘连牌容量校验：需同时放入粘连牌+被连带的卡牌，剩余容量不足则直接失败
     const stickyBatchSize = stickyAdjacentTile ? 2 : 1; // 连带1张=2，无连带=1
@@ -4414,9 +4554,9 @@ function Game() {
 
     const uid = ++uidRef.current;
     // 胆小减免下小狗牌用originalType参与三消匹配；真身牌揭穿后直接入槽（不走此分支）；其他情况直接用tile.type
-    const slotItemType = (isDangerCard && dangerBlockOverride && tile.originalType) ? tile.originalType 
-      : tile.type;
-    const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride, interferenceType: tile.isInterference ? tile.interferenceType : null, areaTag: tile.areaTag, visualType: tile.visualType || tile.type };
+    const slotItemType = (isDangerCard && dangerBlockOverride && tile.originalType) ? tile.originalType
+      : getTileMatchType(tile);
+    const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride, interferenceType: tile.isInterference ? tile.interferenceType : null, areaTag: tile.areaTag, visualType: getTileDisplayType(tile) };
 
     // 粘连牌首次点击提示
     if (isStickyCard && !stickyBlockOverride && !stickyAdjacentTile && groomSlots.length === 0 && !window._stickyToastShown) {
@@ -4498,12 +4638,6 @@ function Game() {
         });
         setMaxCombo(c => Math.max(c, matchResult.sameType.filter(s => s.type === matchResult.type).length));
 
-        if (isTimed) {
-          const bonus = (levelConfig.matchBonus || 5) + (isCombo ? (levelConfig.comboBonus || 3) : 0);
-          setTimeLeft(t => t + bonus);
-          timeLeftRef.current += bonus;
-        }
-
         const matchType = matchResult.type;
         const matchedTileIds = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
         matchTimeoutRef.current = setTimeout(() => {
@@ -4533,7 +4667,7 @@ function Game() {
           ));
           setTiles(prev => {
             // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-            const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && t.interferenceType === 'danger'));
+            const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
             if (nonDangerRemaining.length === 0) {
               const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
               if (slotEmpty) setScore(s => s + 200);
@@ -4622,13 +4756,6 @@ function Game() {
         return Math.max(c, currentCombo);
       });
 
-      // 计时模式：消除奖励时间
-      if (isTimed) {
-        const bonus = (levelConfig.matchBonus || 5) + (isCombo ? (levelConfig.comboBonus || 3) : 0);
-        setTimeLeft(t => t + bonus);
-        timeLeftRef.current += bonus;
-      }
-
       // Capture matched tile IDs for board removal
       const matchRemoveType = matchType;
       const matchedTileIds = sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
@@ -4664,7 +4791,7 @@ function Game() {
         // Check win — all tiles either removed or still in slot will be cleared
         setTiles(prev => {
           // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && t.interferenceType === 'danger'));
+          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
           if (nonDangerRemaining.length === 0) {
             // 完美通关加分（棋盘清空且收集槽为空）
             const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
@@ -4927,7 +5054,7 @@ function Game() {
         setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? { ...t, removed: true } : t));
         setTimeout(() => {
           // 胜利判定：排除小狗牌（不消除）
-          const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && t.interferenceType === 'danger'));
+          const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
           if (nonBlockingRemaining.length === 0) {
             setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
           }
@@ -4962,7 +5089,7 @@ function Game() {
         setTempStorage([]);
         setTimeout(() => {
           // 胜利判定：排除小狗牌（不消除）
-          const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && t.interferenceType === 'danger'));
+          const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
           if (nonBlockingRemaining.length === 0) {
             setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
           }
@@ -5314,6 +5441,16 @@ function Game() {
         display: phase === 'levelSelect' ? 'none' : 'block',
       }}/>
 
+      {/* 最后3秒全屏红边警示 */}
+      {phase === 'playing' && timerVisual === 'critical' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          border: '4px solid #FF4444',
+          pointerEvents: 'none',
+          animation: 'screenBorderFlash 0.45s ease-in-out infinite',
+        }} />
+      )}
+
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
@@ -5383,33 +5520,44 @@ function Game() {
               )}
             </div>
             
-            {/* 计时器 */}
-            {phase === 'playing' && (
+            {/* 计时器（限时关显示） */}
+            {phase === 'playing' && isTimed && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 2,
                 padding: '3px 6px', borderRadius: 6,
-                background: timerDelay > 0 
+                background: timerVisual === 'idle'
                   ? 'rgba(85,239,196,0.15)'
-                  : timeLeft <= 10 
-                    ? 'rgba(255,107,107,0.2)'
-                    : 'rgba(108,92,231,0.12)',
-                border: timerDelay > 0 
-                  ? '1px solid rgba(85,239,196,0.3)' 
-                  : timeLeft <= 10 
-                    ? '1px solid rgba(255,107,107,0.3)' 
-                    : '1px solid rgba(108,92,231,0.2)',
+                  : timerVisual === 'warn'
+                    ? 'rgba(253,150,68,0.18)'
+                    : timerVisual === 'danger' || timerVisual === 'critical'
+                      ? 'rgba(255,107,107,0.2)'
+                      : 'rgba(108,92,231,0.12)',
+                border: timerVisual === 'idle'
+                  ? '1px solid rgba(85,239,196,0.3)'
+                  : timerVisual === 'warn'
+                    ? '1px solid rgba(253,150,68,0.35)'
+                    : timerVisual === 'danger' || timerVisual === 'critical'
+                      ? '1px solid rgba(255,107,107,0.3)'
+                      : '1px solid rgba(108,92,231,0.2)',
                 flexShrink: 0,
               }}>
                 <span style={{ fontSize: 10 }}>
-                  {timerDelay > 0 ? '🛡️' : timeLeft <= 10 ? '⏰' : '⏱️'}
+                  {timerVisual === 'idle' ? '🛡️' : (timerVisual === 'danger' || timerVisual === 'critical') ? '⏰' : '⏱️'}
                 </span>
                 <span style={{
                   fontSize: 10, fontWeight: 700,
-                  color: timerDelay > 0 ? '#55EFC4' : timeLeft <= 10 ? '#FF6B6B' : '#A29BFE',
-                  animation: timeLeft <= 10 && timerDelay === 0 ? 'shake 0.5s ease-in-out infinite' : 'none',
+                  color: timerVisual === 'idle' ? '#55EFC4'
+                    : timerVisual === 'warn' ? '#FD9644'
+                    : (timerVisual === 'danger' || timerVisual === 'critical') ? '#FF6B6B'
+                    : '#A29BFE',
+                  animation: timerVisual === 'danger'
+                    ? 'timerBounce 0.25s ease-in-out infinite'
+                    : timerVisual === 'critical'
+                      ? 'timerBounce 0.15s ease-in-out infinite'
+                      : 'none',
                 }}>
-                  {timerDelay > 0 
-                    ? `${timerDelay}s` 
+                  {timerVisual === 'idle'
+                    ? `${timerDelay}s`
                     : `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`}
                 </span>
               </div>
