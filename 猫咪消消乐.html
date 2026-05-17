@@ -804,7 +804,10 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
-    desc: '波斯双域特殊造型棋盘，中间第4列空白'
+    desc: '波斯双域特殊造型棋盘，中间第4列空白',
+    areaRuleEnable: true,
+    areaBlueColor: '#1677FF',
+    areaGreenColor: '#00B42A'
   },
   // 第11-20关：9种卡牌，54张（Layer0=22, Layer1=20, Layer2=12）
   11: {
@@ -1375,6 +1378,24 @@ function runParticleFrame(ctx, dt) {
 function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
   ctx.clearRect(0, 0, boardW, boardH);
 
+  // 波斯双域：棋盘中间区域分隔线（咖色加粗，浅灰阴影）
+  const hasAreaRule = tiles.some(t => t.areaTag);
+  if (hasAreaRule) {
+    const dividerX = boardW / 2 - 15;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.12)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(dividerX, 0);
+    ctx.lineTo(dividerX, boardH);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // 按 layer 排序绘制
   const sorted = [...tiles].filter(t => !t.removed).sort((a, b) => {
     if (a.layer !== b.layer) return a.layer - b.layer;
@@ -1384,7 +1405,7 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
 
   sorted.forEach(tile => {
     // 查找卡牌视觉定义：先找普通牌，再找干扰牌
-    let cat = CAT_TYPES.find(c => c.id === tile.type);
+    let cat = CAT_TYPES.find(c => c.id === (tile.visualType || tile.type));
     if (!cat && tile.isInterference) {
       const iCard = INTERFERENCE_CARDS[tile.interferenceType];
       if (iCard) cat = iCard;
@@ -1408,6 +1429,26 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
 
     ctx.save();
 
+    // 3D 砖块厚度效果：在卡片本体背后绘制多层偏移的圆角矩形，
+    // 每层向右下偏移并逐渐加深，模拟砖块/厚卡牌的侧边厚度感
+    if (!isInSlot) {
+      const layers = 6;
+      const baseA = isBlocked ? 0.05 : 0.10;
+      const stepA = isBlocked ? 0.04 : 0.08;
+      // 波斯双域：侧壁颜色跟随区域（浅蓝/浅绿），其他关卡保持暖米色
+      let sideR = 185, sideG = 170, sideB = 150;
+      if (tile.areaTag === 'blue') { sideR = 180; sideG = 210; sideB = 240; }
+      else if (tile.areaTag === 'green') { sideR = 180; sideG = 230; sideB = 195; }
+      for (let i = layers; i >= 1; i--) {
+        const ox = i * 0.35;
+        const oy = i * 0.7;
+        const a = baseA + i * stepA;
+        ctx.fillStyle = 'rgba(' + sideR + ',' + sideG + ',' + sideB + ',' + a + ')';
+        roundRect(ctx, x + ox, y + oy, TILE_W, TILE_H, 10);
+        ctx.fill();
+      }
+    }
+
     // 入场动画（简化：用 opacity 渐入）
     // 背景
     if (isInSlot) {
@@ -1423,9 +1464,23 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.fill();
 
+    // 顶部边缘高光：模拟砖块受光面的微倒角效果
+    if (!isInSlot && !isBlocked) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, x + 2, y + 1, TILE_W - 4, 10, 6);
+      ctx.clip();
+      const highlightGrad = ctx.createLinearGradient(x, y, x, y + 10);
+      highlightGrad.addColorStop(0, 'rgba(255,255,255,0.45)');
+      highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = highlightGrad;
+      ctx.fillRect(x, y, TILE_W, 10);
+      ctx.restore();
+    }
+
     // 图片
     // 真身牌：未暴露用伪装层图片，暴露后用原始牌图片（去壳后就是普通牌）
-    let imgKey = tile.type;
+    let imgKey = tile.visualType || tile.type;
     let disguiseImgKey = null; // 伪装层图片key（暴露动画期间用于淡出）
     if (isDisguiseOnBoard && tile.disguisedAs) {
       imgKey = tile.disguisedAs; // 未暴露：渲染伪装层图片
@@ -1457,6 +1512,19 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     ctx.lineWidth = isHighlighted ? 3 : 2.5;
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.stroke();
+
+    // 波斯双域：区域发光描边（蓝色域/绿色域），全程固定显示，入槽后消失
+    if (!isInSlot && !isBlocked && tile.areaTag) {
+      ctx.save();
+      const areaColor = tile.areaTag === 'blue' ? '#1677FF' : '#00B42A';
+      ctx.shadowColor = areaColor;
+      ctx.shadowBlur = 2;
+      ctx.strokeStyle = areaColor + 'CC'; // 80% 不透明度
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, TILE_W, TILE_H, 10);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 粘连牌专属特效：边缘胶水风格半透明边框
     if (tile.isInterference && tile.interferenceType === 'sticky' && !isBlocked && !isInSlot) {
@@ -1849,7 +1917,7 @@ function generateBoard(levelNum) {
   const allSlots = [];
   const isShapedBoard = boardType !== BOARD_TYPES.standard;
   let coordIndex = 0;
-  
+
   for (let layer = 0; layer <= 2; layer++) {
     const count = layerConfig[layer];
     for (let i = 0; i < count; i++) {
@@ -1871,8 +1939,42 @@ function generateBoard(levelNum) {
     }
   }
 
-  // 5. 分配类型（使用洗牌后的牌池）
-  const cards = assignTypesFromPool(allSlots, cardPool, rng);
+  // 5. 分配类型
+  const uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+
+  // areaRuleEnable 时：蓝/绿区域各自独立牌池，每区域每种牌恰好3张，类型带后缀天然隔离
+  function assignCardsForSlots(slots, lvConfig, rand) {
+    if (lvConfig.areaRuleEnable) {
+      const cards = [];
+      [{ tag: 'blue', test: (c) => c <= 4 }, { tag: 'green', test: (c) => c > 4 }].forEach(({ tag, test }) => {
+        const areaSlots = slots.filter(s => test(s.col));
+        const areaCount = Math.floor(areaSlots.length / 3) * 3; // 保证3的倍数
+        const typeCount = areaCount / 3;
+        const pickedTypes = shuffleArr([...uniqueTypes], rand).slice(0, typeCount);
+        const areaPool = [];
+        pickedTypes.forEach(t => { for (let i = 0; i < 3; i++) areaPool.push(t); });
+        const shuffled = shuffleCardPool(areaPool, rand);
+        for (let i = 0; i < areaCount; i++) {
+          const s = areaSlots[i];
+          const baseType = shuffled[i];
+          cards.push({
+            id: cards.length,
+            type: baseType + '__' + tag,
+            visualType: baseType,
+            col: s.col, row: s.row, layer: s.layer,
+            zone: s.zone || 'default',
+            areaTag: tag,
+            removed: false, inSlot: false, matched: false,
+          });
+        }
+      });
+      return cards;
+    } else {
+      return assignTypesFromPool(slots, cardPool, rand);
+    }
+  }
+
+  const cards = assignCardsForSlots(allSlots, lv, rng);
 
   // 6. 添加干扰牌
   const cardsWithInterference = addInterferenceCards(cards, lv, rng);
@@ -1889,10 +1991,8 @@ function generateBoard(levelNum) {
       for (let i = 0; i < count; i++) {
         let coord;
         if (isShapedBoard) {
-          // 异形棋盘：按顺序选取
           coord = boardCoords[(retryCoordIndex + attempts * 3) % boardCoordCount];
         } else {
-          // 标准棋盘：随机选取
           coord = boardCoords[Math.floor(rng() * boardCoordCount)];
         }
         retrySlots.push({
@@ -1904,7 +2004,7 @@ function generateBoard(levelNum) {
         retryCoordIndex++;
       }
     }
-    const retryCards = assignTypesFromPool(retrySlots, cardPool, rng);
+    const retryCards = assignCardsForSlots(retrySlots, lv, rng);
     result = addInterferenceCards(retryCards, lv, rng);
     attempts++;
   }
@@ -2315,7 +2415,7 @@ function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
    TILE COMPONENT
    ═══════════════════════════════════════ */
 function Tile({ tile, blocked, onClick, animDelay, highlighted, transformLockedIds }) {
-  let cat = CAT_TYPES.find(c => c.id === tile.type);
+  let cat = CAT_TYPES.find(c => c.id === (tile.visualType || tile.type));
   // 干扰牌type不在CAT_TYPES中（groom/danger/disguise），从INTERFERENCE_CARDS查找
   if (!cat && tile.type && tile.type.startsWith('__interference_')) {
     const iKey = tile.type.replace('__interference_', '').replace('__', '');
@@ -2673,7 +2773,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
               }} />
             )}
             {item ? (() => {
-              let cat = CAT_TYPES.find(c => c.id === item.type);
+              let cat = CAT_TYPES.find(c => c.id === (item.visualType || item.type));
               // 干扰牌（三花/小狗/真身等）type不在CAT_TYPES中，从INTERFERENCE_CARDS查找
               if (!cat && item.type && item.type.startsWith('__interference_')) {
                 const iKey = item.type.replace('__interference_', '').replace('__', '');
@@ -3556,6 +3656,7 @@ function Game() {
   const [transformToast, setTransformToast] = useState(''); // 三花牌提示文案（空=不显示）
   const [dangerToast, setDangerToast] = useState(''); // 小狗牌提示文案（空=不显示）
   const [disguiseToast, setDisguiseToast] = useState(''); // 真身牌提示文案（空=不显示）
+  const [areaToast, setAreaToast] = useState(''); // 波斯双域提示文案（空=不显示）
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
@@ -3630,6 +3731,16 @@ function Game() {
       return () => clearTimeout(t);
     }
   }, [gameState, tiles]);
+
+  // ═══ 波斯双域开局提示（2秒轻量提示） ═══
+  useEffect(() => {
+    if (currentLevel === 10 && gameState === GAME_PLAYING && !window._areaToastShown) {
+      setAreaToast('本关为双域玩法！蓝色域卡牌仅能和蓝色域匹配，绿色域卡牌仅能和绿色域匹配，跨区域无法消除哦～');
+      window._areaToastShown = true;
+      const t = setTimeout(() => { setAreaToast(''); }, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [gameState, currentLevel]);
 
   // ═══ 三花牌：全局3秒变身计时器 ═══
   // 胆小性格减免：高好感度下，三花牌变换间隔从3秒延长至6秒
@@ -3855,8 +3966,10 @@ function Game() {
     setFreezeToast('');
     setDangerToast('');
     setDisguiseToast('');
+    setAreaToast('');
     window._dangerToastShown = false;
     window._disguiseToastShown = false;
+    window._areaToastShown = false;
     // 冰冻牌：根据触发规则判断是否生成（名称匹配+配置开关优先）
     const selectedConfig = getLevelConfig(level);
     if (shouldTriggerFreeze(selectedConfig)) {
@@ -4173,7 +4286,7 @@ function Game() {
       const uid = ++uidRef.current;
       // 真身牌入槽用原始type，可以和同类型普通牌凑成三消
       const slotItemType = tile.type; // 原始猫咪type
-      const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: false, interferenceType: 'disguise' };
+      const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: false, interferenceType: 'disguise', areaTag: tile.areaTag, visualType: tile.visualType || tile.type };
       setMoveCount(m => m + 1);
       setMoveHistory(h => [...h, { uid, type: slotItemType, tileId: tile.id, tile }]);
 
@@ -4184,7 +4297,7 @@ function Game() {
       const sameType = combined.filter(s => s.type === slotItemType && !s.isGroom);
 
       if (sameType.length >= MATCH_COUNT) {
-        const tempMatches = curTemp.filter(s => s.type === slotItemType && !s.isGroom);
+        const tempMatches = sameType.filter(s => curTemp.some(ts => ts.uid === s.uid));
         const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
         const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
         const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
@@ -4303,7 +4416,7 @@ function Game() {
     // 胆小减免下小狗牌用originalType参与三消匹配；真身牌揭穿后直接入槽（不走此分支）；其他情况直接用tile.type
     const slotItemType = (isDangerCard && dangerBlockOverride && tile.originalType) ? tile.originalType 
       : tile.type;
-    const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride, interferenceType: tile.isInterference ? tile.interferenceType : null };
+    const slotItem = { uid, type: slotItemType, tileId: tile.id, isGroom: isGroomCard && !groomBlockOverride, interferenceType: tile.isInterference ? tile.interferenceType : null, areaTag: tile.areaTag, visualType: tile.visualType || tile.type };
 
     // 粘连牌首次点击提示
     if (isStickyCard && !stickyBlockOverride && !stickyAdjacentTile && groomSlots.length === 0 && !window._stickyToastShown) {
@@ -4330,7 +4443,7 @@ function Game() {
     // 粘连牌：同时标记被连带的相邻卡牌
     if (isStickyCard && stickyAdjacentTile && !stickyBlockOverride) {
       const uid2 = ++uidRef.current;
-      const adjacentSlotItem = { uid: uid2, type: stickyAdjacentTile.type, tileId: stickyAdjacentTile.id, isGroom: false };
+      const adjacentSlotItem = { uid: uid2, type: stickyAdjacentTile.type, tileId: stickyAdjacentTile.id, isGroom: false, areaTag: stickyAdjacentTile.areaTag, visualType: stickyAdjacentTile.visualType || stickyAdjacentTile.type };
       setTiles(prev => prev.map(t =>
         (t.id === tile.id || t.id === stickyAdjacentTile.id) ? { ...t, inSlot: true } : t
       ));
@@ -4359,7 +4472,7 @@ function Game() {
       }
 
       if (matchResult) {
-        const tempMatches = curTemp2.filter(s => s.type === matchResult.type && !s.isGroom);
+        const tempMatches = matchResult.sameType.filter(s => curTemp2.some(ts => ts.uid === s.uid));
         const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
         const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
         const allMatchUids = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.uid);
@@ -4437,7 +4550,10 @@ function Game() {
         setSlot(nextSlotWithBoth);
         setTimeout(() => {
           const typeCounts = {};
-          nextSlotWithBoth.filter(s => !s.isGroom).forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
+          nextSlotWithBoth.filter(s => !s.isGroom).forEach(s => {
+            const key = s.type;
+            typeCounts[key] = (typeCounts[key] || 0) + 1;
+          });
           if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
             setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
             setSlot([]);
@@ -4467,7 +4583,8 @@ function Game() {
 
     if (sameType.length >= MATCH_COUNT) {
       // Cross-slot match: prioritize removing from tempStorage first
-      const tempMatches = curTemp.filter(s => s.type === matchType && !s.isGroom);
+      // 从已过滤的 sameType 中统计 tempStorage 数量（保证区域规则一致性）
+      const tempMatches = sameType.filter(s => curTemp.some(ts => ts.uid === s.uid));
       const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
       const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
       const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
@@ -4569,7 +4686,10 @@ function Game() {
       setSlot(nextSlot);
       setTimeout(() => {
         const typeCounts = {};
-        nextSlot.filter(s => !s.isGroom).forEach(s => { typeCounts[s.type] = (typeCounts[s.type] || 0) + 1; });
+        nextSlot.filter(s => !s.isGroom).forEach(s => {
+          const key = s.type;
+          typeCounts[key] = (typeCounts[key] || 0) + 1;
+        });
         if (!Object.values(typeCounts).some(c => c >= MATCH_COUNT)) {
           // Slot full with no match — restore all in-slot tiles to board
           setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
@@ -4582,7 +4702,7 @@ function Game() {
     } else {
       setSlot(nextSlot);
     }
-  }, [gameState, slotBonus, frozenSlot, groomSlots, battleCats, transformLocked]);
+  }, [gameState, currentLevel, slotBonus, frozenSlot, groomSlots, battleCats, transformLocked]);
 
   // P5: 旧道具处理函数已移除，功能由 executeSkill 取代
 
@@ -4923,6 +5043,7 @@ function Game() {
     window._transformToastShown = false;
     window._dangerToastShown = false;
     window._disguiseToastShown = false;
+    window._areaToastShown = false;
     clearTransformTimers();
     transformLastTimeRef.current = 0;
     setMatching([]);
@@ -5047,6 +5168,7 @@ function Game() {
       window._transformToastShown = false;
       window._dangerToastShown = false;
       window._disguiseToastShown = false;
+      window._areaToastShown = false;
       clearTransformTimers();
       transformLastTimeRef.current = 0;
       setMatching([]);
@@ -5095,6 +5217,7 @@ function Game() {
     window._transformToastShown = false;
     window._dangerToastShown = false;
     window._disguiseToastShown = false;
+    window._areaToastShown = false;
     clearTransformTimers();
     transformLastTimeRef.current = 0;
     setMatching([]);
@@ -5584,6 +5707,21 @@ function Game() {
               pointerEvents: 'none',
             }}>
               {disguiseToast}
+            </div>
+          )}
+          {/* 波斯双域开局提示 */}
+          {areaToast && (
+            <div style={{
+              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+              bottom: 100, zIndex: 300,
+              background: 'linear-gradient(135deg, rgba(22,119,255,0.95), rgba(0,180,42,0.9))',
+              color: '#fff', padding: '8px 18px', borderRadius: 20,
+              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 16px rgba(22,119,255,0.5)',
+              animation: 'fadeIn 0.2s ease-out',
+              pointerEvents: 'none',
+            }}>
+              {areaToast}
             </div>
           )}
         </div>
