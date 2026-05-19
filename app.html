@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>喵呜乐消消·养好猫·闯难关</title>
+  <title>喵呜乐消消·养好猫·趣闯关</title>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
@@ -604,6 +604,8 @@ function makeCatInstance(breedId, rarity, personality, bagExpiresDays = 30) {
     daysAlive: 0,
     gamesWitnessed: 0,
     bestCombo: 0,
+    witnessMaxScore: 0,
+    witnessTotalScore: 0,
     fishSpent: 0,
     // battle fields (出战席)
     battleSlot: null, // 1-3号位，null表示不在出战席
@@ -772,13 +774,25 @@ function loadSavedTitle() {
   return '新手铲屎官';
 }
 
-function saveState(cats, bells, activeTitle) {
+function saveState(cats, bells, activeTitle, extra) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    const data = {
       cats, globalSerialId, fishLedger, bells, activeTitle,
       breedSerialCounters, coolingPool,
       savedAt: Date.now(),
-    }));
+    };
+    if (extra) {
+      data.ownedSkins = extra.ownedSkins || [];
+      data.equippedSkins = extra.equippedSkins || {};
+      data.groupStageScores = extra.groupStageScores || {};
+      data.groupStageBellsClaimed = extra.groupStageBellsClaimed || [];
+      data.knockoutConsecutiveClears = extra.knockoutConsecutiveClears || 0;
+      data.knockoutEliminatedToday = extra.knockoutEliminatedToday || false;
+      data.knockoutSkinClaimed = extra.knockoutSkinClaimed || false;
+      data.finalTitleAwarded = extra.finalTitleAwarded || false;
+      data.bets = extra.bets || [];
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch(e) {}
 }
 
@@ -871,6 +885,326 @@ return (
         }}>{theme === 'light' ? '☀️' : '🌙'}</div>
       </div>
       </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════
+   P0: 深夜场鱼干加成（世界杯期间 00:00-06:00）
+   ═══════════════════════════════════════ */
+function isNightBonusActive() {
+  const now = new Date();
+  const hours = now.getHours();
+  return hours >= 0 && hours < 6;
+}
+
+/* P2: 世界杯 2026 时间线常量 */
+const WORLD_CUP = {
+  START: new Date('2026-06-12T00:00:00+08:00').getTime(),
+  END: new Date('2026-07-20T23:59:59+08:00').getTime(),
+  GROUP_STAGE_END: new Date('2026-06-28T23:59:59+08:00').getTime(),
+  KNOCKOUT_START: new Date('2026-06-29T00:00:00+08:00').getTime(),
+  KNOCKOUT_END: new Date('2026-07-15T23:59:59+08:00').getTime(),
+  FINAL_DAY: new Date('2026-07-20T00:00:00+08:00').getTime(),
+};
+
+/* P2: 调试模式 - URL 参数 ?debug_wc=true 强制激活世界杯活动 */
+function isDebugWC() {
+  try { return new URLSearchParams(window.location.search).get('debug_wc') === 'true'; } catch(e) { return false; }
+}
+
+function isWorldCupActive() {
+  if (isDebugWC()) return true;
+  const now = Date.now();
+  return now >= WORLD_CUP.START && now <= WORLD_CUP.END;
+}
+
+function isGroupStageActive() {
+  if (isDebugWC()) return true;
+  const now = Date.now();
+  return now >= WORLD_CUP.START && now <= WORLD_CUP.GROUP_STAGE_END;
+}
+
+function isKnockoutStageActive() {
+  if (isDebugWC()) return true; // debug: show all phases
+  const now = Date.now();
+  return now >= WORLD_CUP.KNOCKOUT_START && now <= WORLD_CUP.KNOCKOUT_END;
+}
+
+function isFinalDayActive() {
+  if (isDebugWC()) return true;
+  const now = new Date();
+  return now.getFullYear() === 2026 && now.getMonth() === 6 && now.getDate() === 20;
+}
+
+/* P2: 分组赛得分段位判定 */
+function getGroupStageBracket(todayScore) {
+  if (todayScore >= 5000) return { name: 'Gold', color: '#FFD700', emoji: '🥇', threshold: 5000 };
+  if (todayScore >= 3000) return { name: 'Silver', color: '#C0C0C0', emoji: '🥈', threshold: 3000 };
+  if (todayScore >= 1000) return { name: 'Bronze', color: '#CD7F32', emoji: '🥉', threshold: 1000 };
+  return { name: 'Participant', color: '#B2BEC3', emoji: '👏', threshold: 0 };
+}
+
+/* P2: 检查今日是否有消消乐对局（用于淘汰赛判定） */
+function checkTodayGameClear() {
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  return fishLedger.some(t => t.type === 'earn' && t.desc.includes('消消乐结算') && t.time > todayStart.getTime());
+}
+/* P2: 淘汰赛对阵表（竞猜用） */
+var KNOCKOUT_MATCHES = [
+  { matchId: 'R16_1', date: '2026-06-29', home: '阿根廷', away: '法国', homeCat: '幸运猫', awayCat: '星空猫', stage: '1/8决赛' },
+  { matchId: 'R16_2', date: '2026-06-30', home: '西班牙', away: '德国', homeCat: '橘猫', awayCat: '黑猫', stage: '1/8决赛' },
+  { matchId: 'QF_1', date: '2026-07-05', home: '阿根廷', away: '巴西', homeCat: '幸运猫', awayCat: '三花猫', stage: '1/4决赛' },
+  { matchId: 'SF_1', date: '2026-07-09', home: '阿根廷', away: '日本', homeCat: '幸运猫', awayCat: '白猫', stage: '半决赛' },
+  { matchId: 'FINAL', date: '2026-07-19', home: '阿根廷', away: '西班牙', homeCat: '幸运猫', awayCat: '橘猫', stage: '决赛' },
+];
+
+function getUpcomingMatch() {
+  var now = Date.now();
+  for (var i = 0; i < KNOCKOUT_MATCHES.length; i++) {
+    var m = KNOCKOUT_MATCHES[i];
+    var matchTime = new Date(m.date + 'T20:00:00+08:00').getTime();
+    var bettingOpen = matchTime - 24 * 60 * 60 * 1000;
+    if (now >= bettingOpen && now < matchTime) return m;
+  }
+  return null;
+}
+
+function getAllMatches() {
+  return KNOCKOUT_MATCHES;
+}
+function NightBonusBanner() {
+  if (!isNightBonusActive()) return null;
+  return React.createElement('div', {
+    style: {
+      margin: '0 16px 8px',
+      padding: '10px 16px',
+      borderRadius: 12,
+      background: 'linear-gradient(135deg, rgba(25,25,112,0.6), rgba(72,61,139,0.4))',
+      border: '1px solid rgba(147,112,219,0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      animation: 'pulse 2s ease-in-out infinite',
+    }
+  },
+    React.createElement('span', { style: { fontSize: 18 } }, '🌙'),
+    React.createElement('span', { style: { fontSize: 13, fontWeight: 700, color: '#E8D5FF' } }, '深夜场加成中'),
+    React.createElement('span', { style: { fontSize: 13, fontWeight: 600, color: '#FFD700' } }, '鱼干 ×1.5'),
+    React.createElement('span', { style: { fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 'auto' } }, '00:00-06:00')
+  );
+}
+/* P2: 分组赛横幅 */
+function GroupStageBanner({ scores, claimed, onClaim, fish }) {
+  if (!isGroupStageActive()) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const todayScore = scores[today] || 0;
+  const bracket = getGroupStageBracket(todayScore);
+  const claimedToday = claimed.includes(today);
+  const canClaim = bracket.name === 'Gold' && !claimedToday;
+
+  return (
+    <div style={{
+      margin: '0 16px 8px', padding: '10px 16px', borderRadius: 12,
+      background: 'linear-gradient(135deg, rgba(253,150,68,0.2), rgba(255,107,107,0.15))',
+      border: '1px solid rgba(253,150,68,0.3)',
+      display: 'flex', alignItems: 'center', gap: 8,
+    }}>
+      <span style={{ fontSize: 18 }}>⚽</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: colors.ink }}>喵星分组赛</div>
+        <div style={{ fontSize: 10, color: colors.sub }}>
+          今日得分: {todayScore} · 段位: {bracket.emoji} {bracket.name}
+          {claimedToday && ' · 奖励已领取'}
+        </div>
+      </div>
+      {canClaim && (
+        <button onClick={onClaim} style={{
+          padding: '6px 14px', borderRadius: 16, border: 'none',
+          background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+          color: '#1A1235', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+        }}>领取 1 🔔</button>
+      )}
+      {claimedToday && (
+        <span style={{ fontSize: 11, color: colors.green, fontWeight: 600 }}>已领取</span>
+      )}
+    </div>
+  );
+}
+
+/* P2: 淘汰赛横幅 */
+function KnockoutBanner({ clears, eliminated, skinClaimed }) {
+  if (!isKnockoutStageActive()) return null;
+
+  return (
+    <div style={{
+      margin: '0 16px 8px', padding: '10px 16px', borderRadius: 12,
+      background: eliminated
+        ? 'linear-gradient(135deg, rgba(255,107,107,0.15), rgba(200,50,50,0.1))'
+        : 'linear-gradient(135deg, rgba(108,92,231,0.2), rgba(69,183,209,0.15))',
+      border: eliminated ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(108,92,231,0.3)',
+      display: 'flex', alignItems: 'center', gap: 8,
+    }}>
+      <span style={{ fontSize: 18 }}>{eliminated ? '💔' : '🏆'}</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: colors.ink }}>淘汰制挑战</div>
+        <div style={{ fontSize: 10, color: colors.sub }}>
+          {eliminated
+            ? '今日已淘汰，明日再战！'
+            : skinClaimed
+              ? '3连胜达成！皮肤奖励已发放'
+              : '连胜 ' + clears + '/3 · 达成3连胜获皮肤奖励'}
+        </div>
+      </div>
+      {skinClaimed && <span style={{ fontSize: 11, color: colors.green, fontWeight: 600 }}>已领取</span>}
+    </div>
+  );
+}
+
+/* P2: 大决战横幅 */
+function FinalDayBanner({ doubleFish }) {
+  if (!isFinalDayActive()) return null;
+
+  return (
+    <div style={{
+      margin: '0 16px 8px', padding: '10px 16px', borderRadius: 12,
+      background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(253,150,68,0.2))',
+      border: '1px solid rgba(255,215,0,0.5)',
+      display: 'flex', alignItems: 'center', gap: 8,
+      animation: 'pulse 1.5s ease-in-out infinite',
+    }}>
+      <span style={{ fontSize: 20 }}>🏆</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#FFD700' }}>全服大决战</div>
+        <div style={{ fontSize: 10, color: colors.sub }}>
+          鱼干双倍产出 · 打破 10000 分获专属称号
+        </div>
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD700' }}>鱼干 ×2</span>
+    </div>
+  );
+}
+/* P2: 竞猜面板 */
+function BettingPanel({ bets, onPlaceBet, onShareBet, fish }) {
+  var upcomingMatch = getUpcomingMatch();
+  var [selectedTeam, setSelectedTeam] = React.useState(null);
+  var [wager, setWager] = React.useState(10);
+  var [betPlaced, setBetPlaced] = React.useState(false);
+
+  // Check if already bet on current match
+  React.useEffect(function() {
+    if (upcomingMatch) {
+      var hasBet = bets.some(function(b) { return b.matchId === upcomingMatch.matchId; });
+      setBetPlaced(hasBet);
+    }
+  }, [bets, upcomingMatch]);
+
+  // Show settled bets
+  var settledBets = bets.filter(function(b) { return b.settled; });
+  var activeBets = bets.filter(function(b) { return !b.settled; });
+
+  // Don't show if no upcoming match and no active/settled bets to display
+  if (!upcomingMatch && activeBets.length === 0 && settledBets.length === 0) return null;
+
+  var handlePlace = function() {
+    if (!selectedTeam || !upcomingMatch) return;
+    if (fish < wager) { alert('鱼干不足！'); return; }
+    var isHome = selectedTeam === upcomingMatch.home;
+    onPlaceBet(upcomingMatch.matchId, isHome ? upcomingMatch.homeCat : upcomingMatch.awayCat, selectedTeam, wager);
+    setBetPlaced(true);
+  };
+
+  return (
+    <div style={{ margin: '0 16px 8px', padding: '12px 16px', borderRadius: 12,
+      background: 'linear-gradient(135deg, rgba(108,92,231,0.15), rgba(69,183,209,0.1))',
+      border: '1px solid rgba(108,92,231,0.25)',
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>
+        ⚽ 喵星竞猜
+      </div>
+
+      {upcomingMatch && !betPlaced && (
+        <div>
+          <div style={{ fontSize: 11, color: colors.sub, marginBottom: 8 }}>
+            {upcomingMatch.stage} · {upcomingMatch.home} vs {upcomingMatch.away}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            {[
+              { team: upcomingMatch.home, cat: upcomingMatch.homeCat, flag: '🇦🇷' },
+              { team: upcomingMatch.away, cat: upcomingMatch.awayCat, flag: upcomingMatch.away === '法国' ? '🇫🇷' : upcomingMatch.away === '德国' ? '🇩🇪' : upcomingMatch.away === '巴西' ? '🇧🇷' : upcomingMatch.away === '日本' ? '🇯🇵' : '🇪🇸' }
+            ].map(function(opt) {
+              var flags = { '阿根廷': '🇦🇷', '法国': '🇫🇷', '西班牙': '🇪🇸', '德国': '🇩🇪', '巴西': '🇧🇷', '日本': '🇯🇵' };
+              return (
+                <button key={opt.team} onClick={function() { setSelectedTeam(opt.team); }} style={{
+                  flex: 1, padding: '10px 8px', borderRadius: 12, border: '1px solid ' + (selectedTeam === opt.team ? colors.purple : colors.cardBorder),
+                  background: selectedTeam === opt.team ? colors.purple + '15' : colors.glass,
+                  color: colors.ink, cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                }}>
+                  <span style={{ fontSize: 20 }}>{flags[opt.team] || '⚽'}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600 }}>{opt.team}</span>
+                  <span style={{ fontSize: 9, color: colors.sub }}>{opt.cat}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 10, color: colors.sub }}>投注鱼干:</span>
+            {[5, 10, 20, 50].map(function(n) {
+              return (
+                <button key={n} onClick={function() { setWager(n); }} style={{
+                  padding: '3px 10px', borderRadius: 12, border: '1px solid ' + (wager === n ? colors.orange : colors.cardBorder),
+                  background: wager === n ? colors.orange + '20' : 'transparent',
+                  color: wager === n ? colors.orange : colors.sub, fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                }}>{n} 🐟</button>
+              );
+            })}
+          </div>
+          <button onClick={handlePlace} disabled={!selectedTeam} style={{
+            width: '100%', padding: '8px', borderRadius: 12, border: 'none',
+            background: selectedTeam ? 'linear-gradient(135deg, #6C5CE7, #A29BFE)' : 'rgba(255,255,255,0.05)',
+            color: selectedTeam ? '#fff' : colors.muted, fontSize: 12, fontWeight: 700,
+            cursor: selectedTeam ? 'pointer' : 'not-allowed',
+          }}>确认投注 {wager} 🐟</button>
+          <div style={{ fontSize: 9, color: colors.green, marginTop: 6 }}>
+            猜对返还鱼干 + 50% 额外奖励 · 猜错不扣额外鱼干
+          </div>
+        </div>
+      )}
+
+      {upcomingMatch && betPlaced && (
+        <div style={{ fontSize: 11, color: colors.green, fontWeight: 600 }}>
+          已投注 · 等待比赛结果
+        </div>
+      )}
+
+      {settledBets.map(function(bet) {
+        return (
+          <div key={bet.matchId} style={{
+            display: 'flex', alignItems: 'center', gap: 8, marginTop: 6,
+            padding: '6px 10px', borderRadius: 8,
+            background: bet.won ? 'rgba(0,184,148,0.1)' : 'rgba(255,107,107,0.08)',
+          }}>
+            <span style={{ fontSize: 14 }}>{bet.won ? '🎉' : '💔'}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: colors.ink }}>
+                {bet.teamName} {bet.won ? '获胜！' : '失利'}
+              </div>
+              <div style={{ fontSize: 9, color: colors.sub }}>
+                {bet.won ? '+' + (bet.fishWagered + Math.floor(bet.fishWagered * 0.5)) + ' 🐟' : '-' + bet.fishWagered + ' 🐟'}
+              </div>
+            </div>
+            {bet.won && !bet.shared && (
+              <button onClick={function() { onShareBet(bet); }} style={{
+                padding: '3px 10px', borderRadius: 10, border: 'none',
+                background: 'rgba(108,92,231,0.15)', color: colors.purple,
+                fontSize: 9, fontWeight: 600, cursor: 'pointer',
+              }}>分享 +3🐟</button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1103,64 +1437,71 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
           </div>
         </div>
       </div>
-
-      {/* P2: 家园预览（亲密度系统） */}
+      {/* P0: 好友今日战况 */}
       <div style={{ padding:'14px 20px 0' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
           <div style={{ fontSize:13, fontWeight:700, color:colors.ink, display:'flex', alignItems:'center', gap:6 }}>
-            <span>🏠</span>家园
-            <span style={{ fontSize:10, color:colors.sub, fontWeight:400 }}>{nurturing.length}/10</span>
+            <span>🏆</span>好友今日战况
           </div>
-          <div onClick={() => onNavigate('cat', null, 'home')} style={{ fontSize:11, color:colors.purpleLight, cursor:'pointer', fontWeight:500 }}>查看全部 →</div>
+          <div onClick={() => onNavigate('market')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>查看完整好友榜 →</div>
         </div>
-        <div style={{ display:'flex', gap:10 }}>
-          {Array.from({ length: 3 }).map((_, i) => {
-            const cat = nurturing[i];
-            if (cat) {
-              // P2: 亲密度系统
-              const intimacy = cat.intimacy || 0;
-              const intimacyColor = getIntimacyColor(intimacy);
-              return (
-                <div key={i} onClick={() => onNavigate('catDetail', cat)} style={{
-                  flex:1, borderRadius:14, padding:'10px 6px 8px', cursor:'pointer',
-                  background: colors.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}25`,
-                  display:'flex', flexDirection:'column', alignItems:'center', gap:4,
-                  position:'relative',
-                }}>
-                  {/* P2: 亲密度指示 */}
-                  <div style={{ position:'absolute', top:4, right:6, display:'flex', alignItems:'center', gap:2 }}>
-                    <span style={{ fontSize:8 }}>❤️</span>
-                    <span style={{ fontSize:8, fontWeight:700, color: intimacyColor.bar }}>{intimacy}</span>
-                  </div>
-                  <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', border:`2px solid ${RARITY_COLORS[cat.rarity]}40` }}>
-                    <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; }} />
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1 }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:colors.ink }}>{cat.name}</span>
-                    <span style={{ fontSize:8, color:colors.muted }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</span>
-                  </div>
-                  {/* P2: 亲密度进度条 */}
-                  <div style={{ width:'80%', height:3, borderRadius:2, background:'rgba(255,255,255,0.06)' }}>
-                    <div style={{ width:`${intimacy}%`, height:'100%', borderRadius:2, background: intimacyColor.bar }}/>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div key={i} onClick={() => onNavigate('cat', null, 'bag')} style={{
-                flex:1, borderRadius:14, padding:'10px 6px', cursor:'pointer',
-                background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.08)',
-                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
-                minHeight:90,
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(253,180,68,0.04) 100%)',
+          borderRadius:16, padding:'12px',
+          border: '1px solid rgba(253,150,68,0.12)',
+        }}>
+          {/* 好友榜预览 — 显示前3名 + 自己 */}
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {[
+              { rank: 1, name: '小花', score: 2840, avatar: '🐱' },
+              { rank: 2, name: '铲屎大将军', score: 2510, avatar: '🐈' },
+              { rank: 3, name: '喵星人', score: 2380, avatar: '😺' },
+            ].map((friend, i, arr) => (
+              <div key={friend.rank} style={{
+                display:'flex', alignItems:'center', gap:8, padding:'6px 8px',
+                borderRadius:10, background: 'rgba(255,255,255,0.03)',
               }}>
-                <div style={{ fontSize:24, color:colors.muted }}>+</div>
-                <div style={{ fontSize:9, color:colors.muted }}>领养新猫</div>
+                <div style={{
+                  width:22, height:22, borderRadius:'50%',
+                  background: friend.rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)' :
+                             friend.rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #A0A0A0)' :
+                             'linear-gradient(135deg, #CD7F32, #A0522D)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:11, fontWeight:800, color:'#fff',
+                }}>{friend.rank}</div>
+                <span style={{ fontSize:20 }}>{friend.avatar}</span>
+                <span style={{ flex:1, fontSize:12, fontWeight:500, color:colors.ink }}>{friend.name}</span>
+                <span style={{ fontSize:13, fontWeight:700, color:colors.orange }}>{friend.score.toLocaleString()}</span>
+                <span style={{ fontSize:9, color:colors.muted }}>分</span>
+                {i < arr.length - 1 && (
+                  <div style={{ position:'absolute', bottom:0, left:40, right:8, height:1, background:'rgba(255,255,255,0.04)' }} />
+                )}
               </div>
-            );
-          })}
+            ))}
+            {/* 自己排名 */}
+            <div style={{
+              display:'flex', alignItems:'center', gap:8, padding:'6px 8px',
+              borderRadius:10, background: 'rgba(253,150,68,0.15)',
+              border: '1px solid rgba(253,150,68,0.25)',
+            }}>
+              <div style={{
+                width:22, height:22, borderRadius:'50%',
+                background: 'rgba(253,150,68,0.3)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:11, fontWeight:800, color:colors.orange,
+              }}>6</div>
+              <span style={{ fontSize:20 }}>👤</span>
+              <span style={{ flex:1, fontSize:12, fontWeight:600, color:colors.orange }}>我</span>
+              <span style={{ fontSize:13, fontWeight:700, color:colors.orange }}>{todayFish ? (todayFish * 12).toLocaleString() : '0'}</span>
+              <span style={{ fontSize:9, color:colors.muted }}>分</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize:9, color:colors.muted, textAlign:'center', marginTop:6 }}>
+          ⚠️ 好友榜数据来自微信好友关系，需授权后可查看真实好友战况
         </div>
       </div>
+
 
       {/* Check-in */}
       <div style={{ padding:'14px 20px 0' }}>
@@ -2308,6 +2649,8 @@ const cat = cats.find(c => c.serialId === catSerialId);
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 0' }}>
               <div><span style={{ fontSize:11, color:colors.sub }}>陪伴天数</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.daysAlive} 天</div></div>
               <div><span style={{ fontSize:11, color:colors.sub }}>见证游戏</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.gamesWitnessed} 场</div></div>
+              <div><span style={{ fontSize:11, color:colors.sub }}>见证最高分</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.witnessMaxScore || 0} 分</div></div>
+              <div><span style={{ fontSize:11, color:colors.sub }}>见证累计分</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.witnessTotalScore || 0} 分</div></div>
               <div><span style={{ fontSize:11, color:colors.sub }}>最大连击</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.bestCombo} 连消</div></div>
               <div><span style={{ fontSize:11, color:colors.sub }}>消耗鱼干</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.fishSpent} 条</div></div>
             </div>
@@ -2568,8 +2911,537 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
 }
 
 /* ═══════════════════════════════════════
+   P1: FRIEND LEADERBOARD - 完整好友榜
+   ============================================================ */
+function FriendLeaderboard({ todayFish, user }) {
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
+  const [authorized, setAuthorized] = React.useState(
+    () => localStorage.getItem('miaolegemi_friend_auth') === 'true'
+  );
+
+  const mockFriends = React.useMemo(() => {
+    const friends = [
+      { id: 1, name: '小花', score: 2840, avatar: '🐱', cat: '橘猫', catImg: 'cat/橘猫.png' },
+      { id: 2, name: '铲屎大将军', score: 2510, avatar: '🐈', cat: '暹罗猫', catImg: 'cat/暹罗猫.png' },
+      { id: 3, name: '喵星人', score: 2380, avatar: '😺', cat: '布偶猫', catImg: 'cat/布偶猫.png' },
+      { id: 4, name: '猫咪爱好者', score: 2150, avatar: '😻', cat: '三花猫', catImg: 'cat/三花猫.png' },
+      { id: 5, name: '小猫咪咪', score: 1980, avatar: '🐱', cat: '白猫', catImg: 'cat/白猫.png' },
+      { id: 6, name: '奶茶猫奴', score: 1720, avatar: '🧋', cat: '黑猫', catImg: 'cat/黑猫.png' },
+      { id: 7, name: '午后阳光', score: 1650, avatar: '☀️', cat: '蓝猫', catImg: 'cat/蓝猫.png' },
+      { id: 8, name: '夜猫子', score: 1520, avatar: '🦉', cat: '折耳猫', catImg: 'cat/折耳猫.png' },
+      { id: 9, name: '毛球控', score: 1410, avatar: '🧶', cat: '无毛猫', catImg: 'cat/无毛猫.png' },
+      { id: 10, name: '爱吃鱼的猫', score: 1350, avatar: '🐟', cat: '波斯猫', catImg: 'cat/波斯猫.png' },
+      { id: 11, name: '懒懒喵', score: 1280, avatar: '😴', cat: '幸运猫', catImg: 'cat/幸运猫.png' },
+      { id: 12, name: '云吸猫', score: 1150, avatar: '☁️', cat: '橘猫', catImg: 'cat/橘猫.png' },
+      { id: 13, name: '流浪猫之家', score: 1020, avatar: '🏠', cat: '星空猫', catImg: 'cat/星空猫.png' },
+    ];
+    return friends.sort((a, b) => b.score - a.score);
+  }, []);
+
+  const playerScore = todayFish ? todayFish * 12 : 820;
+
+  const handleAuthorize = () => {
+    localStorage.setItem('miaolegemi_friend_auth', 'true');
+    setAuthorized(true);
+    setShowAuthModal(false);
+  };
+
+  if (!authorized && !showAuthModal) {
+    return (
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ textAlign: 'center', padding: '24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>好友榜</div>
+          <div style={{ fontSize: 12, color: colors.sub, marginBottom: 16 }}>授权好友关系后可查看好友战况</div>
+          <button onClick={() => setShowAuthModal(true)} style={{
+            padding: '10px 24px', borderRadius: 12, border: 'none',
+            background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+            color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>授权好友关系</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '0 0 20px' }}>
+      {/* Authorization modal */}
+      {showAuthModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        }} onClick={() => setShowAuthModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: 300, background: colors.card, borderRadius: 24, padding: '28px 22px',
+            textAlign: 'center', border: `1px solid ${colors.cardBorder}`,
+            animation: 'slideUp 0.3s ease-out',
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: colors.ink, marginBottom: 8 }}>好友战况授权</div>
+            <div style={{ fontSize: 12, color: colors.sub, marginBottom: 20, lineHeight: 1.6 }}>
+              我们将获取你的微信好友关系，仅用于展示好友消消乐得分排行。不会存储你的好友列表。
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowAuthModal(false)} style={{
+                flex: 1, height: 40, borderRadius: 12, background: colors.bg2,
+                border: `1px solid ${colors.border}`, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: colors.muted,
+              }}>拒绝</button>
+              <button onClick={handleAuthorize} style={{
+                flex: 1, height: 40, borderRadius: 12,
+                background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+                border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#fff',
+              }}>同意授权</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: colors.ink, marginBottom: 4 }}>🏆 好友今日战况</div>
+        <div style={{ fontSize: 10, color: colors.muted, marginBottom: 12 }}>排名依据：今日最高单局得分 · 每日0点重置</div>
+      </div>
+
+      {/* Player self row (if not in top 3) */}
+      {playerScore < (mockFriends[2]?.score || 0) && (
+        <div style={{ padding: '0 20px 8px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+            borderRadius: 12, background: 'rgba(253,150,68,0.15)',
+            border: '1px solid rgba(253,150,68,0.3)',
+          }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              background: 'rgba(253,150,68,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 800, color: colors.orange,
+            }}>?</div>
+            <span style={{ fontSize: 18 }}>👤</span>
+            <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: colors.orange }}>我</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: colors.orange }}>{playerScore.toLocaleString()}</span>
+            <span style={{ fontSize: 9, color: colors.muted }}>分</span>
+          </div>
+        </div>
+      )}
+
+      {/* Friend rows */}
+      {mockFriends.map((friend, index) => {
+        const rank = index + 1;
+        const rankBg = rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)' :
+                       rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #A0A0A0)' :
+                       rank === 3 ? 'linear-gradient(135deg, #CD7F32, #A0522D)' : 'transparent';
+        return (
+          <div key={friend.id} style={{ padding: '0 20px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+              borderRadius: 10, background: 'rgba(255,255,255,0.02)', marginBottom: 4,
+            }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: rankBg || 'rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: rank <= 3 ? 800 : 500,
+                color: rank <= 3 ? '#fff' : colors.muted,
+              }}>{rank}</div>
+              <span style={{ fontSize: 18 }}>{friend.avatar}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: colors.ink }}>{friend.name}</div>
+                <div style={{ fontSize: 9, color: colors.muted }}>出战: {friend.cat}</div>
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: colors.orange }}>{friend.score.toLocaleString()}</span>
+              <span style={{ fontSize: 9, color: colors.muted }}>分</span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Tip */}
+      <div style={{ padding: '12px 20px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: 10, color: colors.muted }}>
+          ⚠️ 好友榜仅为社交参考，不绑定任何奖励，不制造竞争压力
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   P1: MARKET PAGE - 喵市（抽卡 + 好友榜）
+   ============================================================ */
+/* P2: 活动页 - 赛程总览 */
+function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell }) {
+  return (
+    <div style={{ padding: '0 20px 20px' }}>
+      {isWorldCupActive() && (
+        <div style={{
+          padding: '12px 16px', borderRadius: 12, marginBottom: 12,
+          background: 'linear-gradient(135deg, rgba(253,150,68,0.15), rgba(255,215,0,0.1))',
+          border: '1px solid rgba(253,150,68,0.3)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: colors.ink }}>⚽ 2026 世界杯联动进行中</div>
+          <div style={{ fontSize: 10, color: colors.sub, marginTop: 4 }}>6月12日 - 7月20日 · 限定皮肤 + 深夜加成 + 淘汰赛挑战</div>
+        </div>
+      )}
+      <GroupStageBanner scores={groupStageScores || {}} claimed={groupStageBellsClaimed || []} onClaim={onClaimGroupStageBell} fish={fish} />
+      <KnockoutBanner clears={knockoutConsecutiveClears || 0} eliminated={knockoutEliminatedToday || false} skinClaimed={knockoutSkinClaimed || false} />
+      <FinalDayBanner />
+      <BettingPanel bets={bets || []} onPlaceBet={onPlaceBet} onShareBet={onShareBet} fish={fish} />
+      <div style={{ background: colors.card, borderRadius: 16, padding: '16px', border: '1px solid ' + colors.cardBorder, marginTop: 12 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: colors.ink, marginBottom: 12 }}>世界杯特别活动-赛程对阵表</div>
+        {getAllMatches().map(function(m) {
+          var matchTime = new Date(m.date + 'T20:00:00+08:00');
+          var isPast = Date.now() > matchTime.getTime();
+          var flags = { '阿根廷': '🇦🇷', '法国': '🇫🇷', '西班牙': '🇪🇸', '德国': '🇩🇪', '巴西': '🇧🇷', '日本': '🇯🇵' };
+          return (
+            <div key={m.matchId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid ' + colors.cardBorder, opacity: isPast ? 0.5 : 1 }}>
+              <div style={{ fontSize: 9, color: colors.muted, width: 50 }}>{m.stage}</div>
+              <span style={{ fontSize: 16 }}>{flags[m.home] || '⚽'}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: colors.ink }}>{m.home}</span>
+              <span style={{ fontSize: 9, color: colors.sub }}>{m.homeCat}</span>
+              <span style={{ fontSize: 11, color: colors.muted, fontWeight: 700 }}>vs</span>
+              <span style={{ fontSize: 9, color: colors.sub }}>{m.awayCat}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: colors.ink }}>{m.away}</span>
+              <span style={{ fontSize: 16 }}>{flags[m.away] || '⚽'}</span>
+              <span style={{ fontSize: 9, color: colors.muted, marginLeft: 'auto' }}>{m.date.slice(5)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, user, bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell }) {
+  const [subTab, setSubTab] = React.useState('gacha');
+
+  return (
+    <div>
+      <div style={{
+        display: 'flex', margin: '12px 20px', background: colors.card,
+        borderRadius: 12, padding: 3, border: `1px solid ${colors.cardBorder}`,
+      }}>
+        {[
+          { key: 'gacha', icon: '🎁', label: '抽卡' },
+          { key: 'leaderboard', icon: '🏆', label: '好友榜' },
+          { key: 'event', icon: '⚽', label: '活动' },
+        ].map(t => (
+          <div key={t.key} onClick={() => setSubTab(t.key)} style={{
+            flex: 1, textAlign: 'center', padding: '8px 0', borderRadius: 10, cursor: 'pointer',
+            fontSize: 13, fontWeight: subTab === t.key ? 700 : 400,
+            background: subTab === t.key ? 'linear-gradient(135deg, #6C5CE7, #A29BFE)' : 'transparent',
+            color: subTab === t.key ? '#fff' : colors.sub,
+            transition: 'all 0.2s',
+          }}>
+            {t.icon} {t.label}
+          </div>
+        ))}
+      </div>
+
+      {subTab === 'gacha' ? (
+        <GachaPage bells={bells} pityCount={pityCount} onGacha={onGacha} cats={cats} onCardClick={onCardClick} />
+      ) : subTab === 'leaderboard' ? (
+        <FriendLeaderboard todayFish={todayFish} user={user} />
+      ) : (
+        <EventPage
+          bets={bets} onPlaceBet={onPlaceBet} onShareBet={onShareBet} fish={fish}
+          knockoutConsecutiveClears={knockoutConsecutiveClears}
+          knockoutEliminatedToday={knockoutEliminatedToday}
+          knockoutSkinClaimed={knockoutSkinClaimed}
+          groupStageScores={groupStageScores}
+          groupStageBellsClaimed={groupStageBellsClaimed}
+          onClaimGroupStageBell={onClaimGroupStageBell}
+        />
+      )}
+    </div>
+  );
+}
+
+
+
+/* P2: 全部皮肤定义 */
+const ALL_SKINS = {
+  'worldcup:ARG:lucky': { id: 'worldcup:ARG:lucky', breedId: '幸运猫', team: '阿根廷', flag: '🇦🇷', colors: ['#75AADB','#FFFFFF'], price: 10, category: 'worldcup', desc: '天蓝+白条纹 · 卫冕冠军' },
+  'worldcup:FRA:star': { id: 'worldcup:FRA:star', breedId: '星空猫', team: '法国', flag: '🇫🇷', colors: ['#002395','#FFFFFF'], price: 10, category: 'worldcup', desc: '深蓝色系 · 技术华丽' },
+  'worldcup:ESP:orange': { id: 'worldcup:ESP:orange', breedId: '橘猫', team: '西班牙', flag: '🇪🇸', colors: ['#C60B1E','#FFC400'], price: 8, category: 'worldcup', desc: '红色系 · 热情进攻' },
+  'worldcup:GER:black': { id: 'worldcup:GER:black', breedId: '黑猫', team: '德国', flag: '🇩🇪', colors: ['#000000','#FFFFFF'], price: 8, category: 'worldcup', desc: '白色经典 · 严谨稳健' },
+  'worldcup:BRA:calico': { id: 'worldcup:BRA:calico', breedId: '三花猫', team: '巴西', flag: '🇧🇷', colors: ['#009C3B','#FEDD00'], price: 0, category: 'worldcup', desc: '黄绿色系 · 桑巴风格', freeEvent: true },
+  'worldcup:JPN:white': { id: 'worldcup:JPN:white', breedId: '白猫', team: '日本', flag: '🇯🇵', colors: ['#BC002D','#FFFFFF'], price: 0, category: 'worldcup', desc: '白蓝色系 · 技巧流', freeEvent: true },
+  'classic:sakura:orange': { id: 'classic:sakura:orange', breedId: '橘猫', name: '樱花', emoji: '🌸', colors: ['#FFB7B2','#E2F0CB'], price: 5, category: 'permanent', desc: '樱花季限定' },
+  'classic:snow:black': { id: 'classic:snow:black', breedId: '黑猫', name: '雪夜', emoji: '❄️', colors: ['#2C3E50','#ECF0F1'], price: 5, category: 'permanent', desc: '冬夜经典' },
+};
+
+function getCatSkinKey(cat) {
+  return (cat && cat.breedId && cat.serialId != null) ? (cat.breedId + '_' + cat.serialId) : null;
+}
+
+function getSkinById(skinId) {
+  return ALL_SKINS[skinId] || null;
+}
+
+/*   SHOP PAGE - cat shop (P1: functional exchange + world cup skins)
+   ============================================================ */
+function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSkins, onBuySkin, onEquipSkin, onClaimFreeSkin }) {
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const exchangedToday = (typeof fishLedger !== 'undefined' ? fishLedger : [])
+    .filter(t => t.type === 'exchange' && t.time > todayStart.getTime()).length;
+  const dailyLimit = 5;
+  const canExchange = exchangedToday < dailyLimit && fish >= 100;
+
+  const [shopSubTab, setShopSubTab] = React.useState('worldcup');
+  const [equipTarget, setEquipTarget] = React.useState(null);
+  const [showExchangeConfirm, setShowExchangeConfirm] = React.useState(false);
+
+  const skinList = React.useMemo(() => Object.values(ALL_SKINS).filter(s => {
+    if (shopSubTab === 'worldcup') return s.category === 'worldcup';
+    if (shopSubTab === 'permanent') return s.category === 'permanent';
+    return true;
+  }), [shopSubTab]);
+
+  const handleExchange = () => {
+    if (!canExchange) return;
+    setShowExchangeConfirm(true);
+  };
+
+  const confirmExchange = () => {
+    setShowExchangeConfirm(false);
+    if (onExchange) onExchange();
+  };
+
+  const handleSkinClick = (skin) => {
+    if (ownedSkins.includes(skin.id)) {
+      // Already owned - show equip dialog
+      if (equipTarget === skin.id) { setEquipTarget(null); return; }
+      setEquipTarget(skin.id);
+    } else if (skin.price === 0 && onClaimFreeSkin) {
+      onClaimFreeSkin(skin.id);
+    } else if (onBuySkin) {
+      if (bells < skin.price) { alert('铃铛不足！'); return; }
+      if (confirm('确认花费 ' + skin.price + ' 铃铛购买「' + (skin.team || skin.name) + '」皮肤？')) {
+        onBuySkin(skin.id);
+      }
+    }
+  };
+
+  const handleEquipToCat = (skinId, cat) => {
+    const catKey = getCatSkinKey(cat);
+    if (catKey && onEquipSkin) onEquipSkin(catKey, skinId);
+    setEquipTarget(null);
+  };
+
+  const equippedCats = React.useMemo(() => {
+    const result = [];
+    for (const [catKey, skinId] of Object.entries(equippedSkins || {})) {
+      if (skinId) {
+        const parts = catKey.split('_');
+        const cat = cats.find(c => c.breedId === parts[0] && c.serialId === parseInt(parts[1]));
+        if (cat) result.push({ cat, skinId });
+      }
+    }
+    return result;
+  }, [equippedSkins, cats]);
+
+  // Filter cats matching a skin's breed
+  const getMatchingCats = (breedId) => cats.filter(c => c.breedId === breedId && (c.location === 'home' || c.battleSlot != null));
+
+  return (
+    <div style={{ padding: '16px 20px' }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: colors.ink, marginBottom: 4 }}>🛒 猫铺</div>
+      
+
+      {/* 鱼干兑换铃铛 */}
+      <div style={{
+        background: colors.card, borderRadius: 16, padding: '16px',
+        border: `1px solid ${colors.cardBorder}`, marginBottom: 12,
+      }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>💱 鱼干兑换铃铛</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <div style={{ fontSize: 14, color: colors.sub }}>100 🐟 = 1 🔔</div>
+          <div style={{ fontSize: 11, color: colors.muted }}>今日已兑 {exchangedToday}/{dailyLimit}</div>
+        </div>
+        <button onClick={handleExchange} disabled={!canExchange} style={{
+          width: '100%', padding: '12px', borderRadius: 12, border: 'none',
+          background: canExchange ? 'linear-gradient(135deg, #FD9644, #FF6B6B)' : 'rgba(255,255,255,0.05)',
+          color: canExchange ? '#fff' : colors.muted, fontSize: 14, fontWeight: 700,
+          cursor: canExchange ? 'pointer' : 'not-allowed', opacity: canExchange ? 1 : 0.5,
+        }}>
+          {canExchange ? '兑换 1 铃铛' : (fish < 100 ? '鱼干不足（需100条）' : '今日兑换已达上限')}
+        </button>
+      </div>
+
+      {/* P2: 已装备皮肤概览 */}
+      {equippedCats.length > 0 && (
+        <div style={{
+          background: colors.card, borderRadius: 16, padding: '12px 16px',
+          border: '1px solid rgba(108,92,231,0.25)', marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>👔 我的皮肤</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {equippedCats.map(({ cat, skinId }) => {
+              const skin = getSkinById(skinId);
+              return (
+                <div key={cat.serialId} style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: skin ? `linear-gradient(135deg, ${skin.colors[0]}20, ${skin.colors[1]}18)` : colors.glass,
+                  borderRadius: 10, padding: '4px 10px', border: '1px solid ' + (skin ? skin.colors[0] + '40' : colors.cardBorder),
+                }}>
+                  <span style={{ fontSize: 14 }}>{skin ? skin.flag || skin.emoji : '🐱'}</span>
+                  <span style={{ fontSize: 11, color: colors.ink }}>{cat.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* P2: 皮肤商店 - 子标签切换 */}
+      <div style={{
+        background: colors.card, borderRadius: 16, padding: '16px',
+        border: '1px solid rgba(253,150,68,0.2)', marginBottom: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 18 }}>⚽</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: colors.ink }}>皮肤商店</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {[{ key: 'worldcup', label: '世界杯限定', icon: '⚽' }, { key: 'permanent', label: '永久皮肤', icon: '👔' }].map(tab => (
+            <button key={tab.key} onClick={() => { setShopSubTab(tab.key); setEquipTarget(null); }} style={{
+              padding: '6px 14px', borderRadius: 20, border: '1px solid ' + (shopSubTab === tab.key ? colors.purple : colors.cardBorder),
+              background: shopSubTab === tab.key ? colors.purple + '20' : 'transparent',
+              color: shopSubTab === tab.key ? colors.purple : colors.sub,
+              fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            }}>{tab.icon} {tab.label}</button>
+          ))}
+        </div>
+        {shopSubTab === 'worldcup' && (
+          <div style={{ fontSize: 10, color: colors.orange, marginBottom: 10 }}>
+            限时 · 6月12日 - 7月20日 · 赛后永久下架
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {skinList.map(skin => {
+            const owned = ownedSkins.includes(skin.id);
+            const isEquipped = Object.values(equippedSkins).includes(skin.id);
+            return (
+              <div key={skin.id} onClick={() => handleSkinClick(skin)} style={{
+                borderRadius: 12, padding: '10px 8px',
+                background: `linear-gradient(135deg, ${skin.colors[0]}22, ${skin.colors[1]}15)`,
+                border: `1px solid ${skin.colors[0]}30`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                opacity: owned ? 1 : 0.85, cursor: 'pointer',
+                position: 'relative',
+              }}>
+                {owned && (
+                  <div style={{ position: 'absolute', top: 4, right: 4, fontSize: 10, fontWeight: 700, color: colors.green }}>
+                    {isEquipped ? '装备中' : '已拥有'}
+                  </div>
+                )}
+                <div style={{ fontSize: 24 }}>{skin.flag || skin.emoji}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: colors.ink }}>{skin.breedId}</div>
+                <div style={{ fontSize: 8, color: colors.sub, textAlign: 'center' }}>{skin.desc}</div>
+                <div style={{
+                  marginTop: 4, padding: '2px 10px', borderRadius: 8,
+                  fontSize: 9, fontWeight: 600,
+                  background: owned ? 'rgba(0,184,148,0.15)' : (skin.price === 0 ? 'rgba(0,184,148,0.15)' : 'rgba(253,150,68,0.15)'),
+                  color: owned ? colors.green : (skin.price === 0 ? colors.green : colors.orange),
+                }}>
+                  {owned ? '已拥有' : (skin.price === 0 ? '免费领取' : skin.price + ' 🔔')}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* P2: 装备到猫咪选择器 */}
+        {equipTarget && (
+          <div style={{ marginTop: 12, padding: '10px', borderRadius: 12, background: colors.glass, border: '1px solid ' + colors.cardBorder }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>
+              选择要装备的猫咪（{getSkinById(equipTarget)?.breedId}）：
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {getMatchingCats(getSkinById(equipTarget)?.breedId).map(cat => {
+                const catKey = getCatSkinKey(cat);
+                const isCatEquipped = equippedSkins[catKey] === equipTarget;
+                return (
+                  <button key={cat.serialId} onClick={() => handleEquipToCat(equipTarget, cat)} style={{
+                    padding: '6px 12px', borderRadius: 16, border: '1px solid ' + (isCatEquipped ? colors.green : colors.cardBorder),
+                    background: isCatEquipped ? colors.green + '15' : 'transparent',
+                    color: isCatEquipped ? colors.green : colors.ink, fontSize: 11, cursor: 'pointer',
+                  }}>
+                    {cat.name} {isCatEquipped ? '✓' : ''}
+                  </button>
+                );
+              })}
+              {getMatchingCats(getSkinById(equipTarget)?.breedId).length === 0 && (
+                <span style={{ fontSize: 11, color: colors.muted }}>暂无可装备的{getSkinById(equipTarget)?.breedId}猫咪</span>
+              )}
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: 9, color: colors.muted, textAlign: 'center', marginTop: 10 }}>
+          皮肤仅改变外观，不影响任何游戏数值 · 已购买皮肤永久保留
+        </div>
+      </div>
+
+      {/* 即将上线 — 道具专区 */}
+      <div style={{
+        background: colors.card, borderRadius: 16, padding: '16px',
+        border: '1px solid ' + colors.cardBorder, opacity: 0.55,
+      }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>🎒 道具专区</div>
+        <div style={{ fontSize: 12, color: colors.muted }}>消消乐道具包 · 小鱼干 · 猫抓板</div>
+        <div style={{ fontSize: 11, color: colors.orange, marginTop: 6, fontWeight: 600 }}>即将上线</div>
+      </div>
+
+      {/* 兑换确认弹窗 */}
+      {showExchangeConfirm && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 60,
+        }} onClick={() => setShowExchangeConfirm(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: 280, background: colors.card, borderRadius: 24,
+            padding: '28px 22px', textAlign: 'center',
+            border: '1px solid ' + colors.cardBorder,
+            animation: 'slideUp 0.3s ease-out',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>💱</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>
+              确认兑换
+            </div>
+            <div style={{ fontSize: 13, color: colors.sub, lineHeight: 1.6, marginBottom: 20 }}>
+              确认要用 <span style={{ color: colors.orange, fontWeight: 700 }}>100 🐟 鱼干</span> 兑换 <span style={{ color: '#FFD700', fontWeight: 700 }}>1 🔔 铃铛</span> 吗？<br/>
+              <span style={{ fontSize: 11, color: colors.muted }}>该操作不可撤销</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowExchangeConfirm(false)} style={{
+                flex: 1, padding: '12px', borderRadius: 12, border: '1px solid ' + colors.cardBorder,
+                background: 'transparent', color: colors.sub, fontSize: 14, fontWeight: 600,
+                cursor: 'pointer',
+              }}>取消</button>
+              <button onClick={confirmExchange} style={{
+                flex: 1, padding: '12px', borderRadius: 12, border: 'none',
+                background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+                color: '#fff', fontSize: 14, fontWeight: 700,
+                cursor: 'pointer',
+              }}>确认</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+/* ============================================================
    GACHA PAGE
-   ═══════════════════════════════════════ */
+   ============================================================ */
+
 function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
 
 // Pre-computed 128 gold particle positions
@@ -3184,7 +4056,7 @@ if (!show || !cat) return null;
         <div style={{ fontSize:48, marginBottom:12 }}>😿</div>
         <div style={{ fontSize:16, fontWeight:800, color:colors.red, marginBottom:8 }}>确定要送走{cat.name} #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} 吗？</div>
         <div style={{ fontSize:12, color:colors.sub, marginBottom:20, lineHeight:1.6, fontWeight:500 }}>
-          它陪伴了你 {cat.daysAlive} 天，见证了 {cat.gamesWitnessed} 场消消乐。<br/>
+          它陪伴了你 {cat.daysAlive} 天，见证了 {cat.gamesWitnessed} 场消消乐，见证了你 {cat.witnessMaxScore || 0} 分的高光时刻。<br/>
           它的序列号将在 60 天后重新流通。<br/>
           这段记忆将永久消失。
         </div>
@@ -3370,7 +4242,7 @@ function FarewellCeremony({ cat, show, onDone }) {
           </div>
           <div style={{ fontSize:12, color:colors.sub, lineHeight:1.8 }}>
             陪伴了你 {cat.daysAlive} 天<br/>
-            见证了 {cat.gamesWitnessed} 场消消乐<br/>
+            见证了 {cat.gamesWitnessed} 场消消乐，见证了你 {cat.witnessMaxScore || 0} 分的高光时刻<br/>
             最佳连击 {cat.bestCombo} 连消
           </div>
           <div style={{ fontSize:13, color:colors.purpleLight, marginTop:12, fontWeight:600 }}>
@@ -3424,6 +4296,8 @@ function MemorialDetailModal({ cat, show, onClose }) {
           {[
             { label:'陪伴天数', value:cat.daysAlive, color:colors.purpleLight },
             { label:'见证游戏', value:cat.gamesWitnessed, color:colors.blue },
+            { label:'见证最高分', value:cat.witnessMaxScore || 0, color:colors.orange },
+            { label:'见证累计分', value:cat.witnessTotalScore || 0, color:colors.purpleLight },
             { label:'最大连击', value:cat.bestCombo+'连消', color:colors.orange },
           ].map(s => (
             <div key={s.label} style={{ textAlign:'center', padding:'8px 0', background:colors.card, borderRadius:10 }}>
@@ -4044,9 +4918,10 @@ function GuestModeBanner({ onLogin }) {
 function TabBar({ active, onChange }) {
 
 const tabs = [
-    { key: 'home', icon: '👋', label: '首页' },
-    { key: 'game', icon: '🎁', label: '抽卡' },
-    { key: 'cathome', icon: '🏠', label: '家园' },
+    { key: 'home', icon: '🏠', label: '首页' },
+    { key: 'market', icon: '🎪', label: '喵市' },
+    { key: 'cathome', icon: '🐱', label: '家园' },
+    { key: 'shop', icon: '🛒', label: '猫铺' },
     { key: 'me', icon: '👤', label: '我的' },
   ];
   return (
@@ -4299,7 +5174,8 @@ function App() {
                 expiresAt: c.expiresAt ? new Date(c.expiresAt).getTime() : null,
                 lastFedAt: c.lastFedAt ? new Date(c.lastFedAt).getTime() : null,
                 daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
-                bestCombo: c.bestCombo || 0, fishSpent: c.fishSpent || 0,
+                bestCombo: c.bestCombo || 0, witnessMaxScore: c.witnessMaxScore || 0,
+                witnessTotalScore: c.witnessTotalScore || 0, fishSpent: c.fishSpent || 0,
                 isGenesis: (c.serial?.serialNumber || 0) <= 10,
                 previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
@@ -4459,6 +5335,37 @@ function App() {
 
   // Info modals
   const [infoModal, setInfoModal] = useState(null);
+  // P2: 皮肤系统状态
+  const [ownedSkins, setOwnedSkins] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).ownedSkins || []) : []; } catch(e) { return []; }
+  });
+  const [equippedSkins, setEquippedSkins] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).equippedSkins || {}) : {}; } catch(e) { return {}; }
+  });
+  // P2: 赛程活动状态
+  const [groupStageScores, setGroupStageScores] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).groupStageScores || {}) : {}; } catch(e) { return {}; }
+  });
+  const [groupStageBellsClaimed, setGroupStageBellsClaimed] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).groupStageBellsClaimed || []) : []; } catch(e) { return []; }
+  });
+  const [knockoutConsecutiveClears, setKnockoutConsecutiveClears] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).knockoutConsecutiveClears || 0) : 0; } catch(e) { return 0; }
+  });
+  const [knockoutEliminatedToday, setKnockoutEliminatedToday] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).knockoutEliminatedToday || false) : false; } catch(e) { return false; }
+  });
+  const [knockoutSkinClaimed, setKnockoutSkinClaimed] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).knockoutSkinClaimed || false) : false; } catch(e) { return false; }
+  });
+  const [finalTitleAwarded, setFinalTitleAwarded] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).finalTitleAwarded || false) : false; } catch(e) { return false; }
+  });
+  // P2: 竞猜状态
+  const [bets, setBets] = useState(() => {
+    try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? (JSON.parse(saved).bets || []) : []; } catch(e) { return []; }
+  });
+
 
   const fish = getFishBalance();
   const nurturing = cats.filter(c => c.location === 'home');
@@ -4531,7 +5438,8 @@ function App() {
                 expiresAt: c.expiresAt ? new Date(c.expiresAt).getTime() : null,
                 lastFedAt: c.lastFedAt ? new Date(c.lastFedAt).getTime() : null,
                 daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
-                bestCombo: c.bestCombo || 0, fishSpent: c.fishSpent || 0,
+                bestCombo: c.bestCombo || 0, witnessMaxScore: c.witnessMaxScore || 0,
+                witnessTotalScore: c.witnessTotalScore || 0, fishSpent: c.fishSpent || 0,
                 isGenesis: (c.serial?.serialNumber || 0) <= 10,
                 previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
@@ -4692,8 +5600,12 @@ function App() {
 
   // Save state (local mode only)
   useEffect(() => {
-    if (isLocalMode) saveState(cats, bells, activeTitle);
-  }, [cats, bells, activeTitle, isLocalMode]);
+    if (isLocalMode) saveState(cats, bells, activeTitle, {
+      ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed,
+      knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed,
+      finalTitleAwarded, bets,
+    });
+  }, [cats, bells, activeTitle, isLocalMode, ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, finalTitleAwarded, bets]);
 
   // Handle feeding - P2: 亲密度系统
   const handleFeed = useCallback(async (cat) => {
@@ -4774,7 +5686,7 @@ function App() {
         lastFedAt: now, lastOnlineAt: now, // P2: 更新在线时间
         status: 'alive',
         intimacy: 0, // P2: 亲密度初始为0
-        daysAlive: 0, gamesWitnessed: 0, bestCombo: 0, fishSpent: 0,
+        daysAlive: 0, gamesWitnessed: 0, bestCombo: 0, witnessMaxScore: 0, witnessTotalScore: 0, fishSpent: 0,
         // P4: 记录初次发现者（创世猫）
         firstOwner: isFirstDiscovery ? (user?.nickname || '本地用户') : c.firstOwner,
         // P4: 清空冷却信息（被救回）
@@ -5067,7 +5979,7 @@ function App() {
           status: 'alive', location: 'bag', createdAt: Date.now(),
           bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : Date.now() + 30*86400000,
           adoptedAt: null, expiresAt: null, lastFedAt: null,
-          daysAlive: 0, gamesWitnessed: 0, bestCombo: 0, fishSpent: 0,
+          daysAlive: 0, gamesWitnessed: 0, bestCombo: 0, witnessMaxScore: 0, witnessTotalScore: 0, fishSpent: 0,
           isGenesis: c.serial.serialNumber <= 10,
           previousOwners: [], releasedAt: null,
           _apiId: c.id, _serialId: c.serialId,
@@ -5111,6 +6023,156 @@ function App() {
     setCheckedIn(true);
     setShowCheckIn(true);
   }, [isLocalMode]);
+
+  // P1: 鱼干兑换铃铛
+  const handleExchangeBells = useCallback(() => {
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayExchanges = fishLedger.filter(t => t.type === 'exchange' && t.time > todayStart.getTime());
+    const exchangedToday = todayExchanges.length;
+    const dailyLimit = 5;
+    if (exchangedToday >= dailyLimit) { alert('今日兑换已达上限（5次/天）'); return; }
+    if (getFishBalance() < 100) { alert('鱼干不足（需要100条鱼干）'); return; }
+    fishLedger.push({ type: 'spend', amount: -100, desc: '兑换铃铛', time: Date.now() });
+    fishLedger.push({ type: 'exchange', amount: 0, desc: '兑换铃铛', time: Date.now() });
+    setBells(prev => prev + 1);
+    setCats(prev => [...prev]); // trigger re-render to update fish display
+  }, []);
+
+  // P2: 皮肤购买
+  const handleBuySkin = useCallback((skinId) => {
+    const skin = ALL_SKINS[skinId];
+    if (!skin) return;
+    if (bells < skin.price) { alert('铃铛不足！'); return; }
+    setBells(prev => prev - skin.price);
+    setOwnedSkins(prev => [...prev, skinId]);
+    fishLedger.push({ type: 'spend', amount: 0, desc: '购买皮肤:' + skinId, time: Date.now() });
+  }, [bells]);
+
+  // P2: 皮肤装备
+  const handleEquipSkin = useCallback((catKey, skinId) => {
+    setEquippedSkins(prev => ({ ...prev, [catKey]: skinId }));
+  }, []);
+
+  // P2: 皮肤卸下
+  const handleUnequipSkin = useCallback((catKey) => {
+    setEquippedSkins(prev => {
+      const next = { ...prev };
+      delete next[catKey];
+      return next;
+    });
+  }, []);
+
+  // P2: 免费皮肤领取
+  const handleClaimFreeSkin = useCallback((skinId) => {
+    if (ownedSkins.includes(skinId)) { alert('已拥有该皮肤'); return; }
+    setOwnedSkins(prev => [...prev, skinId]);
+    fishLedger.push({ type: 'earn', amount: 0, desc: '领取免费皮肤:' + skinId, time: Date.now() });
+  }, [ownedSkins]);
+
+  // P2: 分组赛领取铃铛奖励
+  const handleClaimGroupStageBell = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (groupStageBellsClaimed.includes(today)) return;
+    const todayScore = groupStageScores[today] || 0;
+    if (getGroupStageBracket(todayScore).name !== 'Gold') return;
+    setGroupStageBellsClaimed(prev => [...prev, today]);
+    setBells(prev => prev + 1);
+    fishLedger.push({ type: 'earn', amount: 0, desc: '分组赛Gold奖励:1铃铛', time: Date.now() });
+  }, [groupStageScores, groupStageBellsClaimed]);
+
+  // P2: 竞猜投注
+  const handlePlaceBet = useCallback((matchId, catBreedId, teamName, fishWagered) => {
+    if (getFishBalance() < fishWagered) { alert('鱼干不足！'); return; }
+    fishLedger.push({ type: 'spend', amount: fishWagered, desc: '竞猜投注:' + matchId, time: Date.now() });
+    const newBet = { matchId, catBreedId, teamName, fishWagered, won: null, settled: false, shared: false, placedAt: Date.now() };
+    setBets(prev => [...prev, newBet]);
+  }, []);
+
+  // P2: 竞猜分享奖励
+  const handleShareBet = useCallback((bet) => {
+    fishLedger.push({ type: 'earn', amount: 3, desc: '分享竞猜奖励', time: Date.now() });
+    setBets(prev => prev.map(b => b.matchId === bet.matchId ? { ...b, shared: true } : b));
+    alert('分享成功！+3 鱼干 🐟');
+  }, []);
+
+  // P2: 竞猜结算（自动检测未结算的投注）
+  useEffect(() => {
+    const now = Date.now();
+    let changed = false;
+    const updated = bets.map(bet => {
+      if (bet.settled) return bet;
+      const match = KNOCKOUT_MATCHES.find(m => m.matchId === bet.matchId);
+      if (!match) return bet;
+      const matchTime = new Date(match.date + 'T22:00:00+08:00').getTime();
+      if (now < matchTime) return bet;
+      // Simulate result (55% home win)
+      const homeWins = Math.random() < 0.55;
+      const winner = homeWins ? match.home : match.away;
+      const won = winner === bet.teamName;
+      changed = true;
+      if (won) {
+        const bonus = Math.floor(bet.fishWagered * 0.5);
+        fishLedger.push({ type: 'earn', amount: bet.fishWagered + bonus, desc: '竞猜获胜+奖金:' + bet.matchId, time: Date.now() });
+      }
+      return { ...bet, won, settled: true };
+    });
+    if (changed) setBets(updated);
+  }, [bets]);
+
+  // P2: 每日重置逻辑（淘汰赛状态 + 分组赛新一天）
+  useEffect(() => {
+    const checkReset = () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          const lastDate = data._lastDate || '';
+          if (lastDate !== today) {
+            // 新的一天：重置淘汰状态
+            setKnockoutEliminatedToday(false);
+            // 更新日期标记
+            data._lastDate = today;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          }
+        } catch(e) {}
+      }
+    };
+    checkReset();
+    const timer = setInterval(checkReset, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // P2: 检测淘汰赛3连胜自动发放皮肤
+  useEffect(() => {
+    if (isKnockoutStageActive() && knockoutConsecutiveClears >= 3 && !knockoutSkinClaimed) {
+      const unownedWC = Object.keys(ALL_SKINS).filter(id =>
+        ALL_SKINS[id].category === 'worldcup' && !ownedSkins.includes(id)
+      );
+      if (unownedWC.length > 0) {
+        const pick = unownedWC[Math.floor(Math.random() * unownedWC.length)];
+        setKnockoutSkinClaimed(true);
+        setOwnedSkins(prev => [...prev, pick]);
+        alert('淘汰赛3连胜！获得限定皮肤: ' + (ALL_SKINS[pick].team || ALL_SKINS[pick].name));
+      }
+    }
+  }, [knockoutConsecutiveClears, knockoutSkinClaimed, ownedSkins]);
+
+  // P2: 大决战高分数称号
+  useEffect(() => {
+    if (isFinalDayActive() && !finalTitleAwarded) {
+      const personalBest = (() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? (JSON.parse(saved).personalBestScore || 0) : 0;
+        } catch(e) { return 0; }
+      })();
+      if (personalBest >= 10000) {
+        setFinalTitleAwarded(true);
+        alert('大决战突破10000分！获得专属称号「2026世界杯冠军」');
+      }
+    }
+  }, [finalTitleAwarded]);
 
   // Navigation
   const handleNavigate = useCallback((tab, cat, subTab) => {
@@ -5221,6 +6283,11 @@ function App() {
           <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', scrollbarWidth:'none', paddingBottom:74 }}>
             <style>{`div::-webkit-scrollbar{display:none}`}</style>
 
+            <NightBonusBanner />
+            <GroupStageBanner scores={groupStageScores} claimed={groupStageBellsClaimed} onClaim={handleClaimGroupStageBell} fish={fish} />
+            <KnockoutBanner clears={knockoutConsecutiveClears} eliminated={knockoutEliminatedToday} skinClaimed={knockoutSkinClaimed} />
+            <FinalDayBanner />
+            <BettingPanel bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} />
             {showCatDetail ? (
               <CatDetailPage
                 cats={cats}
@@ -5257,8 +6324,10 @@ function App() {
                 activeTitle={activeTitle} battleMaxSlots={maxSlots}
                 user={user}
               />
-            ) : activeTab === 'game' ? (
-              <GachaPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} />
+            ) : activeTab === 'market' ? (
+              <MarketPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} todayFish={todayFish} user={user} bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} knockoutConsecutiveClears={knockoutConsecutiveClears} knockoutEliminatedToday={knockoutEliminatedToday} knockoutSkinClaimed={knockoutSkinClaimed} groupStageScores={groupStageScores} groupStageBellsClaimed={groupStageBellsClaimed} onClaimGroupStageBell={handleClaimGroupStageBell} />
+            ) : activeTab === 'shop' ? (
+              <ShopPage fish={fish} bells={bells} user={user} onExchange={handleExchangeBells} cats={cats} ownedSkins={ownedSkins} equippedSkins={equippedSkins} onBuySkin={handleBuySkin} onEquipSkin={handleEquipSkin} onClaimFreeSkin={handleClaimFreeSkin} />
             ) : (
               <ProfilePage cats={cats} fish={fish} bells={bells} activeTitle={activeTitle} onEquipTitle={setActiveTitle} maxSlots={maxSlots} baseSlots={baseSlots} slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked} totalAdopted={totalAdopted} user={user} isLocalMode={isLocalMode} guestMode={guestMode} onLogout={() => setShowLogoutConfirm(true)} onLogin={handleShowLoginAuth} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} onMemorialClick={setMemorialDetailCat} />
             )}

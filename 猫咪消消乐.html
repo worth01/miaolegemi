@@ -440,6 +440,51 @@ function getPersonalityColor(personality) {
   return colors[personality] || '#95A5A6';
 }
 
+
+// P0: 深夜场鱼干加成检查（北京时间 00:00-06:00）
+function isNightBonusActive() {
+  const now = new Date();
+  const hours = now.getUTCHours() + 8; // UTC+8 北京时间
+  const adjustedHours = hours >= 24 ? hours - 24 : hours;
+  return adjustedHours >= 0 && adjustedHours < 6;
+}
+// P2: 世界杯淘汰赛阶段判定
+function isKnockoutStageActive() {
+  try { if (new URLSearchParams(window.location.search).get('debug_wc') === 'true') return true; } catch(e) {}
+  var now = Date.now();
+  var ks = new Date('2026-06-29T00:00:00+08:00').getTime();
+  var ke = new Date('2026-07-15T23:59:59+08:00').getTime();
+  return now >= ks && now <= ke;
+}
+
+// P2: 大决战当天判定
+function isFinalDayActive() {
+  try { if (new URLSearchParams(window.location.search).get('debug_wc') === 'true') return true; } catch(e) {}
+  var now = new Date();
+  return now.getFullYear() === 2026 && now.getMonth() === 6 && now.getDate() === 20;
+}
+
+// P0: 获取玩家历史最高单局得分
+function getPersonalBestScore() {
+  try {
+    const saved = localStorage.getItem('miaolegemi_p0_v1');
+    if (saved) {
+      const data = JSON.parse(saved);
+      return data.personalBestScore || 0;
+    }
+  } catch(e) {}
+  return 0;
+}
+
+// P0: 保存玩家历史最高单局得分
+function savePersonalBestScore(score) {
+  try {
+    const saved = localStorage.getItem('miaolegemi_p0_v1');
+    const data = saved ? JSON.parse(saved) : {};
+    data.personalBestScore = score;
+    localStorage.setItem('miaolegemi_p0_v1', JSON.stringify(data));
+  } catch(e) {}
+}
 /* ═══════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════ */
@@ -3211,9 +3256,23 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
   // P7: 计算本局最终鱼干（使用性格效果）
   const soloFishBonus = persEffects.isSoloBattle ? persEffects.soloBonus : 0;
   const totalFishBonus = (fishMultiplier || 1) - 1 + persEffects.fishBonus + soloFishBonus;
-  const fishCalc = calculateFishReward(comboCount || 0, totalFishBonus, persEffects.extraFishLimit > 0, persEffects.extraFishLimit > 0 ? 5 : 1);
-  const finalFish = fishCalc.totalFish;
+  let fishCalc = calculateFishReward(comboCount || 0, totalFishBonus, persEffects.extraFishLimit > 0, persEffects.extraFishLimit > 0 ? 5 : 1);
+  let finalFish = fishCalc.totalFish;
   const actualBonusRatio = totalFishBonus;
+
+  // P0: 深夜场鱼干加成
+  const nightBonus = isNightBonusActive();
+  if (nightBonus) {
+    finalFish = Math.floor(finalFish * 1.5);
+  }
+
+  // P0: 新纪录检测
+  const personalBest = getPersonalBestScore();
+  const isNewRecord = score > 0 && score > personalBest;
+
+  // P0: 性格得分加成标注（高冷: 得分加成显示，话痨: 技能额外得分）
+  const hasGaoLeng = (battleCatsData || []).some(c => (c?.personality || '') === '高冷');
+  const hasHuaLao = (battleCatsData || []).some(c => (c?.personality || '') === '话痨');
   
   // P5: 胜利/失败状态颜色
   const statusColor = isLose ? '#FF6B6B' : '#00B894';
@@ -3274,7 +3333,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           }}>
             {isLose ? '挑战失败' : isWin ? '恭喜通关！' : '关卡完成'}
           </div>
-          <div style={{ 
+                    <div style={{ 
             fontSize: 13, 
             color: 'rgba(240,237,255,0.5)', 
             marginTop: 4,
@@ -3285,6 +3344,23 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           }}>
             {isLose ? '没关系，再接再厉！' : '恭喜你完成了本局游戏'}
           </div>
+          {/* P0: 新纪录达成庆祝 */}
+          {isNewRecord && (
+            <div style={{
+              marginTop: 12, padding: '12px 16px',
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,180,0,0.15))',
+              border: '1px solid rgba(255,215,0,0.4)',
+              animation: 'slideUp 0.5s ease-out',
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#FFD700', textShadow: '0 0 20px rgba(255,215,0,0.5)', textAlign: 'center' }}>
+                🎉 新纪录！猫咪都为你鼓掌！
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 4 }}>
+                超越历史最高 {personalBest.toLocaleString()} 分
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stats - P5优化布局 */}
@@ -3365,9 +3441,20 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                 letterSpacing: '-1px',
                 textShadow: '0 0 20px rgba(253,150,68,0.3)',
               }}>+{finalFish}
+                {/* P0: 深夜场加成标注 */}
+                {nightBonus && (
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#FFD700', marginLeft: 4 }}>🌙×1.5</span>
+                )}
                 {/* P7: 显示加成来源 */}
                 {actualBonusRatio > 0 && (
                   <span style={{ fontSize: 12, fontWeight: 500 }}> (含+{Math.round(fishCalc.extraFish)}加成)</span>
+                )}
+                {/* P0: 性格得分加成标注 */}
+                {hasGaoLeng && (
+                  <div style={{ fontSize: 10, color: '#A29BFE', marginTop: 2 }}>✨ 高冷性格得分加成生效</div>
+                )}
+                {hasHuaLao && (
+                  <div style={{ fontSize: 10, color: '#FD79A8', marginTop: 2 }}>💬 话痨技能额外得分生效</div>
                 )}
               </div>
             </div>
@@ -5358,16 +5445,39 @@ function Game() {
       // P7: 使用新的鱼干计算公式（基于已有的fishMultiplier + 性格效果）
       const pers = personalityEffectsRef.current || {};
       const cleverLvl = (pers.extraFishLimit || 0) >= 2 ? 5 : ((pers.extraFishLimit || 0) >= 1 ? 3 : 1);
-      const fishCalc = calculateFishReward(comboCount || 0, (fishMultiplier || 1) - 1, (pers.extraFishLimit || 0) > 0, cleverLvl);
-      const finalFish = fishCalc.totalFish;
+      let fishCalc = calculateFishReward(comboCount || 0, (fishMultiplier || 1) - 1, (pers.extraFishLimit || 0) > 0, cleverLvl);
+      let finalFish = fishCalc.totalFish;
+
+      // P0: 深夜场鱼干加成（00:00-06:00，×1.5）
+      const nightBonus = isNightBonusActive();
+      if (nightBonus) {
+        finalFish = Math.floor(finalFish * 1.5);
+        fishCalc.totalFish = finalFish;
+        fishCalc.baseFish = Math.floor(fishCalc.baseFish * 1.5);
+        fishCalc.bonusFish = finalFish - fishCalc.baseFish;
+      }
+
+      // P2: 大决战双倍鱼干（7月20日）
+      const finalDayDouble = isFinalDayActive();
+      if (finalDayDouble) {
+        finalFish = finalFish * 2;
+        fishCalc.totalFish = finalFish;
+      }
+
+      // P0: 检查是否打破个人最高分
+      const currentScore = score || 0;
+      const personalBest = getPersonalBestScore();
+      const isNewRecord = currentScore > personalBest && currentScore > 0;
 
       // Send to API if online
       if (MiaolegemiAPI && MiaolegemiAPI.isLoggedIn()) {
         MiaolegemiAPI.endGame({
-          score: score || 0,
+          score: currentScore,
           fishEarned: finalFish,
           maxCombo: maxCombo || 0,
           activeCats: nourishingCats.current.map(c => c.id).filter(Boolean),
+          nightBonus: nightBonus,
+          isNewRecord: isNewRecord,
         }).catch(() => {});
       }
 
@@ -5378,16 +5488,44 @@ function Game() {
         const data = saved ? JSON.parse(saved) : {};
         let ledger = data.fishLedger || [];
         if (!Array.isArray(ledger)) ledger = [];
-        ledger.push({ type: 'earn', amount: finalFish, desc: '消消乐结算', time: Date.now() });
+        ledger.push({ type: 'earn', amount: finalFish, desc: '消消乐结算' + (nightBonus ? '（深夜加成×1.5）' : '') + (finalDayDouble ? '（大决战双倍）' : ''), time: Date.now() });
         data.fishLedger = ledger;
         if (data.cats) {
           data.cats = data.cats.map(c => {
-            // P3: 更新家园和出战席猫咪的见证记录
+            // P0: 更新家园和出战席猫咪的见证记录（含最高分和累计分）
             if (c.location === 'home' || c.battleSlot != null) {
-              return { ...c, gamesWitnessed: (c.gamesWitnessed || 0) + 1, bestCombo: Math.max(c.bestCombo || 0, maxCombo) };
+              return { 
+                ...c, 
+                gamesWitnessed: (c.gamesWitnessed || 0) + 1, 
+                bestCombo: Math.max(c.bestCombo || 0, maxCombo || 0),
+                witnessMaxScore: Math.max(c.witnessMaxScore || 0, currentScore),
+                witnessTotalScore: (c.witnessTotalScore || 0) + currentScore,
+              };
             }
             return c;
           });
+        }
+        // P0: 保存个人最高分
+        if (isNewRecord) {
+          savePersonalBestScore(currentScore);
+        }
+        // P2: 淘汰赛追踪
+        if (isKnockoutStageActive()) {
+          var todayStr = new Date().toISOString().slice(0, 10);
+          if (gameState === GAME_LOSE) {
+            data.knockoutEliminatedToday = true;
+            data.knockoutEliminatedDate = todayStr;
+          }
+          if ((gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) && !data.knockoutEliminatedToday) {
+            data.knockoutConsecutiveClears = (data.knockoutConsecutiveClears || 0) + 1;
+          }
+        }
+        // P2: 分组赛每日得分记录
+        if (isKnockoutStageActive() || true) { // also track during group stage
+          var gsToday = new Date().toISOString().slice(0, 10);
+          if (!data.groupStageScores) data.groupStageScores = {};
+          var prev = data.groupStageScores[gsToday] || 0;
+          if (currentScore > prev) data.groupStageScores[gsToday] = currentScore;
         }
         localStorage.setItem(key, JSON.stringify(data));
       } catch(e) {}
