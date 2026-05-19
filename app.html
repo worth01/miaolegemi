@@ -106,6 +106,7 @@
       display: flex; flex-direction: column; align-items: center; gap: 5px;
       cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
       position: relative; user-select: none; touch-action: none;
+      animation: cat-float 4s ease-in-out infinite;
     }
     .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -149,6 +150,129 @@
       0%, 100% { transform: translateY(0) translateX(0); }
       33% { transform: translateY(-6px) translateX(3px); }
       66% { transform: translateY(-3px) translateX(-2px); }
+    }
+
+    /* ═══════════════════════════════════════
+       猫咪卡片动效系统 — CSS Keyframes
+       ═══════════════════════════════════════ */
+
+    /* 待机漂浮（所有猫咪卡片默认状态） */
+    @keyframes cat-float {
+      0%, 100% { transform: translateY(0px) rotate(-0.5deg); }
+      50%      { transform: translateY(-10px) rotate(0.5deg); }
+    }
+
+    /* 点击互动弹跳 */
+    @keyframes cat-bounce-click {
+      0%   { transform: scale(1) rotate(0deg); }
+      20%  { transform: scale(1.12) rotate(-2deg) translateY(-6px); }
+      45%  { transform: scale(0.96) rotate(1deg) translateY(2px); }
+      65%  { transform: scale(1.04) rotate(-0.5deg) translateY(-2px); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* 喂食跳跃动效 */
+    @keyframes cat-feed-jump {
+      0%   { transform: translateY(0) scale(1); }
+      25%  { transform: translateY(-18px) scale(1.1) rotate(-3deg); }
+      50%  { transform: translateY(-8px) scale(1.05) rotate(2deg); }
+      70%  { transform: translateY(-14px) scale(1.08) rotate(-1deg); }
+      100% { transform: translateY(0) scale(1) rotate(0); }
+    }
+
+    /* 通关庆祝动效 */
+    @keyframes cat-celebrate {
+      0%   { transform: scale(1) rotate(0deg); }
+      15%  { transform: scale(1.15) rotate(-5deg) translateY(-12px); }
+      30%  { transform: scale(1.1) rotate(5deg) translateY(-8px); }
+      45%  { transform: scale(1.15) rotate(-3deg) translateY(-14px); }
+      65%  { transform: scale(1.05) rotate(2deg) translateY(-4px); }
+      100% { transform: scale(1) rotate(0deg) translateY(0); }
+    }
+
+    /* 失败安慰动效 — 左右轻轻摇摆 */
+    @keyframes cat-console {
+      0%,100% { transform: rotate(0deg) translateY(0); }
+      20%  { transform: rotate(-4deg) translateY(2px); }
+      40%  { transform: rotate(4deg) translateY(2px); }
+      60%  { transform: rotate(-2deg) translateY(1px); }
+      80%  { transform: rotate(2deg) translateY(1px); }
+    }
+
+    /* 深夜睡眠漂浮（更缓慢轻微） */
+    @keyframes cat-sleep-float {
+      0%,100% { transform: translateY(0) rotate(-1deg); }
+      50%      { transform: translateY(-5px) rotate(-2deg); }
+    }
+
+    /* SSR 专属光晕脉冲 */
+    @keyframes ssr-pulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(255,215,0,0.6), 0 0 80px rgba(255,215,0,0.2); }
+      50%      { box-shadow: 0 0 0 2px rgba(255,215,0,0.9), 0 0 120px rgba(255,215,0,0.4); }
+    }
+
+    /* ZZZ 气泡上浮 */
+    @keyframes zzz-float {
+      0%   { opacity:0; transform:translateY(0) scale(0.8); }
+      30%  { opacity:0.7; transform:translateY(-8px) scale(1); }
+      100% { opacity:0; transform:translateY(-24px) scale(0.9); }
+    }
+
+    /* 台词气泡弹出/消失 */
+    @keyframes bubble-in {
+      0%   { opacity:0; transform:translate(-50%, 8px) scale(0.9); }
+      100% { opacity:1; transform:translate(-50%, 0) scale(1); }
+    }
+    @keyframes bubble-out {
+      0%   { opacity:1; transform:translate(-50%, 0) scale(1); }
+      100% { opacity:0; transform:translate(-50%, -8px) scale(0.9); }
+    }
+
+    /* Toast 滑入 */
+    @keyframes toast-slide {
+      0%   { opacity:0; transform:translate(-50%, -24px); }
+      100% { opacity:1; transform:translate(-50%, 0); }
+    }
+
+    /* CSS 类 */
+    .speech-bubble {
+      position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); color: #1A1235;
+      font-size: 11px; font-weight: 600;
+      padding: 5px 12px; border-radius: 12px;
+      white-space: nowrap; pointer-events: none; z-index: 5;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    }
+    .speech-bubble.in {
+      animation: bubble-in 0.2s ease-out forwards;
+    }
+    .speech-bubble.out {
+      animation: bubble-out 0.2s ease-in forwards;
+    }
+    .speech-bubble::after {
+      content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(255,255,255,0.95);
+    }
+
+    .feed-toast {
+      position: fixed; top: 14%; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, #FD9644, #FF6B6B);
+      color: #fff; font-size: 13px; font-weight: 700;
+      padding: 8px 20px; border-radius: 20px;
+      z-index: 100; pointer-events: none;
+      box-shadow: 0 4px 20px rgba(253,150,68,0.4);
+    }
+    .feed-toast.in {
+      animation: toast-slide 0.3s ease-out;
+    }
+
+    .zzz-bubble {
+      position: absolute; top: -8px; right: -8px;
+      font-size: 14px; pointer-events: none; z-index: 6;
+      animation: zzz-float 2s ease-out infinite;
     }
   </style>
 </head>
@@ -441,6 +565,17 @@ const INTIMACY_EFFECTS = {
   4: { skillUses: 3, bonusPercent: 20, extraFishLimit: 1 },
   5: { skillUses: 3, bonusPercent: 30, extraFishLimit: 2 },
 };
+/* ═══════════════════════════════════════
+   猫咪卡片动效系统 — 台词气泡库
+   ═══════════════════════════════════════ */
+const CAT_LINES = {
+  normal: ['😸 喵～主人好！','🐾 摸摸我嘛～','😻 今天消消乐了吗？','🌟 我在这里哦！','😼 要不要一起玩？','呼噜呼噜～','今天心情不错！','陪我玩嘛～','抓不到我～嘿嘿～'],
+  feed:   ['😋 好吃好吃！','🐟 最喜欢鱼干了！','🥰 谢谢主人～','😺 再来一条！','喵呜～幸福！','好吃！再来一条～','呜呼～开饭啦！'],
+  win:    ['🏆 太棒了主人！','🎉 我就知道你可以的！','⭐ 厉害厉害！','🥳 为你感到骄傲！','喵呜～我们赢了！','不愧是本喵的铲屎官！'],
+  fail:   ['😿 没关系的...','💙 下次一定！','🤗 我陪着你呢～','😌 休息一下再来！','喵…已经很努力了','不要灰心，抱抱～'],
+  sleep:  ['💤 zZz...','🌙 晚安主人...','😴 好困哦...','呼…呼…','zZz...喵...'],
+};
+
 // P7: 猫咪默认性格配置（按需求文档猫咪基础配置表）
 const BREED_DEFAULT_PERSONALITIES = {
   '橘猫': '吃货',       // 性格ID: 2
@@ -482,6 +617,20 @@ function sanitizePersonality(raw, breedId) {
   // 兜底：返回品种默认性格
   return getDefaultPersonality(breedId);
 }
+
+// P7: 性格描述文案
+const PERSONALITY_DESCRIPTIONS = {
+  '吃货': '最爱鱼干，看到吃的就走不动路',
+  '黏人': '喜欢贴贴，走到哪跟到哪',
+  '高冷': '不爱搭理人，但内心很温柔',
+  '傲娇': '嘴上说不要，其实超开心',
+  '胆小': '容易被吓到，但鼓起勇气时很厉害',
+  '胆大': '天不怕地不怕，什么都要凑热闹',
+  '话痨': '喵喵叫个不停，超级爱聊天',
+  '懒散': '能躺着绝不坐着，最爱晒太阳',
+  '独行': '喜欢一个人待着，偶尔才来撒娇',
+  '狡黠': '鬼点子最多，总能让你意想不到',
+};
 
 /* ═══════════════════════════════════════
    P3: 猫咪技能系统（设计文档 v3.1）
@@ -974,25 +1123,29 @@ function getUpcomingMatch() {
 function getAllMatches() {
   return KNOCKOUT_MATCHES;
 }
-function NightBonusBanner() {
-  if (!isNightBonusActive()) return null;
+function NightBonusBanner({ dismissed, onClose }) {
+  if (!isNightBonusActive() || dismissed) return null;
   return React.createElement('div', {
     style: {
-      margin: '0 16px 8px',
-      padding: '10px 16px',
-      borderRadius: 12,
+      margin: '0 16px 6px',
+      padding: '6px 12px',
+      borderRadius: 10,
       background: 'linear-gradient(135deg, rgba(25,25,112,0.6), rgba(72,61,139,0.4))',
       border: '1px solid rgba(147,112,219,0.3)',
       display: 'flex',
       alignItems: 'center',
-      gap: 8,
+      gap: 6,
       animation: 'pulse 2s ease-in-out infinite',
     }
   },
-    React.createElement('span', { style: { fontSize: 18 } }, '🌙'),
-    React.createElement('span', { style: { fontSize: 13, fontWeight: 700, color: '#E8D5FF' } }, '深夜场加成中'),
-    React.createElement('span', { style: { fontSize: 13, fontWeight: 600, color: '#FFD700' } }, '鱼干 ×1.5'),
-    React.createElement('span', { style: { fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 'auto' } }, '00:00-06:00')
+    React.createElement('span', { style: { fontSize: 14 } }, '🌙'),
+    React.createElement('span', { style: { fontSize: 11, fontWeight: 700, color: '#E8D5FF' } }, '深夜场加成中'),
+    React.createElement('span', { style: { fontSize: 11, fontWeight: 600, color: '#FFD700' } }, '鱼干 ×1.5'),
+    React.createElement('span', { style: { fontSize: 9, color: 'rgba(255,255,255,0.5)', marginLeft: 'auto' } }, '00:00-06:00'),
+    React.createElement('span', {
+      onClick: onClose,
+      style: { fontSize: 14, cursor: 'pointer', opacity: 0.5, marginLeft: 4, lineHeight: 1 }
+    }, '✕')
   );
 }
 /* P2: 分组赛横幅 */
@@ -1244,7 +1397,7 @@ function NotificationBanner({ cats, onNavigate }) {
       if (banner.cat) {
         onNavigate('catDetail', banner.cat);
       } else if (banner.priority === 3) {
-        onNavigate('cat'); // 跳转到猫咪页
+        onNavigate('cathome'); // 跳转到猫咪页
       }
     }} style={{
       margin: '2px 16px 0', padding: '8px 14px', borderRadius: 12,
@@ -1300,7 +1453,7 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
           padding: 4,
           boxShadow: '0 0 30px rgba(255,215,0,0.4)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          animation:'float 4s ease-in-out infinite',
+          animation:'cat-float 4s ease-in-out infinite',
           overflow:'hidden', cursor:'pointer',
         }}>
           <div style={{ width:140, height:140, borderRadius:'50%', overflow:'hidden', border:'2px solid #FFD700' }}>
@@ -1313,9 +1466,12 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
           width:140, height:140, borderRadius:'50%', margin:'0 auto',
           background:`radial-gradient(circle, ${RARITY_COLORS[cat.rarity]}20, transparent)`,
           display:'flex', alignItems:'center', justifyContent:'center',
-          animation:'float 4s ease-in-out infinite',
+          animation:'cat-float 4s ease-in-out infinite',
           overflow:'hidden', cursor:'pointer',
           border:`2px solid ${RARITY_COLORS[cat.rarity]}30`,
+          ...(cat.rarity === 'SSR' ? {
+            boxShadow: '0 0 24px rgba(253,150,68,0.4)',
+          } : {}),
         }}>
           <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
             onError={e => { e.target.style.display='none'; }} />
@@ -1385,7 +1541,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
             <span>⚔️</span> 出战席
             <span style={{ fontSize:10, color:colors.sub, fontWeight:400 }}>{battleCats.length}/3</span>
           </div>
-          <div onClick={() => onNavigate('cat', null, 'battle')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>调整阵容 →</div>
+          <div onClick={() => onNavigate('cathome', null, 'battle')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>调整阵容 →</div>
         </div>
         <div style={{ 
           background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(108,92,231,0.08) 100%)',
@@ -1418,7 +1574,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
                 );
               }
               return (
-                <div key={slot} onClick={() => onNavigate('cat', null, 'battle')} style={{
+                <div key={slot} onClick={() => onNavigate('cathome', null, 'battle')} style={{
                   borderRadius:10, padding:'8px 4px', cursor:'pointer',
                   background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.08)',
                   display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
@@ -1443,7 +1599,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
           <div style={{ fontSize:13, fontWeight:700, color:colors.ink, display:'flex', alignItems:'center', gap:6 }}>
             <span>🏆</span>好友今日战况
           </div>
-          <div onClick={() => onNavigate('market')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>查看完整好友榜 →</div>
+          <div onClick={() => onNavigate('market', null, 'leaderboard')} style={{ fontSize:11, color:colors.orange, cursor:'pointer', fontWeight:500 }}>查看完整好友榜 →</div>
         </div>
         <div style={{
           background: 'linear-gradient(135deg, rgba(253,150,68,0.08) 0%, rgba(253,180,68,0.04) 100%)',
@@ -1528,7 +1684,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
         const bagCats = cats.filter(c => c.location === 'bag');
         if (bagCats.length === 0) return null;
         return (
-          <div onClick={() => onNavigate('cat', null, 'bag')} style={{ padding:'12px 20px 0' }}>
+          <div onClick={() => onNavigate('cathome', null, 'bag')} style={{ padding:'12px 20px 0' }}>
             <div style={{
               padding:'10px 14px', borderRadius:12, cursor:'pointer',
               background:colors.card, border:`1px solid ${colors.cardBorder}`,
@@ -1579,18 +1735,22 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
 /* ═══════════════════════════════════════
    P9: 猫咪上阵布阵系统 - 统一布阵管理器
    ═══════════════════════════════════════ */
-function LineupManager({ 
-  battleCats, 
-  spectatorCats, 
-  homeCats, 
-  onDeploy, 
-  onWithdraw, 
-  onSpectatorDeploy, 
-  onSpectatorWithdraw, 
+function LineupManager({
+  battleCats,
+  spectatorCats,
+  homeCats,
+  onDeploy,
+  onWithdraw,
+  onSpectatorDeploy,
+  onSpectatorWithdraw,
   onCatClick,
   slot4Unlocked,
   slot5Unlocked,
-  slot6Unlocked
+  slot6Unlocked,
+  bubbles,
+  animatingCats,
+  onCatTap,
+  unlockAudio
 }) {
   const [draggingCat, setDraggingCat] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -1834,7 +1994,7 @@ function LineupManager({
 /* ═══════════════════════════════════════
    CAT PAGE (Tab 3) — Battle + Spectator + Home + Bag + P6: 纪念册
    ═══════════════════════════════════════ */
-function CatPage({ cats, fish, onFeed, onBatchFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw }) {
+function CatPage({ cats, fish, onFeed, onBatchFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio }) {
 
 // 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
 const getInitialTab = () => {
@@ -1924,24 +2084,26 @@ useEffect(() => {
       {subTab === 'battle' && (
         <div>
           {/* 统一布阵管理器 */}
-          <LineupManager 
-            battleCats={battleCats} 
-            spectatorCats={spectatorCats} 
-            homeCats={homeCats} 
-            onDeploy={onDeploy} 
-            onWithdraw={onWithdraw} 
-            onSpectatorDeploy={onSpectatorDeploy} 
-            onSpectatorWithdraw={onSpectatorWithdraw} 
+          <LineupManager
+            battleCats={battleCats}
+            spectatorCats={spectatorCats}
+            homeCats={homeCats}
+            onDeploy={onDeploy}
+            onWithdraw={onWithdraw}
+            onSpectatorDeploy={onSpectatorDeploy}
+            onSpectatorWithdraw={onSpectatorWithdraw}
             onCatClick={(cat) => onNavigate('catDetail', cat)}
             slot4Unlocked={slot4Unlocked}
             slot5Unlocked={slot5Unlocked}
             slot6Unlocked={slot6Unlocked}
+            bubbles={bubbles} animatingCats={animatingCats}
+            onCatTap={onCatTap} unlockAudio={unlockAudio}
           />
         </div>
       )}
       {/* P2: 家园（原养成区） */}
       {subTab === 'home' && (
-        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onBatchFeed={onBatchFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} />
+        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onBatchFeed={onBatchFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} bubbles={bubbles} animatingCats={animatingCats} isSleepTime={isSleepTime} onCatTap={onCatTap} onTriggerFeed={onTriggerFeed} unlockAudio={unlockAudio} />
       )}
       {subTab === 'bag' && (
         <BagArea cats={bagCats} homeCount={homeCats.length} homeMaxSlots={homeMaxSlots} onAdopt={onAdopt} onNavigate={onNavigate} onDiscard={onDiscard} />
@@ -1954,7 +2116,7 @@ useEffect(() => {
    P2: HOME AREA (家园) + P6: 告别仪式 - P4: 界面调整
    家园槽位卡片：添加被动技能标签、批量补满按钮、上场按钮
    ═══════════════════════════════════════ */
-function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onBatchFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive }) {
+function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onBatchFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio }) {
 
 const allSlots = Array.from({ length: homeMaxSlots });
 
@@ -1969,7 +2131,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
   }
 
   // 计算批量补满需要的鱼干
-  const calcFullFeedCost = (currentIntimacy) => Math.ceil((100 - currentIntimacy) / 5);
+  const calcFullFeedCost = (currentIntimacy) => Math.ceil((100 - (Number(currentIntimacy) || 0)) / 5);
   const canFullFeed = (currentIntimacy) => fish >= calcFullFeedCost(currentIntimacy);
 
   return (
@@ -1984,7 +2146,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
               background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(108,92,231,0.2)',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8, minHeight:100,
               cursor:'pointer',
-            }} onClick={() => onNavigate('cat', null, 'bag')}>
+            }} onClick={() => onNavigate('cathome', null, 'bag')}>
               <span style={{ fontSize:22, color:colors.muted }}>+</span>
               <div style={{ textAlign:'center' }}>
                 <span style={{ fontSize:13, color:colors.muted, fontWeight:500 }}>领养新猫</span>
@@ -2014,17 +2176,50 @@ const allSlots = Array.from({ length: homeMaxSlots });
           }}>
             {/* P2: 亲密度指示器 */}
             {!cat.pendingRelease && (
-              <div style={{ position:'absolute', top:10, right:12, display:'flex', alignItems:'center', gap:3 }}>
+              <div style={{ position:'absolute', top:10, right:12, display:'flex', alignItems:'center', gap:3, zIndex:2 }}>
                 <span style={{ fontSize:10 }}>❤️</span>
                 <span style={{ fontSize:10, fontWeight:700, color: intimacyColor.bar }}>{intimacy}</span>
               </div>
             )}
 
-            <div onClick={() => onNavigate('catDetail', cat)} style={{ display:'flex', gap:12, cursor:'pointer' }}>
-              {/* P6: 告别仪式状态 - 猫咪背着小背包 */}
-              <div style={{ position:'relative', width:72, height:72, borderRadius:16, overflow:'hidden', border:`2px solid ${cat.pendingRelease ? 'rgba(255,107,107,0.5)' : RARITY_COLORS[cat.rarity] + '40'}`, flexShrink:0 }}>
-                <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover', filter: cat.pendingRelease ? 'grayscale(0.3)' : 'none' }}
-                  onError={e => { e.target.style.display='none'; }} />
+            {/* 台词气泡 */}
+            {bubbles && bubbles[cat.serialId] && (
+              <div className={`speech-bubble ${bubbles[cat.serialId].hiding ? 'out' : 'in'}`}>
+                {bubbles[cat.serialId].text}
+              </div>
+            )}
+            <div onClick={(e) => {
+              unlockAudio && unlockAudio();
+              onCatTap && onCatTap(cat);
+              onNavigate('catDetail', cat);
+            }} style={{ display:'flex', gap:12, cursor:'pointer' }}>
+              {/* 猫咪图片 */}
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <div style={{
+                  width:72, height:72, borderRadius:16, overflow:'hidden',
+                  border:`2px solid ${cat.pendingRelease ? 'rgba(255,107,107,0.5)' : RARITY_COLORS[cat.rarity] + '40'}`,
+                  ...(!cat.pendingRelease && cat.rarity === 'SSR' ? {
+                    boxShadow: '0 0 16px rgba(253,150,68,0.5)',
+                    animation: 'ssr-pulse 3s ease-in-out infinite',
+                  } : {}),
+                  ...(animatingCats && animatingCats[cat.serialId] ? {
+                    animation: `${animatingCats[cat.serialId]} 0.5s ease-out`,
+                  } : isSleepTime && !cat.pendingRelease ? {
+                    animation: 'cat-sleep-float 6s ease-in-out infinite',
+                  } : !cat.pendingRelease ? {
+                    animation: 'cat-float 4s ease-in-out infinite',
+                  } : {}),
+                }}>
+                  <img src={cat.img} alt={cat.name} style={{
+                    width:'100%', height:'100%', objectFit:'cover',
+                    filter: isSleepTime && !cat.pendingRelease ? 'brightness(0.9) saturate(0.8)' : cat.pendingRelease ? 'grayscale(0.3)' : 'none',
+                    transition: 'filter 1s ease',
+                  }} onError={e => { e.target.style.display='none'; }} />
+                </div>
+                {/* 睡眠 ZZZ 气泡 */}
+                {isSleepTime && !cat.pendingRelease && !(bubbles && bubbles[cat.serialId]) && (
+                  <div className="zzz-bubble">💤</div>
+                )}
                 {/* 告别仪式背包 */}
                 {cat.pendingRelease && (
                   <div style={{ position:'absolute', bottom:-4, right:-4, fontSize:20, animation:'pulse 1.5s ease-in-out infinite' }}>🎒</div>
@@ -2061,7 +2256,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
                 ) : (
                   <div style={{ marginBottom: 4 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
-                      <span style={{ fontSize:10, color: intimacyColor.bar }}>❤️ 亲密度 {intimacy}/100</span>
+                      <span style={{ fontSize:10, color: intimacyColor.bar }}>❤️ 亲密度 {Number(intimacy) || 0}/100</span>
                     </div>
                     <div style={{ width:'100%', height:4, borderRadius:2, background: 'rgba(255,255,255,0.06)', overflow:'hidden' }}>
                       <div style={{ 
@@ -2084,8 +2279,8 @@ const allSlots = Array.from({ length: homeMaxSlots });
                 )}
                 <div style={{ fontSize:10, color:colors.muted }}>
                   {cat.pendingRelease
-                    ? `告别仪式中 · ${cat.daysAlive}天陪伴`
-                    : `陪伴 ${cat.daysAlive} 天 · 上次喂食 ${lastFedHours}小时前`}
+                    ? `告别仪式中 · ${Number(cat.daysAlive) || 0}天陪伴`
+                    : `陪伴 ${Number(cat.daysAlive) || 0} 天 · 上次喂食 ${Number(lastFedHours) || 0}小时前`}
                 </div>
               </div>
             </div>
@@ -2115,7 +2310,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
             ) : (
               <div style={{ display:'flex', gap:8, marginTop:10 }}>
                 {/* 喂食按钮 */}
-                <button onClick={() => onFeed(cat)} disabled={!canFeed} style={{
+                <button onClick={() => { unlockAudio && unlockAudio(); onTriggerFeed && onTriggerFeed(cat); onFeed(cat); }} disabled={!canFeed} style={{
                   flex:1, height:32, borderRadius:8, border:'none', cursor: canFeed?'pointer':'not-allowed',
                   fontSize:11, fontWeight:700,
                   background: canFeed ? `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})` : 'rgba(255,255,255,0.05)',
@@ -2456,7 +2651,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
             <>
               {/* 家园：亲密度 + 技能栏 */}
               <div style={{ fontSize:12, fontWeight:700, color:colors.ink, marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                <span>❤️</span> 亲密度 {intimacy}/100
+                <span>❤️</span> 亲密度 {Number(intimacy) || 0}/100
               </div>
               
               {/* P7: 5段式亲密度进度条 */}
@@ -3113,8 +3308,11 @@ function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClea
   );
 }
 
-function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, user, bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell }) {
-  const [subTab, setSubTab] = React.useState('gacha');
+function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, user, bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell, initialSubTab }) {
+  const [subTab, setSubTab] = React.useState(initialSubTab || 'gacha');
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   return (
     <div>
@@ -3459,6 +3657,8 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
   const [animPhase, setAnimPhase] = useState('idle'); // idle → shake → reveal → idle
   const [animCat, setAnimCat] = useState(null);
   const timersRef = useRef([]);
+  const PAGE_SIZE = 8;
+  const [myCatPage, setMyCatPage] = useState(0);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -3467,14 +3667,14 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
 
   // 使用新的保底系统
   const pityInfo = getPityProgress(pityCount);
-  
+
   const handleGacha = () => {
     if (bells < 1 || animPhase !== 'idle') return;
 
     // 使用新保底系统
     const result = doGacha(pityCount);
     const { breed, rarity, newPityCount, triggeredPity } = result;
-    
+
     const previewCat = {
       breedId: breed.id,
       name: breed.id,
@@ -3682,27 +3882,55 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
             <span style={{ fontSize:10, color:colors.sub, fontWeight:400 }}>{new Set(cats.map(c => c.breedId)).size}/{BREEDS.length}已解锁，共{cats.length}只</span>
           </div>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
-          {sortedCats.map((cat, i) => (
-            <div key={cat.serialId} onClick={() => onCardClick(cat)} style={{
-              borderRadius:14, padding:'8px 4px 6px', cursor:'pointer',
-              background:colors.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}20`,
-              display:'flex', flexDirection:'column', alignItems:'center', gap:4,
-              animation:`slideUp 0.4s ease-out ${i * 0.05}s both`,
-              transition:'transform 0.15s, box-shadow 0.15s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = `0 0 16px ${RARITY_COLORS[cat.rarity]}20`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', border:`1.5px solid ${RARITY_COLORS[cat.rarity]}40` }}>
-                <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
-                  onError={e => { e.target.style.display = 'none'; }} />
+        {(() => {
+          const totalPages = Math.ceil(sortedCats.length / PAGE_SIZE);
+          const safePage = Math.min(myCatPage, Math.max(0, totalPages - 1));
+          const pageCats = sortedCats.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+          return (
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8 }}>
+                {pageCats.map((cat, i) => (
+                  <div key={cat.serialId} onClick={() => onCardClick(cat)} style={{
+                    borderRadius:14, padding:'8px 4px 6px', cursor:'pointer',
+                    background:colors.card, border:`1px solid ${RARITY_COLORS[cat.rarity]}20`,
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                    animation:`slideUp 0.4s ease-out ${i * 0.05}s both`,
+                    transition:'transform 0.15s, box-shadow 0.15s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = `0 0 16px ${RARITY_COLORS[cat.rarity]}20`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', border:`1.5px solid ${RARITY_COLORS[cat.rarity]}40` }}>
+                      <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                        onError={e => { e.target.style.display = 'none'; }} />
+                    </div>
+                    <span style={{ fontSize:10, fontWeight:600, color:colors.ink }}>{cat.name}</span>
+                    <span style={{ fontSize:8, fontWeight:700, color:RARITY_COLORS[cat.rarity], padding:'1px 6px', borderRadius:4, background:RARITY_BG[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
+                  </div>
+                ))}
               </div>
-              <span style={{ fontSize:10, fontWeight:600, color:colors.ink }}>{cat.name}</span>
-              <span style={{ fontSize:8, fontWeight:700, color:RARITY_COLORS[cat.rarity], padding:'1px 6px', borderRadius:4, background:RARITY_BG[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
-            </div>
-          ))}
-        </div>
+              {totalPages > 1 && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginTop:10 }}>
+                  <button onClick={() => setMyCatPage(p => Math.max(0, p - 1))} disabled={safePage === 0} style={{
+                    background: safePage === 0 ? 'transparent' : colors.card,
+                    border: `1px solid ${safePage === 0 ? 'transparent' : colors.cardBorder}`,
+                    borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 600,
+                    color: safePage === 0 ? colors.muted : colors.ink, cursor: safePage === 0 ? 'default' : 'pointer',
+                    opacity: safePage === 0 ? 0.3 : 1,
+                  }}>‹ 上一页</button>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: colors.sub }}>{safePage + 1} / {totalPages}</span>
+                  <button onClick={() => setMyCatPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} style={{
+                    background: safePage >= totalPages - 1 ? 'transparent' : colors.card,
+                    border: `1px solid ${safePage >= totalPages - 1 ? 'transparent' : colors.cardBorder}`,
+                    borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 600,
+                    color: safePage >= totalPages - 1 ? colors.muted : colors.ink, cursor: safePage >= totalPages - 1 ? 'default' : 'pointer',
+                    opacity: safePage >= totalPages - 1 ? 0.3 : 1,
+                  }}>下一页 ›</button>
+                </div>
+              )}
+            </>
+          );
+        })()}
         {/* Unlocked breeds count */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:8, marginTop:8 }}>
           {BREEDS.filter(b => !cats.some(c => c.breedId === b.id)).map((breed, i) => (
@@ -4091,25 +4319,26 @@ if (!show) return null;
    ═══════════════════════════════════════ */
 function FarewellCountdown({ cat }) {
   const [remaining, setRemaining] = useState('');
-  
+  const farewellDuration = cat.farewellDuration || 24 * 60 * 60 * 1000;
+
   useEffect(() => {
     const updateCountdown = () => {
       if (!cat.farewellStartedAt) return;
       const elapsed = Date.now() - cat.farewellStartedAt;
-      const remainingMs = Math.max(0, cat.farewellDuration - elapsed);
+      const remainingMs = Math.max(0, farewellDuration - elapsed);
       const hours = Math.floor(remainingMs / (60 * 60 * 1000));
       const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
       const seconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
       setRemaining(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
     };
-    
+
     updateCountdown();
     const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
-  }, [cat.farewellStartedAt, cat.farewellDuration]);
-  
-  const progress = cat.farewellStartedAt 
-    ? Math.max(0, ((Date.now() - cat.farewellStartedAt) / cat.farewellDuration) * 100)
+  }, [cat.farewellStartedAt, farewellDuration]);
+
+  const progress = cat.farewellStartedAt
+    ? Math.max(0, ((Date.now() - cat.farewellStartedAt) / farewellDuration) * 100)
     : 0;
   
   return (
@@ -4280,7 +4509,7 @@ function MemorialDetailModal({ cat, show, onClose }) {
   const allOwners = [...(cat.previousOwners || [])];
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:300, maxHeight:'80%', overflowY:'auto', background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'24px 20px', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:300, maxHeight:'80%', overflowY:'auto', background:`linear-gradient(180deg, ${colors.bg2} 0%, ${colors.bg} 100%)`, borderRadius:24, padding:'24px 20px', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
         {/* Cat avatar */}
         <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', margin:'0 auto 12px', border:`2px solid ${RARITY_COLORS[cat.rarity]}50`, filter:'grayscale(0.5)' }}>
           <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
@@ -4342,7 +4571,7 @@ function MemorialDetailModal({ cat, show, onClose }) {
           </div>
         )}
 
-        <button onClick={onClose} style={{ width:'100%', height:38, borderRadius:12, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.ink }}>关闭</button>
+        <button onClick={onClose} style={{ width:'100%', height:38, borderRadius:12, background:colors.card, border:`1px solid ${colors.cardBorder}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.ink }}>关闭</button>
       </div>
     </div>
   );
@@ -5061,6 +5290,57 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
 }
 
 /* ═══════════════════════════════════════
+   CAT MEOW SOUND (Web Audio API 合成喵叫)
+   ═══════════════════════════════════════ */
+let _globalAudioCtx = null;
+
+function getGlobalAudioCtx() {
+  if (!_globalAudioCtx) {
+    _globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_globalAudioCtx.state === 'suspended') {
+    _globalAudioCtx.resume();
+  }
+  return _globalAudioCtx;
+}
+
+function playMeowSound(pitch = 600) {
+  try {
+    const ctx = getGlobalAudioCtx();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    // 模拟猫叫声：音高先升后降
+    osc.frequency.setValueAtTime(pitch, t);
+    osc.frequency.exponentialRampToValueAtTime(pitch * 1.3, t + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(pitch * 0.6, t + 0.2);
+    osc.frequency.linearRampToValueAtTime(pitch * 0.3, t + 0.4);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  } catch(e) { /* 降级：不支持则静默 */ }
+}
+
+function unlockAudioCtx() {
+  const ctx = getGlobalAudioCtx();
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+  // 播放无声 buffer 彻底解锁 iOS
+  try {
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════
    MAIN APP
    ═══════════════════════════════════════ */
 function App() {
@@ -5086,7 +5366,7 @@ function App() {
   const getInitialActiveTab = () => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    return (tab && ['battle', 'bag'].includes(tab)) ? 'cat' : 'home';
+    return (tab && ['battle', 'bag'].includes(tab)) ? 'cathome' : 'home';
   };
   const [activeTab, setActiveTab] = useState(getInitialActiveTab);
   const [checkedIn, setCheckedIn] = useState(false);
@@ -5099,6 +5379,7 @@ function App() {
   const [gachaResult, setGachaResult] = useState(null);
   const [showGachaResult, setShowGachaResult] = useState(false);
   const [bagTab, setBagTab] = useState(null);
+  const [marketTab, setMarketTab] = useState(null);
   const [gachaDone, setGachaDone] = useState(false);
   // 通用确认弹窗
   const [confirmModal, setConfirmModal] = useState(null); // { emoji, title, message, onConfirm }
@@ -5120,6 +5401,92 @@ function App() {
   const [memorialDetailCat, setMemorialDetailCat] = useState(null);
   const [titleUnlockToast, setTitleUnlockToast] = useState(null);
   const prevTitlesRef = useRef(new Set());
+
+  // 猫咪卡片动效系统 — 状态
+  const [bubbles, setBubbles] = useState({});               // { [serialId]: { text, hiding } }
+  const [animatingCats, setAnimatingCats] = useState({});    // { [serialId]: animationName }
+  const [feedToast, setFeedToast] = useState(null);           // { text, timestamp }
+  const [isSleepTime, setIsSleepTime] = useState(false);
+  const [nightBonusDismissed, setNightBonusDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('miaolegemi_night_dismiss') === new Date().toISOString().slice(0, 10);
+    } catch(e) { return false; }
+  });
+  const dismissNightBonus = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('miaolegemi_night_dismiss', today);
+    setNightBonusDismissed(true);
+  }, []);
+  const audioUnlockedRef = useRef(false);
+
+  // 台词气泡：显示指定文本，duration ms 后自动消失
+  const showBubble = useCallback((catSerialId, text, duration = 2200) => {
+    setBubbles(prev => ({ ...prev, [catSerialId]: { text, hiding: false } }));
+    clearTimeout(window[`_bubble_timer_${catSerialId}`]);
+    window[`_bubble_timer_${catSerialId}`] = setTimeout(() => {
+      setBubbles(prev => {
+        const cur = prev[catSerialId];
+        if (!cur || cur.hiding) return prev;
+        return { ...prev, [catSerialId]: { ...cur, hiding: true } };
+      });
+      setTimeout(() => {
+        setBubbles(prev => { const n = { ...prev }; delete n[catSerialId]; return n; });
+      }, 250);
+    }, duration);
+  }, []);
+
+  // 通用动效触发器：给 catId 施加 animName 动效，持续 duration ms
+  const triggerAnimation = useCallback((catSerialId, animName, duration = 500) => {
+    setAnimatingCats(prev => ({ ...prev, [catSerialId]: animName }));
+    setTimeout(() => {
+      setAnimatingCats(prev => { const n = { ...prev }; delete n[catSerialId]; return n; });
+    }, duration);
+  }, []);
+
+  // 点击互动：弹跳动效 + 随机 normal 台词 + 喵叫
+  const triggerTap = useCallback((cat) => {
+    const lines = CAT_LINES.normal;
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    showBubble(cat.serialId, line, 2200);
+    triggerAnimation(cat.serialId, 'cat-bounce-click', 500);
+    playMeowSound(500 + Math.random() * 400); // 随机音高 500-900
+  }, [showBubble, triggerAnimation]);
+
+  // 喂食反馈：跳跃动效 + 喂食台词 + Toast
+  const triggerFeed = useCallback((cat) => {
+    const lines = CAT_LINES.feed;
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    showBubble(cat.serialId, line, 2500);
+    triggerAnimation(cat.serialId, 'cat-feed-jump', 800);
+  }, [showBubble, triggerAnimation]);
+
+  // 通关庆祝：所有出战猫咪依次播放 celebrate 动效
+  const triggerWinCelebrate = useCallback(() => {
+    const deployed = cats.filter(c => c.battleSlot != null).sort((a, b) => a.battleSlot - b.battleSlot);
+    if (deployed.length === 0) return;
+    deployed.forEach((cat, i) => {
+      setTimeout(() => {
+        const lines = CAT_LINES.win;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        showBubble(cat.serialId, line, 3000);
+        triggerAnimation(cat.serialId, 'cat-celebrate', 650);
+      }, i * 200);
+    });
+  }, [cats, showBubble, triggerAnimation]);
+
+  // 失败安慰：所有家园猫咪依次播放 console 摇摆
+  const triggerFailConsole = useCallback(() => {
+    const homeCats = cats.filter(c => c.location === 'home');
+    if (homeCats.length === 0) return;
+    homeCats.forEach((cat, i) => {
+      setTimeout(() => {
+        const lines = CAT_LINES.fail;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        showBubble(cat.serialId, line, 3000);
+        triggerAnimation(cat.serialId, 'cat-console', 1200);
+      }, i * 250);
+    });
+  }, [cats, showBubble, triggerAnimation]);
 
   // 通用确认弹窗辅助函数
   const showConfirmModal = useCallback(({ emoji, title, message, onConfirm }) => {
@@ -5419,6 +5786,20 @@ function App() {
   useEffect(() => {
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
+        // 检查消消乐通关/失败标记（动效联动）
+        try {
+          const flagsStr = localStorage.getItem('miaolegemi_game_flags');
+          if (flagsStr) {
+            const flags = JSON.parse(flagsStr);
+            const elapsed = Date.now() - (flags.timestamp || 0);
+            if (elapsed < 30000) {
+              if (flags.justWon) triggerWinCelebrate();
+              else if (flags.justFailed) triggerFailConsole();
+            }
+            localStorage.removeItem('miaolegemi_game_flags');
+          }
+        } catch(e) {}
+
         // Online mode: sync from API
         if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
           try {
@@ -5495,6 +5876,50 @@ function App() {
     }, 5000);
     return () => clearTimeout(timer);
   }, [notifPerm]);
+
+  // 深夜睡眠检测（22:00 - 06:00）
+  useEffect(() => {
+    const checkSleep = () => {
+      const h = new Date().getHours();
+      setIsSleepTime(h >= 22 || h < 6);
+    };
+    checkSleep();
+    const timer = setInterval(checkSleep, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 首次用户交互时解锁 AudioContext（满足浏览器自动播放策略）
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    unlockAudioCtx();
+    audioUnlockedRef.current = true;
+  }, []);
+
+  // 摇一摇检测（DeviceMotion API）
+  useEffect(() => {
+    let lastShakeTime = 0;
+    const handleMotion = (e) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitude = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+      const now = Date.now();
+      if (magnitude > 25 && now - lastShakeTime > 3000) {
+        lastShakeTime = now;
+        const homeCats = cats.filter(c => c.location === 'home');
+        homeCats.slice(0, 3).forEach((cat, i) => {
+          setTimeout(() => {
+            showBubble(cat.serialId, '😱 喵？！地震了？', 2000);
+            triggerAnimation(cat.serialId, 'cat-bounce-click', 500);
+          }, i * 150);
+        });
+        playMeowSound(300);
+      }
+    };
+    if (window.DeviceMotionEvent) {
+      window.addEventListener('devicemotion', handleMotion);
+    }
+    return () => window.removeEventListener('devicemotion', handleMotion);
+  }, [cats, showBubble, triggerAnimation]);
 
   // Push notifications: check cat statuses periodically
   const notifSentRef = useRef({});
@@ -5618,19 +6043,21 @@ function App() {
     fishLedger.push({ type: 'spend', amount: 1, desc: `${cat.name}喂食`, time: Date.now() });
     setCats(prev => prev.map(c => {
       if (c.serialId !== cat.serialId) return c;
-      // P2: 亲密度系统：每次喂食+5亲密度
       const currentIntimacy = c.intimacy || 0;
       const newIntimacy = Math.min(INTIMACY_MAX, currentIntimacy + INTIMACY_PER_FEED);
-      return { 
-        ...c, 
-        lastFedAt: Date.now(), 
-        lastOnlineAt: Date.now(), // 更新在线时间，停止衰减
-        intimacy: newIntimacy, // P2: 亲密度更新
-        fishSpent: (c.fishSpent || 0) + 1, 
+      return {
+        ...c,
+        lastFedAt: Date.now(),
+        lastOnlineAt: Date.now(),
+        intimacy: newIntimacy,
+        fishSpent: (c.fishSpent || 0) + 1,
         daysAlive: (c.daysAlive || 0) + 1,
         status: 'alive',
       };
     }));
+    // 喂食Toast
+    setFeedToast({ text: `🐟 -1 ｜ ❤️ 好感度 +5！`, timestamp: Date.now() });
+    setTimeout(() => setFeedToast(null), 2000);
   }, [isLocalMode]);
 
   // P0: Handle batch feed (批量补满亲密度)
@@ -5826,6 +6253,7 @@ function App() {
         ...c,
         pendingRelease: true,           // 开启告别仪式状态
         farewellStartedAt: now,        // 开始时间
+        farewellDuration: c.farewellDuration || 24 * 60 * 60 * 1000, // 确保有默认值
         canBeSaved: true,              // 可以挽回
         saveCost: 100,                 // 挽留费用
       };
@@ -6032,7 +6460,7 @@ function App() {
     const dailyLimit = 5;
     if (exchangedToday >= dailyLimit) { alert('今日兑换已达上限（5次/天）'); return; }
     if (getFishBalance() < 100) { alert('鱼干不足（需要100条鱼干）'); return; }
-    fishLedger.push({ type: 'spend', amount: -100, desc: '兑换铃铛', time: Date.now() });
+    fishLedger.push({ type: 'spend', amount: 100, desc: '兑换铃铛', time: Date.now() });
     fishLedger.push({ type: 'exchange', amount: 0, desc: '兑换铃铛', time: Date.now() });
     setBells(prev => prev + 1);
     setCats(prev => [...prev]); // trigger re-render to update fish display
@@ -6184,7 +6612,11 @@ function App() {
     } else {
       setActiveTab(tab);
       if (subTab) {
-        setBagTab(subTab);
+        if (tab === 'market') {
+          setMarketTab(subTab);
+        } else {
+          setBagTab(subTab);
+        }
         // 设置URL参数以确保CatPage能获取正确的subTab
         const url = new URL(window.location);
         url.searchParams.set('tab', subTab);
@@ -6283,7 +6715,7 @@ function App() {
           <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', scrollbarWidth:'none', paddingBottom:74 }}>
             <style>{`div::-webkit-scrollbar{display:none}`}</style>
 
-            <NightBonusBanner />
+            <NightBonusBanner dismissed={nightBonusDismissed} onClose={dismissNightBonus} />
             <GroupStageBanner scores={groupStageScores} claimed={groupStageBellsClaimed} onClaim={handleClaimGroupStageBell} fish={fish} />
             <KnockoutBanner clears={knockoutConsecutiveClears} eliminated={knockoutEliminatedToday} skinClaimed={knockoutSkinClaimed} />
             <FinalDayBanner />
@@ -6315,6 +6747,9 @@ function App() {
                 initialTab={(new URLSearchParams(window.location.search).get('tab')) || (activeTab === 'cathome' ? 'home' : bagTab)}
                 baseSlots={baseSlots}
                 slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked}
+                bubbles={bubbles} animatingCats={animatingCats} isSleepTime={isSleepTime}
+                onCatTap={triggerTap} onTriggerFeed={triggerFeed}
+                unlockAudio={unlockAudio}
               />
             ) : activeTab === 'home' ? (
               <HomePage
@@ -6325,7 +6760,7 @@ function App() {
                 user={user}
               />
             ) : activeTab === 'market' ? (
-              <MarketPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} todayFish={todayFish} user={user} bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} knockoutConsecutiveClears={knockoutConsecutiveClears} knockoutEliminatedToday={knockoutEliminatedToday} knockoutSkinClaimed={knockoutSkinClaimed} groupStageScores={groupStageScores} groupStageBellsClaimed={groupStageBellsClaimed} onClaimGroupStageBell={handleClaimGroupStageBell} />
+              <MarketPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} todayFish={todayFish} user={user} bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} knockoutConsecutiveClears={knockoutConsecutiveClears} knockoutEliminatedToday={knockoutEliminatedToday} knockoutSkinClaimed={knockoutSkinClaimed} groupStageScores={groupStageScores} groupStageBellsClaimed={groupStageBellsClaimed} onClaimGroupStageBell={handleClaimGroupStageBell} initialSubTab={marketTab} />
             ) : activeTab === 'shop' ? (
               <ShopPage fish={fish} bells={bells} user={user} onExchange={handleExchangeBells} cats={cats} ownedSkins={ownedSkins} equippedSkins={equippedSkins} onBuySkin={handleBuySkin} onEquipSkin={handleEquipSkin} onClaimFreeSkin={handleClaimFreeSkin} />
             ) : (
@@ -6349,7 +6784,7 @@ function App() {
           )}
 
           {/* Modals */}
-          {!showCatDetail && !showPreBattle && <TabBar active={activeTab} onChange={(tab) => { setActiveTab(tab); setBagTab(null); }} />}
+          {!showCatDetail && !showPreBattle && <TabBar active={activeTab} onChange={(tab) => { setActiveTab(tab); setBagTab(null); setMarketTab(null); const url = new URL(window.location); url.searchParams.delete('tab'); window.history.replaceState({}, '', url); }} />}
           <CheckInModal show={showCheckIn} onClose={() => setShowCheckIn(false)} />
           <AdoptConfirmModal cat={adoptTarget} show={!!adoptTarget} canAdopt={nurturing.length < 10} homeCount={nurturing.length} homeMaxSlots={10} onConfirm={confirmAdopt} onCancel={() => setAdoptTarget(null)} />
           <ReleaseConfirmModal cat={releaseTarget} show={!!releaseTarget} onConfirm={confirmRelease} onCancel={() => setReleaseTarget(null)} />
@@ -6411,6 +6846,12 @@ function App() {
             onViewAgreement={() => setCurrentPage('agreement')}
             loading={loginAuthLoading}
           />
+          {/* 喂食Toast */}
+          {feedToast && (
+            <div className="feed-toast in" key={feedToast.timestamp}>
+              {feedToast.text}
+            </div>
+          )}
           {/* 合规：游客模式toast */}
           {guestToast && (
             <div style={{
