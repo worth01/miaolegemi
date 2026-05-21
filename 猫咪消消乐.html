@@ -78,86 +78,77 @@ const PERSONALITY_TO_ID = Object.fromEntries(
 
 // 性格效果类型
 const PERSONALITY_EFFECT_TYPES = {
-  傲娇: '主动技能冷却缩减',   // 主动技能冷却缩减
-  吃货: '额外鱼干百分比加成',                // 额外鱼干百分比加成
-  胆小: '干扰牌负面效果减免',   // 干扰牌负面效果减免
-  黏人: '关卡容错续命',               // 关卡容错续命
-  高冷: '普通消除得分加成',              // 普通消除得分加成
-  话痨: '释放技能额外得分',         // 释放技能额外得分
-  懒散: '关卡限时延长',           // 关卡限时延长
-  胆大: '危险牌惩罚减免',         // 危险牌惩罚减免
-  独行: '单人出战收益加成',               // 单人出战收益加成
-  狡黠: '额外鱼干上限提升',          // 额外鱼干上限提升
+  傲娇: '主动技能释放次数',
+  吃货: '全局鱼干收益加成',
+  胆小: '干扰牌效果触发概率',
+  黏人: '关卡失败再来一次概率',
+  高冷: '消除得分加成',
+  话痨: '每次释放技能额外加分',
+  懒散: '计时关卡时间延长',
+  胆大: '关卡失败鱼干损失减免',
+  独行: '单猫上阵鱼干加成',
+  狡黠: '额外鱼干上限提升',
 };
 
 // 性格描述
 const PERSONALITY_DESCRIPTIONS = {
-  傲娇: '技能CD更快，可更频繁释放',
-  吃货: '按亲密度等级提升额外鱼干收益',
-  胆小: '降低冰冻、舔毛、变身、真身牌等干扰影响',
-  黏人: '提升失误缓冲，降低关卡失败概率',
-  高冷: '基础三消消除获得更高分数',
-  话痨: '每次使用主动技能时，额外追加对局分数',
-  懒散: '计时类关卡增加可操作总时长',
-  胆大: '减少小狗牌、操作失误的扣分与失败判定',
-  独行: '仅上阵该猫咪1只时，得分/收益提升',
+  傲娇: '按亲密度等级决定技能释放次数，最多3次',
+  吃货: '全局鱼干收益按百分比加成',
+  胆小: '降低干扰牌效果触发概率，高好感度不再受影响',
+  黏人: '关卡失败时概率触发再来一次，最多3次',
+  高冷: '三消消除获得更高分数加成',
+  话痨: '每次释放主动技能时额外追加对局分数',
+  懒散: '计时关卡增加可操作总时长',
+  胆大: '关卡失败时减少鱼干损失比例',
+  独行: '仅单猫上阵时获得额外鱼干加成（多猫失效）',
   狡黠: '按亲密度等级提高本局额外鱼干上限',
 };
 
 /* ═══════════════════════════════════════
-   P7: 10种性格×5阶亲密度效果配置（权威配置表）
+   猫咪性格×5阶亲密度效果配置（权威配置表·定版）
    叠加规则：同性格取最高好感度，不同性格全叠加
+   所有数值严格按设计文档，无私自调整
    ═══════════════════════════════════════ */
 const PERSONALITY_CONFIG = {
   傲娇: {
-    id: 1, name: '傲娇', type: 'cooldown',
-    getEffect: (level) => INTIMACY_EFFECTS[level]?.cooldownReduction || 0,
-    special: { 5: { extraSkillUses: 1 } },
-  },
-  黏人: {
-    id: 4, name: '黏人', type: 'exemption',
-    getEffect: (level) => {
-      const map = {
-        1: { exemptChance: 0.2, exemptCount: 1, hiddenExempt: 0, freeRevive: 0 },
-        2: { exemptChance: 1.0, exemptCount: 1, hiddenExempt: 0, freeRevive: 0 },
-        3: { exemptChance: 1.0, exemptCount: 1, hiddenExempt: 1, freeRevive: 0 },
-        4: { exemptChance: 1.0, exemptCount: 2, hiddenExempt: 0, freeRevive: 0 },
-        5: { exemptChance: 1.0, exemptCount: 2, hiddenExempt: 0, freeRevive: 1 },
-      };
-      return map[level] || map[1];
-    },
-  },
-  狡黠: {
-    id: 10, name: '狡黠', type: 'extraFishLimit',
-    getEffect: (level) => INTIMACY_EFFECTS[level]?.extraFishLimit || 0,
+    id: 1, name: '傲娇', type: 'skillCount',
+    getEffect: (level) => ({ 1:1, 2:1, 3:2, 4:2, 5:3 }[level] || 1),
   },
   吃货: {
     id: 2, name: '吃货', type: 'fishBonus',
-    getEffect: (level) => INTIMACY_EFFECTS[level]?.personalityBonus || 0,
+    getEffect: (level) => ({ 1:0.05, 2:0.05, 3:0.10, 4:0.15, 5:0.20 }[level] || 0),
   },
-  独行: {
-    id: 9, name: '独行', type: 'soloBonus',
-    getEffect: (level) => INTIMACY_EFFECTS[level]?.personalityBonus || 0,
+  胆小: {
+    id: 3, name: '胆小', type: 'interferenceProbability',
+    getEffect: (level) => ({ 1:0.95, 2:0.90, 3:0.85, 4:0.75, 5:0.65 }[level] || 1.0),
+  },
+  黏人: {
+    id: 4, name: '黏人', type: 'retry',
+    getEffect: (level) => ({ 1:0.20, 2:0.30, 3:0.45, 4:0.55, 5:0.66 }[level] || 0),
   },
   高冷: {
     id: 5, name: '高冷', type: 'scoreBonus',
-    getEffect: (level) => INTIMACY_EFFECTS[level]?.personalityBonus || 0,
-  },
-  懒散: {
-    id: 7, name: '懒散', type: 'timerExtension',
-    getEffect: (level) => { const m = {1:2,2:3,3:4,4:6,5:8}; return m[level] || 0; },
-  },
-  胆小: {
-    id: 3, name: '胆小', type: 'interferenceReduction',
-    getEffect: (level) => { const m = {1:0.2,2:0.4,3:0.6,4:0.8,5:1.0}; return m[level] || 0; },
-  },
-  胆大: {
-    id: 8, name: '胆大', type: 'dangerReduction',
-    getEffect: (level) => { const m = {1:0.2,2:0.4,3:0.6,4:0.8,5:1.0}; return m[level] || 0; },
+    getEffect: (level) => ({ 1:0.05, 2:0.10, 3:0.15, 4:0.20, 5:0.30 }[level] || 0),
   },
   话痨: {
     id: 6, name: '话痨', type: 'skillScore',
-    getEffect: (level) => { const m = {1:50,2:100,3:150,4:200,5:300}; return m[level] || 0; },
+    getEffect: (level) => ({ 1:50, 2:100, 3:150, 4:200, 5:300 }[level] || 0),
+  },
+  懒散: {
+    id: 7, name: '懒散', type: 'timerExtension',
+    getEffect: (level) => ({ 1:2, 2:3, 3:4, 4:6, 5:8 }[level] || 0),
+  },
+  胆大: {
+    id: 8, name: '胆大', type: 'fishLossRatio',
+    getEffect: (level) => ({ 1:0.50, 2:0.45, 3:0.40, 4:0.35, 5:0.30 }[level] || 0.50),
+  },
+  独行: {
+    id: 9, name: '独行', type: 'soloBonus',
+    getEffect: (level) => ({ 1:0.05, 2:0.15, 3:0.15, 4:0.25, 5:0.35 }[level] || 0),
+  },
+  狡黠: {
+    id: 10, name: '狡黠', type: 'extraFishLimit',
+    getEffect: (level) => ({ 1:0, 2:0, 3:1, 4:1, 5:2 }[level] || 0),
   },
 };
 
@@ -179,44 +170,13 @@ const INTIMACY_TO_LEVEL = Object.fromEntries(
   Object.entries(INTIMACY_LEVEL_ENUM).map(([level, name]) => [name, parseInt(level)])
 );
 
-// 亲密度等级效果配置
+// 亲密度等级效果配置（仅保留狡黠额外鱼干上限，其余效果由各性格自行定义）
 const INTIMACY_EFFECTS = {
-  // 等级: { skillUses: 技能使用次数, personalityBonus: 性格加成比例, extraFishLimit: 狡黠额外上限, special: 专属效果描述 }
-  1: { // 陌生
-    skillUses: 1,
-    personalityBonus: 0.05,      // +5%
-    extraFishLimit: 0,          // +0
-    cooldownReduction: 0.1,     // 傲娇：冷却小幅缩减
-    extraLifeChance: 0,         // 黏人：无
-  },
-  2: { // 初识
-    skillUses: 1,
-    personalityBonus: 0.10,     // +10%
-    extraFishLimit: 0,          // +0
-    cooldownReduction: 0.2,     // 傲娇：冷却中等缩减
-    extraLifeChance: 0.05,      // 黏人：小概率豁免1次失误
-  },
-  3: { // 熟悉
-    skillUses: 2,
-    personalityBonus: 0.15,     // +15%
-    extraFishLimit: 1,          // +1
-    cooldownReduction: 0.3,     // 傲娇：冷却明显缩减
-    extraLifeChance: 0,         // 黏人：每局自带1次隐性容错（通过extraLife实现）
-  },
-  4: { // 亲密
-    skillUses: 3,
-    personalityBonus: 0.20,     // +20%
-    extraFishLimit: 1,          // +1
-    cooldownReduction: 0.4,     // 傲娇：冷却大幅缩减
-    extraLife: 1,                // 黏人：每局固定豁免1次失误
-  },
-  5: { // 挚爱
-    skillUses: 3,
-    personalityBonus: 0.30,     // +30%
-    extraFishLimit: 2,          // +2
-    cooldownReduction: 0.5,     // 傲娇：冷却最大缩减
-    extraLife: 1,               // 黏人：每局额外免费续命1次
-  },
+  1: { extraFishLimit: 0 },
+  2: { extraFishLimit: 0 },
+  3: { extraFishLimit: 1 },
+  4: { extraFishLimit: 1 },
+  5: { extraFishLimit: 2 },
 };
 
 /* ═══════════════════════════════════════
@@ -287,8 +247,8 @@ function calculateFishReward(comboCount, totalBonusRatio, hasCleverCat = false, 
  */
 function calculatePersonalityBonus(personality, intimacyLevel) {
   if (!personality) return 0;
-  const effects = INTIMACY_EFFECTS[intimacyLevel] || INTIMACY_EFFECTS[1];
-  if (personality === '吃货') return effects.personalityBonus;
+  const config = PERSONALITY_CONFIG[personality];
+  if (config && config.type === 'fishBonus') return config.getEffect(intimacyLevel);
   return 0;
 }
 
@@ -301,16 +261,15 @@ function computePersonalityEffects(allCats) {
   const cats = (allCats || []).filter(Boolean);
   const result = {
     skillUsesMap: {},
-    cooldownReduction: 0,
-    clingy: { exemptChance: 0, exemptCount: 0, hiddenExempt: 0, freeRevive: 0 },
+    clingyRetryChance: 0,
     extraFishLimit: 0,
     fishBonus: 0,
     soloBonus: 0,
     isSoloBattle: false,
     scoreBonus: 0,
     timerExtension: 0,
-    interferenceReduction: 0,
-    dangerReduction: 0,
+    interferenceProbability: 1.0,
+    fishLossRatio: 0.50,
     skillScore: 0,
   };
 
@@ -326,11 +285,16 @@ function computePersonalityEffects(allCats) {
   // 单猫出战检测
   result.isSoloBattle = battleCats.length === 1;
 
-  // 通用规则：每只出战猫独立技能次数
+  // 出战猫技能次数：仅傲娇按性格决定次数，其余默认1次
   battleCats.forEach(cat => {
     const breedId = cat?.breedId || '';
-    const level = getIntimacyLevel(cat?.intimacy || 0);
-    result.skillUsesMap[breedId] = INTIMACY_EFFECTS[level]?.skillUses || 1;
+    const pers = sanitizePersonality(cat?.personality, breedId);
+    if (pers === '傲娇') {
+      const level = getIntimacyLevel(cat?.intimacy || 0);
+      result.skillUsesMap[breedId] = PERSONALITY_CONFIG['傲娇'].getEffect(level);
+    } else {
+      result.skillUsesMap[breedId] = 1;
+    }
   });
 
   // 计算每种性格的最高好感度等级（同性格取最高）
@@ -347,42 +311,38 @@ function computePersonalityEffects(allCats) {
     if (level === 0) continue;
 
     switch (config.type) {
-      case 'cooldown': {
-        result.cooldownReduction = Math.max(result.cooldownReduction, config.getEffect(level));
-        // 傲娇挚爱：最高好感度的傲娇出战猫额外+1技能次数
-        if (level >= 5 && config.special?.[5]?.extraSkillUses) {
-          const best = allEntries
-            .filter(e => e.personalityClean === '傲娇' && e.isBattle)
-            .sort((a, b) => b.intimacyLevel - a.intimacyLevel)[0];
-          if (best?.breedId) {
-            result.skillUsesMap[best.breedId] = (result.skillUsesMap[best.breedId] || 3) + 1;
-          }
-        }
+      case 'skillCount':
+        // 傲娇：技能次数已在 skillUsesMap 中按猫独立计算，此处跳过
         break;
-      }
-      case 'exemption':
-        result.clingy = config.getEffect(level);
+      case 'retry':
+        // 黏人：取最高好感度的再来一次概率
+        result.clingyRetryChance = Math.max(result.clingyRetryChance, config.getEffect(level));
         break;
       case 'extraFishLimit':
         result.extraFishLimit = Math.max(result.extraFishLimit, config.getEffect(level));
         break;
       case 'fishBonus':
+        // 吃货：不同性格的加成加法叠加
         result.fishBonus += config.getEffect(level);
         break;
       case 'soloBonus':
+        // 独行：取最高好感度效果（不同猫的独行不叠加），仅单猫上阵时生效
         result.soloBonus = Math.max(result.soloBonus, config.getEffect(level));
         break;
       case 'scoreBonus':
+        // 高冷：不同性格的加成加法叠加
         result.scoreBonus += config.getEffect(level);
         break;
       case 'timerExtension':
         result.timerExtension = Math.max(result.timerExtension, config.getEffect(level));
         break;
-      case 'interferenceReduction':
-        result.interferenceReduction = Math.max(result.interferenceReduction, config.getEffect(level));
+      case 'interferenceProbability':
+        // 胆小：取最低触发概率（好感度越高，干扰概率越低）
+        result.interferenceProbability = Math.min(result.interferenceProbability, config.getEffect(level));
         break;
-      case 'dangerReduction':
-        result.dangerReduction = Math.max(result.dangerReduction, config.getEffect(level));
+      case 'fishLossRatio':
+        // 胆大：取最低损失比例（好感度越高，损失越少）
+        result.fishLossRatio = Math.min(result.fishLossRatio, config.getEffect(level));
         break;
       case 'skillScore':
         result.skillScore = Math.max(result.skillScore, config.getEffect(level));
@@ -2312,19 +2272,84 @@ function assignTypesFromPool(slots, levelNum, rng) {
   const slotList = slots.map(s => ({ ...s }));
   const assigned = new Set();
 
-  typeGroups.forEach(type => {
+  // 列区域划分（3区），用于空间分散
+  const allCols = slotList.map(s => s.col);
+  const minCol = Math.min(...allCols);
+  const maxCol = Math.max(...allCols);
+  const colRange = maxCol - minCol || 1;
+  const getColZone = (col) => Math.min(2, Math.floor((col - minCol) / (colRange / 3)));
+
+  // Phase 1: 种子组 — 前 2~3 种类型优先占据可及位置（顶层 + 空间分散）
+  const shuffledGroups = shuffleArr([...typeGroups], rng);
+  const SEED_COUNT = Math.min(3, shuffledGroups.length);
+
+  for (let gi = 0; gi < SEED_COUNT; gi++) {
+    const type = shuffledGroups[gi];
+    const groupSlots = [];
+    const usedZones = new Set();
+
+    // 可用槽位按可及性排序：高层优先 + 优选未用区域
+    const available = slotList.filter(s => !assigned.has(s));
+    available.sort((a, b) => {
+      if (a.layer !== b.layer) return b.layer - a.layer;
+      const za = getColZone(a.col), zb = getColZone(b.col);
+      const zaU = usedZones.has(za), zbU = usedZones.has(zb);
+      if (zaU !== zbU) return zaU ? 1 : -1;
+      return 0;
+    });
+
+    for (const s of available) {
+      if (groupSlots.length >= 3) break;
+      const zone = getColZone(s.col);
+      if (!usedZones.has(zone)) {
+        groupSlots.push(s);
+        usedZones.add(zone);
+        assigned.add(s);
+      }
+    }
+    // 放宽区域约束（同区域但不同层也可）
+    if (groupSlots.length < 3) {
+      for (const s of available) {
+        if (groupSlots.length >= 3) break;
+        if (!assigned.has(s)) {
+          groupSlots.push(s);
+          assigned.add(s);
+        }
+      }
+    }
+
+    groupSlots.forEach(s => { s.type = type; });
+  }
+
+  // Phase 2: 剩余类型按层+区域分散填充
+  const remainingGroups = shuffledGroups.slice(SEED_COUNT);
+
+  remainingGroups.forEach(type => {
     const groupSlots = [];
     const usedLayers = new Set();
-    // 优先从不同层各取一张
+    const usedZones = new Set();
+
     for (const s of slotList) {
       if (assigned.has(s)) continue;
-      if (groupSlots.length === 0 || !usedLayers.has(s.layer)) {
+      const zone = getColZone(s.col);
+      if (groupSlots.length === 0 || (!usedLayers.has(s.layer) && !usedZones.has(zone))) {
         groupSlots.push(s);
         usedLayers.add(s.layer);
+        usedZones.add(zone);
         assigned.add(s);
         if (groupSlots.length >= 3) break;
       }
     }
+    // 放宽区域约束
+    for (const s of slotList) {
+      if (groupSlots.length >= 3) break;
+      if (!assigned.has(s) && !usedLayers.has(s.layer)) {
+        groupSlots.push(s);
+        usedLayers.add(s.layer);
+        assigned.add(s);
+      }
+    }
+    // 兜底
     for (const s of slotList) {
       if (groupSlots.length >= 3) break;
       if (!assigned.has(s)) {
@@ -2332,7 +2357,8 @@ function assignTypesFromPool(slots, levelNum, rng) {
         assigned.add(s);
       }
     }
-    groupSlots.slice(0, 3).forEach(s => { s.type = type; });
+
+    groupSlots.forEach(s => { s.type = type; });
   });
 
   enforceNoAdjacent(slotList, [{ layer: 0 }, { layer: 1 }, { layer: 2 }]);
@@ -2573,79 +2599,251 @@ function enforceNoAdjacent(slots, layers) {
     for (let i = 0; i < layerSlots.length; i++) {
       for (let j = i + 1; j < layerSlots.length; j++) {
         const a = layerSlots[i], b = layerSlots[j];
-        if (a.type === b.type && Math.abs(a.col - b.col) <= 1 && Math.abs(a.row - b.row) <= 1) {
-          const other = slots.find(s => s.layer !== a.layer && s.type !== a.type);
-          if (other) { const tmp = other.type; other.type = a.type; a.type = tmp; }
+        if (a.type !== b.type) continue;
+        if (Math.abs(a.col - b.col) > 1 || Math.abs(a.row - b.row) > 1) continue;
+
+        // 优先在同层找到类型不同且自身无邻接问题的卡交换
+        let swapTarget = null;
+        for (const s of layerSlots) {
+          if (s === a || s === b || s.type === a.type) continue;
+          const hasOwnAdjacency = layerSlots.some(
+            o => o !== s && o.type === s.type && Math.abs(o.col - s.col) <= 1 && Math.abs(o.row - s.row) <= 1
+          );
+          if (!hasOwnAdjacency) { swapTarget = s; break; }
+        }
+        // 降级：跨层交换，优先低层（保护顶层种子组）
+        if (!swapTarget) {
+          const crossCandidates = slots
+            .filter(s => s.layer !== a.layer && s.type !== a.type)
+            .sort((x, y) => x.layer - y.layer);
+          swapTarget = crossCandidates[0] || null;
+        }
+        if (swapTarget) {
+          const tmp = swapTarget.type;
+          swapTarget.type = a.type;
+          a.type = tmp;
         }
       }
     }
   });
 }
 
-// 可解性校验（贪心模拟，含舔毛牌占槽）
+// 可解性校验（贪心 + 有限DFS回溯）
 function isSolvable(cards) {
-  // 小狗牌/舔毛牌不参与可解性判断（无法消除，不要求从棋盘消除）
   const excludeIds = new Set(
     cards.filter(c => c.isInterference && (c.interferenceType === 'danger' || c.interferenceType === 'groom')).map(c => c.id)
   );
   const remaining = cards
     .filter(c => !excludeIds.has(c.id))
     .map(c => ({ ...c, removed: false }));
-  const slots = new Array(SLOT_CAPACITY).fill(null);
+  const SLOT_SIZE = SLOT_CAPACITY;
 
   const matchTypeOf = (c) => getTileMatchType(c);
   const isGroomTile = (c) => c.isInterference && c.interferenceType === 'groom';
 
-  const compactSlots = () => {
-    const filled = slots.filter(s => s !== null);
-    slots.fill(null);
-    filled.forEach((s, idx) => { slots[idx] = s; });
+  // 深度克隆状态
+  const cloneState = (slots, groomed, removedMap) => ({
+    slots: [...slots],
+    groomed,
+    removed: new Map(removedMap),
+  });
+
+  // 收集槽中匹配（不要求连续位置，跳过舔毛牌）
+  const tryMatchInSlots = (slotsFn) => {
+    const s = slotsFn;
+    const nonGroom = [];
+    const groomPositions = [];
+    for (let i = 0; i < s.length; i++) {
+      if (!s[i]) continue;
+      if (s[i].isGroom) { groomPositions.push(i); continue; }
+      nonGroom.push({ idx: i, type: s[i].type });
+    }
+    // 按类型分组，每种类型取3张消除
+    const byType = {};
+    nonGroom.forEach(item => {
+      if (!byType[item.type]) byType[item.type] = [];
+      byType[item.type].push(item.idx);
+    });
+    let matched = false;
+    for (const [type, indices] of Object.entries(byType)) {
+      if (indices.length >= 3) {
+        indices.slice(0, 3).forEach(i => { s[i] = null; });
+        matched = true;
+        break; // 一次只消一组，然后重新compact
+      }
+    }
+    if (!matched) return false;
+    // compact：保留舔毛牌位置不变，其他牌左移
+    const kept = [];
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] && s[i].isGroom) { kept.push({ idx: i, val: s[i] }); s[i] = null; }
+    }
+    let writeIdx = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] && !s[i].isGroom) {
+        while (writeIdx < s.length && s[writeIdx] !== null) writeIdx++;
+        if (writeIdx < s.length && writeIdx !== i) { s[writeIdx] = s[i]; s[i] = null; }
+      }
+    }
+    kept.forEach(({ idx, val }) => { s[idx] = val; });
+    return true;
   };
 
-  const tryMatchInSlots = () => {
-    for (let i = 0; i <= slots.length - 3; i++) {
-      const a = slots[i], b = slots[i + 1], c = slots[i + 2];
-      if (a && b && c && !a.isGroom && !b.isGroom && !c.isGroom &&
-          a.type === b.type && a.type === c.type) {
-        slots[i] = slots[i + 1] = slots[i + 2] = null;
-        compactSlots();
+  // 贪心模拟一步（返回是否成功消除了一组）
+  const greedyStep = (slotsFn, remainingFn) => {
+    const clickable = remainingFn.filter(c => !c.removed && !isTileBlockedSolvable(c, remainingFn));
+    if (clickable.length === 0) return { stuck: true };
+
+    // 策略1：优先选能立即凑成三消的牌（槽内已有≥2张同型）
+    const canMatch = clickable.filter(c => {
+      if (isGroomTile(c)) return false;
+      const t = matchTypeOf(c);
+      return slotsFn.filter(s => s && !s.isGroom && s.type === t).length >= 2;
+    });
+    if (canMatch.length > 0) {
+      const card = canMatch[0];
+      const nullIdx = slotsFn.indexOf(null);
+      if (nullIdx === -1) return { stuck: true };
+      slotsFn[nullIdx] = { type: matchTypeOf(card), isGroom: false };
+      card.removed = true;
+      return { matched: true };
+    }
+
+    // 策略2：无立即可消除的，选可点击牌中 board 上剩余同类型最多的（提高后续匹配概率）
+    const nonGroomClickable = clickable.filter(c => !isGroomTile(c));
+    if (nonGroomClickable.length > 0) {
+      // 统计每种类型在剩余牌中的数量
+      const typeCount = {};
+      remainingFn.filter(c => !c.removed && !isGroomTile(c)).forEach(c => {
+        const t = matchTypeOf(c);
+        typeCount[t] = (typeCount[t] || 0) + 1;
+      });
+      // 选数量最多的类型（更可能完成匹配）
+      nonGroomClickable.sort((a, b) => (typeCount[matchTypeOf(b)] || 0) - (typeCount[matchTypeOf(a)] || 0));
+
+      const card = nonGroomClickable[0];
+      const nullIdx = slotsFn.indexOf(null);
+      if (nullIdx === -1) return { stuck: true };
+      slotsFn[nullIdx] = { type: matchTypeOf(card), isGroom: false };
+      card.removed = true;
+      return { matched: true };
+    }
+
+    // 只剩舔毛牌：放入，占槽位
+    const card = clickable[0];
+    const nullIdx = slotsFn.indexOf(null);
+    if (nullIdx === -1) return { stuck: true };
+    slotsFn[nullIdx] = { type: card.type, isGroom: true };
+    card.removed = true;
+    return { matched: true };
+  };
+
+  // 主循环：贪心消除直到无牌可点
+  const runGreedy = (slotsFn, remainingFn) => {
+    while (true) {
+      // 先尝试消除槽内已有的
+      while (tryMatchInSlots(slotsFn)) { /* keep matching */ }
+
+      const clickable = remainingFn.filter(c => !c.removed && !isTileBlockedSolvable(c, remainingFn));
+      if (clickable.length === 0) break;
+
+      const stepResult = greedyStep(slotsFn, remainingFn);
+      if (stepResult.stuck) break;
+    }
+
+    // 检查：所有普通牌是否都已移除
+    const allCleared = remainingFn
+      .filter(c => !(c.isInterference && c.interferenceType === 'groom'))
+      .every(c => c.removed);
+    return allCleared;
+  };
+
+  // DFS 回溯：当贪心选择非立即可消除的牌时，尝试不同候选
+  const MAX_BACKTRACK_DEPTH = 8;
+
+  const dfsBacktrack = (slotsFn, remainingFn, depth) => {
+    if (depth > MAX_BACKTRACK_DEPTH) return runGreedy(slotsFn, remainingFn);
+
+    // 先尝试消除
+    while (tryMatchInSlots(slotsFn)) { /* keep matching */ }
+
+    const clickable = remainingFn.filter(c => !c.removed && !isTileBlockedSolvable(c, remainingFn));
+    if (clickable.length === 0) {
+      return remainingFn
+        .filter(c => !(c.isInterference && c.interferenceType === 'groom'))
+        .every(c => c.removed);
+    }
+
+    // 优先：能立即凑三消的直接执行
+    const canMatch = clickable.filter(c => {
+      if (isGroomTile(c)) return false;
+      const t = matchTypeOf(c);
+      return slotsFn.filter(s => s && !s.isGroom && s.type === t).length >= 2;
+    });
+    if (canMatch.length > 0) {
+      const card = canMatch[0];
+      const nullIdx = slotsFn.indexOf(null);
+      if (nullIdx === -1) return false;
+      const cardClone = remainingFn.find(c => c.id === card.id);
+      if (!cardClone) return false;
+      slotsFn[nullIdx] = { type: matchTypeOf(cardClone), isGroom: false };
+      cardClone.removed = true;
+      return dfsBacktrack(slotsFn, remainingFn, depth + 1);
+    }
+
+    // 无立即可消除的 → 回溯尝试每种非舔毛候选
+    const nonGroomClickable = clickable.filter(c => !isGroomTile(c));
+    if (nonGroomClickable.length === 0) {
+      // 只剩舔毛牌
+      const card = clickable[0];
+      const nullIdx = slotsFn.indexOf(null);
+      if (nullIdx === -1) return false;
+      const cardClone = remainingFn.find(c => c.id === card.id);
+      if (!cardClone) return false;
+      slotsFn[nullIdx] = { type: cardClone.type, isGroom: true };
+      cardClone.removed = true;
+      return dfsBacktrack(slotsFn, remainingFn, depth + 1);
+    }
+
+    // 统计每种类型在剩余牌中的数量，按优先级排序候选
+    const typeCount = {};
+    remainingFn.filter(c => !c.removed && !isGroomTile(c)).forEach(c => {
+      const t = matchTypeOf(c);
+      typeCount[t] = (typeCount[t] || 0) + 1;
+    });
+
+    // 按类型数量降序排列候选（数量多的优先尝试，更可能成功）
+    const ranked = [...nonGroomClickable].sort((a, b) =>
+      (typeCount[matchTypeOf(b)] || 0) - (typeCount[matchTypeOf(a)] || 0)
+    );
+
+    // 限制分支数：最多尝试前3个候选
+    const candidates = ranked.slice(0, 3);
+
+    for (const candidate of candidates) {
+      // 克隆状态
+      const clonedSlots = [...slotsFn];
+      const clonedRemaining = remainingFn.map(c => ({ ...c }));
+      const cardClone = clonedRemaining.find(c => c.id === candidate.id);
+      if (!cardClone) continue;
+
+      const nullIdx = clonedSlots.indexOf(null);
+      if (nullIdx === -1) continue;
+      clonedSlots[nullIdx] = { type: matchTypeOf(cardClone), isGroom: false };
+      cardClone.removed = true;
+
+      if (dfsBacktrack(clonedSlots, clonedRemaining, depth + 1)) {
         return true;
       }
     }
+
     return false;
   };
 
-  while (true) {
-    const clickable = remaining.filter(c => !c.removed && !isTileBlockedSolvable(c, remaining));
-    if (clickable.length === 0) break;
-
-    const mt = (c) => matchTypeOf(c);
-    let picked = clickable.find(c => {
-      if (isGroomTile(c)) return false;
-      const t = mt(c);
-      return slots.filter(s => s && !s.isGroom && s.type === t).length >= 2;
-    });
-    if (!picked) {
-      picked = clickable.find(c => !isGroomTile(c)) || clickable[0];
-    }
-
-    const slotIdx = slots.indexOf(null);
-    if (slotIdx === -1) return false;
-
-    const groom = isGroomTile(picked);
-    slots[slotIdx] = { type: groom ? picked.type : mt(picked), isGroom: groom };
-    picked.removed = true;
-
-    let matched = true;
-    while (matched) {
-      matched = tryMatchInSlots();
-    }
-  }
-
-  // 普通牌须全部消除；小狗牌/舔毛牌可留在棋盘
-  return remaining
-    .filter(c => !(c.isInterference && (c.interferenceType === 'danger' || c.interferenceType === 'groom')))
-    .every(c => c.removed);
+  // 初始运行
+  const initSlots = new Array(SLOT_SIZE).fill(null);
+  const initRemaining = remaining.map(c => ({ ...c }));
+  return dfsBacktrack(initSlots, initRemaining, 0);
 }
 
 function calcOverlap(tile, allTiles) {
@@ -3239,7 +3437,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
    RESULT OVERLAY — 结算页 P5: 增强版界面
    P7: 更新为新的鱼干计算系统
    ═══════════════════════════════════════ */
-function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fishMultiplier, timeLeft, elapsedTime, catCount, cats, spectatorSlots, battleCatsData, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry }) {
+function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fishMultiplier, timeLeft, elapsedTime, catCount, cats, spectatorSlots, battleCatsData, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry, canRetry, retryAttemptsUsed }) {
   if (gameState === GAME_PLAYING) return null;
   const isWin = gameState === GAME_WIN;
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
@@ -3251,7 +3449,8 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
   // 性格效果（结算弹窗重新计算以保持一致）
   const persEffects = React.useMemo(() => computePersonalityEffects(battleCatsData || []), [battleCatsData]);
   // 黏人挚爱：freeRevive>=1 → 「再来一次」可用
-  const hasClingyBeloved = persEffects.clingy.freeRevive >= 1;
+  const clingyRetryChance = persEffects.clingyRetryChance || 0;
+  const hasClingyAbility = clingyRetryChance > 0;
 
   // P7: 计算本局最终鱼干（使用性格效果）
   const soloFishBonus = persEffects.isSoloBattle ? persEffects.soloBonus : 0;
@@ -3456,6 +3655,10 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                 {hasHuaLao && (
                   <div style={{ fontSize: 10, color: '#FD79A8', marginTop: 2 }}>💬 话痨技能额外得分生效</div>
                 )}
+                {/* 胆大性格：失败时鱼干损失减免标注 */}
+                {isLose && persEffects.fishLossRatio < 0.50 && (
+                  <div style={{ fontSize: 10, color: '#55EFC4', marginTop: 2 }}>🛡️ 胆大猫咪守护了 {Math.round((0.50 - persEffects.fishLossRatio) * 100)}% 鱼干</div>
+                )}
               </div>
             </div>
             <div style={{
@@ -3584,38 +3787,56 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
 
         {/* Actions - 底部按钮 */}
         {isLose ? (
-          /* 挑战失败：再来一次（仅参战席黏人/挚爱可用）+ 返回大厅 */
+          /* 挑战失败：再来一次（黏人性格概率触发，最多3次）+ 返回大厅 */
           <div style={{ display: 'flex', gap: 14 }}>
-            <button
-              onClick={hasClingyBeloved ? onRetry : undefined}
-              disabled={!hasClingyBeloved}
-              style={{
-                flex: 1, height: 48, borderRadius: 14,
-                background: hasClingyBeloved
-                  ? statusGradient
-                  : 'rgba(255,255,255,0.08)',
-                border: hasClingyBeloved ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                cursor: hasClingyBeloved ? 'pointer' : 'not-allowed',
-                fontSize: 14, fontWeight: 700,
-                color: hasClingyBeloved ? '#fff' : 'rgba(240,237,255,0.3)',
-                boxShadow: hasClingyBeloved ? `0 6px 20px ${statusColor}40` : 'none',
-                transition: 'all 0.2s ease',
-                opacity: hasClingyBeloved ? 1 : 0.5,
-              }}
-              onMouseEnter={e => {
-                if (!hasClingyBeloved) return;
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = `0 8px 24px ${statusColor}50`;
-              }}
-              onMouseLeave={e => {
-                if (!hasClingyBeloved) return;
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = `0 6px 20px ${statusColor}40`;
-              }}
-              title={hasClingyBeloved ? '🔄 再来一次' : '需要参战席猫咪性格为「黏人」且亲密度达到「挚爱」'}
-            >
-              🔄 再来一次
-            </button>
+            {hasClingyAbility ? (
+              <button
+                onClick={canRetry ? onRestart : undefined}
+                disabled={!canRetry}
+                style={{
+                  flex: 1, height: 48, borderRadius: 14,
+                  background: canRetry
+                    ? statusGradient
+                    : 'rgba(255,255,255,0.08)',
+                  border: canRetry ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                  cursor: canRetry ? 'pointer' : 'not-allowed',
+                  fontSize: 14, fontWeight: 700,
+                  color: canRetry ? '#fff' : 'rgba(240,237,255,0.3)',
+                  boxShadow: canRetry ? `0 6px 20px ${statusColor}40` : 'none',
+                  transition: 'all 0.2s ease',
+                  opacity: canRetry ? 1 : 0.5,
+                }}
+                onMouseEnter={e => {
+                  if (!canRetry) return;
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = `0 8px 24px ${statusColor}50`;
+                }}
+                onMouseLeave={e => {
+                  if (!canRetry) return;
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = `0 6px 20px ${statusColor}40`;
+                }}
+                title={canRetry ? '🔄 黏人猫咪给你一次重来的机会！（不扣鱼干）' : `黏人猫咪正在尝试…概率 ${Math.round(clingyRetryChance * 100)}%，剩余 ${3 - (retryAttemptsUsed || 0)}/3 次`}
+              >
+                🔄 再来一次 ({3 - (retryAttemptsUsed || 0)}/3)
+              </button>
+            ) : (
+              <button
+                disabled={true}
+                style={{
+                  flex: 1, height: 48, borderRadius: 14,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'not-allowed',
+                  fontSize: 14, fontWeight: 700,
+                  color: 'rgba(240,237,255,0.3)',
+                  opacity: 0.5,
+                }}
+                title="需要黏人性格猫咪出战才能获得重试机会"
+              >
+                🔄 再来一次
+              </button>
+            )}
             <a href="app.html" style={{
               flex: 1, height: 48, borderRadius: 14, 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4122,8 +4343,8 @@ function Game() {
       window._disguiseToastShown = true;
       const t = setTimeout(() => { setDisguiseToast(''); }, 1500);
 
-      // 胆小性格减免：减免率>=80%(亲密+)时，真身牌高亮标记
-      if (personalityEffects.interferenceReduction >= 0.8) {
+      // 胆小性格：干扰牌阻挡时，真身牌高亮标记
+      if (cowardlyInterferenceBlockedRef.current) {
         setTiles(prev => prev.map(t =>
           (t.isInterference && t.interferenceType === 'disguise' && !t.revealed)
             ? { ...t, cowardlyHighlight: true }
@@ -4167,7 +4388,7 @@ function Game() {
     }
 
     // 计算变身间隔（胆小减免：3秒→6秒）
-    const cowardlySlowdown = personalityEffects.interferenceReduction >= 0.8;
+    const cowardlySlowdown = cowardlyInterferenceBlockedRef.current;
     const intervalMs = (cowardlySlowdown ? 6 : 3) * 1000;
 
     // 首次进入三花关卡提示（1.5秒）
@@ -4308,11 +4529,19 @@ function Game() {
 
   const initialCats = loadCatsFromStorage();
   const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
+  const retryAttemptsUsedRef = useRef(0);        // 黏人已使用的再来一次次数
+  const cowardlyInterferenceBlockedRef = useRef(false); // 胆小：本局干扰牌是否被阻挡
   // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
   const personalityEffects = React.useMemo(() => computePersonalityEffects(battleCats), [battleCats]);
   useEffect(() => { personalityEffectsRef.current = personalityEffects; }, [personalityEffects]);
+  useEffect(() => { retryAttemptsUsedRef.current = retryAttemptsUsed; }, [retryAttemptsUsed]);
+  // 胆小：每局开始时一次性判定干扰牌是否被阻挡
+  useEffect(() => {
+    const prob = personalityEffects.interferenceProbability;
+    cowardlyInterferenceBlockedRef.current = Math.random() >= prob;
+  }, [personalityEffects]);
   // 冰冻牌减免：胆小性格减免率达到80%(亲密)以上时，冰冻牌冻结效果失效
-  const freezeBlockOverride = frozenSlot && personalityEffects.interferenceReduction >= 0.8;
+  const freezeBlockOverride = frozenSlot && cowardlyInterferenceBlockedRef.current;
   // 冰冻牌冻结格数：从关卡配置读取 freeze_grid_count，默认1
   const freezeGridCount = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
   const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
@@ -4329,8 +4558,6 @@ function Game() {
   const handleTileClickRef = useRef(null);  // 始终指向最新的 handleTileClick，避免闭包过期
   const lastClickTimeRef = useRef(0);       // 防抖：记录上次点击时间戳
   const personalityEffectsRef = useRef(null); // 性格效果缓存，避免回调中重复计算
-  const clingyExemptUsedRef = useRef(0);    // 黏人已使用的显性豁免次数
-  const clingyHiddenUsedRef = useRef(0);    // 黏人已使用的隐性豁免次数
   const [hoveredTileId, setHoveredTileId] = useState(null);
   const [boardScale, setBoardScale] = useState(1);
 
@@ -4356,6 +4583,9 @@ function Game() {
   const [extraRestarts, setExtraRestarts] = useState(0);
   const [slotBonus, setSlotBonus] = useState(0);
   const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
+  // 黏人：再来一次概率系统
+  const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
+  const [canRetry, setCanRetry] = useState(false);
   const highlightedTilesRef = useRef([]);
   useEffect(() => { highlightedTilesRef.current = highlightedTiles; }, [highlightedTiles]);
 
@@ -4664,17 +4894,18 @@ function Game() {
     const isDangerCard = tile.isInterference && tile.interferenceType === 'danger';
     // 真身牌：判断是否为真身牌
     const isDisguiseCard = tile.isInterference && tile.interferenceType === 'disguise';
-    // 胆小性格减免：interferenceReduction>=0.8(亲密+)时，干扰牌负面效果减免
+    // 胆小性格：干扰牌阻挡 + 胆大性格：危险牌减免
     const persEff = personalityEffectsRef.current || {};
-    const cowardlyActive = persEff.interferenceReduction >= 0.8;
+    const cowardlyActive = cowardlyInterferenceBlockedRef.current;
     const groomBlockOverride = isGroomCard && cowardlyActive;
     const stickyBlockOverride = isStickyCard && cowardlyActive; // 胆小减免：粘连牌仅自身入槽
-    const dangerBlockOverride = (isDangerCard && cowardlyActive) || (isDangerCard && (persEff.dangerReduction || 0) >= 0.8); // 胆小或胆大减免
+    const braveAutoRemove = isDangerCard && (persEff.fishLossRatio <= 0.30); // 胆大挚爱：自动移除狗牌
+    const dangerBlockOverride = (isDangerCard && cowardlyActive) || braveAutoRemove; // 胆小或胆大减免
     // freezeBlockOverride 使用组件级计算（影响CollectionSlot渲染和容量计算）
 
     // ═══ 小狗牌核心规则：入槽立即判定失败（优先级最高） ═══
-    // 胆大100%(挚爱): 自动移除狗牌
-    if (isDangerCard && (persEff.dangerReduction || 0) >= 1.0) {
+    // 胆大挚爱(fishLossRatio<=0.30): 自动移除狗牌
+    if (braveAutoRemove) {
       setTiles(prev => prev.map(t => t.id === tile.id ? { ...t, removed: true } : t));
       setDangerToast('🛡️ 胆大猫咪帮你抵挡了小狗牌！');
       setTimeout(() => setDangerToast(''), 1000);
@@ -4810,26 +5041,6 @@ function Game() {
     // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
     const frozenOffset = (frozenSlot && !freezeBlockOverride) ? (levelConfig.freeze_grid_count || 1) : 0;
     let effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
-
-    // 黏人性格豁免：收集槽满时，消耗豁免次数允许额外放入卡牌
-    const clingy = persEff.clingy || {};
-    const clingyExemptsUsed = clingyExemptUsedRef.current;
-    const clingyHiddenUsed = clingyHiddenUsedRef.current;
-    if (clingy.exemptCount > 0 && slotRef.current.length >= effectiveCapacity) {
-      // 检查是否还有可用的显性豁免次数
-      if (clingyExemptsUsed < clingy.exemptCount) {
-        if (clingy.exemptChance >= 1.0 || Math.random() < clingy.exemptChance) {
-          clingyExemptUsedRef.current = clingyExemptsUsed + 1;
-          effectiveCapacity += 1; // 临时增加1格容量
-        }
-      } else if (clingy.hiddenExempt > 0 && clingyHiddenUsed < clingy.hiddenExempt) {
-        // 隐性豁免：自动触发
-        clingyHiddenUsedRef.current = clingyHiddenUsed + 1;
-        effectiveCapacity += 1;
-        setDangerToast('🛡️ 黏人猫咪悄悄帮你抵挡了一次失误！');
-        setTimeout(() => setDangerToast(''), 1500);
-      }
-    }
 
     // 粘连牌容量校验：需同时放入粘连牌+被连带的卡牌，剩余容量不足则直接失败
     const stickyBatchSize = stickyAdjacentTile ? 2 : 1; // 连带1张=2，无连带=1
@@ -5169,14 +5380,8 @@ function Game() {
     if (skillUseCount[key] + 1 >= skillUseMax[key]) {
       setUsedSkills(prev => ({ ...prev, [key]: true }));
     }
-    // 傲娇冷却缩减
-    const pers = personalityEffectsRef.current || {};
-    if (pers.cooldownReduction > 0) {
-      const baseCooldown = 30;
-      const cd = Math.round(baseCooldown * (1 - pers.cooldownReduction));
-      setSkillCooldowns(prev => ({ ...prev, [key]: cd }));
-    }
     // 话痨：释放技能额外加分
+    const pers = personalityEffectsRef.current || {};
     if (pers.skillScore > 0) {
       setScore(prev => prev + pers.skillScore);
     }
@@ -5464,6 +5669,13 @@ function Game() {
         fishCalc.totalFish = finalFish;
       }
 
+      // 胆大性格：关卡失败鱼干损失减免
+      if (gameState === GAME_LOSE) {
+        const lossRatio = pers.fishLossRatio !== undefined ? pers.fishLossRatio : 0.50;
+        finalFish = Math.floor(finalFish * (1 - lossRatio));
+        fishCalc.totalFish = finalFish;
+      }
+
       // P0: 检查是否打破个人最高分
       const currentScore = score || 0;
       const personalBest = getPersonalBestScore();
@@ -5537,6 +5749,16 @@ function Game() {
           }
         } catch(e) {}
       } catch(e) {}
+
+      // 黏人性格：关卡失败时概率触发再来一次（最多3次）
+      if (gameState === GAME_LOSE) {
+        const retryChance = pers.clingyRetryChance || 0;
+        if (retryChance > 0 && retryAttemptsUsedRef.current < 3) {
+          if (Math.random() < retryChance) {
+            setCanRetry(true);
+          }
+        }
+      }
     }
   }, [gameState]);
 
@@ -5573,8 +5795,9 @@ function Game() {
     setElapsedTime(0);
     lastMatchTimeRef.current = 0;
     uidRef.current = 0;
-    clingyExemptUsedRef.current = 0;
-    clingyHiddenUsedRef.current = 0;
+    setRetryAttemptsUsed(0);
+    setCanRetry(false);
+    cowardlyInterferenceBlockedRef.current = false;
     // P2: reset timer and skills
     const tl = levelConfig.timedMode ? (levelConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
@@ -5646,8 +5869,9 @@ function Game() {
     setElapsedTime(0);
     lastMatchTimeRef.current = 0;
     uidRef.current = 0;
-    clingyExemptUsedRef.current = 0;
-    clingyHiddenUsedRef.current = 0;
+    setRetryAttemptsUsed(0);
+    setCanRetry(false);
+    cowardlyInterferenceBlockedRef.current = false;
     const tl = levelConfig.timedMode ? (levelConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
     timeLeftRef.current = tl;
@@ -5704,7 +5928,7 @@ function Game() {
       setMaxCombo(0);
       setScore(0);
       setElapsedTime(0);
-      const tl = getLevelConfig(1)?.timedMode ? (getLevelConfig(1).timeLimit || 120) : 0;
+      const tl = getLevelConfig(1)?.timedMode ? (getLevelConfig(1).timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
       setTimeLeft(tl);
       timeLeftRef.current = tl;
       // 冰冻牌初始化
@@ -5760,10 +5984,11 @@ function Game() {
     setElapsedTime(0);
     lastMatchTimeRef.current = 0;
     uidRef.current = 0;
-    clingyExemptUsedRef.current = 0;
-    clingyHiddenUsedRef.current = 0;
+    setRetryAttemptsUsed(0);
+    setCanRetry(false);
+    cowardlyInterferenceBlockedRef.current = false;
     // P2: reset timer and skills — use nextConfig to avoid stale state
-    const tl = nextConfig.timedMode ? (nextConfig.timeLimit || 120) : 0;
+    const tl = nextConfig.timedMode ? (nextConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
     timeLeftRef.current = tl;
     setTimerPaused(false);
@@ -6166,6 +6391,8 @@ function Game() {
             onBack={() => window.location.href = '主页大厅.html'}
             onNextLevel={handleNextLevel}
             onGoHome={() => window.location.href = 'app.html'}
+            canRetry={canRetry}
+            retryAttemptsUsed={retryAttemptsUsed}
           />
         </div>
 
@@ -6357,7 +6584,7 @@ function Game() {
                     textAlign: 'center', lineHeight: 1.2,
                   }}>
                     {skill ? skill.active : '???'}
-                    {maxUses > 1 && <span style={{ fontSize: 8, color: '#55EFC4' }}> ×{remUses}</span>}
+                    {maxUses >= 2 && <span style={{ fontSize: 8, color: '#55EFC4' }}> ×{remUses}</span>}
                   </span>
                 </div>
               );

@@ -527,15 +527,15 @@ const BREEDS = [
 ];
 // P7: 性格枚举（10种标准性格，按需求文档）
 const PERSONALITY_EFFECT_TYPES = {
-  傲娇: '主动技能冷却缩减',
-  吃货: '额外鱼干百分比加成',
-  胆小: '干扰牌负面效果减免',
-  黏人: '关卡容错续命',
-  高冷: '普通消除得分加成',
-  话痨: '释放技能额外得分',
-  懒散: '关卡限时延长',
-  胆大: '危险牌惩罚减免',
-  独行: '单人出战收益加成',
+  傲娇: '主动技能释放次数',
+  吃货: '全局鱼干收益加成',
+  胆小: '干扰牌效果触发概率',
+  黏人: '关卡失败再来一次',
+  高冷: '消除得分加成',
+  话痨: '技能释放额外得分',
+  懒散: '计时关卡时间延长',
+  胆大: '关卡失败鱼干减免',
+  独行: '单猫上阵鱼干加成',
   狡黠: '额外鱼干上限提升',
 };
 
@@ -2725,7 +2725,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
                       border:`1px solid ${currentLevelConfig.color}30`,
                     }}>
                       <span style={{ fontSize:10, color: colors.sub }}>
-                        技能使用次数{currentLevel <= 2 ? 1 : currentLevel === 3 ? 2 : 3}次
+                        技能使用次数{sanitizePersonality(cat.personality, cat.breedId || '') === '傲娇' ? ([1,1,2,2,3][currentLevel - 1] || 1) : 1}次
                       </span>
                       <span style={{ fontSize:11, fontWeight:700, color: currentLevelConfig.color }}>
                         {sanitizePersonality(cat.personality, cat.breedId || '橘猫')}·{currentLevelConfig.name}
