@@ -984,7 +984,7 @@ function IosFrame({ children }) {
   ];
 
 return (
-    <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)' }}>
+    <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #3a3a5c, 0 32px 80px rgba(0,0,0,0.6)' }}>
       <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:colors.bg }}>
         <div className="star-bg-layer">
           <div className="star-bg-grid"></div>
@@ -1859,7 +1859,7 @@ function LineupManager({
                       #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}
                     </div>
                     <div style={{ fontSize: 7, color: colors.orange, fontWeight: 800, marginTop: 1 }}>
-                      {ACTIVE_SKILLS[cat.breedId]?.icon} {ACTIVE_SKILLS[cat.breedId]?.name}
+                      {ACTIVE_SKILLS[cat.breedId]?.name}
                     </div>
                   </div>
                 ) : (
@@ -1949,7 +1949,7 @@ function LineupManager({
                       #{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}
                     </div>
                     <div style={{ fontSize: 7, color: colors.blue, fontWeight: 800, marginTop: 1 }}>
-                      {PASSIVE_SKILLS[cat.breedId]?.icon} {PASSIVE_SKILLS[cat.breedId]?.name}
+                      {PASSIVE_SKILLS[cat.breedId]?.name}
                     </div>
                   </div>
                 ) : (
@@ -2453,8 +2453,8 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
       
       {/* 标题 */}
       <div style={{ textAlign:'center', marginBottom:20 }}>
-        <div style={{ fontSize:24, fontWeight:800, color:colors.ink, marginBottom:4 }}>🎮 今日出击阵容</div>
-        <div style={{ fontSize:12, color:colors.sub }}>确认你的猫咪阵容，准备消消乐</div>
+        <div style={{ fontSize:24, fontWeight:800, color:colors.ink, marginBottom:4 }}>🎮今日出击阵容</div>
+        <div style={{ fontSize:12, color:colors.sub }}>确认你的猫咪阵容，准备乐消消</div>
       </div>
       
       {/* 出战席猫咪 */}
@@ -2488,7 +2488,7 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
                   <span style={{ fontSize:10, fontWeight:700, color:colors.ink }}>{cat.name}</span>
                   {sk && (
                     <div style={{ fontSize:7, color:colors.orange, textAlign:'center' }}>
-                      {sk.activeIcon} {sk.active}
+                      {sk.active}
                     </div>
                   )}
                 </div>
@@ -2533,7 +2533,7 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:11, fontWeight:700, color:colors.ink }}>{cat.name}</div>
-                    <div style={{ fontSize:9, color:'#00B4D8' }}>{sk.icon} {sk.name}：{sk.desc}</div>
+                    <div style={{ fontSize:9, color:'#00B4D8' }}>{sk.name}：{sk.desc}</div>
                   </div>
                 </div>
               );

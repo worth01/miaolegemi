@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>喵了个咪 · 猫咪消消乐</title>
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-  <script src="api.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,6 +27,15 @@
     @keyframes disguiseReveal { 0%{opacity:0.3;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
     @keyframes timerBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
     @keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
+
+    /* ═══ 技能动效弹窗动画 ═══ */
+    @keyframes skillCardPop { from{transform:scale(0.75) translateY(40px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+    @keyframes skillMaskIn { from{opacity:0} to{opacity:1} }
+    @keyframes skillSsrSweep { 0%{left:-100%;opacity:0} 20%{left:-100%;opacity:1} 50%{left:100%;opacity:1} 51%{left:100%;opacity:0} 100%{left:100%;opacity:0} }
+    @keyframes skillDescSlide { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    /* Loading 动画 */
+    @keyframes loadingSpin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -49,7 +54,64 @@
   setInterval(check, 1000);
 })();
 </script>
+<style>
+  #loading-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    background: #1a1a2e;
+    transition: opacity 0.3s ease-out;
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    overflow: hidden;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  #loading-ios-outer {
+    display: inline-block;
+    padding: 12px;
+    background: #000;
+    border-radius: 60px;
+    box-shadow: 0 0 0 2px #3a3a5c, 0 32px 80px rgba(0,0,0,0.6);
+    transform: scale(min(calc((100vw - 24px) / 417), calc((100vh - 24px) / 876)));
+    transform-origin: center center;
+  }
+  #loading-ios-inner {
+    position: relative;
+    border-radius: 48px;
+    overflow: hidden;
+    width: 393px; height: 852px;
+    background: #0F0A1E;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  #loading-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #FF9F43;
+    border-radius: 50%;
+    animation: loadSpin 0.8s linear infinite;
+  }
+  @keyframes loadSpin { to { transform: rotate(360deg); } }
+  #loading-text {
+    color: rgba(255,255,255,0.35);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+</style>
+<div id="loading-overlay">
+  <div id="loading-ios-outer">
+    <div id="loading-ios-inner">
+      <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); width:126px; height:36px; background:#000; border-radius:999px; z-index:30;"></div>
+      <div id="loading-spinner"></div>
+      <div id="loading-text">喵呜加载中...</div>
+      <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width:134px; height:5px; background:rgba(240,237,255,0.35); border-radius:999px; z-index:25;"></div>
+    </div>
+  </div>
+</div>
 <div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="api.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -1477,6 +1539,21 @@ function preloadImages() {
 }
 preloadImages();
 
+// 技能视频预加载：仅预加载出战阵容中3只猫的技能视频
+let _preloadedSkillVideos = {};
+function preloadSkillVideos(breeds) {
+  breeds.forEach(breed => {
+    const src = getSkillVideoSrc(breed);
+    if (!src || _preloadedSkillVideos[breed]) return;
+    _preloadedSkillVideos[breed] = true;
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = src;
+    link.as = 'video';
+    document.head.appendChild(link);
+  });
+}
+
 /* ═══════════════════════════════════════
    PARTICLE ENGINE (Canvas 2D)
    ═══════════════════════════════════════ */
@@ -2208,7 +2285,7 @@ function generateBoard(levelNum) {
   }
 
   // 4. 生成可解牌局（重试直到可解或达到上限）
-  const MAX_BOARD_ATTEMPTS = 200;
+  const MAX_BOARD_ATTEMPTS = 30;
   let attempts = 0;
   let result = null;
   while (attempts < MAX_BOARD_ATTEMPTS) {
@@ -2759,7 +2836,7 @@ function isSolvable(cards) {
   };
 
   // DFS 回溯：当贪心选择非立即可消除的牌时，尝试不同候选
-  const MAX_BACKTRACK_DEPTH = 8;
+  const MAX_BACKTRACK_DEPTH = 4;
 
   const dfsBacktrack = (slotsFn, remainingFn, depth) => {
     if (depth > MAX_BACKTRACK_DEPTH) return runGreedy(slotsFn, remainingFn);
@@ -2818,7 +2895,7 @@ function isSolvable(cards) {
     );
 
     // 限制分支数：最多尝试前3个候选
-    const candidates = ranked.slice(0, 3);
+    const candidates = ranked.slice(0, 2);
 
     for (const candidate of candidates) {
       // 克隆状态
@@ -2888,6 +2965,156 @@ const GAME_LOSE = 'lose';
 const GAME_LEVEL_COMPLETE = 'levelComplete';
 
 /* ═══════════════════════════════════════
+   SKILL ANIMATION CONFIG (开发文档: 技能动效配置表)
+   ═══════════════════════════════════════ */
+
+// 猫咪品种 → 技能视频ID 映射（cat_001 ~ cat_012）
+const BREED_TO_SKILL_ID = {
+  '橘猫': '001', '黑猫': '002', '白猫': '003', '蓝猫': '004',
+  '布偶猫': '005', '三花猫': '006', '暹罗猫': '007', '无毛猫': '008',
+  '波斯猫': '009', '折耳猫': '010', '星空猫': '011', '幸运猫': '012',
+};
+
+function getSkillVideoSrc(breed) {
+  const id = BREED_TO_SKILL_ID[breed];
+  if (!id) return '';
+  return `assets/skills/cat_${id}_skill.mp4`;
+}
+
+/* ═══════════════════════════════════════
+   SKILL ANIMATION OVERLAY (技能动效弹窗)
+   ═══════════════════════════════════════ */
+function SkillAnimationOverlay({ breed, skill, rarity, visible, onClose }) {
+  const [phase, setPhase] = useState('entering');
+  const videoRef = useRef(null);
+  const timerRef = useRef(null);
+  const closedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const videoSrc = getSkillVideoSrc(breed);
+
+  const triggerClose = useCallback(() => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    clearTimeout(timerRef.current);
+    setPhase('exiting');
+    setTimeout(() => onCloseRef.current && onCloseRef.current(), 200);
+  }, []);
+
+  useEffect(() => {
+    if (!visible) { setPhase('entering'); closedRef.current = false; return; }
+    closedRef.current = false;
+    setPhase('entering');
+    const enterTimer = setTimeout(() => setPhase('active'), 50);
+    return () => clearTimeout(enterTimer);
+  }, [visible, breed]);
+
+  useEffect(() => {
+    if (phase !== 'active') return;
+    timerRef.current = setTimeout(triggerClose, 3500);
+    return () => clearTimeout(timerRef.current);
+  }, [phase, triggerClose]);
+
+  const handleVideoEnded = useCallback(() => { triggerClose(); }, [triggerClose]);
+
+  const handleVideoError = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(triggerClose, 1500);
+  }, [triggerClose]);
+
+  if (!visible && phase === 'entering') return null;
+
+  const glowColor = rarity === 'SSR' ? '#FFD700' :
+                    rarity === 'SR' ? '#CC88FF' :
+                    rarity === 'R' ? '#64A0FF' : '#B0B0C0';
+  const isSSR = rarity === 'SSR';
+
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 998,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      opacity: phase === 'exiting' ? 0 : 1,
+      transition: 'opacity 0.2s ease-out',
+      pointerEvents: phase === 'exiting' ? 'none' : 'all',
+    }} onClick={triggerClose}>
+      {/* 半透明遮罩 */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0,0,0,0.65)',
+        animation: phase === 'entering' ? 'skillMaskIn 0.25s ease-out' : 'none',
+      }} />
+      {/* 视频卡片 */}
+      <div onClick={e => e.stopPropagation()} style={{
+        position: 'relative',
+        width: 290, height: 290,
+        borderRadius: 16,
+        overflow: 'hidden',
+        background: '#000000',
+        border: `2px solid ${glowColor}${isSSR ? '99' : '66'}`,
+        boxShadow: isSSR
+          ? `0 0 8px ${glowColor}33, 0 24px 80px rgba(255,215,0,0.3)`
+          : `0 24px 80px rgba(0,0,0,0.8), 0 0 40px ${glowColor}22`,
+        animation: phase === 'entering' ? 'skillCardPop 0.35s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+      }}>
+        {/* SSR 金色光扫 */}
+        {isSSR && (
+          <div style={{
+            position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%',
+            background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.12), transparent)',
+            animation: 'skillSsrSweep 2s ease-in-out infinite',
+            pointerEvents: 'none', zIndex: 10,
+          }} />
+        )}
+{/* 视频播放区 */}
+        <div style={{
+          width: '100%', height: 290,
+          background: '#000000',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {videoSrc ? (
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              autoPlay
+              playsInline
+              muted
+              onEnded={handleVideoEnded}
+              onError={handleVideoError}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '100%', height: '100%', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.3)', fontSize: 14,
+            }}>
+              技能动画加载中...
+            </div>
+          )}
+          {/* 主动技能名称 - 视频左上角叠加 */}
+          <div style={{
+            position: 'absolute', top: 10, left: 12,
+            zIndex: 5, pointerEvents: 'none',
+          }}>
+            <span style={{
+              fontSize: 15, fontWeight: 900, color: '#ffffff',
+              background: 'rgba(0,0,0,0.55)',
+              padding: '5px 12px', borderRadius: 8,
+              textShadow: '0 0 6px rgba(255,255,255,0.2)',
+            }}>{skill?.active || ''}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
    SKILL CONFIRM MODAL
    ═══════════════════════════════════════ */
 function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
@@ -2922,7 +3149,7 @@ function SkillConfirmModal({ breed, skill, onConfirm, onCancel }) {
           {breed} · 主动技能
         </div>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#F0EDFF', marginBottom: 6 }}>
-          {skill.icon} {skill.active}
+          {skill.active}
         </div>
         <div style={{
           fontSize: 13, color: 'rgba(240,237,255,0.6)', lineHeight: 1.6, marginBottom: 20,
@@ -3481,7 +3708,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
 
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(15,10,30,0.75)', backdropFilter: 'blur(20px) saturate(1.3)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       zIndex: 500, animation: 'fadeIn 0.4s ease-out',
@@ -3918,7 +4145,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
 
   return (
     <div style={{
-      position:'fixed', top:0, left:0, right:0, bottom:0,
+      position:'absolute', top:0, left:0, right:0, bottom:0,
       background:'rgba(15,10,30,0.6)', backdropFilter:'blur(16px) saturate(1.2)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       zIndex:100, animation:'fadeIn 0.4s ease-out',
@@ -4039,7 +4266,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                           性格：{sanitizePersonality(s.cat.personality, s.cat.breedId || s.breed || '橘猫')}
                         </div>
                         <div style={{ fontSize:9, color:'#FD9644', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                          {skill ? `${skill.icon} ${skill.active}` : '???'}
+                          {skill ? skill.active : '???'}
                         </div>
                       </>
                     ) : (
@@ -4163,7 +4390,7 @@ function LevelSelect({ onSelectLevel, onBack }) {
 
   return (
     <div style={{
-      position:'fixed', top:0, left:0, right:0, bottom:0,
+      position:'absolute', top:0, left:0, right:0, bottom:0,
       background:'rgba(15,10,30,0.85)', backdropFilter:'blur(16px)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       zIndex:150, animation:'fadeIn 0.4s ease-out',
@@ -4579,6 +4806,8 @@ function Game() {
   const [skillCooldowns, setSkillCooldowns] = useState({ active0: 0, active1: 0, active2: 0 }); // 冷却剩余秒数
   const [usedSkills, setUsedSkills] = useState({ active0: false, active1: false, active2: false }); // UI显示(已用完置灰)
   const [confirmSkill, setConfirmSkill] = useState(null); // { index, breed, skill }
+  const [skillAnimVisible, setSkillAnimVisible] = useState(false); // 技能动效弹窗可见
+  const [skillAnimData, setSkillAnimData] = useState(null); // { breed, skill, rarity }
   const [fishMultiplier, setFishMultiplier] = useState(1);
   const [extraRestarts, setExtraRestarts] = useState(0);
   const [slotBonus, setSlotBonus] = useState(0);
@@ -4652,6 +4881,13 @@ function Game() {
       }
     } catch(e) {}
   }, []);
+
+  // BattlePrep 显示时预加载出战阵容中3只猫的技能视频
+  useEffect(() => {
+    if (phase === 'prep' || (phase === 'playing' && !shownBattlePrep.current)) {
+      preloadSkillVideos(skillSlots.slice(0, 3).filter(Boolean));
+    }
+  }, [phase, skillSlots]);
 
   useEffect(() => { slotRef.current = slot; }, [slot]);
   useEffect(() => { tempStorageRef.current = tempStorage; }, [tempStorage]);
@@ -5355,6 +5591,8 @@ function Game() {
   /* ── ACTIVE SKILLS ── */
   const handleSkillClick = (skillIndex) => {
     const key = `active${skillIndex}`;
+    // 检查动效弹窗正在播放
+    if (skillAnimVisible) return;
     // 检查冷却中
     if (skillCooldowns[key] > 0) return;
     // 检查使用次数
@@ -5369,12 +5607,19 @@ function Game() {
 
   const executeSkill = () => {
     if (!confirmSkill) return;
+    if (skillAnimVisible) return; // 动效播放中防止重复触发
     const skillIndex = confirmSkill.index;
     const breedId = confirmSkill.breed;
+    const skill = confirmSkill.skill;
     setConfirmSkill(null);
     const key = `active${skillIndex}`;
     if (skillUseCount[key] >= skillUseMax[key]) return;
     if (gameState !== GAME_PLAYING) return;
+
+    // 技能动效弹窗：T+0ms 同时触发动画 + 技能逻辑
+    const rarity = BREED_RARITY[breedId] || 'N';
+    setSkillAnimData({ breed: breedId, skill, rarity });
+    setSkillAnimVisible(true);
 
     setSkillUseCount(prev => ({ ...prev, [key]: prev[key] + 1 }));
     if (skillUseCount[key] + 1 >= skillUseMax[key]) {
@@ -5899,13 +6144,19 @@ function Game() {
   };
 
   const handleNextLevel = () => {
+    console.time('[handleNextLevel] total');
     const nextLv = currentLevel + 1;
     const nextConfig = getLevelConfig(nextLv);
+    console.log('[handleNextLevel] 从关卡', currentLevel, '→', nextLv, 'nextConfig:', nextConfig?.name || '无');
     // P0: 关卡轮回机制 - 10关通关后循环复刻
     // 如果没有下一关，重新从第1关开始
     if (!nextConfig) {
+      console.log('[handleNextLevel] 没有下一关，回到第1关');
       setCurrentLevel(1);
-      setTiles(generateBoard(1));
+      console.time('[handleNextLevel] generateBoard(cycle)');
+      const cycleTiles = generateBoard(1);
+      console.timeEnd('[handleNextLevel] generateBoard(cycle)');
+      setTiles(cycleTiles);
       setSlot([]);
       setTempStorage([]);
       setGroomSlots([]);
@@ -5949,6 +6200,7 @@ function Game() {
     setSkillUseMax({ active0: 1, active1: 1, active2: 1 });
     setSkillCooldowns({ active0: 0, active1: 0, active2: 0 });
       setHighlightedTiles([]);
+      console.timeEnd('[handleNextLevel] total');
       return;
     }
     if (matchTimeoutRef.current) {
@@ -5958,7 +6210,16 @@ function Game() {
     gameEndedRef.current = false;
     // P4: 保持 phase 不变，直接进入下一关（不再显示备战弹窗）
     setCurrentLevel(nextLv);
-    setTiles(generateBoard(nextLv));
+    console.time('[handleNextLevel] generateBoard');
+    try {
+      const newTiles = generateBoard(nextLv);
+      console.timeEnd('[handleNextLevel] generateBoard');
+      console.log('[handleNextLevel] generateBoard 返回', newTiles.length, '张卡牌');
+      setTiles(newTiles);
+    } catch(e) {
+      console.error('[handleNextLevel] generateBoard 异常:', e);
+      setTiles(generateBoard(1)); // 兜底：回到第1关
+    }
     setSlot([]);
     setTempStorage([]);
     setGroomSlots([]);
@@ -6014,6 +6275,7 @@ function Game() {
       setFrozenSlot(null);
     }
     // P4: 保持固定阵容，不重新读取
+    console.timeEnd('[handleNextLevel] total');
   };
 
   const remaining = tiles.filter(t => !t.removed && !t.inSlot).length;
@@ -6078,12 +6340,37 @@ function Game() {
       {/* 最后3秒全屏红边警示 */}
       {phase === 'playing' && timerVisual === 'critical' && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
+          position: 'absolute', inset: 0, zIndex: 200,
           border: '4px solid #FF4444',
           pointerEvents: 'none',
           animation: 'screenBorderFlash 0.45s ease-in-out infinite',
         }} />
       )}
+
+      {/* 通关/失败弹窗 - 毛玻璃全屏覆盖 */}
+      <ResultOverlay
+        gameState={gameState}
+        remaining={remaining}
+        score={score}
+        maxCombo={maxCombo}
+        comboCount={comboCount}
+        fishMultiplier={fishMultiplier}
+        timeLeft={timeLeft}
+        catCount={skillSlots.filter((s, i) => i < 3 && s).length}
+        cats={skillSlots.slice(0, 3).filter(s => s).map((breed, idx) => ({ serialId: `active-${idx}`, breed }))}
+        elapsedTime={elapsedTime}
+        spectatorSlots={skillSlots.slice(3, 6).filter(Boolean)}
+        battleCatsData={battleCats}
+        extraRestarts={extraRestarts}
+        onRestart={handleRestart}
+        onRetry={handleRetry}
+        onExtraRestart={handleExtraRestart}
+        onBack={() => window.location.href = '主页大厅.html'}
+        onNextLevel={handleNextLevel}
+        onGoHome={() => window.location.href = 'app.html'}
+        canRetry={canRetry}
+        retryAttemptsUsed={retryAttemptsUsed}
+      />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
@@ -6371,29 +6658,6 @@ function Game() {
               />
             </div>
           </div>
-          <ResultOverlay
-            gameState={gameState}
-            remaining={remaining}
-            score={score}
-            maxCombo={maxCombo}
-            comboCount={comboCount} // P7: 三消次数
-            fishMultiplier={fishMultiplier} // P7: 鱼干加成倍数
-            timeLeft={timeLeft}
-            catCount={skillSlots.filter((s, i) => i < 3 && s).length}
-            cats={skillSlots.slice(0, 3).filter(s => s).map((breed, idx) => ({ serialId: `active-${idx}`, breed }))}
-            elapsedTime={elapsedTime}
-            spectatorSlots={skillSlots.slice(3, 6).filter(Boolean)}
-            battleCatsData={battleCats}
-            extraRestarts={extraRestarts}
-            onRestart={handleRestart}
-            onRetry={handleRetry}
-            onExtraRestart={handleExtraRestart}
-            onBack={() => window.location.href = '主页大厅.html'}
-            onNextLevel={handleNextLevel}
-            onGoHome={() => window.location.href = 'app.html'}
-            canRetry={canRetry}
-            retryAttemptsUsed={retryAttemptsUsed}
-          />
         </div>
 
         {/* ═══ 临时存放层 + 收集槽（技能栏上方）═══ */}
@@ -6518,11 +6782,11 @@ function Game() {
           <div style={{
             display: 'flex', justifyContent: 'center', gap: 20,
             padding: '0 10px 25px',
-            marginTop: 90, // 收集槽距离技能按钮保持80px
+            marginTop: 30,
           }}>
             {[0, 1, 2].map(i => {
               const breed = skillSlots[i];
-              if (!breed) return <div key={i} style={{ width: 64 }} />;
+              if (!breed) return <div key={i} style={{ width: 82 }} />;
               const skill = CAT_SKILLS[breed];
               const key = `active${i}`;
               const usedCount = skillUseCount[key];
@@ -6536,27 +6800,27 @@ function Game() {
               const borderColor = disabled ? 'rgba(255,255,255,0.08)' : (skill?.color || rarityColors[rarity] || '#6C5CE7');
               return (
                 <div key={i} onClick={() => !disabled && handleSkillClick(i)} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   opacity: disabled ? 0.3 : 1,
                   filter: disabled ? 'grayscale(1)' : 'none',
                   transition: 'all 0.2s',
-                  maxWidth: 70,
+                  maxWidth: 90,
                 }}>
                   <div style={{
-                    width: 54, height: 54, borderRadius: 16, overflow: 'hidden',
+                    width: 70, height: 70, borderRadius: 16, overflow: 'hidden',
                     border: `2px solid ${borderColor}`,
                     background: disabled ? 'rgba(255,255,255,0.02)' : `${borderColor}15`,
                     boxShadow: disabled ? 'none' : `0 4px 16px ${borderColor}30`,
                     position: 'relative',
                   }}>
-                    <img src={`cat/${breed}.png`} alt={breed} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }}
+                    <img src={`cat/${breed}.png`} alt={breed} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }}
                       onError={e => { e.target.style.display = 'none'; }} />
                     {cooling && (
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(0,0,0,0.6)', borderRadius: 14,
+                        background: 'rgba(0,0,0,0.6)', borderRadius: 10,
                       }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#74B9FF' }}>{skillCooldowns[key]}s</span>
                       </div>
@@ -6565,19 +6829,12 @@ function Game() {
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(0,0,0,0.5)', borderRadius: 14,
+                        background: 'rgba(0,0,0,0.5)', borderRadius: 10,
                       }}>
                         <span style={{ fontSize: 18, color: '#fff' }}>✓</span>
                       </div>
                     )}
                   </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: disabled ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
-                    textAlign: 'center', lineHeight: 1.2,
-                  }}>
-                    {skill ? skill.icon : '???'}
-                  </span>
                   <span style={{
                     fontSize: 10, fontWeight: 700,
                     color: disabled ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
@@ -6600,6 +6857,14 @@ function Game() {
         onConfirm={executeSkill}
         onCancel={() => setConfirmSkill(null)}
       />
+      {/* Skill animation overlay (技能动效弹窗) */}
+      <SkillAnimationOverlay
+        breed={skillAnimData?.breed}
+        skill={skillAnimData?.skill}
+        rarity={skillAnimData?.rarity}
+        visible={skillAnimVisible}
+        onClose={() => { setSkillAnimVisible(false); setSkillAnimData(null); }}
+      />
     </div>
   );
 }
@@ -6609,7 +6874,7 @@ function Game() {
    ═══════════════════════════════════════ */
 function IosFrame({ children }) {
   return (
-    <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #1f2937, 0 32px 80px rgba(0,0,0,0.5)' }}>
+    <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #3a3a5c, 0 32px 80px rgba(0,0,0,0.6)' }}>
       <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:'#0F0A1E' }}>
         <div style={{ position:'absolute', top:12, left:'50%', transform:'translateX(-50%)', width:126, height:36, background:'#000', borderRadius:999, zIndex:30 }}/>
         {children}
@@ -6621,6 +6886,15 @@ function IosFrame({ children }) {
 
 function App() {
   const [scale, setScale] = React.useState(1);
+
+  // 隐藏 HTML Loading 叠加层
+  React.useEffect(() => {
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      setTimeout(function() { overlay.remove(); }, 400);
+    }
+  }, []);
 
   React.useEffect(() => {
     function fit() {
@@ -6635,7 +6909,7 @@ function App() {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: '#0E0E16',
+      background: '#1a1a2e',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden',
     }}>
@@ -6648,8 +6922,42 @@ function App() {
   );
 }
 
+// Error boundary to prevent white screen
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  componentDidCatch(error, info) {
+    this.setState({ error: { message: error.message, stack: error.stack, info: info.componentStack } });
+  }
+  render() {
+    if (this.state.error) {
+      return React.createElement('div', {
+        style: { padding: 40, color: '#fff', background: '#1a0a0a', minHeight: '100vh', fontFamily: 'monospace', fontSize: 13, lineHeight: 1.8, overflow: 'auto' }
+      },
+        React.createElement('h2', { style: { color: '#FF6B6B' } }, 'Error Caught'),
+        React.createElement('pre', { style: { whiteSpace: 'pre-wrap', wordBreak: 'break-all' } },
+          this.state.error.message + '\n\n' + this.state.error.stack + '\n\n' + (this.state.error.info || '')
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
+window.onerror = function(msg, src, line, col, err) {
+  var el = document.getElementById('root');
+  if (el) {
+    el.innerHTML = '<div style="padding:40px;color:#fff;background:#1a0a0a;min-height:100vh;font-family:monospace;font-size:13px;line-height:1.8;overflow:auto">' +
+      '<h2 style="color:#FF6B6B">Global Error</h2>' +
+      '<pre style="white-space:pre-wrap;word-break:break-all">' +
+      (err && err.message || msg) + '\n\n' +
+      (err && err.stack || (src + ':' + line + ':' + col)) +
+      '</pre></div>';
+  }
+};
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+root.render(React.createElement(ErrorBoundary, null, React.createElement(App)));
 </script>
 </body>
 </html>
