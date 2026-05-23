@@ -1370,7 +1370,7 @@ function NotificationBanner({ cats, onNavigate }) {
 // P2: Priority: packing > starving > bag expiring <=7d > low intimacy > empty battle
   const nurturing = cats.filter(c => c.location === 'home');
   const bagCats = cats.filter(c => c.location === 'bag');
-  const battleCats = cats.filter(c => c.battleSlot != null);
+  const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
 
   let banner = null;
 
@@ -1505,7 +1505,7 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
 function HomePage({ cats, fish, bells, todayFish, checkedIn, gachaDone, onCheckIn, onNavigate, activeTitle, battleMaxSlots, user }) {
 
 const nurturing = cats.filter(c => c.location === 'home');
-const battleCats = cats.filter(c => c.battleSlot != null).sort((a, b) => a.battleSlot - b.battleSlot);
+const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
 const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
 
   return (
@@ -2013,7 +2013,7 @@ useEffect(() => {
 }, [initialTab]);
 
   // P2: 三区过滤
-  const battleCats = cats.filter(c => c.battleSlot != null);
+  const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
   const spectatorCats = cats.filter(c => c.battleSpectator != null).sort((a, b) => a.battleSpectator - b.battleSpectator);
   const homeCats = cats.filter(c => c.location === 'home');
   const bagCats = cats.filter(c => c.location === 'bag');
@@ -5462,7 +5462,7 @@ function App() {
 
   // 通关庆祝：所有出战猫咪依次播放 celebrate 动效
   const triggerWinCelebrate = useCallback(() => {
-    const deployed = cats.filter(c => c.battleSlot != null).sort((a, b) => a.battleSlot - b.battleSlot);
+    const deployed = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
     if (deployed.length === 0) return;
     deployed.forEach((cat, i) => {
       setTimeout(() => {
@@ -6133,7 +6133,7 @@ function App() {
 
   // P2: Handle deploy (家园 → 出战席/观战席)
   const handleDeploy = useCallback((cat) => {
-    const battleCats = cats.filter(c => c.battleSlot != null);
+    const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
     const targetSlot = findEmptyBattleSlot(battleCats);
     
     if (targetSlot !== null) {

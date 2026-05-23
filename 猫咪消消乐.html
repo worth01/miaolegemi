@@ -112,6 +112,8 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="api.js"></script>
+<script src="utils/boardGenerator.js"></script>
+<script src="utils/boardShapes.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
@@ -512,9 +514,67 @@ function savePersonalBestScore(score) {
    ═══════════════════════════════════════ */
 const TILE_W = 50; // iOS适配：50px确保6行8列在375px设备上缩放约91%
 const TILE_H = 50;
+const SAFE_ZONE = 12; // P0: 棋盘内边距（安全区），防止牌溢出边界
+const TILE_GAP = 0;   // P0: 牌间距（当前使用无缝拼接，设为0）
 const SLOT_CAPACITY = 7;
+
+// ═══════════════════════════════════════
+// P2: 牌堆系统配置
+// ═══════════════════════════════════════
+const PILE_CONFIG = {
+  '1':      { count: 0, minCards: 0, maxCards: 0 },  // 第1关教学关：无牌堆
+  '2-10':  { count: 3, minCards: 5, maxCards: 6 },
+  '11-20': { count: 3, minCards: 6, maxCards: 8 },
+  '21-30': { count: 4, minCards: 6, maxCards: 8 },
+};
+
+/** P2: 获取关卡对应的牌堆配置 */
+function getPileConfig(levelNum) {
+  // 波斯双域关卡（10/20/30关及轮回）无牌堆
+  const cycleLevel = ((levelNum - 1) % 30) + 1;
+  if (cycleLevel === 10 || cycleLevel === 20 || cycleLevel === 30) return { count: 0, minCards: 0, maxCards: 0 };
+  if (cycleLevel === 1) return PILE_CONFIG['1'];
+  if (cycleLevel >= 2 && cycleLevel <= 10) return PILE_CONFIG['2-10'];
+  if (cycleLevel >= 11 && cycleLevel <= 20) return PILE_CONFIG['11-20'];
+  return PILE_CONFIG['21-30'];
+}
+
+/** P2: 为指定关卡生成牌堆数据 */
+function generatePileData(levelNum) {
+  const config = getPileConfig(levelNum);
+  if (config.count === 0) return [];
+
+  // 使用与棋盘相同的去重牌型列表，确保牌堆与棋盘类型一致
+  const uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+  const piles = [];
+
+  for (let i = 0; i < config.count; i++) {
+    let rawCount = config.minCards + Math.floor(Math.random() * (config.maxCards - config.minCards + 1));
+    // 保证每堆牌数是3的倍数，配合 buildBalancedTypePool 每种牌恰好3张一组
+    let cardCount = Math.floor(rawCount / 3) * 3;
+    if (cardCount < 3) cardCount = 3;
+    // 使用与棋盘相同的平衡分配算法：每种图案数量都是3的倍数
+    let balancedPool = buildBalancedTypePool(cardCount, uniqueTypes, Math.random);
+    let cards = shuffleCardPool(balancedPool, Math.random);
+    piles.push({
+      id: i,
+      cards: cards,
+      topIndex: 0,
+      isEmpty: false,
+    });
+  }
+  return piles;
+}
+
+/** P2: 获取牌堆总卡牌数 */
+function getPileTotalCards(levelNum) {
+  const config = getPileConfig(levelNum);
+  if (config.count === 0) return 0;
+  const avgCards = Math.floor((config.minCards + config.maxCards) / 2);
+  return config.count * avgCards;
+}
 const MATCH_COUNT = 3;
-const HALF = 25; // 层间偏移 = tileSize / 2
+const HALF = 25; // 层间偏移 = tileSize / 2（P0: 仅用于视觉阴影深度计算，不影响坐标）
 
 // ═══════════════════════════════════════
 // 棋盘坐标白名单（6行8列，1-based索引）
@@ -703,7 +763,7 @@ function getBoardCoordsByType(boardType) {
   }
 }
 
-// 获取指定类型的棋盘边界
+// P0+P1: 获取指定类型的棋盘边界（含安全区 + 半偏移）
 function getBoardBoundsByType(boardType) {
   const coords = getBoardCoordsByType(boardType);
   let maxCol = 1, maxRow = 1;
@@ -711,7 +771,11 @@ function getBoardBoundsByType(boardType) {
     if (c.col > maxCol) maxCol = c.col;
     if (c.row > maxRow) maxRow = c.row;
   });
-  return { boardW: maxCol * TILE_W, boardH: maxRow * TILE_H };
+  // P1: 半偏移网格宽度修正
+  const halfOffset = (TILE_W + TILE_GAP) / 2;
+  const boardW = SAFE_ZONE * 2 + (maxCol - 1) * (TILE_W + TILE_GAP) + TILE_W + halfOffset - TILE_GAP;
+  const boardH = SAFE_ZONE * 2 + maxRow * (TILE_H + TILE_GAP) - TILE_GAP;
+  return { boardW, boardH };
 }
 
 // 检查坐标是否在白名单内
@@ -786,11 +850,11 @@ const LAYER_CONFIG = {
 
 // 异形棋盘最大放牌数（须为3的倍数；实际值由 getMaxCardsForBoard 按坐标数动态计算）
 const BOARD_COUNTS = {
-  'love': 30,
+  'love': 32,
   'diamond': 24,
   'persia': 42,
   'butterfly': 30,
-  'petal': 30,
+  'petal': 32,
   'hourglass': 36,
   'standard': 48,
 };
@@ -805,7 +869,8 @@ function getMaxCardsForBoard(boardType, boardCoordCount, levelNum) {
   return Math.min(baseTotal, shapeCap, namedCap);
 }
 
-// 构建均衡牌池：每种牌恰好3张，共 cardCount 张（cardCount 须为3的倍数）
+// P0: 构建均衡牌池：每种牌恰好3张，共 cardCount 张（cardCount 须为3的倍数）
+// 与 utils/boardGenerator.js 的 buildQuotaTiles 保持一致逻辑
 function buildBalancedTypePool(cardCount, availableTypes, rng) {
   const groups = cardCount / 3;
   const types = shuffleArr([...availableTypes], rng);
@@ -813,6 +878,15 @@ function buildBalancedTypePool(cardCount, availableTypes, rng) {
   for (let g = 0; g < groups; g++) {
     const t = types[g % types.length];
     pool.push(t, t, t);
+  }
+  // P0: 验证配额加密（每种图案总数是3的倍数）
+  if (typeof BoardGenerator !== 'undefined') {
+    const poolTypeIndices = pool.map(function(typeName) {
+      return availableTypes.indexOf(typeName);
+    });
+    if (!BoardGenerator.isSolvable(poolTypeIndices, availableTypes.length)) {
+      console.warn('[BoardGen] buildBalancedTypePool: P0配额验证失败，但已按3的倍数构建');
+    }
   }
   return shuffleCardPool(pool, rng);
 }
@@ -1435,33 +1509,74 @@ function getDisplayLevel(levelNum) {
   return levelNum;
 }
 
-// 计算棋盘像素尺寸（用于 canvas / board 容器）
+// P0: 计算棋盘像素尺寸（用于 canvas / board 容器）
 // 使用1-based坐标：row 1-6, col 1-8
-// 始终基于BOARD_COORDS白名单计算，确保6行8列正确显示
+// 坐标由行列号唯一确定（与层级无关），包含安全区 + 间距
+// P1: 半偏移网格 — 奇数行(0-based)向右偏移半格
 function getBoardBounds(layers) {
   let maxCol = 1, maxRow = 1;
   BOARD_COORDS.forEach(c => {
     if (c.col > maxCol) maxCol = c.col;
     if (c.row > maxRow) maxRow = c.row;
   });
-  // 像素尺寸 = 最大坐标 * 格子尺寸
-  return { boardW: maxCol * TILE_W, boardH: maxRow * TILE_H };
+  // P1: 宽度需额外留出半格偏移空间（奇数行最右列偏移 TILE_W/2）
+  const halfOffset = (TILE_W + TILE_GAP) / 2;
+  const boardW = SAFE_ZONE * 2 + (maxCol - 1) * (TILE_W + TILE_GAP) + TILE_W + halfOffset - TILE_GAP;
+  const boardH = SAFE_ZONE * 2 + maxRow * (TILE_H + TILE_GAP) - TILE_GAP;
+  return { boardW, boardH };
 }
 
-// Tile 像素坐标（1-based坐标系统：row 1-6, col 1-8）
-function tileX(tile) { return (tile.col - 1) * TILE_W + getLayerOffset(tile.layer).ox; }
-function tileY(tile) { return (tile.row - 1) * TILE_H + getLayerOffset(tile.layer).oy; }
+// P0: Tile 像素坐标（1-based坐标系统：row 1-6, col 1-8）
+// 坐标由行列号唯一确定，与层级无关！
+// P1: 半偏移规整网格 — 奇数行(0-based: row-1 ∈ {1,3,5})向右偏移半格
+function tileX(tile) {
+  const rowOffset = ((tile.row - 1) % 2 === 1) ? (TILE_W + TILE_GAP) / 2 : 0;
+  return SAFE_ZONE + (tile.col - 1) * (TILE_W + TILE_GAP) + rowOffset;
+}
+function tileY(tile) { return SAFE_ZONE + (tile.row - 1) * (TILE_H + TILE_GAP); }
+
+// P0: 层级只影响 z-index 和 box-shadow，不改变任何物理位置
 let _layerOffsetMap = {};
 function getLayerOffset(layer) {
   const offset = _layerOffsetMap[layer];
   return {
-    ox: offset?.offsetX ?? offset?.ox ?? 0,
-    oy: offset?.offsetY ?? offset?.oy ?? 0
+    zIndex: offset?.zIndex ?? ((layer + 1) * 10),
+    shadowY: offset?.shadowY ?? Math.min(layer * 2, 6),
+    shadowBlur: offset?.shadowBlur ?? Math.min(layer * 4, 12),
+    shadowAlpha: offset?.shadowAlpha ?? (0.2 + layer * 0.05),
   };
 }
 function buildLayerOffsetMap(layers) {
   _layerOffsetMap = {};
-  layers.forEach(la => { _layerOffsetMap[la.layer] = { ox: la.offsetX, oy: la.offsetY }; });
+  layers.forEach(la => {
+    const layer = la.layer;
+    _layerOffsetMap[layer] = {
+      zIndex: (layer + 1) * 10,
+      shadowY: Math.min(layer * 2, 6),
+      shadowBlur: Math.min(layer * 4, 12),
+      shadowAlpha: 0.2 + layer * 0.05,
+    };
+  });
+}
+
+/** P0+P1: 获取牌的完整视觉样式（坐标 + 层级样式 + 半偏移） */
+function getTileStyle(row, col, layer) {
+  // P1: 半偏移网格 — 奇数行(0-based)向右偏移半格
+  const rowOffset = ((row - 1) % 2 === 1) ? (TILE_W + TILE_GAP) / 2 : 0;
+  const x = SAFE_ZONE + (col - 1) * (TILE_W + TILE_GAP) + rowOffset;
+  const y = SAFE_ZONE + (row - 1) * (TILE_H + TILE_GAP);
+  const zIndex = (layer + 1) * 10;
+  const shadowY = Math.min(layer * 2, 6);
+  const shadowBlur = Math.min(layer * 4, 12);
+  const boxShadow = '0 ' + shadowY + 'px ' + shadowBlur + 'px rgba(0,0,0,' + (0.2 + layer * 0.05) + ')';
+  return { x, y, zIndex, boxShadow };
+}
+
+/** P1: 获取指定行的最大列数（半偏移网格中奇数行少1列） */
+function getColsForRow(row) {
+  // 0-based 奇数行（1-based row 2,4,6）向右偏移半格，最右列易溢出
+  // 采用 overflow:hidden 裁切方案，保持8列不变
+  return 8;
 }
 
 const CAT_TYPES = [
@@ -2322,14 +2437,45 @@ function generateBoard(levelNum) {
     console.warn(`[generateBoard] 关卡${levelNum} 在${MAX_BOARD_ATTEMPTS}次内未找到可解布局，已使用末次生成`);
   }
 
-  // 8. 构建 offset map 供坐标计算（基础偏移确保在棋盘内，边距留出偏移空间）
-  const BASE_OFFSET = 15; // 基础偏移，确保Layer0卡牌也在内边距内
-  const LAYER_GAP = 12;   // 层间偏移量：确保同坐标堆叠牌每层都可见
+  // P0: 构建层样式映射（层级只影响 z-index 和阴影，不改变坐标）
   buildLayerOffsetMap([
-    { layer: 0, offsetX: BASE_OFFSET, offsetY: BASE_OFFSET },
-    { layer: 1, offsetX: BASE_OFFSET + LAYER_GAP, offsetY: BASE_OFFSET + LAYER_GAP },
-    { layer: 2, offsetX: BASE_OFFSET + LAYER_GAP * 2, offsetY: BASE_OFFSET + LAYER_GAP * 2 }
+    { layer: 0, zIndex: 10, shadowY: 0, shadowBlur: 4, shadowAlpha: 0.20 },
+    { layer: 1, zIndex: 20, shadowY: 2, shadowBlur: 8, shadowAlpha: 0.25 },
+    { layer: 2, zIndex: 30, shadowY: 4, shadowBlur: 12, shadowAlpha: 0.30 },
   ]);
+
+  // P0: 使用 BoardGenerator 进行配额验证（兜底检查）
+  if (typeof BoardGenerator !== 'undefined' && result) {
+    const typeIds = result.map(function(c) { return c.type; });
+    const uniqueTypes = [...new Set(typeIds)];
+    const typeToIdx = {};
+    uniqueTypes.forEach(function(t, i) { typeToIdx[t] = i; });
+    const typeIndices = typeIds.map(function(t) { return typeToIdx[t]; });
+    if (!BoardGenerator.isSolvable(typeIndices, uniqueTypes.length)) {
+      console.warn('[BoardGen] P0配额验证失败，触发配额修正');
+      // 配额修正：确保每种类型是3的倍数
+      const counts = {};
+      typeIds.forEach(function(t) { counts[t] = (counts[t]||0)+1; });
+      Object.keys(counts).forEach(function(t) {
+        if (counts[t] % 3 !== 0) {
+          console.warn('[BoardGen] 类型 ' + t + ' 数量=' + counts[t] + ' 不是3的倍数!');
+        }
+      });
+    }
+  }
+
+  // P1: 使用 BoardShapes 验证棋盘形状合法性
+  if (typeof BoardShapes !== 'undefined' && result) {
+    const shapeKey = BoardShapes.getShapeKeyForLevel(levelNum);
+    const validCells = BoardShapes.getBoardShape(shapeKey);
+    const validSet = new Set(validCells.map(function(c) { return c.row + ',' + c.col; }));
+    const outOfBounds = result.filter(function(card) {
+      return !validSet.has(card.row + ',' + card.col);
+    });
+    if (outOfBounds.length > 0) {
+      console.warn('[BoardGen] P1形状验证: ' + outOfBounds.length + ' 张牌超出' + shapeKey + '棋盘边界');
+    }
+  }
 
   return result;
 }
@@ -2461,6 +2607,7 @@ function addInterferenceCards(cards, levelConfig, rng) {
 
   const interferenceType = levelConfig.interference.id;
   const count = levelConfig.interferenceCount;
+  console.log('[P2-Interference] addInterferenceCards called: type=' + interferenceType + ', count=' + count + ', totalCards=' + cards.length);
   
   // 冰冻牌不出现在棋盘上，直接占据收集槽前N格（freeze_grid_count），无需在棋盘上生成
   if (interferenceType === 'freeze') {
@@ -2503,30 +2650,61 @@ function addInterferenceCards(cards, levelConfig, rng) {
   if (interferenceType === 'sticky' || interferenceType === 'transform' || interferenceType === 'disguise') {
     // 真身牌配置开关：real_card_enable === 0 时强制关闭
     if (interferenceType === 'disguise' && levelConfig.real_card_enable === 0) return cards;
-    const iCount = interferenceType === 'sticky' ? (levelConfig.stick_card_count || count || 2) 
+    const iCount = interferenceType === 'sticky' ? (levelConfig.stick_card_count || count || 2)
       : interferenceType === 'transform' ? (levelConfig.transform_card_count || count || 2)
       : (levelConfig.real_card_count || count || 2);
     const selectedCards = [];
     const shuffledTop = shuffleArr([...topLayerCards], rng);
-    
-    for (const card of shuffledTop) {
-      if (selectedCards.length >= iCount) break;
-      // 检查与已选中的牌是否相邻（上下左右，曼哈顿距离=1）
-      const isAdjacent = selectedCards.some(sc =>
-        Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1
-      );
-      if (!isAdjacent) {
-        selectedCards.push(card);
+
+    // 粘连牌：优先选择有相邻同层卡牌的位置，保证点击时能触发连带效果
+    if (interferenceType === 'sticky') {
+      const allCards = cards.filter(c => !c.removed);
+      const hasNeighbor = (card) => {
+        const dirs = [{dr:-1,dc:0},{dr:1,dc:0},{dr:0,dc:-1},{dr:0,dc:1}];
+        return dirs.some(({dr, dc}) =>
+          allCards.some(other =>
+            other.id !== card.id && other.layer === card.layer &&
+            other.row === card.row + dr && other.col === card.col + dc
+          )
+        );
+      };
+      const withNeighbor = shuffledTop.filter(hasNeighbor);
+      const withoutNeighbor = shuffledTop.filter(c => !hasNeighbor);
+      const sortedCandidates = [...withNeighbor, ...withoutNeighbor];
+      for (const card of sortedCandidates) {
+        if (selectedCards.length >= iCount) break;
+        const isAdjacent = selectedCards.some(sc =>
+          Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1
+        );
+        if (!isAdjacent) {
+          selectedCards.push(card);
+        }
+      }
+      console.log('[P2-Interference] sticky: withNeighbor=' + withNeighbor.length + ', withoutNeighbor=' + withoutNeighbor.length + ', selected=' + selectedCards.length + '/iCount=' + iCount + ', top=' + topLayerCards.length);
+    } else {
+      for (const card of shuffledTop) {
+        if (selectedCards.length >= iCount) break;
+        // 检查与已选中的牌是否相邻（上下左右，曼哈顿距离=1）
+        const isAdjacent = selectedCards.some(sc =>
+          Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1
+        );
+        if (!isAdjacent) {
+          selectedCards.push(card);
+        }
       }
     }
     // 若顶层空间不足以放置所有干扰牌（间隔约束），降级到不限制间隔
     if (selectedCards.length < iCount) {
-      const fallbackSelected = shuffledTop.slice(0, Math.min(iCount, shuffledTop.length));
+      // 保留已选中的，从剩余牌中补齐
+      const remaining = shuffledTop.filter(c => selectedCards.every(sc => sc.id !== c.id));
+      const fallbackSelected = [...selectedCards, ...remaining].slice(0, Math.min(iCount, shuffledTop.length));
+      console.log('[P2-Interference] ' + interferenceType + ': fallback, selected=' + fallbackSelected.length + '/iCount=' + iCount + ', top=' + topLayerCards.length);
       return applyInterferenceToCards(cards, fallbackSelected, interferenceType, rng);
     }
+    console.log('[P2-Interference] ' + interferenceType + ': OK, selected=' + selectedCards.length + '/iCount=' + iCount + ', top=' + topLayerCards.length);
     return applyInterferenceToCards(cards, selectedCards, interferenceType, rng);
   }
-  
+
   // 舔毛牌：替换3张同型牌为1张舔毛牌，保持牌池3的倍数
   if (interferenceType === 'groom') {
     const shuffledTop = shuffleArr([...topLayerCards], rng);
@@ -2923,11 +3101,13 @@ function isSolvable(cards) {
   return dfsBacktrack(initSlots, initRemaining, 0);
 }
 
+// P0: 计算卡牌被上层覆盖的面积占比（阻挡判断）
+// 坐标由行列号唯一确定（与层级无关），只计算同一坐标不同层的堆叠
 function calcOverlap(tile, allTiles) {
   const BLOCK_THRESHOLD = 0.3;
-  // 使用1-based坐标：pixel = (coord - 1) * tileSize
-  const left = (tile.col - 1) * TILE_W + getLayerOffset(tile.layer).ox;
-  const top = (tile.row - 1) * TILE_H + getLayerOffset(tile.layer).oy;
+  // P0: 使用 tileX/tileY（行列号唯一确定坐标）
+  const left = tileX(tile);
+  const top = tileY(tile);
   const right = left + TILE_W;
   const bottom = top + TILE_H;
   const area = TILE_W * TILE_H;
@@ -2936,8 +3116,8 @@ function calcOverlap(tile, allTiles) {
   for (const other of allTiles) {
     if (other.id === tile.id || other.removed || other.layer <= tile.layer) continue;
     if (other.inSlot) continue;
-    const oLeft = (other.col - 1) * TILE_W + getLayerOffset(other.layer).ox;
-    const oTop = (other.row - 1) * TILE_H + getLayerOffset(other.layer).oy;
+    const oLeft = tileX(other);
+    const oTop = tileY(other);
     const oRight = oLeft + TILE_W;
     const oBottom = oTop + TILE_H;
     overlap += Math.max(0, Math.min(right, oRight) - Math.max(left, oLeft))
@@ -3407,9 +3587,12 @@ function Tile({ tile, blocked, onClick, animDelay, highlighted, transformLockedI
 /* ═══════════════════════════════════════
    COLLECTION SLOT (with 收集槽.png bg) - P5: 增强版
    ═══════════════════════════════════════ */
-function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlot = null, groomSlots = [], freezeOverride = false, freezeGridCount = 1 }) {
+function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlot = null, groomSlots = [], freezeOverride = false, freezeGridCount = 1, compact = false }) {
   const count = maxSlots;
   const [slotAnim, setSlotAnim] = useState(null);
+  const H = compact ? 48 : 86;
+  const slotW = compact ? 38 : 48;
+  const slotH = compact ? 38 : 58;
 
   // P5: 检测新卡牌入场动画
   useEffect(() => {
@@ -3426,7 +3609,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
   return (
     <div style={{
       position: 'relative',
-      width: '100%', height: 86,
+      width: '100%', height: H,
     }}>
       {/* 收集槽背景 — CSS渐变 */}
       {showBg && (
@@ -3446,7 +3629,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
       <div style={{
         position: 'relative', width: '100%', height: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 5, padding: '0 4px', zIndex: 1,
+        gap: compact ? 3 : 5, padding: 0, zIndex: 1,
       }}>
       {/* 槽位指示器 */}
       {Array.from({ length: count }).map((_, i) => {
@@ -3460,7 +3643,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
         
         return (
           <div key={i} style={{
-            width: 48, height: 58, borderRadius: 12,
+            width: slotW, height: slotH, borderRadius: 12,
             flexShrink: 0,
             position: 'relative',
           }}>
@@ -3644,8 +3827,6 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
             })() : (
               <div style={{
                 width: '100%', height: '100%', borderRadius: 10,
-                border: '1.5px dashed rgba(255,255,255,0.1)',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
               }}/>
             )}
               </>
@@ -4779,6 +4960,7 @@ function Game() {
   const slotRef = useRef([]);
   const tempStorageRef = useRef([]);
   const tilesRef = useRef(tiles);
+  const pilesRef = useRef(piles); // P2: 牌堆ref
   const matchTimeoutRef = useRef(null);
   const boardContainerRef = useRef(null);
   const boardCanvasRef = useRef(null);
@@ -4811,6 +4993,7 @@ function Game() {
   const [fishMultiplier, setFishMultiplier] = useState(1);
   const [extraRestarts, setExtraRestarts] = useState(0);
   const [slotBonus, setSlotBonus] = useState(0);
+  const [piles, setPiles] = useState(() => generatePileData(1)); // P2: 牌堆状态
   const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
   // 黏人：再来一次概率系统
   const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
@@ -4823,6 +5006,7 @@ function Game() {
     setCurrentLevel(level);
     setPhase('prep');
     setTiles(generateBoard(level));
+    setPiles(generatePileData(level)); // P2: 初始化牌堆
     setGroomSlots([]);
     setFreezeToast('');
     setDangerToast('');
@@ -4892,6 +5076,7 @@ function Game() {
   useEffect(() => { slotRef.current = slot; }, [slot]);
   useEffect(() => { tempStorageRef.current = tempStorage; }, [tempStorage]);
   useEffect(() => { tilesRef.current = tiles; }, [tiles]);
+  useEffect(() => { pilesRef.current = piles; }, [piles]); // P2: 牌堆ref同步
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
   // P2: Timer countdown (only in timed mode, respects timerDelay passive)
@@ -5040,11 +5225,10 @@ function Game() {
     }
   }, [phase]);
 
+  // P0: 棋盘尺寸由行列号和SAFE_ZONE唯一确定，不需层偏移余量
   const { boardW, boardH } = getBoardBounds(levelConfig.layers);
-  // 增加空间容纳Layer偏移（BASE_OFFSET=15 + 最大层偏移10 = 25px），确保棋盘内所有卡牌完整显示
-  const LAYER_OFFSET_SPACE = 45; // 层偏移空间：BASE_OFFSET(15) + max层偏移(24) + 余量
-  const boardWidth = boardW + LAYER_OFFSET_SPACE;
-  const boardHeight = boardH + LAYER_OFFSET_SPACE + 15;
+  const boardWidth = boardW;
+  const boardHeight = boardH;
   const totalTiles = tiles.length;
 
   // Dynamic board scaling - 限制scale不超过1，确保棋盘始终完整显示在容器内
@@ -6015,6 +6199,7 @@ function Game() {
     gameEndedRef.current = false;
     setPhase('playing');
     setTiles(generateBoard(currentLevel));
+    setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
     setTempStorage([]);
     setGroomSlots([]);
@@ -6100,6 +6285,7 @@ function Game() {
     }
     gameEndedRef.current = false;
     setTiles(generateBoard(currentLevel));
+    setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
     setTempStorage([]);
     setGroomSlots([]);
@@ -6157,6 +6343,7 @@ function Game() {
       const cycleTiles = generateBoard(1);
       console.timeEnd('[handleNextLevel] generateBoard(cycle)');
       setTiles(cycleTiles);
+      setPiles(generatePileData(1)); // P2: 重置牌堆
       setSlot([]);
       setTempStorage([]);
       setGroomSlots([]);
@@ -6216,9 +6403,11 @@ function Game() {
       console.timeEnd('[handleNextLevel] generateBoard');
       console.log('[handleNextLevel] generateBoard 返回', newTiles.length, '张卡牌');
       setTiles(newTiles);
+      setPiles(generatePileData(nextLv)); // P2: 重置牌堆
     } catch(e) {
       console.error('[handleNextLevel] generateBoard 异常:', e);
       setTiles(generateBoard(1)); // 兜底：回到第1关
+      setPiles(generatePileData(1)); // P2: 重置牌堆
     }
     setSlot([]);
     setTempStorage([]);
@@ -6280,6 +6469,98 @@ function Game() {
 
   const remaining = tiles.filter(t => !t.removed && !t.inSlot).length;
   const progress = Math.round(((totalTiles - remaining) / totalTiles) * 100);
+
+  // ═══════════════════════════════════════
+  // P2: 牌堆点击处理
+  // ═══════════════════════════════════════
+  const onPileTap = useCallback((pileId) => {
+    if (gameState !== GAME_PLAYING) return;
+
+    const currentPiles = pilesRef.current;
+    const pile = currentPiles[pileId];
+    if (!pile || pile.isEmpty) return;
+    if (pile.topIndex >= pile.cards.length) return;
+
+    const isFrozen = frozenSlot && !(frozenSlot && cowardlyInterferenceBlockedRef.current);
+    const frozenOffset = isFrozen ? (levelConfig.freeze_grid_count || 1) : 0;
+    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
+    if (slotRef.current.length >= effectiveCapacity) return;
+
+    const cardType = pile.cards[pile.topIndex];
+
+    // 更新牌堆状态
+    setPiles(prev => prev.map((p, i) => {
+      if (i !== pileId) return p;
+      const newTopIndex = p.topIndex + 1;
+      return {
+        ...p,
+        topIndex: newTopIndex,
+        isEmpty: newTopIndex >= p.cards.length,
+      };
+    }));
+
+    // 加入收集槽
+    if (matchTimeoutRef.current) {
+      clearTimeout(matchTimeoutRef.current);
+      matchTimeoutRef.current = null;
+    }
+    const uid = ++uidRef.current;
+    const slotItem = { uid, type: cardType, tileId: null, isGroom: false, fromPile: pileId };
+
+    setMoveCount(m => m + 1);
+    setMoveHistory(h => [...h, { uid, type: cardType, tileId: null, fromPile: pileId }]);
+
+    const nextSlot = [...slotRef.current, slotItem];
+    const curTemp = tempStorageRef.current;
+    const combined = [...curTemp, ...nextSlot];
+    const sameType = combined.filter(s => s.type === cardType && !s.isGroom);
+
+    if (sameType.length >= MATCH_COUNT) {
+      const tempMatches = sameType.filter(s => curTemp.some(ts => ts.uid === s.uid));
+      const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
+      const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
+      const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
+
+      setSlot(nextSlot);
+      setMatching(allMatchUids);
+
+      setComboCount(c => c + 1);
+      const now = Date.now();
+      const isCombo = (now - lastMatchTimeRef.current) < 2000;
+      lastMatchTimeRef.current = now;
+      setScore(prev => {
+        let pts = 10;
+        if (isCombo) pts += 5;
+        return prev + pts;
+      });
+      setMaxCombo(c => Math.max(c, sameType.length));
+
+      matchTimeoutRef.current = setTimeout(() => {
+        setSlot(prev => {
+          let removed2 = 0;
+          const remaining = [];
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (prev[i].type === cardType && !prev[i].isGroom && removed2 < slotRemoveCount) {
+              removed2++;
+            } else {
+              remaining.unshift(prev[i]);
+            }
+          }
+          return remaining;
+        });
+        setTempStorage(prev => {
+          let removed = 0;
+          return prev.filter(s => {
+            if (s.type === cardType && !s.isGroom && removed < tempRemoveCount) { removed++; return false; }
+            return true;
+          });
+        });
+        setMatching([]);
+      }, 350);
+    } else {
+      setSlot(nextSlot);
+    }
+  }, [gameState, frozenSlot, levelConfig, slotBonus]);
 
   // P4: 关卡背景图映射（11-20关循环1-10关）
   const getLevelBg = (level) => {
@@ -6660,14 +6941,135 @@ function Game() {
           </div>
         </div>
 
+        {/* ═══ P2: 牌堆区 ═══ */}
+        {piles.length > 0 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-evenly',
+            width: '100%',
+            height: Math.ceil(78 * boardScale),
+            padding: '4px 0',
+            transform: `scale(${boardScale})`,
+            transformOrigin: 'top center',
+          }}>
+            {piles.map((pile, idx) => {
+              // 仅3堆时使用叠牌阴影效果：左侧阴影向左，中/右侧阴影向右
+              const isLeftStack = piles.length === 3 && idx === 0;
+              const isRightStack = piles.length === 3 && idx === 2;
+              const isMiddleStack = piles.length === 3 && idx === 1;
+              const isSideStack = isLeftStack || isRightStack || isMiddleStack;
+              // 隐藏的牌数（顶层可见牌除外）
+              const hiddenCount = pile.isEmpty ? 0 : pile.cards.length - pile.topIndex - 1;
+              // 每道阴影宽度（与棋盘卡牌 3D 厚度同款奶灰色）
+              const SHADOW_W = 6;
+              const CARD_SZ = isSideStack ? 52 : 50;
+              const OVERLAP = 3; // 阴影与卡牌重叠像素，消除视觉间隙
+              const shadowTotalW = hiddenCount * SHADOW_W;
+              const containerPadX = hiddenCount > 0 ? 4 : 8;
+              return (
+              <div key={pile.id}
+                onClick={() => onPileTap(pile.id)}
+                style={{
+                  position: 'relative',
+                  width: isSideStack ? CARD_SZ + shadowTotalW + containerPadX - (hiddenCount > 0 ? OVERLAP : 0) : CARD_SZ,
+                  height: isSideStack ? CARD_SZ + 8 : CARD_SZ,
+                  cursor: pile.isEmpty ? 'not-allowed' : 'pointer',
+                  opacity: pile.isEmpty ? 0.3 : 1,
+                  transition: 'transform 0.15s, opacity 0.3s',
+                  pointerEvents: pile.isEmpty ? 'none' : 'auto',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                onMouseEnter={e => {
+                  if (!pile.isEmpty) e.currentTarget.style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = '';
+                }}
+              >
+                {/* 叠牌阴影：每张隐藏的牌对应一道竖条 */}
+                {isSideStack && hiddenCount > 0 && !pile.isEmpty &&
+                  Array.from({ length: hiddenCount }).map((_, si) => {
+                    const stripLeft = isLeftStack ? si * SHADOW_W : CARD_SZ - OVERLAP + si * SHADOW_W;
+                    return (
+                      <div key={si} style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: stripLeft,
+                        width: SHADOW_W,
+                        height: CARD_SZ,
+                        borderRadius: isLeftStack ? '3px 0 0 3px' : '0 3px 3px 0',
+                        background: 'linear-gradient(180deg, rgba(185,170,150,0.45) 0%, rgba(185,170,150,0.70) 35%, rgba(185,170,150,0.78) 60%, rgba(185,170,150,0.50) 100%)',
+                        boxShadow: isLeftStack
+                          ? '2px 2px 6px rgba(0,0,0,0.25)'
+                          : '-2px 2px 6px rgba(0,0,0,0.25)',
+                      }} />
+                    );
+                  })
+                }
+                {/* 顶部牌面 */}
+                {!pile.isEmpty && (() => {
+                  const pileType = pile.cards[pile.topIndex];
+                  let cat = CAT_TYPES.find(c => c.id === pileType);
+                  let ifCard = null;
+                  if (!cat && pileType && pileType.startsWith('__interference_')) {
+                    const iKey = pileType.replace('__interference_', '').replace('__', '');
+                    ifCard = INTERFERENCE_CARDS[iKey] || null;
+                  }
+                  const cardDef = cat || ifCard;
+                  const cardLeft = isLeftStack ? shadowTotalW - OVERLAP : 0;
+                  return (
+                  <div style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: cardLeft,
+                    width: CARD_SZ, height: CARD_SZ,
+                    background: cardDef ? `linear-gradient(145deg, ${cardDef.color}dd, ${cardDef.color}88)` : 'linear-gradient(145deg, #FF9F43, #EE5A24)',
+                    borderRadius: 10,
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
+                    zIndex: 2,
+                  }}>
+                    {_tileImages[cardDef.id] instanceof Image ? (
+                      <img src={_tileImages[cardDef.id].src} alt={cardDef.id}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}
+                      />
+                    ) : cardDef && (cardDef.emoji || (ifCard && ifCard.emoji)) ? (
+                      <span style={{ fontSize: isSideStack ? 22 : 20, lineHeight: 1 }}>{cardDef.emoji || (ifCard && ifCard.emoji)}</span>
+                    ) : (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.5)', textAlign: 'center', lineHeight: 1.1, padding: '0 2px' }}>
+                        {pileType}
+                      </span>
+                    )}
+                  </div>
+                  );
+                })()}
+                {/* 空状态 */}
+                {pile.isEmpty && (
+                  <div style={{
+                    width: CARD_SZ, height: CARD_SZ,
+                    borderRadius: 10,
+                    opacity: 0,
+                  }} />
+                )}
+              </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* ═══ 临时存放层 + 收集槽（技能栏上方）═══ */}
-        <div style={{ padding: '0 2px', position: 'relative', marginTop: -15 }}>
-          {tempStorage.length > 0 && (
-            <div style={{ marginBottom: 4 }}>
-              <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} />
-            </div>
+        <div style={{ padding: '0 2px', position: 'relative', marginTop: 10 }}>
+          {/* 有牌堆的关卡：始终预留临时存放层空间，避免版面跳动 */}
+          {piles.length > 0 && (
+            <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} compact />
           )}
-          <div style={{ marginTop: tempStorage.length > 0 ? 6 : 0 }}>
+          {/* 无牌堆的关卡：仅在有临时牌时显示 */}
+          {piles.length === 0 && tempStorage.length > 0 && (
+            <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} compact />
+          )}
+          <div style={{ marginTop: (piles.length > 0 || tempStorage.length > 0) ? 10 : 0 }}>
             <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} groomSlots={groomSlots} freezeOverride={freezeBlockOverride} freezeGridCount={freezeGridCount} />
           </div>
           {/* 舔毛牌进入收集槽提示 */}
@@ -6781,8 +7183,8 @@ function Game() {
         {phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && (
           <div style={{
             display: 'flex', justifyContent: 'center', gap: 20,
-            padding: '0 10px 25px',
-            marginTop: 30,
+            padding: '0 10px 20px',
+            marginTop: 10,
           }}>
             {[0, 1, 2].map(i => {
               const breed = skillSlots[i];
