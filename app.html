@@ -925,9 +925,14 @@ function loadSavedTitle() {
 
 function saveState(cats, bells, activeTitle, extra) {
   try {
+    const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     const data = {
       cats, globalSerialId, fishLedger, bells, activeTitle,
       breedSerialCounters, coolingPool,
+      homeMaxSlots: prev.homeMaxSlots || 10,
+      myInviteCode: prev.myInviteCode,
+      inviteCodes: prev.inviteCodes,
+      inviteRewards: prev.inviteRewards,
       savedAt: Date.now(),
     };
     if (extra) {
@@ -943,6 +948,73 @@ function saveState(cats, bells, activeTitle, extra) {
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch(e) {}
+}
+
+/* ═══════════════════════════════════════
+   P0: 好友推荐系统
+   ═══════════════════════════════════════ */
+function generateInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+function getOrCreateInviteCode() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (saved.myInviteCode) return saved.myInviteCode;
+    const code = generateInviteCode();
+    saved.myInviteCode = code;
+    saved.inviteCodes = saved.inviteCodes || [];
+    saved.inviteCodes.push({ code, createdAt: Date.now() });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    return code;
+  } catch(e) { return generateInviteCode(); }
+}
+
+function getTodayInviteRewardCount() {
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const rewards = saved.inviteRewards || [];
+    return rewards.filter(r => r.time > todayStart.getTime()).length;
+  } catch(e) { return 0; }
+}
+
+function processInviteReward(inviteCode) {
+  if (!inviteCode) return false;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const myCode = saved.myInviteCode;
+    if (inviteCode === myCode) return false;
+    const codes = saved.inviteCodes || [];
+    const match = codes.find(c => c.code === inviteCode);
+    if (match && Date.now() - match.createdAt > 86400000) return false;
+    const rewards = saved.inviteRewards || [];
+    if (rewards.some(r => r.code === inviteCode && r.role === 'invitee')) return false;
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayRewards = rewards.filter(r => r.time > todayStart.getTime());
+    if (todayRewards.length >= 3) return false;
+    rewards.push({ code: inviteCode, time: Date.now(), role: 'invitee', amount: 30 });
+    saved.inviteRewards = rewards;
+    const ledger = saved.fishLedger || [];
+    ledger.push({ type: 'earn', amount: 30, desc: '好友推荐奖励', time: Date.now() });
+    saved.fishLedger = ledger;
+    if (match && !match.claimed) {
+      match.claimed = true;
+      match.claimedAt = Date.now();
+      if (!rewards.some(r => r.code === inviteCode && r.role === 'inviter')) {
+        rewards.push({ code: inviteCode, time: Date.now(), role: 'inviter', amount: 30 });
+        ledger.push({ type: 'earn', amount: 30, desc: '好友推荐奖励（邀请）', time: Date.now() });
+        saved.fishLedger = ledger;
+      }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    return true;
+  } catch(e) { return false; }
 }
 
 /* ═══════════════════════════════════════
@@ -1239,7 +1311,7 @@ function FinalDayBanner({ doubleFish }) {
   );
 }
 /* P2: 竞猜面板 */
-function BettingPanel({ bets, onPlaceBet, onShareBet, fish }) {
+function BettingPanel({ bets, onPlaceBet, onShareBet, fish, showConfirmModal }) {
   var upcomingMatch = getUpcomingMatch();
   var [selectedTeam, setSelectedTeam] = React.useState(null);
   var [wager, setWager] = React.useState(10);
@@ -1262,7 +1334,7 @@ function BettingPanel({ bets, onPlaceBet, onShareBet, fish }) {
 
   var handlePlace = function() {
     if (!selectedTeam || !upcomingMatch) return;
-    if (fish < wager) { alert('鱼干不足！'); return; }
+    if (fish < wager) { showConfirmModal({ emoji:'🐟', title:'鱼干不足', message:'投注所需鱼干不足', onConfirm:()=>{} }); return; }
     var isHome = selectedTeam === upcomingMatch.home;
     onPlaceBet(upcomingMatch.matchId, isHome ? upcomingMatch.homeCat : upcomingMatch.awayCat, selectedTeam, wager);
     setBetPlaced(true);
@@ -1502,7 +1574,7 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
   );
 }
 
-function HomePage({ cats, fish, bells, todayFish, checkedIn, gachaDone, onCheckIn, onNavigate, activeTitle, battleMaxSlots, user }) {
+function HomePage({ cats, fish, bells, todayFish, checkedIn, gachaDone, onCheckIn, onNavigate, activeTitle, battleMaxSlots, user, inviteRewardToday, onShareInvite, shareToast }) {
 
 const nurturing = cats.filter(c => c.location === 'home');
 const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
@@ -1710,7 +1782,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
           {[
             { icon:'☀️', text:'每日打卡', reward:'+5 🐟', done: checkedIn },
             { icon:'🎁', text:'体验抽卡', reward:'+1 🔔', done: gachaDone },
-            { icon:'👥', text:'分享给好友', reward:'+3 🐟', done: false },
+            { icon:'👥', text:'把游戏推荐给朋友', reward: '+30 🐟', done: (inviteRewardToday || 0) >= 3, type: 'invite' },
           ].map((m, i, arr) => (
             <div key={i} style={{
               display:'flex', alignItems:'center', padding:'10px 14px',
@@ -1718,11 +1790,38 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
               gap:10, opacity: m.done ? 0.5 : 1,
             }}>
               <span style={{ fontSize:16 }}>{m.icon}</span>
-              <span style={{ flex:1, fontSize:13, fontWeight:500, color: m.done ? colors.sub : colors.ink, textDecoration: m.done ? 'line-through' : 'none' }}>{m.text}</span>
-              <span style={{ fontSize:11, fontWeight:600, color: m.done ? colors.green : colors.orange, padding:'2px 8px', borderRadius:999, background: m.done ? 'rgba(0,184,148,0.1)' : 'rgba(253,150,68,0.1)' }}>{m.done ? '已完成' : m.reward}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:500, color: m.done ? colors.sub : colors.ink, textDecoration: m.done ? 'line-through' : 'none' }}>{m.text}</div>
+                {m.type === 'invite' && !m.done && (
+                  <div style={{ fontSize:10, color:colors.muted, marginTop:2 }}>
+                    今日已完成 {inviteRewardToday || 0}/3
+                  </div>
+                )}
+              </div>
+              {m.type === 'invite' && !m.done ? (
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <button onClick={(e) => { e.stopPropagation(); onShareInvite && onShareInvite(); }} style={{
+                    padding:'4px 12px', borderRadius:999, border:'1px solid rgba(108,92,231,0.3)',
+                    background:'rgba(108,92,231,0.1)', cursor:'pointer',
+                    fontSize:11, fontWeight:600, color:colors.ink, whiteSpace:'nowrap',
+                  }}>去推荐</button>
+                  <span style={{ fontSize:11, fontWeight:600, color: colors.orange, padding:'2px 8px', borderRadius:999, background: 'rgba(253,150,68,0.1)' }}>+30 🐟</span>
+                </div>
+              ) : (
+                <span style={{ fontSize:11, fontWeight:600, color: m.done ? colors.green : colors.orange, padding:'2px 8px', borderRadius:999, background: m.done ? 'rgba(0,184,148,0.1)' : 'rgba(253,150,68,0.1)' }}>{m.done ? '已完成' : m.reward}</span>
+              )}
             </div>
           ))}
         </div>
+        {/* P0: 推荐码分享提示 */}
+        {shareToast && (
+          <div style={{
+            marginTop:8, padding:'10px 14px', borderRadius:12,
+            background:'rgba(108,92,231,0.12)', border:'1px solid rgba(108,92,231,0.2)',
+            fontSize:12, color:colors.primary, textAlign:'center',
+            animation: 'slideUp 0.3s ease-out',
+          }}>{shareToast}</div>
+        )}
       </div>
     </div>
   );
@@ -1994,7 +2093,7 @@ function LineupManager({
 /* ═══════════════════════════════════════
    CAT PAGE (Tab 3) — Battle + Spectator + Home + Bag + P6: 纪念册
    ═══════════════════════════════════════ */
-function CatPage({ cats, fish, onFeed, onBatchFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio }) {
+function CatPage({ cats, fish, onFeed, onBatchFeed, onAdopt, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDiscard, initialTab, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, onDeploy, onWithdraw, onSpectatorDeploy, onSpectatorWithdraw, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio, homeMaxSlots, onExpandHome }) {
 
 // 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
 const getInitialTab = () => {
@@ -2021,9 +2120,7 @@ useEffect(() => {
   const totalAdopted = cats.filter(c => c.location === 'home' || c.location === 'memorial').length;
   const maxDaysAlive = Math.max(...cats.map(c => c.daysAlive), 0);
 
-  // P2: 容量定义
-  // 家园：初始 10 格，后续可使用鱼干扩容（每格150鱼干）
-  const homeMaxSlots = 10;
+  // P2: 容量定义（homeMaxSlots 由 App state 管理，动态扩容）
   // 备战区：出战席(3格) + 观战席(最多3格) = 最多 6 格
   // 解锁条件：totalAdopted >= 10 解锁观战席，totalAdopted >= 30 解锁观战席全部
   const spectatorSlots = slot4Unlocked ? (slot6Unlocked ? 3 : 1) : 0;
@@ -2103,7 +2200,7 @@ useEffect(() => {
       )}
       {/* P2: 家园（原养成区） */}
       {subTab === 'home' && (
-        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onBatchFeed={onBatchFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} bubbles={bubbles} animatingCats={animatingCats} isSleepTime={isSleepTime} onCatTap={onCatTap} onTriggerFeed={onTriggerFeed} unlockAudio={unlockAudio} />
+        <NurturingArea cats={homeCats} homeMaxSlots={homeMaxSlots} fish={fish} onFeed={onFeed} onBatchFeed={onBatchFeed} onRelease={onRelease} onNavigate={onNavigate} onSaveFromFarewell={onSaveFromFarewell} onImmediateRelease={onImmediateRelease} onDeploy={onDeploy} totalAdopted={totalAdopted} maxDaysAlive={maxDaysAlive} bubbles={bubbles} animatingCats={animatingCats} isSleepTime={isSleepTime} onCatTap={onCatTap} onTriggerFeed={onTriggerFeed} unlockAudio={unlockAudio} onExpandHome={onExpandHome} />
       )}
       {subTab === 'bag' && (
         <BagArea cats={bagCats} homeCount={homeCats.length} homeMaxSlots={homeMaxSlots} onAdopt={onAdopt} onNavigate={onNavigate} onDiscard={onDiscard} />
@@ -2116,7 +2213,7 @@ useEffect(() => {
    P2: HOME AREA (家园) + P6: 告别仪式 - P4: 界面调整
    家园槽位卡片：添加被动技能标签、批量补满按钮、上场按钮
    ═══════════════════════════════════════ */
-function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onBatchFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio }) {
+function NurturingArea({ cats, homeMaxSlots, fish, onFeed, onBatchFeed, onRelease, onNavigate, onSaveFromFarewell, onImmediateRelease, onDeploy, totalAdopted, maxDaysAlive, bubbles, animatingCats, isSleepTime, onCatTap, onTriggerFeed, unlockAudio, onExpandHome }) {
 
 const allSlots = Array.from({ length: homeMaxSlots });
 
@@ -2356,6 +2453,19 @@ const allSlots = Array.from({ length: homeMaxSlots });
           </div>
         );
       })}
+      {/* 拓展家园入口 */}
+      <div onClick={() => onExpandHome && onExpandHome()} style={{
+        borderRadius:18, padding:'16px', marginBottom:12,
+        background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(108,92,231,0.2)',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8, minHeight:100,
+        cursor:'pointer',
+      }}>
+        <span style={{ fontSize:22, color:colors.muted }}>+</span>
+        <div style={{ textAlign:'center' }}>
+          <span style={{ fontSize:13, color:colors.muted, fontWeight:500 }}>拓展家园</span>
+          <div style={{ fontSize:10, color:colors.muted, marginTop:2 }}>1500 鱼干解锁 1 格</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2908,14 +3018,25 @@ const cat = cats.find(c => c.serialId === catSerialId);
         </div>
       </div>
 
-      {/* Release button (home only) */}
+      {/* Release button + 推荐 (home only) */}
       {cat.location === 'home' && (
-        <div style={{ padding:'16px 20px 0' }}>
+        <div style={{ padding:'16px 20px 0', display:'flex', gap:10 }}>
+          <button onClick={() => {
+            const code = getOrCreateInviteCode();
+            const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(msg).catch(() => {});
+            }
+          }} style={{
+            flex:1, height:40, borderRadius:12, border:'1px solid rgba(108,92,231,0.2)',
+            background:'rgba(108,92,231,0.06)', cursor:'pointer',
+            fontSize:13, fontWeight:600, color:colors.purpleLight,
+          }}>📤 推荐这只猫</button>
           <button onClick={() => onRelease(cat)} style={{
-            width:'100%', height:40, borderRadius:12, border:'1px solid rgba(255,107,107,0.25)',
+            flex:1, height:40, borderRadius:12, border:'1px solid rgba(255,107,107,0.25)',
             background:'rgba(255,107,107,0.06)', cursor:'pointer',
             fontSize:13, fontWeight:600, color:colors.red,
-          }}>送去流浪（24小时内可挽回）</button>
+          }}>送去流浪</button>
         </div>
       )}
     </div>
@@ -3266,7 +3387,7 @@ function FriendLeaderboard({ todayFish, user }) {
    P1: MARKET PAGE - 喵市（抽卡 + 好友榜）
    ============================================================ */
 /* P2: 活动页 - 赛程总览 */
-function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell }) {
+function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell, showConfirmModal }) {
   return (
     <div style={{ padding: '0 20px 20px' }}>
       {isWorldCupActive() && (
@@ -3282,7 +3403,7 @@ function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClea
       <GroupStageBanner scores={groupStageScores || {}} claimed={groupStageBellsClaimed || []} onClaim={onClaimGroupStageBell} fish={fish} />
       <KnockoutBanner clears={knockoutConsecutiveClears || 0} eliminated={knockoutEliminatedToday || false} skinClaimed={knockoutSkinClaimed || false} />
       <FinalDayBanner />
-      <BettingPanel bets={bets || []} onPlaceBet={onPlaceBet} onShareBet={onShareBet} fish={fish} />
+      <BettingPanel bets={bets || []} onPlaceBet={onPlaceBet} onShareBet={onShareBet} fish={fish} showConfirmModal={showConfirmModal} />
       <div style={{ background: colors.card, borderRadius: 16, padding: '16px', border: '1px solid ' + colors.cardBorder, marginTop: 12 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: colors.ink, marginBottom: 12 }}>世界杯特别活动-赛程对阵表</div>
         {getAllMatches().map(function(m) {
@@ -3308,7 +3429,7 @@ function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClea
   );
 }
 
-function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, user, bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell, initialSubTab }) {
+function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, user, bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, groupStageScores, groupStageBellsClaimed, onClaimGroupStageBell, initialSubTab, showConfirmModal }) {
   const [subTab, setSubTab] = React.useState(initialSubTab || 'gacha');
   useEffect(() => {
     if (initialSubTab) setSubTab(initialSubTab);
@@ -3350,6 +3471,7 @@ function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, u
           groupStageScores={groupStageScores}
           groupStageBellsClaimed={groupStageBellsClaimed}
           onClaimGroupStageBell={onClaimGroupStageBell}
+          showConfirmModal={showConfirmModal}
         />
       )}
     </div>
@@ -3380,7 +3502,7 @@ function getSkinById(skinId) {
 
 /*   SHOP PAGE - cat shop (P1: functional exchange + world cup skins)
    ============================================================ */
-function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSkins, onBuySkin, onEquipSkin, onClaimFreeSkin }) {
+function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSkins, onBuySkin, onEquipSkin, onClaimFreeSkin, showConfirmModal }) {
   const todayStart = new Date(); todayStart.setHours(0,0,0,0);
   const exchangedToday = (typeof fishLedger !== 'undefined' ? fishLedger : [])
     .filter(t => t.type === 'exchange' && t.time > todayStart.getTime()).length;
@@ -3415,10 +3537,13 @@ function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSki
     } else if (skin.price === 0 && onClaimFreeSkin) {
       onClaimFreeSkin(skin.id);
     } else if (onBuySkin) {
-      if (bells < skin.price) { alert('铃铛不足！'); return; }
-      if (confirm('确认花费 ' + skin.price + ' 铃铛购买「' + (skin.team || skin.name) + '」皮肤？')) {
-        onBuySkin(skin.id);
-      }
+      if (bells < skin.price) { showConfirmModal({ emoji:'🔔', title:'铃铛不足', message:'铃铛不足，无法购买皮肤', onConfirm:()=>{} }); return; }
+      showConfirmModal({
+        emoji: '🛒',
+        title: '购买皮肤',
+        message: '确认花费 ' + skin.price + ' 铃铛购买「' + (skin.team || skin.name) + '」皮肤？',
+        onConfirm: () => { onBuySkin(skin.id); },
+      });
     }
   };
 
@@ -5180,19 +5305,50 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [useLocal, setUseLocal] = useState(false);
+
+  // 验证码系统
+  const generateCaptcha = () => {
+    const a = Math.floor(Math.random() * 9) + 1;
+    const b = Math.floor(Math.random() * 9) + 1;
+    const ops = ['+', '×'];
+    const op = ops[Math.floor(Math.random() * 2)];
+    const answer = op === '+' ? a + b : a * b;
+    return { a, b, op, answer, text: `${a} ${op} ${b} = ?` };
+  };
+  const [captcha, setCaptcha] = useState(generateCaptcha);
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
+
+  const refreshCaptcha = () => {
+    setCaptcha(generateCaptcha());
+    setCaptchaInput('');
+    setCaptchaError(false);
+  };
 
   const handleSubmit = async () => {
-    if (!username.trim() || !password.trim()) { setError('请填写用户名和密码'); return; }
-    setError(''); setLoading(true);
+    setError(''); setCaptchaError(false);
+    if (!username.trim()) { setError('请输入用户名'); return; }
+    if (username.trim().length < 3) { setError('用户名至少3个字符'); return; }
+    if (!password.trim()) { setError('请输入密码'); return; }
+    if (password.length < 6) { setError('密码至少6个字符'); return; }
+    if (!captchaInput.trim()) { setCaptchaError(true); setError('请填写验证码'); return; }
+    if (parseInt(captchaInput) !== captcha.answer) {
+      setCaptchaError(true);
+      setError('验证码错误，请重新输入');
+      refreshCaptcha();
+      return;
+    }
+    setLoading(true);
     try {
       const fn = mode === 'login' ? MiaolegemiAPI.login : MiaolegemiAPI.register;
       const data = await fn(username.trim(), password);
       onLogin(data.user, false);
     } catch (e) {
       setError(e.message);
+      refreshCaptcha();
     } finally { setLoading(false); }
   };
 
@@ -5200,9 +5356,17 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
     onLogin({ id: 'local', username: '本地用户', nickname: '铲屎官', bells: 3 }, true);
   };
 
+  const pwdStrength = password.length === 0 ? 0
+    : password.length < 6 ? 1
+    : /(?=.*[a-zA-Z])(?=.*\d)/.test(password) ? 3
+    : password.length >= 6 ? 2 : 1;
+
+  const strengthColors = ['transparent', colors.red, colors.orange, colors.green];
+  const strengthLabels = ['', '太短', '一般', '较强'];
+
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:colors.bg, padding:30, position:'relative', overflow:'hidden' }}>
-      
+
       {/* 背景图片 + 模糊效果 */}
       <div style={{
         position:'absolute', top:0, left:0, right:0, bottom:0,
@@ -5212,25 +5376,25 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
         opacity:0.6,
         zIndex:0,
       }} />
-      
+
       {/* 半透明遮罩 */}
       <div style={{
         position:'absolute', top:0, left:0, right:0, bottom:0,
         background:'rgba(15,10,30,0.5)',
         zIndex:1,
       }} />
-      
+
       {/* 表单内容 */}
       <div style={{ position:'relative', zIndex:2 }}>
-      
+
       <div style={{ fontSize:24, fontWeight:800, color:colors.ink, marginBottom:4, textAlign:'center', textShadow:'0 2px 10px rgba(0,0,0,0.5)' }}>喵呜乐消消</div>
-      <div style={{ fontSize:12, color:colors.sub, marginBottom:36, textAlign:'center', textShadow:'0 1px 5px rgba(0,0,0,0.5)' }}>猫咪养成 × 消除游戏</div>
+      <div style={{ fontSize:12, color:colors.sub, marginBottom:36, textAlign:'center', textShadow:'0 1px 5px rgba(0,0,0,0.5)' }}>养好猫·趣闯关</div>
 
       <div style={{ width:'100%', maxWidth:300 }}>
         {/* Tab切换 */}
         <div style={{ display:'flex', marginBottom:20, background:colors.card, borderRadius:12, padding:3 }}>
           {['login','register'].map(m => (
-            <div key={m} onClick={() => { setMode(m); setError(''); }} style={{
+            <div key={m} onClick={() => { setMode(m); setError(''); setCaptchaError(false); refreshCaptcha(); }} style={{
               flex:1, textAlign:'center', padding:'8px 0', borderRadius:10, cursor:'pointer',
               fontSize:13, fontWeight: mode===m ? 700 : 400,
               background: mode===m ? colors.purple : 'transparent',
@@ -5240,17 +5404,72 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
           ))}
         </div>
 
-        {/* 输入框 */}
+        {/* 用户名 */}
         <div style={{ marginBottom:12 }}>
-          <input value={username} onChange={e => setUsername(e.target.value)}
+          <input value={username} onChange={e => { setUsername(e.target.value); setError(''); }}
             placeholder="用户名 (至少3个字符)" maxLength={20}
-            style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${colors.cardBorder}`, background:colors.card, color:colors.ink, fontSize:14, outline:'none' }} />
+            style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${colors.cardBorder}`, background:colors.card, color:colors.ink, fontSize:14, outline:'none', boxSizing:'border-box' }} />
         </div>
-        <div style={{ marginBottom:16 }}>
-          <input value={password} onChange={e => setPassword(e.target.value)} type="password"
+
+        {/* 密码 + 可见切换 + 强度指示 */}
+        <div style={{ marginBottom:8, position:'relative' }}>
+          <input value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
+            type={showPwd ? 'text' : 'password'}
             placeholder="密码 (至少6个字符)" maxLength={40}
+            style={{ width:'100%', padding:'10px 40px 10px 14px', borderRadius:10, border:`1px solid ${colors.cardBorder}`, background:colors.card, color:colors.ink, fontSize:14, outline:'none', boxSizing:'border-box' }} />
+          <span onClick={() => setShowPwd(!showPwd)} style={{
+            position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
+            cursor:'pointer', fontSize:14, opacity:0.5, userSelect:'none',
+          }}>{showPwd ? '🙈' : '👁️'}</span>
+        </div>
+        {password.length > 0 && (
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
+            <div style={{ flex:1, height:3, borderRadius:2, background:colors.cardBorder, overflow:'hidden' }}>
+              <div style={{ width:`${(pwdStrength/3)*100}%`, height:'100%', borderRadius:2, background:strengthColors[pwdStrength], transition:'width 0.3s' }} />
+            </div>
+            <span style={{ fontSize:10, color:strengthColors[pwdStrength], fontWeight:600 }}>{strengthLabels[pwdStrength]}</span>
+          </div>
+        )}
+
+        {/* 验证码区域 */}
+        <div style={{ marginBottom:16 }}>
+          {/* 第一行：验证码展示 + 刷新按钮 */}
+          <div style={{ display:'flex', gap:10, alignItems:'stretch', marginBottom:10 }}>
+            <div style={{
+              flex:1, height:42, borderRadius:10,
+              background:'linear-gradient(135deg, rgba(108,92,231,0.15), rgba(108,92,231,0.05))',
+              border:`1px solid ${captchaError ? colors.red : colors.cardBorder}`,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              position:'relative', overflow:'hidden', userSelect:'none',
+            }}>
+              <svg style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', opacity:0.06, pointerEvents:'none' }}>
+                {Array.from({ length: 8 }, (_, i) => (
+                  <line key={i} x1={Math.random()*200} y1={Math.random()*42} x2={Math.random()*200} y2={Math.random()*42}
+                    stroke={i%2===0?'#fff':'#6C5CE7'} strokeWidth={1+i%2} />
+                ))}
+              </svg>
+              <span style={{
+                fontSize:18, fontWeight:800, color:colors.ink,
+                letterSpacing:2, fontFamily:'monospace',
+                textShadow:'0 0 8px rgba(108,92,231,0.3)',
+              }}>{captcha.text}</span>
+            </div>
+            <div onClick={refreshCaptcha} style={{
+              width:42, height:42, borderRadius:10, cursor:'pointer',
+              background:'rgba(108,92,231,0.1)', border:`1px solid ${colors.cardBorder}`,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:16, transition:'all 0.2s', flexShrink:0,
+            }} title="换一个">🔄</div>
+          </div>
+          {/* 第二行：验证码输入 */}
+          <input value={captchaInput} onChange={e => { setCaptchaInput(e.target.value.replace(/\D/g,'')); setCaptchaError(false); setError(''); }}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-            style={{ width:'100%', padding:'10px 14px', borderRadius:10, border:`1px solid ${colors.cardBorder}`, background:colors.card, color:colors.ink, fontSize:14, outline:'none' }} />
+            placeholder="输入验证码答案" maxLength={3}
+            style={{
+              width:'100%', padding:'10px 14px', borderRadius:10, fontSize:14, outline:'none',
+              border:`1px solid ${captchaError ? colors.red : colors.cardBorder}`,
+              background:colors.card, color:colors.ink, boxSizing:'border-box',
+            }} />
         </div>
 
         {error && <div style={{ color:colors.red, fontSize:12, marginBottom:12, textAlign:'center' }}>{error}</div>}
@@ -5389,6 +5608,17 @@ function App() {
   const [flipCardCat, setFlipCardCat] = useState(null);
   const [notifPerm, setNotifPerm] = useState('default');
   const [theme, setTheme] = useState('dark');
+  const [homeMaxSlots, setHomeMaxSlots] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return saved?.homeMaxSlots || 10;
+    } catch(e) { return 10; }
+  });
+  // P0: 好友推荐系统
+  const [inviteCode, setInviteCode] = useState(() => getOrCreateInviteCode());
+  const [inviteRewardToday, setInviteRewardToday] = useState(() => getTodayInviteRewardCount());
+  const [shareToast, setShareToast] = useState(null);
+
   const [milestoneAlert, setMilestoneAlert] = useState(null); // { label, slotName }
   const milestoneAlertTimer = useRef(null);
   const milestoneState = useRef(
@@ -5800,6 +6030,9 @@ function App() {
           }
         } catch(e) {}
 
+        // P0: 刷新邀请奖励计数
+        setInviteRewardToday(getTodayInviteRewardCount());
+
         // Online mode: sync from API
         if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
           try {
@@ -6038,7 +6271,7 @@ function App() {
     if (!isLocalMode && cat._apiId) {
       try {
         await MiaolegemiAPI.feedCat(cat._apiId);
-      } catch (e) { alert(e.message); return; }
+      } catch (e) { showConfirmModal({ emoji:'❌', title:'喂食失败', message:e.message, onConfirm:()=>{} }); return; }
     }
     fishLedger.push({ type: 'spend', amount: 1, desc: `${cat.name}喂食`, time: Date.now() });
     setCats(prev => prev.map(c => {
@@ -6069,7 +6302,7 @@ function App() {
     if (!isLocalMode && cat._apiId) {
       try {
         await MiaolegemiAPI.batchFeedCat && MiaolegemiAPI.batchFeedCat(cat._apiId);
-      } catch (e) { alert(e.message); return; }
+      } catch (e) { showConfirmModal({ emoji:'❌', title:'批量补满失败', message:e.message, onConfirm:()=>{} }); return; }
     }
     fishLedger.push({ type: 'spend', amount: feedsNeeded, desc: `${cat.name}批量补满`, time: Date.now() });
     setCats(prev => prev.map(c => {
@@ -6088,17 +6321,16 @@ function App() {
   // Handle adoption
   const handleAdopt = useCallback((cat) => {
     const homeCatsCount = cats.filter(c => c.location === 'home').length;
-    const homeMaxSlots = 10; // 家园初始 10 格
     if (homeCatsCount >= homeMaxSlots) return;
     setAdoptTarget(cat);
-  }, [cats]);
+  }, [cats, homeMaxSlots]);
 
   const confirmAdopt = useCallback(async () => {
     if (!adoptTarget) return;
     if (!isLocalMode && adoptTarget._apiId) {
       try {
         await MiaolegemiAPI.adoptCat(adoptTarget._apiId);
-      } catch (e) { alert(e.message); return; }
+      } catch (e) { showConfirmModal({ emoji:'❌', title:'领养失败', message:e.message, onConfirm:()=>{} }); return; }
     }
     const now = Date.now();
     setCats(prev => prev.map(c => {
@@ -6125,7 +6357,7 @@ function App() {
     // P4: 如果是创世区猫咪，显示特殊提示
     const adoptBreedSerial = adoptTarget.breedSerial || adoptTarget.serialId || 0;
     if (adoptBreedSerial <= 10) {
-      alert(`🎉 恭喜！你发现了创世区猫咪 ${adoptTarget.name} #${String(adoptBreedSerial).padStart(3,'0')}！\n\n这是全球仅有的10只创世猫咪之一，请好好珍惜！`);
+      showConfirmModal({ emoji:'🎉', title:'创世区猫咪', message:`恭喜！你发现了创世区猫咪 ${adoptTarget.name} #${String(adoptBreedSerial).padStart(3,'0')}！\n这是全球仅有的10只创世猫咪之一，请好好珍惜！`, onConfirm:()=>{} });
     }
     
     setAdoptTarget(null);
@@ -6141,7 +6373,7 @@ function App() {
       const newBattleCats = [...battleCats, { ...cat, battleSlot: targetSlot }];
       const conflict = validateBattleLineup(newBattleCats.filter(c => c.battleSlot != null));
       if (!conflict.valid) {
-        alert(`⚠️ ${conflict.conflict[0].name} 和 ${conflict.conflict[1].name} 性格不合，不能同时出战！`);
+        showConfirmModal({ emoji:'⚠️', title:'性格不合', message:`${conflict.conflict[0].name} 和 ${conflict.conflict[1].name} 性格不合，不能同时出战！`, onConfirm:()=>{} });
         return;
       }
       setCats(prev => prev.map(c => {
@@ -6202,7 +6434,7 @@ function App() {
   const handleSpectatorDeploy = useCallback((cat) => {
     const spectatorCats = cats.filter(c => c.battleSpectator != null);
     if (spectatorCats.length >= 3) {
-      alert('观战席已满！最多3只观战猫咪');
+      showConfirmModal({ emoji:'📋', title:'观战席已满', message:'最多3只观战猫咪', onConfirm:()=>{} });
       return;
     }
     
@@ -6266,13 +6498,13 @@ function App() {
     }
     
     // 简短提示告别仪式开始
-    alert(`${rt.name} 开始告别仪式，24小时内可以挽留～`);
-  }, [releaseTarget, showCatDetail, selectedCat]);
+    showConfirmModal({ emoji:'💫', title:'告别仪式', message:`${rt.name} 开始告别仪式，24小时内可以挽留～`, onConfirm:()=>{} });
+  }, [releaseTarget, showCatDetail, selectedCat, showConfirmModal]);
 
   // P6: 挽留告别仪式中的猫咪
   const handleSaveFromFarewell = useCallback(async (cat) => {
     if (fish < cat.saveCost) {
-      alert(`鱼干不足！挽留需要 ${cat.saveCost} 鱼干`);
+      showConfirmModal({ emoji:'🐟', title:'鱼干不足', message:`挽留需要 ${cat.saveCost} 鱼干`, onConfirm:()=>{} });
       return;
     }
     
@@ -6382,13 +6614,42 @@ function App() {
         if (!isLocalMode && cat._apiId) {
           try {
             await MiaolegemiAPI.releaseCat(cat._apiId);
-          } catch (e) { alert(e.message); return; }
+          } catch (e) { showConfirmModal({ emoji:'❌', title:'丢弃失败', message:e.message, onConfirm:()=>{} }); return; }
         }
         setCats(prev => prev.filter(c => c.serialId !== cat.serialId));
         setFlipCardCat(null);
       },
     });
   }, [isLocalMode, showConfirmModal]);
+
+  // 拓展家园
+  const handleExpandHome = useCallback(() => {
+    const cost = 1500;
+    if (getFishBalance() < cost) {
+      showConfirmModal({
+        emoji: '🐟',
+        title: '鱼干不足',
+        message: '拓展家园需要1500鱼干，快去消消乐赚取吧！',
+        onConfirm: () => {},
+      });
+      return;
+    }
+    showConfirmModal({
+      emoji: '🏠',
+      title: '拓展家园',
+      message: `你要花费 ${cost} 鱼干拓展 1 格家园吗？`,
+      onConfirm: () => {
+        fishLedger.push({ type: 'spend', amount: cost, desc: '拓展家园', time: Date.now() });
+        setHomeMaxSlots(prev => prev + 1);
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          saved.homeMaxSlots = (saved.homeMaxSlots || 10) + 1;
+          saved.fishLedger = fishLedger;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        } catch(e) {}
+      },
+    });
+  }, [showConfirmModal]);
 
   // Handle gacha — breedId/rarity pre-rolled by GachaPage for animation sync
   // 支持新参数: breedId, rarity, newPityCount, triggeredPity
@@ -6423,7 +6684,7 @@ function App() {
           setPityCount(data.pityCount);
         }
         return;
-      } catch (e) { alert(e.message); return; }
+      } catch (e) { showConfirmModal({ emoji:'❌', title:'抽卡失败', message:e.message, onConfirm:()=>{} }); return; }
     }
     setBells(prev => prev - 1);
     setGachaDone(true);
@@ -6444,7 +6705,7 @@ function App() {
         const data = await MiaolegemiAPI.checkin();
         fishLedger.push({ type: 'earn', amount: data.fishEarned, desc: '每日签到', time: Date.now() });
         if (data.bellsEarned > 0) setBells(prev => prev + data.bellsEarned);
-      } catch (e) { alert(e.message); return; }
+      } catch (e) { showConfirmModal({ emoji:'❌', title:'签到失败', message:e.message, onConfirm:()=>{} }); return; }
     } else {
       fishLedger.push({ type: 'earn', amount: 5, desc: '每日签到', time: Date.now() });
     }
@@ -6458,23 +6719,23 @@ function App() {
     const todayExchanges = fishLedger.filter(t => t.type === 'exchange' && t.time > todayStart.getTime());
     const exchangedToday = todayExchanges.length;
     const dailyLimit = 5;
-    if (exchangedToday >= dailyLimit) { alert('今日兑换已达上限（5次/天）'); return; }
-    if (getFishBalance() < 100) { alert('鱼干不足（需要100条鱼干）'); return; }
+    if (exchangedToday >= dailyLimit) { showConfirmModal({ emoji:'📊', title:'兑换上限', message:'今日兑换已达上限（5次/天）', onConfirm:()=>{} }); return; }
+    if (getFishBalance() < 100) { showConfirmModal({ emoji:'🐟', title:'鱼干不足', message:'需要100条鱼干', onConfirm:()=>{} }); return; }
     fishLedger.push({ type: 'spend', amount: 100, desc: '兑换铃铛', time: Date.now() });
     fishLedger.push({ type: 'exchange', amount: 0, desc: '兑换铃铛', time: Date.now() });
     setBells(prev => prev + 1);
     setCats(prev => [...prev]); // trigger re-render to update fish display
-  }, []);
+  }, [showConfirmModal]);
 
   // P2: 皮肤购买
   const handleBuySkin = useCallback((skinId) => {
     const skin = ALL_SKINS[skinId];
     if (!skin) return;
-    if (bells < skin.price) { alert('铃铛不足！'); return; }
+    if (bells < skin.price) { showConfirmModal({ emoji:'🔔', title:'铃铛不足', message:'铃铛不足，无法购买皮肤', onConfirm:()=>{} }); return; }
     setBells(prev => prev - skin.price);
     setOwnedSkins(prev => [...prev, skinId]);
     fishLedger.push({ type: 'spend', amount: 0, desc: '购买皮肤:' + skinId, time: Date.now() });
-  }, [bells]);
+  }, [bells, showConfirmModal]);
 
   // P2: 皮肤装备
   const handleEquipSkin = useCallback((catKey, skinId) => {
@@ -6492,10 +6753,10 @@ function App() {
 
   // P2: 免费皮肤领取
   const handleClaimFreeSkin = useCallback((skinId) => {
-    if (ownedSkins.includes(skinId)) { alert('已拥有该皮肤'); return; }
+    if (ownedSkins.includes(skinId)) { showConfirmModal({ emoji:'✅', title:'已拥有', message:'已拥有该皮肤', onConfirm:()=>{} }); return; }
     setOwnedSkins(prev => [...prev, skinId]);
     fishLedger.push({ type: 'earn', amount: 0, desc: '领取免费皮肤:' + skinId, time: Date.now() });
-  }, [ownedSkins]);
+  }, [ownedSkins, showConfirmModal]);
 
   // P2: 分组赛领取铃铛奖励
   const handleClaimGroupStageBell = useCallback(() => {
@@ -6510,17 +6771,36 @@ function App() {
 
   // P2: 竞猜投注
   const handlePlaceBet = useCallback((matchId, catBreedId, teamName, fishWagered) => {
-    if (getFishBalance() < fishWagered) { alert('鱼干不足！'); return; }
+    if (getFishBalance() < fishWagered) { showConfirmModal({ emoji:'🐟', title:'鱼干不足', message:'投注所需鱼干不足', onConfirm:()=>{} }); return; }
     fishLedger.push({ type: 'spend', amount: fishWagered, desc: '竞猜投注:' + matchId, time: Date.now() });
     const newBet = { matchId, catBreedId, teamName, fishWagered, won: null, settled: false, shared: false, placedAt: Date.now() };
     setBets(prev => [...prev, newBet]);
-  }, []);
+  }, [showConfirmModal]);
 
   // P2: 竞猜分享奖励
   const handleShareBet = useCallback((bet) => {
     fishLedger.push({ type: 'earn', amount: 3, desc: '分享竞猜奖励', time: Date.now() });
     setBets(prev => prev.map(b => b.matchId === bet.matchId ? { ...b, shared: true } : b));
-    alert('分享成功！+3 鱼干 🐟');
+    showConfirmModal({ emoji:'🐟', title:'分享成功', message:'+3 鱼干 🐟', onConfirm:()=>{} });
+  }, [showConfirmModal]);
+
+  // P0: 好友推荐 - 分享邀请
+  const handleShareInvite = useCallback(() => {
+    const code = getOrCreateInviteCode();
+    setInviteCode(code);
+    const shareMsg = '喵呜乐消消邀请你一起来玩！\n我的推荐码：' + code + '\n打开游戏输入推荐码，一起赚鱼干吧～🐱';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareMsg).then(() => {
+        setShareToast('推荐码已复制到剪贴板！');
+        setTimeout(() => setShareToast(null), 3000);
+      }).catch(() => {
+        setShareToast('推荐码：' + code);
+        setTimeout(() => setShareToast(null), 4000);
+      });
+    } else {
+      setShareToast('推荐码：' + code);
+      setTimeout(() => setShareToast(null), 4000);
+    }
   }, []);
 
   // P2: 竞猜结算（自动检测未结算的投注）
@@ -6581,10 +6861,10 @@ function App() {
         const pick = unownedWC[Math.floor(Math.random() * unownedWC.length)];
         setKnockoutSkinClaimed(true);
         setOwnedSkins(prev => [...prev, pick]);
-        alert('淘汰赛3连胜！获得限定皮肤: ' + (ALL_SKINS[pick].team || ALL_SKINS[pick].name));
+        showConfirmModal({ emoji:'🏆', title:'3连胜', message:'淘汰赛3连胜！获得限定皮肤: ' + (ALL_SKINS[pick].team || ALL_SKINS[pick].name), onConfirm:()=>{} });
       }
     }
-  }, [knockoutConsecutiveClears, knockoutSkinClaimed, ownedSkins]);
+  }, [knockoutConsecutiveClears, knockoutSkinClaimed, ownedSkins, showConfirmModal]);
 
   // P2: 大决战高分数称号
   useEffect(() => {
@@ -6597,10 +6877,10 @@ function App() {
       })();
       if (personalBest >= 10000) {
         setFinalTitleAwarded(true);
-        alert('大决战突破10000分！获得专属称号「2026世界杯冠军」');
+        showConfirmModal({ emoji:'🏆', title:'大决战', message:'突破10000分！获得专属称号「2026世界杯冠军」', onConfirm:()=>{} });
       }
     }
-  }, [finalTitleAwarded]);
+  }, [finalTitleAwarded, showConfirmModal]);
 
   // Navigation
   const handleNavigate = useCallback((tab, cat, subTab) => {
@@ -6719,7 +6999,7 @@ function App() {
             <GroupStageBanner scores={groupStageScores} claimed={groupStageBellsClaimed} onClaim={handleClaimGroupStageBell} fish={fish} />
             <KnockoutBanner clears={knockoutConsecutiveClears} eliminated={knockoutEliminatedToday} skinClaimed={knockoutSkinClaimed} />
             <FinalDayBanner />
-            <BettingPanel bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} />
+            <BettingPanel bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} showConfirmModal={showConfirmModal} />
             {showCatDetail ? (
               <CatDetailPage
                 cats={cats}
@@ -6732,7 +7012,7 @@ function App() {
                 onShowLineage={(cat) => setLineageCat(cat)}
                 fish={fish}
                 homeCount={nurturing.length}
-                homeMaxSlots={10}
+                homeMaxSlots={homeMaxSlots}
               />
             ) : (activeTab === 'cat' || activeTab === 'cathome') ? (
               <CatPage
@@ -6750,6 +7030,7 @@ function App() {
                 bubbles={bubbles} animatingCats={animatingCats} isSleepTime={isSleepTime}
                 onCatTap={triggerTap} onTriggerFeed={triggerFeed}
                 unlockAudio={unlockAudio}
+                homeMaxSlots={homeMaxSlots} onExpandHome={handleExpandHome}
               />
             ) : activeTab === 'home' ? (
               <HomePage
@@ -6757,12 +7038,13 @@ function App() {
                 checkedIn={checkedIn} gachaDone={gachaDone}
                 onCheckIn={handleCheckIn} onNavigate={handleNavigate}
                 activeTitle={activeTitle} battleMaxSlots={maxSlots}
-                user={user}
+                user={user} inviteRewardToday={inviteRewardToday}
+                onShareInvite={handleShareInvite} shareToast={shareToast}
               />
             ) : activeTab === 'market' ? (
-              <MarketPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} todayFish={todayFish} user={user} bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} knockoutConsecutiveClears={knockoutConsecutiveClears} knockoutEliminatedToday={knockoutEliminatedToday} knockoutSkinClaimed={knockoutSkinClaimed} groupStageScores={groupStageScores} groupStageBellsClaimed={groupStageBellsClaimed} onClaimGroupStageBell={handleClaimGroupStageBell} initialSubTab={marketTab} />
+              <MarketPage bells={bells} pityCount={pityCount} onGacha={handleGacha} cats={cats} onCardClick={setFlipCardCat} todayFish={todayFish} user={user} bets={bets} onPlaceBet={handlePlaceBet} onShareBet={handleShareBet} fish={fish} knockoutConsecutiveClears={knockoutConsecutiveClears} knockoutEliminatedToday={knockoutEliminatedToday} knockoutSkinClaimed={knockoutSkinClaimed} groupStageScores={groupStageScores} groupStageBellsClaimed={groupStageBellsClaimed} onClaimGroupStageBell={handleClaimGroupStageBell} initialSubTab={marketTab} showConfirmModal={showConfirmModal} />
             ) : activeTab === 'shop' ? (
-              <ShopPage fish={fish} bells={bells} user={user} onExchange={handleExchangeBells} cats={cats} ownedSkins={ownedSkins} equippedSkins={equippedSkins} onBuySkin={handleBuySkin} onEquipSkin={handleEquipSkin} onClaimFreeSkin={handleClaimFreeSkin} />
+              <ShopPage fish={fish} bells={bells} user={user} onExchange={handleExchangeBells} cats={cats} ownedSkins={ownedSkins} equippedSkins={equippedSkins} onBuySkin={handleBuySkin} onEquipSkin={handleEquipSkin} onClaimFreeSkin={handleClaimFreeSkin} showConfirmModal={showConfirmModal} />
             ) : (
               <ProfilePage cats={cats} fish={fish} bells={bells} activeTitle={activeTitle} onEquipTitle={setActiveTitle} maxSlots={maxSlots} baseSlots={baseSlots} slot4Unlocked={slot4Unlocked} slot5Unlocked={slot5Unlocked} slot6Unlocked={slot6Unlocked} totalAdopted={totalAdopted} user={user} isLocalMode={isLocalMode} guestMode={guestMode} onLogout={() => setShowLogoutConfirm(true)} onLogin={handleShowLoginAuth} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} onMemorialClick={setMemorialDetailCat} />
             )}
@@ -6786,7 +7068,7 @@ function App() {
           {/* Modals */}
           {!showCatDetail && !showPreBattle && <TabBar active={activeTab} onChange={(tab) => { setActiveTab(tab); setBagTab(null); setMarketTab(null); const url = new URL(window.location); url.searchParams.delete('tab'); window.history.replaceState({}, '', url); }} />}
           <CheckInModal show={showCheckIn} onClose={() => setShowCheckIn(false)} />
-          <AdoptConfirmModal cat={adoptTarget} show={!!adoptTarget} canAdopt={nurturing.length < 10} homeCount={nurturing.length} homeMaxSlots={10} onConfirm={confirmAdopt} onCancel={() => setAdoptTarget(null)} />
+          <AdoptConfirmModal cat={adoptTarget} show={!!adoptTarget} canAdopt={nurturing.length < homeMaxSlots} homeCount={nurturing.length} homeMaxSlots={homeMaxSlots} onConfirm={confirmAdopt} onCancel={() => setAdoptTarget(null)} />
           <ReleaseConfirmModal cat={releaseTarget} show={!!releaseTarget} onConfirm={confirmRelease} onCancel={() => setReleaseTarget(null)} />
           <GachaResultModal cat={gachaResult} show={showGachaResult} onClose={() => setShowGachaResult(false)} />
           <InfoModal show={!!infoModal} title={infoModal?.title} onClose={() => setInfoModal(null)}>{infoModal?.content}</InfoModal>
@@ -6867,6 +7149,19 @@ function App() {
     </div>
   );
 }
+
+// P0: 检查URL邀请码参数
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteParam = params.get('invite');
+  if (inviteParam && inviteParam.length === 8) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      saved.pendingInviteCode = inviteParam;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    } catch(e) {}
+  }
+})();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);

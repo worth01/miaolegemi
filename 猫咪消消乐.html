@@ -3845,7 +3845,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
    RESULT OVERLAY — 结算页 P5: 增强版界面
    P7: 更新为新的鱼干计算系统
    ═══════════════════════════════════════ */
-function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fishMultiplier, timeLeft, elapsedTime, catCount, cats, spectatorSlots, battleCatsData, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry, canRetry, retryAttemptsUsed }) {
+function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fishMultiplier, timeLeft, elapsedTime, catCount, cats, spectatorSlots, battleCatsData, extraRestarts, onRestart, onExtraRestart, onBack, onNextLevel, onGoHome, onRetry, canRetry, retryAttemptsUsed, inviteRewardToast, newRecordAchieved, previousBestScore }) {
   if (gameState === GAME_PLAYING) return null;
   const isWin = gameState === GAME_WIN;
   const isLevelComplete = gameState === GAME_LEVEL_COMPLETE;
@@ -3873,9 +3873,9 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
     finalFish = Math.floor(finalFish * 1.5);
   }
 
-  // P0: 新纪录检测
-  const personalBest = getPersonalBestScore();
-  const isNewRecord = score > 0 && score > personalBest;
+  // P0: 新纪录检测（使用游戏结束时捕获的值，避免读到已更新的localStorage）
+  const personalBest = previousBestScore;
+  const isNewRecord = newRecordAchieved;
 
   // P0: 性格得分加成标注（高冷: 得分加成显示，话痨: 技能额外得分）
   const hasGaoLeng = (battleCatsData || []).some(c => (c?.personality || '') === '高冷');
@@ -3966,6 +3966,18 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 4 }}>
                 超越历史最高 {personalBest.toLocaleString()} 分
               </div>
+              <button onClick={(e) => {
+                e.stopPropagation();
+                const msg = '喵呜乐消消新纪录！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(msg);
+                }
+              }} style={{
+                marginTop: 10, width: '100%', height: 38, borderRadius: 12,
+                background: 'rgba(255,215,0,0.2)', border: '1px solid rgba(255,215,0,0.4)',
+                cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#FFD700',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>📤 分享新纪录</button>
             </div>
           )}
         </div>
@@ -4153,18 +4165,18 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         </div>
         */}
 
-        {/* 挑战成功 - 居中"再玩一局"按钮（橙色，仅波斯猫观战时可用） */}
+        {/* 挑战成功 - 再玩一局 + 分享战绩 同一行 */}
         {!isLose && (
           <div style={{
             display: 'flex',
-            justifyContent: 'center',
+            gap: 14,
             marginBottom: 16
           }}>
             <button
               onClick={hasPersianSpectator ? onRestart : undefined}
               disabled={!hasPersianSpectator}
               style={{
-                height: 48, padding: '0 40px', borderRadius: 14,
+                flex: 1, height: 48, borderRadius: 14,
                 background: hasPersianSpectator
                   ? 'linear-gradient(135deg, #FD9644, #F39C12)'
                   : 'rgba(255,255,255,0.08)',
@@ -4190,87 +4202,121 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
             >
               🎮 再玩一局
             </button>
+            <button onClick={() => {
+              const msg = '喵呜乐消消战绩分享！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(msg);
+              }
+            }} style={{
+              flex: 1, height: 48, borderRadius: 14,
+              background: 'rgba(108,92,231,0.15)',
+              border: '1px solid rgba(108,92,231,0.3)',
+              cursor: 'pointer', fontSize: 14, fontWeight: 600,
+              color: '#A29BFE', transition: 'all 0.2s ease',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(108,92,231,0.25)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(108,92,231,0.15)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >📤 分享战绩</button>
           </div>
         )}
 
         {/* Actions - 底部按钮 */}
         {isLose ? (
-          /* 挑战失败：再来一次（黏人性格概率触发，最多3次）+ 返回大厅 */
-          <div style={{ display: 'flex', gap: 14 }}>
-            {hasClingyAbility ? (
-              <button
-                onClick={canRetry ? onRestart : undefined}
-                disabled={!canRetry}
-                style={{
-                  flex: 1, height: 48, borderRadius: 14,
-                  background: canRetry
-                    ? statusGradient
-                    : 'rgba(255,255,255,0.08)',
-                  border: canRetry ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  cursor: canRetry ? 'pointer' : 'not-allowed',
-                  fontSize: 14, fontWeight: 700,
-                  color: canRetry ? '#fff' : 'rgba(240,237,255,0.3)',
-                  boxShadow: canRetry ? `0 6px 20px ${statusColor}40` : 'none',
-                  transition: 'all 0.2s ease',
-                  opacity: canRetry ? 1 : 0.5,
-                }}
+          /* 挑战失败：分享战绩居中 + 再来一次/返回大厅 */
+          <>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              <button onClick={() => {
+                const msg = '喵呜乐消消战绩分享！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(msg);
+                }
+              }} style={{
+                height: 48, padding: '0 40px', borderRadius: 14,
+                background: 'rgba(108,92,231,0.15)',
+                border: '1px solid rgba(108,92,231,0.3)',
+                cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                color: '#A29BFE', transition: 'all 0.2s ease',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(108,92,231,0.25)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(108,92,231,0.15)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >📤 分享战绩</button>
+            </div>
+            <div style={{ display: 'flex', gap: 14 }}>
+              {hasClingyAbility ? (
+                <button
+                  onClick={canRetry ? onRestart : undefined}
+                  disabled={!canRetry}
+                  style={{
+                    flex: 1, height: 48, borderRadius: 14,
+                    background: canRetry
+                      ? statusGradient
+                      : 'rgba(255,255,255,0.08)',
+                    border: canRetry ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    cursor: canRetry ? 'pointer' : 'not-allowed',
+                    fontSize: 14, fontWeight: 700,
+                    color: canRetry ? '#fff' : 'rgba(240,237,255,0.3)',
+                    boxShadow: canRetry ? `0 6px 20px ${statusColor}40` : 'none',
+                    transition: 'all 0.2s ease',
+                    opacity: canRetry ? 1 : 0.5,
+                  }}
+                  onMouseEnter={e => {
+                    if (!canRetry) return;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = `0 8px 24px ${statusColor}50`;
+                  }}
+                  onMouseLeave={e => {
+                    if (!canRetry) return;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = `0 6px 20px ${statusColor}40`;
+                  }}
+                  title={canRetry ? '🔄 黏人猫咪给你一次重来的机会！（不扣鱼干）' : `黏人猫咪正在尝试…概率 ${Math.round(clingyRetryChance * 100)}%，剩余 ${3 - (retryAttemptsUsed || 0)}/3 次`}
+                >
+                  🔄 再来一次 ({3 - (retryAttemptsUsed || 0)}/3)
+                </button>
+              ) : (
+                <button
+                  disabled={true}
+                  style={{
+                    flex: 1, height: 48, borderRadius: 14,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    cursor: 'not-allowed',
+                    fontSize: 14, fontWeight: 700,
+                    color: 'rgba(240,237,255,0.3)',
+                    opacity: 0.5,
+                  }}
+                  title="需要黏人性格猫咪出战才能获得重试机会"
+                >
+                  🔄 再来一次
+                </button>
+              )}
+              <a href="app.html" style={{
+                flex: 1, height: 48, borderRadius: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                cursor: 'pointer', textDecoration: 'none',
+                fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.8)',
+                transition: 'all 0.2s ease',
+              }}
                 onMouseEnter={e => {
-                  if (!canRetry) return;
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = `0 8px 24px ${statusColor}50`;
                 }}
                 onMouseLeave={e => {
-                  if (!canRetry) return;
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = `0 6px 20px ${statusColor}40`;
                 }}
-                title={canRetry ? '🔄 黏人猫咪给你一次重来的机会！（不扣鱼干）' : `黏人猫咪正在尝试…概率 ${Math.round(clingyRetryChance * 100)}%，剩余 ${3 - (retryAttemptsUsed || 0)}/3 次`}
-              >
-                🔄 再来一次 ({3 - (retryAttemptsUsed || 0)}/3)
-              </button>
-            ) : (
-              <button
-                disabled={true}
-                style={{
-                  flex: 1, height: 48, borderRadius: 14,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  cursor: 'not-allowed',
-                  fontSize: 14, fontWeight: 700,
-                  color: 'rgba(240,237,255,0.3)',
-                  opacity: 0.5,
-                }}
-                title="需要黏人性格猫咪出战才能获得重试机会"
-              >
-                🔄 再来一次
-              </button>
-            )}
-            <a href="app.html" style={{
-              flex: 1, height: 48, borderRadius: 14, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,0.08)', 
-              border: '1px solid rgba(255,255,255,0.15)',
-              cursor: 'pointer', textDecoration: 'none',
-              fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.8)',
-              transition: 'all 0.2s ease',
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >🏠 返回大厅</a>
-          </div>
+              >🏠 返回大厅</a>
+            </div>
+          </>
         ) : (
           /* 挑战成功：返回大厅 + 下一关 */
           <div style={{ display: 'flex', gap: 14 }}>
             <a href="app.html" style={{
-              flex: 1, height: 48, borderRadius: 14, 
+              flex: 1, height: 48, borderRadius: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,0.08)', 
+              background: 'rgba(255,255,255,0.08)',
               border: '1px solid rgba(255,255,255,0.15)',
               cursor: 'pointer', textDecoration: 'none',
               fontSize: 14, fontWeight: 600, color: 'rgba(240,237,255,0.8)',
@@ -4286,7 +4332,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
               }}
             >🏠 返回大厅</a>
             <button onClick={onNextLevel} style={{
-              flex: 1, height: 48, borderRadius: 14, 
+              flex: 1, height: 48, borderRadius: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: statusGradient,
               border: 'none', cursor: 'pointer', textDecoration: 'none',
@@ -4303,6 +4349,18 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                 e.currentTarget.style.boxShadow = `0 6px 20px ${statusColor}40`;
               }}
             >下一关 →</button>
+          </div>
+        )}
+        {/* P0: 好友推荐奖励到账提示 */}
+        {inviteRewardToast && (
+          <div style={{
+            marginTop: 16, padding: '12px 16px', borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(0,184,148,0.2), rgba(85,239,196,0.1))',
+            border: '1px solid rgba(0,184,148,0.3)',
+            textAlign: 'center', animation: 'slideUp 0.5s ease-out',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#55EFC4' }}>🎉 好友推荐成功！</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>+30 鱼干已到账</div>
           </div>
         )}
       </div>
@@ -4998,6 +5056,9 @@ function Game() {
   // 黏人：再来一次概率系统
   const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
   const [canRetry, setCanRetry] = useState(false);
+  const [inviteRewardToast, setInviteRewardToast] = useState(false); // P0: 推荐奖励提示
+  const [newRecordAchieved, setNewRecordAchieved] = useState(false);
+  const [previousBestScore, setPreviousBestScore] = useState(0);
   const highlightedTilesRef = useRef([]);
   useEffect(() => { highlightedTilesRef.current = highlightedTiles; }, [highlightedTiles]);
 
@@ -6110,6 +6171,10 @@ function Game() {
       const personalBest = getPersonalBestScore();
       const isNewRecord = currentScore > personalBest && currentScore > 0;
 
+      // 在保存到localStorage之前捕获纪录状态，避免ResultOverlay读到已更新的值
+      setNewRecordAchieved(isNewRecord);
+      setPreviousBestScore(personalBest);
+
       // Send to API if online
       if (MiaolegemiAPI && MiaolegemiAPI.isLoggedIn()) {
         MiaolegemiAPI.endGame({
@@ -6148,7 +6213,40 @@ function Game() {
         }
         // P0: 保存个人最高分
         if (isNewRecord) {
-          savePersonalBestScore(currentScore);
+          data.personalBestScore = currentScore;
+        }
+        // P0: 处理好友推荐邀请码奖励
+        if (data.pendingInviteCode) {
+          const inviteCode = data.pendingInviteCode;
+          const myCode = data.myInviteCode;
+          if (inviteCode !== myCode) {
+            const codes = data.inviteCodes || [];
+            const match = codes.find(c => c.code === inviteCode);
+            const codeValid = !match || (Date.now() - match.createdAt <= 86400000);
+            if (codeValid) {
+              const rewards = data.inviteRewards || [];
+              const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+              const todayRewards = rewards.filter(r => r.time > todayStart.getTime());
+              if (todayRewards.length < 3 && !rewards.some(r => r.code === inviteCode && r.role === 'invitee')) {
+                rewards.push({ code: inviteCode, time: Date.now(), role: 'invitee', amount: 30 });
+                data.inviteRewards = rewards;
+                ledger.push({ type: 'earn', amount: 30, desc: '好友推荐奖励', time: Date.now() });
+                if (match && !match.claimed) {
+                  match.claimed = true;
+                  match.claimedAt = Date.now();
+                  if (!rewards.some(r => r.code === inviteCode && r.role === 'inviter')) {
+                    rewards.push({ code: inviteCode, time: Date.now(), role: 'inviter', amount: 30 });
+                    ledger.push({ type: 'earn', amount: 30, desc: '好友推荐奖励（邀请）', time: Date.now() });
+                  }
+                  data.inviteRewards = rewards;
+                }
+                data.fishLedger = ledger;
+                data.inviteRewardProcessed = true;
+                setInviteRewardToast(true);
+              }
+            }
+          }
+          delete data.pendingInviteCode;
         }
         // P2: 淘汰赛追踪
         if (isKnockoutStageActive()) {
@@ -6197,6 +6295,8 @@ function Game() {
       matchTimeoutRef.current = null;
     }
     gameEndedRef.current = false;
+    setNewRecordAchieved(false);
+    setPreviousBestScore(0);
     setPhase('playing');
     setTiles(generateBoard(currentLevel));
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
@@ -6284,6 +6384,8 @@ function Game() {
       matchTimeoutRef.current = null;
     }
     gameEndedRef.current = false;
+    setNewRecordAchieved(false);
+    setPreviousBestScore(0);
     setTiles(generateBoard(currentLevel));
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
@@ -6330,6 +6432,8 @@ function Game() {
   };
 
   const handleNextLevel = () => {
+    setNewRecordAchieved(false);
+    setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
     const nextLv = currentLevel + 1;
     const nextConfig = getLevelConfig(nextLv);
@@ -6651,6 +6755,9 @@ function Game() {
         onGoHome={() => window.location.href = 'app.html'}
         canRetry={canRetry}
         retryAttemptsUsed={retryAttemptsUsed}
+        inviteRewardToast={inviteRewardToast}
+        newRecordAchieved={newRecordAchieved}
+        previousBestScore={previousBestScore}
       />
 
       {/* Content */}
