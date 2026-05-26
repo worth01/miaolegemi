@@ -7,7 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    #root, .phone-screen { width: 100%; height: 100%; overflow: hidden; }
     @keyframes tileIn { 0%{transform:scale(0.3) rotate(-10deg);opacity:0} 60%{transform:scale(1.1) rotate(2deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
     @keyframes toSlot { 0%{transform:scale(1)} 50%{transform:scale(0.5)} 100%{transform:scale(0.45)} }
     @keyframes matchPop { 0%{transform:scale(1);opacity:1} 40%{transform:scale(1.5);opacity:0.8;box-shadow:0 0 30px currentColor} 100%{transform:scale(0);opacity:0} }
@@ -36,9 +37,73 @@
 
     /* Loading 动画 */
     @keyframes loadingSpin { to { transform: rotate(360deg); } }
+
+    /* ── 手机框：PC 端居中显示，移动端全屏 ── */
+    .phone-mockup {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 390px; height: 844px; max-height: 100vh;
+      border-radius: 40px;
+      border: 3px solid #2a2a3e;
+      box-shadow:
+        0 0 0 2px #111,
+        0 0 0 6px #1a1a2e,
+        0 0 60px rgba(0,0,0,0.6),
+        inset 0 0 4px rgba(255,255,255,0.05);
+      overflow: hidden;
+      background: #0F0A1E;
+      z-index: 1;
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      overflow-y: auto; overflow-x: hidden;
+      border-radius: 37px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .phone-screen::-webkit-scrollbar { display: none; }
+
+    /* 手机框装饰 — PC 端可见 */
+    .phone-notch {
+      position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 28px;
+      background: #111;
+      border-radius: 0 0 20px 20px;
+      z-index: 10; pointer-events: none;
+    }
+    .phone-notch::after {
+      content: '';
+      position: absolute; top: 6px; left: 50%;
+      transform: translateX(-50%);
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #1a1a2e;
+    }
+
+    @media (max-width: 480px) {
+      .phone-mockup {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        transform: none !important;
+        width: 100vw !important; height: 100vh !important;
+        max-height: none !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .phone-screen {
+        border-radius: 0 !important;
+      }
+      .phone-notch { display: none !important; }
+    }
   </style>
 </head>
 <body>
+<div class="phone-mockup">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
 <script>
 // Live reload — 仅在 localhost 桌面开发时启用（手机通过IP访问时跳过，避免跨域错误）
 (function(){
@@ -7383,6 +7448,15 @@ function Game() {
    iOS FRAME + APP
    ═══════════════════════════════════════ */
 function IosFrame({ children }) {
+  const inMockup = !!document.querySelector('.phone-mockup');
+  if (inMockup) {
+    // 已由 phone-mockup 提供外壳，内容撑满手机屏幕
+    return (
+      <div style={{ position:'relative', width:390, height:844, overflow:'hidden', background:'#0F0A1E' }}>
+        {children}
+      </div>
+    );
+  }
   return (
     <div style={{ display:'inline-block', padding:12, background:'#000', borderRadius:60, boxShadow:'0 0 0 2px #3a3a5c, 0 32px 80px rgba(0,0,0,0.6)' }}>
       <div style={{ position:'relative', borderRadius:48, overflow:'hidden', width:393, height:852, background:'#0F0A1E' }}>
@@ -7408,7 +7482,13 @@ function App() {
 
   React.useEffect(() => {
     function fit() {
-      const s = Math.min(window.innerWidth / 417, window.innerHeight / 876);
+      var inMockup = !!document.querySelector('.phone-mockup');
+      var rootEl = document.getElementById('root');
+      var w = (rootEl && rootEl.parentElement) ? rootEl.parentElement.clientWidth : window.innerWidth;
+      var h = (rootEl && rootEl.parentElement) ? rootEl.parentElement.clientHeight : window.innerHeight;
+      if (!w || !h) { w = window.innerWidth; h = window.innerHeight; }
+      // inMockup 模式下 IosFrame 无外壳，尺寸为 390×844；否则含外壳为 417×876
+      var s = inMockup ? Math.min(w / 390, h / 844) : Math.min(w / 417, h / 876);
       setScale(s);
     }
     fit();
@@ -7481,6 +7561,28 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(ErrorBoundary, null, React.createElement(App)));
+</script>
+  </div><!-- .phone-screen -->
+</div><!-- .phone-mockup -->
+<script>
+(function() {
+  function adaptToDevice() {
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+                || window.innerWidth <= 480;
+    var mockup = document.querySelector('.phone-mockup');
+    var screen = document.querySelector('.phone-screen');
+    if (!mockup || !screen) return;
+    if (isMobile) {
+      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:100vw!important;height:100vh!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
+      screen.style.cssText = 'border-radius:0!important';
+    }
+  }
+  adaptToDevice();
+  window.addEventListener('resize', adaptToDevice);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(adaptToDevice, 100);
+  });
+})();
 </script>
 </body>
 </html>
