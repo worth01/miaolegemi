@@ -7032,32 +7032,26 @@ function App() {
   // 合规：隐私政策独立页面
   if (currentPage === 'privacy') {
     return (
-      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
-        <IosFrame>
-          <PrivacyPolicyPage onBack={() => setCurrentPage(null)} />
-        </IosFrame>
-      </div>
+      <IosFrame>
+        <PrivacyPolicyPage onBack={() => setCurrentPage(null)} />
+      </IosFrame>
     );
   }
 
   // 合规：用户服务协议独立页面
   if (currentPage === 'agreement') {
     return (
-      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
-        <IosFrame>
-          <UserAgreementPage onBack={() => setCurrentPage(null)} />
-        </IosFrame>
-      </div>
+      <IosFrame>
+        <UserAgreementPage onBack={() => setCurrentPage(null)} />
+      </IosFrame>
     );
   }
 
   // Show login page if not authenticated
   if (authChecked && !user) {
     return (
-      <div style={{ minHeight:'100vh', background:'#0E0E16', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:48 }}>
-        <IosFrame>
-          <LoginPage onLogin={handleLogin} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} />
-        </IosFrame>
+      <IosFrame>
+        <LoginPage onLogin={handleLogin} onViewPrivacy={() => setCurrentPage('privacy')} onViewAgreement={() => setCurrentPage('agreement')} />
         {/* 合规：协议确认弹窗覆盖在登录页上 */}
         <AgreementModal
           show={showAgreementModal}
@@ -7066,7 +7060,7 @@ function App() {
           onViewPrivacy={() => setCurrentPage('privacy')}
           onViewAgreement={() => setCurrentPage('agreement')}
         />
-      </div>
+      </IosFrame>
     );
   }
 
