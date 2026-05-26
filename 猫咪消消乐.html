@@ -57,7 +57,7 @@
     }
     .phone-screen {
       width: 100%; height: 100%;
-      overflow-y: auto; overflow-x: hidden;
+      overflow: hidden;
       border-radius: 37px;
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -7482,11 +7482,23 @@ function App() {
 
   React.useEffect(() => {
     function fit() {
-      // 直接使用 window.innerWidth/innerHeight，准确反映可见区域（排除浏览器地址栏等）
-      var w = window.innerWidth;
-      var h = window.innerHeight;
-      if (!w || !h) return;
+      var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+                  || window.innerWidth <= 480;
       var inMockup = !!document.querySelector('.phone-mockup');
+      var w, h;
+      if (inMockup && !isMobile) {
+        // PC 端：游戏渲染在 phone-mockup 内部（390×844），scale=1 即可占满
+        w = 390; h = 844;
+      } else if (inMockup) {
+        // 手机端：mockup 已被 adaptToDevice 调整为全屏，使用实际可见区域
+        w = window.innerWidth;
+        h = window.innerHeight;
+      } else {
+        // 独立打开（无 mockup 外壳）
+        w = window.innerWidth;
+        h = window.innerHeight;
+      }
+      if (!w || !h) return;
       // inMockup 模式下 IosFrame 无外壳，尺寸为 390×844；否则含外壳为 417×876
       var s = inMockup ? Math.min(w / 390, h / 844) : Math.min(w / 417, h / 876);
       setScale(s);
