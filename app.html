@@ -1856,6 +1856,9 @@ function LineupManager({
   const [highlightZone, setHighlightZone] = useState(null); // 'battle' or 'spectator'
   const dragRef = useRef(null);
   const startPos = useRef({ x: 0, y: 0 });
+  // 用 ref 避免 handleDragEnd 因 state 变化而反复重建/重注册监听器
+  const draggingCatRef = useRef(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   // 筛选家园中可用的猫咪
   const availableCats = homeCats.filter(c => c.battleSlot == null && c.battleSpectator == null);
@@ -1865,37 +1868,49 @@ function LineupManager({
   const conflict = validateBattleLineup(activeBattleCats);
 
   const handleDragStart = (e, cat) => {
+    e.preventDefault(); // 阻止长按选中文本等默认行为
     const pos = e.type.includes('touch') ? e.touches[0] : e;
     startPos.current = { x: pos.clientX, y: pos.clientY };
+    draggingCatRef.current = cat;
     setDraggingCat(cat);
     setDragOffset({ x: 0, y: 0 });
   };
 
   const handleDragMove = useCallback((e) => {
-    if (!draggingCat) return;
+    if (!draggingCatRef.current) return;
+    e.preventDefault(); // 阻止浏览器默认滚动行为，避免拖拽卡顿
     const pos = e.type.includes('touch') ? e.touches[0] : e;
-    const diffY = pos.clientY - startPos.current.clientY;
+    if (!pos) return; // 部分浏览器在手指抬起瞬间发空touch事件
+    const diffY = pos.clientY - startPos.current.y;
+    if (isNaN(diffY)) return;
+    dragOffsetRef.current = { x: 0, y: diffY };
     setDragOffset({ x: 0, y: diffY });
 
     if (diffY < -60) setHighlightZone('battle');
     else if (diffY > 60) setHighlightZone('spectator');
     else setHighlightZone(null);
-  }, [draggingCat]);
+  }, []); // 不再依赖 draggingCat，改用 ref
 
+  // handleDragEnd 仅依赖稳定的回调，不在拖拽过程中重建
   const handleDragEnd = useCallback(() => {
-    if (!draggingCat) return;
-    
-    if (dragOffset.y < -60) {
-      onDeploy(draggingCat);
-    } else if (dragOffset.y > 60) {
-      onSpectatorDeploy(draggingCat);
+    const cat = draggingCatRef.current;
+    const offset = dragOffsetRef.current;
+    if (!cat) return;
+
+    if (offset.y < -60) {
+      onDeploy(cat);
+    } else if (offset.y > 60) {
+      onSpectatorDeploy(cat);
     }
 
+    draggingCatRef.current = null;
+    dragOffsetRef.current = { x: 0, y: 0 };
     setDraggingCat(null);
     setDragOffset({ x: 0, y: 0 });
     setHighlightZone(null);
-  }, [draggingCat, dragOffset, onDeploy, onSpectatorDeploy]);
+  }, [onDeploy, onSpectatorDeploy]);
 
+  // 拖拽监听器只在 draggingCat 从 null↔cat 切换时注册/卸载，不随偏移量变化重建
   useEffect(() => {
     if (draggingCat) {
       window.addEventListener('touchmove', handleDragMove, { passive: false });
@@ -1992,8 +2007,13 @@ function LineupManager({
             <div 
               key={cat.serialId} 
               className="cat-card-p9"
+              ref={el => {
+                if (el && !el._dragTouchBound) {
+                  el._dragTouchBound = true;
+                  el.addEventListener('touchstart', (e) => handleDragStart(e, cat), { passive: false });
+                }
+              }}
               onMouseDown={(e) => handleDragStart(e, cat)}
-              onTouchStart={(e) => handleDragStart(e, cat)}
             >
               <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[cat.rarity]}40`, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
                 <img src={cat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -2071,7 +2091,7 @@ function LineupManager({
         <div style={{
           position: 'fixed',
           left: startPos.current.x - 40,
-          top: startPos.current.y - 40 + dragOffset.y,
+          top: (startPos.current.y || 0) - 40 + (dragOffset.y || 0),
           width: 81,
           pointerEvents: 'none',
           zIndex: 9999,
@@ -5347,7 +5367,15 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
       const data = await fn(username.trim(), password);
       onLogin(data.user, false);
     } catch (e) {
-      setError(e.message);
+      const rawMsg = (e && e.message) ? e.message : String(e || '操作失败');
+      const msgLower = rawMsg.toLowerCase();
+      if (msgLower.includes('网络') || msgLower.includes('failed to fetch') || msgLower.includes('fetch') || msgLower.includes('networkerror')) {
+        setError('⚠️ 网络连接失败，请确认：1.后端已启动(端口3001) 2.使用http访问而非file:// 3.刷新页面后重试');
+      } else if (msgLower.includes('用户名') || msgLower.includes('密码')) {
+        setError('❌ ' + rawMsg);
+      } else {
+        setError('❌ ' + rawMsg);
+      }
       refreshCaptcha();
     } finally { setLoading(false); }
   };
@@ -5422,7 +5450,7 @@ function LoginPage({ onLogin, onViewPrivacy, onViewAgreement }) {
             cursor:'pointer', fontSize:14, opacity:0.5, userSelect:'none',
           }}>{showPwd ? '🙈' : '👁️'}</span>
         </div>
-        {password.length > 0 && (
+        {mode === 'register' && password.length > 0 && (
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
             <div style={{ flex:1, height:3, borderRadius:2, background:colors.cardBorder, overflow:'hidden' }}>
               <div style={{ width:`${(pwdStrength/3)*100}%`, height:'100%', borderRadius:2, background:strengthColors[pwdStrength], transition:'width 0.3s' }} />
@@ -5758,12 +5786,12 @@ function App() {
             ]);
             if (apiCats.length > 0) {
               const mapped = apiCats.map(c => ({
-                serialId: c.id, breedSerial: c.serial?.serialNumber || 0,
-                breedId: c.serial?.species?.name || '橘猫', name: c.serial?.species?.name || '橘猫',
-                rarity: c.serial?.species?.rarity || 'N',
-                img: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).img,
-                desc: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).desc,
-                personality: sanitizePersonality(c.personality, c.serial?.species?.name || '橘猫'),
+                serialId: c.id, breedSerial: c.cat_serial_registry?.serialNumber || 0,
+                breedId: c.cat_serial_registry?.cat_species?.name || '橘猫', name: c.cat_serial_registry?.cat_species?.name || '橘猫',
+                rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
+                img: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).img,
+                desc: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).desc,
+                personality: sanitizePersonality(c.personality, c.cat_serial_registry?.cat_species?.name || '橘猫'),
                 status: computeCatStatus({ location: c.location, lastFedAt: c.lastFedAt }),
                 location: c.location, createdAt: new Date(c.createdAt).getTime(),
                 bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
@@ -5773,7 +5801,8 @@ function App() {
                 daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
                 bestCombo: c.bestCombo || 0, witnessMaxScore: c.witnessMaxScore || 0,
                 witnessTotalScore: c.witnessTotalScore || 0, fishSpent: c.fishSpent || 0,
-                isGenesis: (c.serial?.serialNumber || 0) <= 10,
+                isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
+                battleSlot: c.slotPosition,
                 previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
                 _apiId: c.id, _serialId: c.serialId,
@@ -6039,12 +6068,12 @@ function App() {
             const apiCats = await MiaolegemiAPI.getCats();
             if (apiCats.length > 0) {
               const mapped = apiCats.map(c => ({
-                serialId: c.id, breedSerial: c.serial?.serialNumber || 0,
-                breedId: c.serial?.species?.name || '橘猫', name: c.serial?.species?.name || '橘猫',
-                rarity: c.serial?.species?.rarity || 'N',
-                img: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).img,
-                desc: (BREEDS.find(b => b.id === (c.serial?.species?.name)) || BREEDS[0]).desc,
-                personality: sanitizePersonality(c.personality, c.serial?.species?.name || '橘猫'),
+                serialId: c.id, breedSerial: c.cat_serial_registry?.serialNumber || 0,
+                breedId: c.cat_serial_registry?.cat_species?.name || '橘猫', name: c.cat_serial_registry?.cat_species?.name || '橘猫',
+                rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
+                img: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).img,
+                desc: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).desc,
+                personality: sanitizePersonality(c.personality, c.cat_serial_registry?.cat_species?.name || '橘猫'),
                 status: computeCatStatus({ location: c.location, lastFedAt: c.lastFedAt }),
                 location: c.location, createdAt: new Date(c.createdAt).getTime(),
                 bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
@@ -6054,7 +6083,8 @@ function App() {
                 daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
                 bestCombo: c.bestCombo || 0, witnessMaxScore: c.witnessMaxScore || 0,
                 witnessTotalScore: c.witnessTotalScore || 0, fishSpent: c.fishSpent || 0,
-                isGenesis: (c.serial?.serialNumber || 0) <= 10,
+                isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
+                battleSlot: c.slotPosition,
                 previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
                 _apiId: c.id, _serialId: c.serialId,

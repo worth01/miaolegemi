@@ -40,8 +40,9 @@
 </head>
 <body>
 <script>
-// Live reload — 检测文件变化自动刷新（仅本地开发）
+// Live reload — 仅在 localhost 桌面开发时启用（手机通过IP访问时跳过，避免跨域错误）
 (function(){
+  if (!location.hostname.match(/^(localhost|127\.0\.0\.1)$/)) return;
   let lastEtag = '';
   async function check() {
     try {
@@ -7455,16 +7456,29 @@ class ErrorBoundary extends React.Component {
   }
 }
 window.onerror = function(msg, src, line, col, err) {
+  // 跨域脚本错误（浏览器隐藏了详情，只返回 "Script error." :0:0）
+  // 通常由 CDN 脚本或网络问题触发，不需要白屏打断用户
+  if (msg === 'Script error.' || (line === 0 && col === 0 && !err)) {
+    console.warn('[Game] Ignored cross-origin script error');
+    return true; // 阻止默认行为，不打断游戏
+  }
   var el = document.getElementById('root');
   if (el) {
     el.innerHTML = '<div style="padding:40px;color:#fff;background:#1a0a0a;min-height:100vh;font-family:monospace;font-size:13px;line-height:1.8;overflow:auto">' +
-      '<h2 style="color:#FF6B6B">Global Error</h2>' +
-      '<pre style="white-space:pre-wrap;word-break:break-all">' +
-      (err && err.message || msg) + '\n\n' +
+      '<h2 style="color:#FF6B6B">出错了</h2>' +
+      '<p style="color:#aaa;margin-bottom:12px">游戏遇到意外错误，请刷新页面后重试</p>' +
+      '<pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:#666">' +
+      (err && err.message || msg) + '\n' +
       (err && err.stack || (src + ':' + line + ':' + col)) +
       '</pre></div>';
   }
 };
+
+// 捕获未处理的 Promise 异常
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[Game] Unhandled rejection:', e.reason);
+  e.preventDefault(); // 阻止浏览器默认报错
+});
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(ErrorBoundary, null, React.createElement(App)));
 </script>

@@ -77,7 +77,7 @@ export async function requireUser(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: '未登录' });
   }
   
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: req.user.userId }
   });
   

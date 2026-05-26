@@ -8,15 +8,15 @@ const router = Router();
 // 获取出战席猫咪
 router.get('/battle', authMiddleware, async (req, res) => {
   try {
-    const cats = await prisma.playerCat.findMany({
+    const cats = await prisma.player_cats.findMany({
       where: {
         ownerId: req.user!.userId,
         location: 'battle'
       },
       include: {
-        serial: {
+        cat_serial_registry: {
           include: {
-            species: true
+            cat_species: true
           }
         }
       },
@@ -33,15 +33,15 @@ router.get('/battle', authMiddleware, async (req, res) => {
 // 获取家园猫咪
 router.get('/home', authMiddleware, async (req, res) => {
   try {
-    const cats = await prisma.playerCat.findMany({
+    const cats = await prisma.player_cats.findMany({
       where: {
         ownerId: req.user!.userId,
         location: 'home'
       },
       include: {
-        serial: {
+        cat_serial_registry: {
           include: {
-            species: true
+            cat_species: true
           }
         }
       },
@@ -61,15 +61,15 @@ router.get('/home', authMiddleware, async (req, res) => {
 // 获取包裹区猫咪
 router.get('/bag', authMiddleware, async (req, res) => {
   try {
-    const cats = await prisma.playerCat.findMany({
+    const cats = await prisma.player_cats.findMany({
       where: {
         ownerId: req.user!.userId,
         location: 'bag'
       },
       include: {
-        serial: {
+        cat_serial_registry: {
           include: {
-            species: true
+            cat_species: true
           }
         }
       },
@@ -83,7 +83,7 @@ router.get('/bag', authMiddleware, async (req, res) => {
 
     // 自动删除过期猫咪
     if (expiredCats.length > 0) {
-      await prisma.playerCat.deleteMany({
+      await prisma.player_cats.deleteMany({
         where: {
           id: { in: expiredCats.map(c => c.id) }
         }
@@ -100,15 +100,15 @@ router.get('/bag', authMiddleware, async (req, res) => {
 // 猫咪详情
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId
       },
       include: {
-        serial: {
+        cat_serial_registry: {
           include: {
-            species: true,
+            cat_species: true,
             firstOwner: {
               select: { nickname: true }
             },
@@ -135,7 +135,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // 领养（包裹区→家园）
 router.post('/:id/adopt', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -153,7 +153,7 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
     }
 
     // 检查家园是否有空位
-    const homeCount = await prisma.playerCat.count({
+    const homeCount = await prisma.player_cats.count({
       where: {
         ownerId: req.user!.userId,
         location: 'home'
@@ -165,7 +165,7 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
     }
 
     // 领养
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         location: 'home',
@@ -179,20 +179,20 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
         coolingUntil: null
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       }
     });
 
     // 如果是创世区猫咪，更新首次发现者
-    if (cat.serial) {
-      const serial = await prisma.catSerialRegistry.findUnique({
-        where: { id: cat.serial.serialId }
+    if (cat.cat_serial_registry) {
+      const serial = await prisma.cat_serial_registry.findUnique({
+        where: { id: cat.cat_serial_registry.serialId }
       });
       
       if (serial && !serial.firstOwnerId) {
-        await prisma.catSerialRegistry.update({
+        await prisma.cat_serial_registry.update({
           where: { id: serial.id },
           data: { firstOwnerId: req.user!.userId }
         });
@@ -215,7 +215,7 @@ router.post('/:id/deploy', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: '请选择1-3号出战位' });
     }
 
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -228,7 +228,7 @@ router.post('/:id/deploy', authMiddleware, async (req, res) => {
     }
 
     // 检查该槽位是否已被占用
-    const existingCat = await prisma.playerCat.findFirst({
+    const existingCat = await prisma.player_cats.findFirst({
       where: {
         ownerId: req.user!.userId,
         location: 'battle',
@@ -238,22 +238,22 @@ router.post('/:id/deploy', authMiddleware, async (req, res) => {
 
     if (existingCat) {
       // 交换：将原位置的猫移回家园
-      await prisma.playerCat.update({
+      await prisma.player_cats.update({
         where: { id: existingCat.id },
         data: { location: 'home' }
       });
     }
 
     // 部署到出战席
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         location: 'battle',
         slotPosition: slot
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       }
     });
@@ -268,7 +268,7 @@ router.post('/:id/deploy', authMiddleware, async (req, res) => {
 // 撤回（出战席→家园）
 router.post('/:id/withdraw', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -280,15 +280,15 @@ router.post('/:id/withdraw', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: '猫咪不存在或不在出战席' });
     }
 
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         location: 'home',
         slotPosition: null
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       }
     });
@@ -303,7 +303,7 @@ router.post('/:id/withdraw', authMiddleware, async (req, res) => {
 // 喂食
 router.post('/:id/feed', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -316,7 +316,7 @@ router.post('/:id/feed', authMiddleware, async (req, res) => {
     }
 
     // 扣除鱼干
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
@@ -326,7 +326,7 @@ router.post('/:id/feed', authMiddleware, async (req, res) => {
     }
 
     // 记录鱼干消耗
-    await prisma.fishLedger.create({
+    await prisma.fish_ledger.create({
       data: {
         userId: req.user!.userId,
         amount: -1,
@@ -338,7 +338,7 @@ router.post('/:id/feed', authMiddleware, async (req, res) => {
     // 增加亲密度
     const newIntimacy = Math.min(100, cat.intimacy + 5);
 
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         intimacy: newIntimacy,
@@ -346,8 +346,8 @@ router.post('/:id/feed', authMiddleware, async (req, res) => {
         fishSpent: cat.fishSpent + 1
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       }
     });
@@ -366,7 +366,7 @@ router.post('/:id/feed', authMiddleware, async (req, res) => {
 // 批量喂食（一键补满亲密度）
 router.post('/:id/feed-all', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -382,7 +382,7 @@ router.post('/:id/feed-all', authMiddleware, async (req, res) => {
     const neededFish = Math.ceil((100 - cat.intimacy) / 5);
 
     // 扣除鱼干
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
@@ -395,7 +395,7 @@ router.post('/:id/feed-all', authMiddleware, async (req, res) => {
     }
 
     // 记录鱼干消耗
-    await prisma.fishLedger.create({
+    await prisma.fish_ledger.create({
       data: {
         userId: req.user!.userId,
         amount: -actualFish,
@@ -407,7 +407,7 @@ router.post('/:id/feed-all', authMiddleware, async (req, res) => {
     // 补满亲密度
     const newIntimacy = Math.min(100, cat.intimacy + intimacyToAdd);
 
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         intimacy: newIntimacy,
@@ -415,8 +415,8 @@ router.post('/:id/feed-all', authMiddleware, async (req, res) => {
         fishSpent: cat.fishSpent + actualFish
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       }
     });
@@ -436,7 +436,7 @@ router.post('/:id/feed-all', authMiddleware, async (req, res) => {
 // 送走（家园→告别）
 router.post('/:id/release', authMiddleware, async (req, res) => {
   try {
-    const cat = await prisma.playerCat.findFirst({
+    const cat = await prisma.player_cats.findFirst({
       where: {
         id: req.params.id,
         ownerId: req.user!.userId,
@@ -451,7 +451,7 @@ router.post('/:id/release', authMiddleware, async (req, res) => {
     const now = new Date();
 
     // 记录血统
-    await prisma.catLineage.create({
+    await prisma.cat_lineage.create({
       data: {
         serialId: cat.serialId,
         ownerId: req.user!.userId,
@@ -468,7 +468,7 @@ router.post('/:id/release', authMiddleware, async (req, res) => {
     // 进入冷却期（60天）
     const coolingUntil = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
 
-    const updatedCat = await prisma.playerCat.update({
+    const updatedCat = await prisma.player_cats.update({
       where: { id: cat.id },
       data: {
         location: 'memorial',
@@ -478,7 +478,7 @@ router.post('/:id/release', authMiddleware, async (req, res) => {
     });
 
     // 更新序列号状态
-    await prisma.catSerialRegistry.update({
+    await prisma.cat_serial_registry.update({
       where: { id: cat.serialId },
       data: {
         status: 'cooling',
@@ -488,7 +488,7 @@ router.post('/:id/release', authMiddleware, async (req, res) => {
     });
 
     // 更新里程碑
-    await prisma.userMilestone.update({
+    await prisma.user_milestones.update({
       where: { userId: req.user!.userId },
       data: {
         catsReleased: { increment: 1 }
@@ -509,7 +509,7 @@ router.post('/:id/release', authMiddleware, async (req, res) => {
 // 序列号血统记录
 router.get('/:serialId/lineage', authMiddleware, async (req, res) => {
   try {
-    const lineage = await prisma.catLineage.findMany({
+    const lineage = await prisma.cat_lineage.findMany({
       where: { serialId: req.params.serialId },
       include: {
         owner: {

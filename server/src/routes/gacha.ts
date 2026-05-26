@@ -57,7 +57,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
     const cost = pullCount * 10; // 单抽10鱼干，十连90鱼干
     const actualCost = type === 'ten' ? 90 : 10;
 
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
@@ -67,7 +67,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
     }
 
     // 获取保底计数
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: req.user!.userId }
     });
 
@@ -108,13 +108,13 @@ router.post('/pull', authMiddleware, async (req, res) => {
       catName = selectedCat.name;
 
       // 获取品种信息
-      let species = await prisma.catSpecies.findUnique({
+      let species = await prisma.cat_species.findUnique({
         where: { name: catName }
       });
 
       // 如果品种不存在，创建它
       if (!species) {
-        species = await prisma.catSpecies.create({
+        species = await prisma.cat_species.create({
           data: {
             name: catName,
             rarity: rarity,
@@ -167,7 +167,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
       const selectedPersonality = getDefaultPersonality(catName);
 
       // 创建猫咪实例
-      const cat = await prisma.playerCat.create({
+      const cat = await prisma.player_cats.create({
         data: {
           ownerId: req.user!.userId,
           serialId: serial.id,
@@ -176,8 +176,8 @@ router.post('/pull', authMiddleware, async (req, res) => {
           bagExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30天有效期
         },
         include: {
-          serial: {
-            include: { species: true }
+          cat_serial_registry: {
+            include: { cat_species: true }
           }
         }
       });
@@ -186,7 +186,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
     }
 
     // 扣除鱼干
-    await prisma.fishLedger.create({
+    await prisma.fish_ledger.create({
       data: {
         userId: req.user!.userId,
         amount: -actualCost,
@@ -196,13 +196,13 @@ router.post('/pull', authMiddleware, async (req, res) => {
     });
 
     // 更新保底计数
-    await prisma.user.update({
+    await prisma.users.update({
       where: { id: req.user!.userId },
       data: { pityCount }
     });
 
     // 获取剩余鱼干
-    const newBalance = await prisma.fishLedger.aggregate({
+    const newBalance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
@@ -222,7 +222,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
 // 保底进度
 router.get('/pity', authMiddleware, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: req.user!.userId },
       select: { pityCount: true }
     });
@@ -241,13 +241,13 @@ router.get('/pity', authMiddleware, async (req, res) => {
 // 获取猫咪品种列表
 router.get('/species', async (req, res) => {
   try {
-    let species = await prisma.catSpecies.findMany({
+    let species = await prisma.cat_species.findMany({
       orderBy: { id: 'asc' }
     });
 
     // 如果数据库为空，初始化品种数据
     if (species.length === 0) {
-      species = await prisma.catSpecies.createMany({
+      species = await prisma.cat_species.createMany({
         data: CAT_WEIGHTS.map((cat, index) => ({
           name: cat.name,
           rarity: cat.rarity,
@@ -258,7 +258,7 @@ router.get('/species', async (req, res) => {
         }))
       });
 
-      species = await prisma.catSpecies.findMany({
+      species = await prisma.cat_species.findMany({
         orderBy: { id: 'asc' }
       });
     }
@@ -367,9 +367,9 @@ router.post('/cleanup-personalities', authMiddleware, async (req, res) => {
     const VALID_PERSONALITIES = ['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠'];
 
     // 获取所有猫咪，带品种信息
-    const cats = await prisma.playerCat.findMany({
+    const cats = await prisma.player_cats.findMany({
       where: { ownerId: req.user!.userId },
-      include: { serial: { include: { species: true } } },
+      include: { cat_serial_registry: { include: { cat_species: true } } },
     });
 
     let cleanedCount = 0;
@@ -382,10 +382,10 @@ router.post('/cleanup-personalities', authMiddleware, async (req, res) => {
 
       if (!isValid && rawPersonality) {
         // 获取品种对应的默认性格
-        const breedName = cat.serial?.species?.name;
+        const breedName = cat.cat_serial_registry?.cat_species?.name;
         const correctPersonality = BREED_DEFAULT_PERSONALITIES[breedName || ''] || '傲娇';
 
-        await prisma.playerCat.update({
+        await prisma.player_cats.update({
           where: { id: cat.id },
           data: { personality: correctPersonality },
         });

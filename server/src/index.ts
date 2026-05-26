@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 // 路由
@@ -21,12 +22,16 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://your-domain.com' 
-    : ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production'
+    ? 'https://your-domain.com'
+    : true, // 开发环境允许所有来源（手机通过局域网IP访问需要）
   credentials: true
 }));
 app.use(express.json());
+
+// 托管前端静态文件（手机通过局域网访问时只需一个端口）
+const staticDir = path.resolve(process.cwd(), '..');
+app.use(express.static(staticDir));
 
 // 全局错误处理
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -53,10 +58,10 @@ app.use('/api/personalities', personalityRoutes);
 app.listen(PORT, () => {
   console.log(`
   ╔════════════════════════════════════════╗
-  ║     🐱 喵了个咪 后端服务启动成功      ║
-  ║                                      ║
+  ║     🐱 喵呜乐消消 后端服务启动成功          ║
+  ║                                        ║
   ║  Port: ${PORT}                           ║
-  ║  Env:  ${process.env.NODE_ENV || 'development'}                    ║
+  ║  Env:  ${process.env.NODE_ENV || 'development'}           ║
   ╚════════════════════════════════════════╝
   `);
 });

@@ -12,27 +12,27 @@ router.post('/start', authMiddleware, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let dailyBoard = await prisma.dailyBoard.findUnique({
+    let dailyBoard = await prisma.daily_boards.findUnique({
       where: { date: today }
     });
 
     // 如果今日棋盘不存在，生成新的
     if (!dailyBoard) {
       const seed = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
-      dailyBoard = await prisma.dailyBoard.create({
+      dailyBoard = await prisma.daily_boards.create({
         data: { date: today, seed }
       });
     }
 
     // 获取玩家出战席猫咪
-    const battleCats = await prisma.playerCat.findMany({
+    const battleCats = await prisma.player_cats.findMany({
       where: {
         ownerId: req.user!.userId,
         location: 'battle'
       },
       include: {
-        serial: {
-          include: { species: true }
+        cat_serial_registry: {
+          include: { cat_species: true }
         }
       },
       orderBy: { slotPosition: 'asc' }
@@ -44,10 +44,10 @@ router.post('/start', authMiddleware, async (req, res) => {
       battleCats: battleCats.map(cat => ({
         id: cat.id,
         slot: cat.slotPosition,
-        name: cat.serial.species.name,
-        rarity: cat.serial.species.rarity,
-        activeSkill: cat.serial.species.activeSkill,
-        passiveSkill: cat.serial.species.passiveSkill,
+        name: cat.cat_serial_registry.cat_species.name,
+        rarity: cat.cat_serial_registry.cat_species.rarity,
+        activeSkill: cat.cat_serial_registry.cat_species.activeSkill,
+        passiveSkill: cat.cat_serial_registry.cat_species.passiveSkill,
         intimacy: cat.intimacy
       }))
     });
@@ -70,7 +70,7 @@ router.post('/end', authMiddleware, async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     // 记录游戏
-    const gameSession = await prisma.gameSession.create({
+    const gameSession = await prisma.game_sessions.create({
       data: {
         playerId: req.user!.userId,
         boardDate: today,
@@ -83,7 +83,7 @@ router.post('/end', authMiddleware, async (req, res) => {
     });
 
     // 增加鱼干
-    await prisma.fishLedger.create({
+    await prisma.fish_ledger.create({
       data: {
         userId: req.user!.userId,
         amount: fishEarned,
@@ -95,7 +95,7 @@ router.post('/end', authMiddleware, async (req, res) => {
     // 更新猫咪统计
     if (catStats && Array.isArray(catStats)) {
       for (const stat of catStats) {
-        await prisma.playerCat.updateMany({
+        await prisma.player_cats.updateMany({
           where: {
             id: stat.catId,
             ownerId: req.user!.userId
@@ -110,12 +110,12 @@ router.post('/end', authMiddleware, async (req, res) => {
     }
 
     // 更新里程碑
-    const existingMilestone = await prisma.userMilestone.findUnique({
+    const existingMilestone = await prisma.user_milestones.findUnique({
       where: { userId: req.user!.userId }
     });
 
     if (existingMilestone) {
-      await prisma.userMilestone.update({
+      await prisma.user_milestones.update({
         where: { userId: req.user!.userId },
         data: {
           totalGames: { increment: 1 },
@@ -124,7 +124,7 @@ router.post('/end', authMiddleware, async (req, res) => {
         }
       });
     } else {
-      await prisma.userMilestone.create({
+      await prisma.user_milestones.create({
         data: {
           userId: req.user!.userId,
           totalGames: 1,
@@ -135,7 +135,7 @@ router.post('/end', authMiddleware, async (req, res) => {
     }
 
     // 获取更新后的鱼干余额
-    const newBalance = await prisma.fishLedger.aggregate({
+    const newBalance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
@@ -158,12 +158,12 @@ router.get('/leaderboard/today', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const leaderboard = await prisma.gameSession.findMany({
+    const leaderboard = await prisma.game_sessions.findMany({
       where: {
         boardDate: today
       },
       include: {
-        player: {
+        users: {
           select: {
             nickname: true
           }
@@ -175,7 +175,7 @@ router.get('/leaderboard/today', async (req, res) => {
 
     const formattedLeaderboard = leaderboard.map((game, index) => ({
       rank: index + 1,
-      nickname: game.player.nickname,
+      nickname: game.users.nickname,
       score: game.score,
       fishEarned: game.fishEarned
     }));
@@ -192,14 +192,14 @@ router.get('/history', authMiddleware, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
 
-    const games = await prisma.gameSession.findMany({
+    const games = await prisma.game_sessions.findMany({
       where: { playerId: req.user!.userId },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
       skip: Number(offset)
     });
 
-    const total = await prisma.gameSession.count({
+    const total = await prisma.game_sessions.count({
       where: { playerId: req.user!.userId }
     });
 

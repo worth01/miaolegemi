@@ -8,7 +8,7 @@ datasource db {
 }
 
 model cat_lineage {
-  id                  String              @id
+  id                  String              @id @default(uuid())
   serialId            String
   ownerId             String
   nickname            String
@@ -24,7 +24,7 @@ model cat_lineage {
 }
 
 model cat_serial_registry {
-  id                                              String        @id
+  id                                              String        @id @default(uuid())
   speciesId                                       Int
   serialNumber                                    Int
   status                                          String        @default("available")
@@ -68,7 +68,7 @@ model daily_boards {
 }
 
 model fish_ledger {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String
   amount    Int
   reason    String
@@ -78,7 +78,7 @@ model fish_ledger {
 }
 
 model game_sessions {
-  id         String   @id
+  id         String   @id @default(uuid())
   playerId   String
   boardDate  DateTime @db.Date
   score      Int
@@ -91,7 +91,7 @@ model game_sessions {
 }
 
 model player_cats {
-  id                  String              @id
+  id                  String              @id @default(uuid())
   ownerId             String
   serialId            String              @unique
   location            String              @default("bag")
@@ -107,30 +107,30 @@ model player_cats {
   daysAlive           Int                 @default(0)
   releasedAt          DateTime?
   coolingUntil        DateTime?
-  updatedAt           DateTime
+  updatedAt           DateTime              @default(now()) @updatedAt
   users               users               @relation(fields: [ownerId], references: [id])
   cat_serial_registry cat_serial_registry @relation(fields: [serialId], references: [id])
 }
 
 model user_milestones {
-  id           String   @id
+  id           String   @id @default(uuid())
   userId       String   @unique
   totalGames   Int      @default(0)
   totalFish    Int      @default(0)
   maxCombo     Int      @default(0)
   catsOwned    Int      @default(0)
   catsReleased Int      @default(0)
-  updatedAt    DateTime
+  updatedAt    DateTime              @default(now()) @updatedAt
 }
 
 model users {
-  id                                                            String                @id
+  id                                                            String                @id @default(uuid())
   username                                                      String                @unique
   password                                                      String
   nickname                                                      String
   pityCount                                                     Int                   @default(0)
   createdAt                                                     DateTime              @default(now())
-  updatedAt                                                     DateTime
+  updatedAt                                                     DateTime              @default(now()) @updatedAt
   cat_lineage                                                   cat_lineage[]
   cat_serial_registry_cat_serial_registry_currentOwnerIdTousers cat_serial_registry[] @relation("cat_serial_registry_currentOwnerIdTousers")
   cat_serial_registry_cat_serial_registry_firstOwnerIdTousers   cat_serial_registry[] @relation("cat_serial_registry_firstOwnerIdTousers")

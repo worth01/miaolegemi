@@ -4,7 +4,10 @@
  */
 
 // API配置
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = (() => {
+  const host = window.location.hostname;
+  return 'http://' + host + ':3001/api';
+})();
 const TOKEN_KEY = 'miaolegemi_token';
 
 // Token管理
@@ -29,12 +32,22 @@ async function request(endpoint, options = {}) {
     ...options.headers
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+  } catch (e) {
+    throw new Error('网络连接失败，请检查网络或稍后重试');
+  }
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (e) {
+    throw new Error('服务器响应异常，请稍后重试');
+  }
 
   if (!response.ok) {
     throw new Error(data.error || '请求失败');

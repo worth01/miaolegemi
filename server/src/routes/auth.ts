@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 检查用户是否存在
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { username }
     });
 
@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 创建用户
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
         username,
         password: hashedPassword,
@@ -46,12 +46,12 @@ router.post('/register', async (req, res) => {
     });
 
     // 创建用户里程碑记录
-    await prisma.userMilestone.create({
+    await prisma.user_milestones.create({
       data: { userId: user.id }
     });
 
     // 初始鱼干（用于测试）
-    await prisma.fishLedger.create({
+    await prisma.fish_ledger.create({
       data: {
         userId: user.id,
         amount: 100,
@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
     }
 
     // 查找用户
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { username }
     });
 
@@ -112,7 +112,7 @@ router.post('/login', async (req, res) => {
     });
 
     // 获取用户鱼干余额
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: user.id },
       _sum: { amount: true }
     });
@@ -136,7 +136,7 @@ router.post('/login', async (req, res) => {
 // 获取当前用户信息
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: req.user!.userId },
       select: {
         id: true,
@@ -152,13 +152,13 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 
     // 获取鱼干余额
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: user.id },
       _sum: { amount: true }
     });
 
     // 获取里程碑
-    const milestones = await prisma.userMilestone.findUnique({
+    const milestones = await prisma.user_milestones.findUnique({
       where: { userId: user.id }
     });
 
@@ -182,7 +182,7 @@ router.put('/nickname', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: '昵称长度需在2-10字符之间' });
     }
 
-    const user = await prisma.user.update({
+    const user = await prisma.users.update({
       where: { id: req.user!.userId },
       data: { nickname },
       select: {

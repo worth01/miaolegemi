@@ -8,7 +8,7 @@ const router = Router();
 // 获取用户统计
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: req.user!.userId },
       include: {
         cats: true,
@@ -24,30 +24,30 @@ router.get('/stats', authMiddleware, async (req, res) => {
     }
 
     // 计算鱼干余额
-    const fishBalance = await prisma.fishLedger.aggregate({
+    const fishBalance = await prisma.fish_ledger.aggregate({
       where: { userId: user.id },
       _sum: { amount: true }
     });
 
     // 猫咪统计
-    const catsOwned = await prisma.playerCat.count({
+    const catsOwned = await prisma.player_cats.count({
       where: { ownerId: user.id }
     });
 
-    const catsInBattle = await prisma.playerCat.count({
+    const catsInBattle = await prisma.player_cats.count({
       where: { ownerId: user.id, location: 'battle' }
     });
 
-    const catsInHome = await prisma.playerCat.count({
+    const catsInHome = await prisma.player_cats.count({
       where: { ownerId: user.id, location: 'home' }
     });
 
     // 游戏统计
-    const totalGames = await prisma.gameSession.count({
+    const totalGames = await prisma.game_sessions.count({
       where: { playerId: user.id }
     });
 
-    const gameStats = await prisma.gameSession.aggregate({
+    const gameStats = await prisma.game_sessions.aggregate({
       where: { playerId: user.id },
       _sum: { score: true, fishEarned: true },
       _avg: { score: true, comboCount: true },
@@ -55,7 +55,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
     });
 
     // 获取里程碑
-    const milestones = await prisma.userMilestone.findUnique({
+    const milestones = await prisma.user_milestones.findUnique({
       where: { userId: user.id }
     });
 
@@ -91,13 +91,13 @@ router.get('/stats', authMiddleware, async (req, res) => {
 // 获取里程碑进度
 router.get('/milestones', authMiddleware, async (req, res) => {
   try {
-    let milestones = await prisma.userMilestone.findUnique({
+    let milestones = await prisma.user_milestones.findUnique({
       where: { userId: req.user!.userId }
     });
 
     // 如果不存在，创建默认里程碑
     if (!milestones) {
-      milestones = await prisma.userMilestone.create({
+      milestones = await prisma.user_milestones.create({
         data: { userId: req.user!.userId }
       });
     }
@@ -130,19 +130,19 @@ router.get('/fish-history', authMiddleware, async (req, res) => {
   try {
     const { limit = 50, offset = 0 } = req.query;
 
-    const records = await prisma.fishLedger.findMany({
+    const records = await prisma.fish_ledger.findMany({
       where: { userId: req.user!.userId },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
       skip: Number(offset)
     });
 
-    const total = await prisma.fishLedger.count({
+    const total = await prisma.fish_ledger.count({
       where: { userId: req.user!.userId }
     });
 
     // 计算当前余额
-    const balance = await prisma.fishLedger.aggregate({
+    const balance = await prisma.fish_ledger.aggregate({
       where: { userId: req.user!.userId },
       _sum: { amount: true }
     });
