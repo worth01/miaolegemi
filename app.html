@@ -6508,11 +6508,12 @@ function App() {
         title: '出战席已满',
         message: `"出战席"已满，是否前往"观战区"观战？`,
         onConfirm: () => {
-          // 找到空观战槽位
+          // 找到空观战槽位（仅已解锁的）
           const usedSlots = new Set(spectatorCats.map(c => c.battleSpectator).filter(s => s != null));
+          const specUnlocked = [slot4Unlocked, slot5Unlocked, slot6Unlocked];
           let targetSpectatorSlot = null;
           for (let i = 1; i <= 3; i++) {
-            if (!usedSlots.has(i)) { targetSpectatorSlot = i; break; }
+            if (!usedSlots.has(i) && specUnlocked[i - 1]) { targetSpectatorSlot = i; break; }
           }
           if (targetSpectatorSlot !== null) {
             setCats(prev => prev.map(c => {
@@ -6546,23 +6547,40 @@ function App() {
   // P2: Handle spectator deploy (家园 → 观战席)
   const handleSpectatorDeploy = useCallback((cat) => {
     const spectatorCats = cats.filter(c => c.battleSpectator != null);
-    if (spectatorCats.length >= 3) {
-      showConfirmModal({ emoji:'📋', title:'观战席已满', message:'最多3只观战猫咪', onConfirm:()=>{} });
+    const slotUnlocked = [slot4Unlocked, slot5Unlocked, slot6Unlocked];
+    const maxUnlocked = slotUnlocked.filter(Boolean).length;
+
+    if (maxUnlocked === 0) {
+      showConfirmModal({ emoji:'🔒', title:'观战区未解锁', message:'已解锁0个观战区，请在解锁后再进行观战', onConfirm:()=>{} });
       return;
     }
-    
-    // 找到空槽位
+
+    if (spectatorCats.length >= maxUnlocked) {
+      if (maxUnlocked < 3) {
+        showConfirmModal({ emoji:'🔒', title:'观战区未解锁', message:`已解锁${maxUnlocked}个观战区，请在解锁后再进行观战`, onConfirm:()=>{} });
+      } else {
+        showConfirmModal({ emoji:'📋', title:'观战区已满', message:'3个观战区已满，请先撤回再上阵', onConfirm:()=>{} });
+      }
+      return;
+    }
+
+    // 找到空槽位（仅已解锁的）
     const usedSlots = new Set(spectatorCats.map(c => c.battleSpectator).filter(s => s != null));
     let targetSlot = null;
     for (let i = 1; i <= 3; i++) {
-      if (!usedSlots.has(i)) { targetSlot = i; break; }
+      if (!usedSlots.has(i) && slotUnlocked[i - 1]) { targetSlot = i; break; }
     }
-    
+
+    if (targetSlot === null) {
+      showConfirmModal({ emoji:'📋', title:'观战席已满', message:'所有已解锁的观战席已有猫咪', onConfirm:()=>{} });
+      return;
+    }
+
     setCats(prev => prev.map(c => {
       if (c.serialId !== cat.serialId) return c;
       return { ...c, battleSpectator: targetSlot };
     }));
-  }, [cats]);
+  }, [cats, slot4Unlocked, slot5Unlocked, slot6Unlocked]);
 
   // P2: Handle spectator withdraw (观战席 → 家园)
   const handleSpectatorWithdraw = useCallback((cat) => {

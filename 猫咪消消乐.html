@@ -1359,6 +1359,7 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
+    areaRuleEnable: true,
     desc: '波斯双域特殊造型棋盘，冰冻牌挑战'
   },
   // 第21-30关：10种卡牌，60张（+猫罐头）
@@ -1512,6 +1513,7 @@ const LEVELS = {
       { layer: 0 }, { layer: 1 }, { layer: 2 },
     ],
     timedMode: false,
+    areaRuleEnable: true,
     desc: '波斯双域特殊造型棋盘，10种卡牌终极挑战'
   }
 };
@@ -3966,18 +3968,23 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         background: `radial-gradient(ellipse at 50% 30%, ${statusColor}20 0%, transparent 60%)`,
         pointerEvents: 'none',
       }} />
-      
+
       {/* Modal - P5增强样式 */}
-      <div style={{
-        width: '90%', maxWidth: 340, borderRadius: 24,
-        background: 'linear-gradient(180deg, rgba(26,18,53,0.95) 0%, rgba(15,10,30,0.98) 100%)',
-        border: `1px solid ${statusColor}40`,
-        boxShadow: `0 12px 48px ${statusColor}30, 0 0 60px ${statusColor}10`,
-        padding: '24px 20px',
-        animation: 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
+      <div style={(() => {
+        const modalScale = Math.max(0.88, Math.min(1, window.innerHeight / 500));
+        return {
+          transform: `scale(${modalScale})`,
+          transformOrigin: 'center center',
+          width: '90%', maxWidth: 340, borderRadius: 24,
+          background: 'linear-gradient(180deg, rgba(26,18,53,0.95) 0%, rgba(15,10,30,0.98) 100%)',
+          border: `1px solid ${statusColor}40`,
+          boxShadow: `0 12px 48px ${statusColor}30, 0 0 60px ${statusColor}10`,
+          padding: '12px 20px',
+          animation: 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          position: 'relative',
+          overflow: 'hidden',
+        };
+      })()}>
         {/* P5: 顶部装饰光条 */}
         <div style={{
           position: 'absolute', top: 0, left: '10%', right: '10%',
@@ -3988,28 +3995,28 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         }} />
         
         {/* Title - P5增强 */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ textAlign: 'center', marginBottom: 10 }}>
           {/* P5: 状态图标 */}
           <div style={{
             fontSize: 26, fontWeight: 900,
             color: statusColor,
             letterSpacing: '-0.5px',
           }}>
-            
+
           </div>
           <div style={{
             fontSize: 26, fontWeight: 900,
             color: statusColor,
             letterSpacing: '-0.5px',
-            marginBottom: 6,
+            marginBottom: 3,
             textShadow: `0 0 30px ${statusColor}50`,
           }}>
             {isLose ? '挑战失败' : isWin ? '恭喜通关！' : '关卡完成'}
           </div>
-                    <div style={{ 
-            fontSize: 13, 
-            color: 'rgba(240,237,255,0.5)', 
-            marginTop: 4,
+                    <div style={{
+            fontSize: 13,
+            color: 'rgba(240,237,255,0.5)',
+            marginTop: 2,
             background: statusGradient,
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
@@ -4020,7 +4027,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           {/* P0: 新纪录达成庆祝 */}
           {isNewRecord && (
             <div style={{
-              marginTop: 12, padding: '12px 16px',
+              marginTop: 6, padding: '6px 16px',
               borderRadius: 14,
               background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,180,0,0.15))',
               border: '1px solid rgba(255,215,0,0.4)',
@@ -4029,31 +4036,19 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
               <div style={{ fontSize: 16, fontWeight: 800, color: '#FFD700', textShadow: '0 0 20px rgba(255,215,0,0.5)', textAlign: 'center' }}>
                 🎉 新纪录！猫咪都为你鼓掌！
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 2 }}>
                 超越历史最高 {personalBest.toLocaleString()} 分
               </div>
-              <button onClick={(e) => {
-                e.stopPropagation();
-                const msg = '喵呜乐消消新纪录！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                  navigator.clipboard.writeText(msg);
-                }
-              }} style={{
-                marginTop: 10, width: '100%', height: 38, borderRadius: 12,
-                background: 'rgba(255,215,0,0.2)', border: '1px solid rgba(255,215,0,0.4)',
-                cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#FFD700',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}>📤 分享新纪录</button>
             </div>
           )}
         </div>
 
         {/* Stats - P5优化布局 */}
         <div style={{
-          borderRadius: 20, padding: '18px', 
+          borderRadius: 20, padding: '9px 18px',
           background: 'linear-gradient(180deg, rgba(26,18,53,0.6) 0%, rgba(15,10,30,0.8) 100%)',
           border: '1px solid rgba(108,92,231,0.2)',
-          marginBottom: 18,
+          marginBottom: 9,
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -4065,9 +4060,9 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           }} />
           
           {/* 第一行：得分和最大连击 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
             <div style={{
-              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              borderRadius: 14, padding: '7px 12px', textAlign: 'center',
               background: 'rgba(15,10,30,0.6)',
               border: '1px solid rgba(247,220,111,0.2)',
               position: 'relative',
@@ -4075,51 +4070,51 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
             }}>
               {/* P5: 图标背景 */}
               <div style={{
-                position: 'absolute', top: 8, right: 8,
-                fontSize: 20, opacity: 0.3,
+                position: 'absolute', top: 4, right: 4,
+                fontSize: 16, opacity: 0.3,
               }}>🏆</div>
-              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>得分</div>
-              <div style={{ 
-                fontSize: 24, fontWeight: 900, 
-                color: '#F7DC6F', 
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 3 }}>得分</div>
+              <div style={{
+                fontSize: 24, fontWeight: 900,
+                color: '#F7DC6F',
                 letterSpacing: '-1px',
                 textShadow: '0 0 20px rgba(247,220,111,0.3)',
               }}>{score.toLocaleString()}</div>
             </div>
             <div style={{
-              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              borderRadius: 14, padding: '7px 12px', textAlign: 'center',
               background: 'rgba(15,10,30,0.6)',
               border: '1px solid rgba(255,107,107,0.2)',
               position: 'relative',
               overflow: 'hidden',
             }}>
               <div style={{
-                position: 'absolute', top: 8, right: 8,
-                fontSize: 20, opacity: 0.3,
+                position: 'absolute', top: 4, right: 4,
+                fontSize: 16, opacity: 0.3,
               }}>🔥</div>
-              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>最大连击</div>
-              <div style={{ 
-                fontSize: 24, fontWeight: 900, 
-                color: '#FF6B6B', 
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 3 }}>最大连击</div>
+              <div style={{
+                fontSize: 24, fontWeight: 900,
+                color: '#FF6B6B',
                 letterSpacing: '-1px',
                 textShadow: '0 0 20px rgba(255,107,107,0.3)',
               }}>{maxCombo}</div>
             </div>
           </div>
           {/* 第二行：获得鱼干和用时 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             <div style={{
-              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              borderRadius: 14, padding: '7px 12px', textAlign: 'center',
               background: 'rgba(15,10,30,0.6)',
               border: '1px solid rgba(253,150,68,0.2)',
               position: 'relative',
               overflow: 'hidden',
             }}>
               <div style={{
-                position: 'absolute', top: 8, right: 8,
-                fontSize: 20, opacity: 0.3,
+                position: 'absolute', top: 4, right: 4,
+                fontSize: 16, opacity: 0.3,
               }}>🐟</div>
-              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>获得鱼干</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 3 }}>获得鱼干</div>
               <div style={{ 
                 fontSize: 24, fontWeight: 900, 
                 color: '#FD9644', 
@@ -4136,29 +4131,29 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                 )}
                 {/* P0: 性格得分加成标注 */}
                 {hasGaoLeng && (
-                  <div style={{ fontSize: 10, color: '#A29BFE', marginTop: 2 }}>✨ 高冷性格得分加成生效</div>
+                  <div style={{ fontSize: 10, color: '#A29BFE', marginTop: 1 }}>✨ 高冷性格得分加成生效</div>
                 )}
                 {hasHuaLao && (
-                  <div style={{ fontSize: 10, color: '#FD79A8', marginTop: 2 }}>💬 话痨技能额外得分生效</div>
+                  <div style={{ fontSize: 10, color: '#FD79A8', marginTop: 1 }}>💬 话痨技能额外得分生效</div>
                 )}
                 {/* 胆大性格：失败时鱼干损失减免标注 */}
                 {isLose && persEffects.fishLossRatio < 0.50 && (
-                  <div style={{ fontSize: 10, color: '#55EFC4', marginTop: 2 }}>🛡️ 胆大猫咪守护了 {Math.round((0.50 - persEffects.fishLossRatio) * 100)}% 鱼干</div>
+                  <div style={{ fontSize: 10, color: '#55EFC4', marginTop: 1 }}>🛡️ 胆大猫咪守护了 {Math.round((0.50 - persEffects.fishLossRatio) * 100)}% 鱼干</div>
                 )}
               </div>
             </div>
             <div style={{
-              borderRadius: 14, padding: '14px 12px', textAlign: 'center',
+              borderRadius: 14, padding: '7px 12px', textAlign: 'center',
               background: 'rgba(15,10,30,0.6)',
               border: `1px solid ${statusColor}30`,
               position: 'relative',
               overflow: 'hidden',
             }}>
               <div style={{
-                position: 'absolute', top: 8, right: 8,
-                fontSize: 20, opacity: 0.3,
+                position: 'absolute', top: 4, right: 4,
+                fontSize: 16, opacity: 0.3,
               }}>{isLose ? '🃏' : '⏱️'}</div>
-              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: 'rgba(240,237,255,0.5)', marginBottom: 3 }}>
                 {isLose ? '剩余卡牌' : '用时'}
               </div>
               <div style={{ 
@@ -4175,30 +4170,30 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
 
         {/* Cat witnesses - P5增强 */}
         {catCount > 0 && (
-          <div style={{ 
-            marginBottom: 18, padding: '16px', 
+          <div style={{
+            marginBottom: 9, padding: '8px 16px',
             background: 'linear-gradient(135deg, rgba(253,150,68,0.1) 0%, rgba(108,92,231,0.1) 100%)',
-            borderRadius: 16, 
+            borderRadius: 16,
             border: '1px solid rgba(253,150,68,0.2)',
             position: 'relative',
             overflow: 'hidden',
           }}>
-            <div style={{ 
-              fontSize: 12, fontWeight: 700, 
-              color: '#FD9644', textAlign: 'center', marginBottom: 12,
+            <div style={{
+              fontSize: 12, fontWeight: 700,
+              color: '#FD9644', textAlign: 'center', marginBottom: 6,
               position: 'relative',
             }}>
               🐱 这场游戏有 {catCount} 只猫参战了
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
               {cats.map((cat, idx) => (
-                <div key={cat.serialId} style={{ 
+                <div key={cat.serialId} style={{
                   textAlign: 'center',
                 }}>
-                  <div style={{ 
-                    width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', 
-                    border: '2px solid rgba(253,150,68,0.5)', 
-                    margin: '0 auto 6px',
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%', overflow: 'hidden',
+                    border: '2px solid rgba(253,150,68,0.5)',
+                    margin: '0 auto 3px',
                     boxShadow: '0 4px 12px rgba(253,150,68,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
                     background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)',
                   }}>
@@ -4235,8 +4230,8 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         {!isLose && (
           <div style={{
             display: 'flex',
-            gap: 14,
-            marginBottom: 16
+            gap: 7,
+            marginBottom: 8
           }}>
             <button
               onClick={hasPersianSpectator ? onRestart : undefined}
@@ -4290,7 +4285,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         {isLose ? (
           /* 挑战失败：分享战绩居中 + 再来一次/返回大厅 */
           <>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
               <button onClick={() => {
                 const msg = '喵呜乐消消战绩分享！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -4307,7 +4302,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(108,92,231,0.15)'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >📤 分享战绩</button>
             </div>
-            <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 7 }}>
               {hasClingyAbility ? (
                 <button
                   onClick={canRetry ? onRestart : undefined}
@@ -4378,7 +4373,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           </>
         ) : (
           /* 挑战成功：返回大厅 + 下一关 */
-          <div style={{ display: 'flex', gap: 14 }}>
+          <div style={{ display: 'flex', gap: 7 }}>
             <a href="app.html" style={{
               flex: 1, height: 48, borderRadius: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4420,13 +4415,13 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         {/* P0: 好友推荐奖励到账提示 */}
         {inviteRewardToast && (
           <div style={{
-            marginTop: 16, padding: '12px 16px', borderRadius: 14,
+            marginTop: 8, padding: '6px 16px', borderRadius: 14,
             background: 'linear-gradient(135deg, rgba(0,184,148,0.2), rgba(85,239,196,0.1))',
             border: '1px solid rgba(0,184,148,0.3)',
             textAlign: 'center', animation: 'slideUp 0.5s ease-out',
           }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#55EFC4' }}>🎉 好友推荐成功！</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>+30 鱼干已到账</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>+30 鱼干已到账</div>
           </div>
         )}
       </div>
@@ -4466,11 +4461,11 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       }}>
       {/* P0: 关卡信息头 */}
       <div style={{ textAlign:'center', marginBottom:12 }}>
-        <div style={{ 
-          display:'inline-flex', alignItems:'center', gap:8,
-          background: 'rgba(253,150,68,0.12)', 
-          borderRadius:12, padding:'6px 16px',
-          cursor: 'pointer',
+        <div style={{
+          display:'inline-flex', alignItems:'center', gap:6,
+          background: 'rgba(253,150,68,0.12)',
+          borderRadius:12, padding:'6px 14px',
+          whiteSpace: 'nowrap',
         }}>
           <span style={{ fontSize:14, fontWeight:800, color:'#FD9644' }}>
             第{currentLevel}关
@@ -4478,6 +4473,11 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
           <span style={{ fontSize:16 }}>{levelConfig?.breed ? '🐱' : '❓'}</span>
           <span style={{ fontSize:14, fontWeight:700, color:'#F0EDFF' }}>
             {levelConfig?.name || '??关'}
+          </span>
+          <span style={{ fontSize:12, fontWeight:500, color:'rgba(240,237,255,0.45)' }}>
+            · {levelConfig?.timedMode
+              ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时`
+              : '教学关'}
           </span>
         </div>
       </div>
@@ -4530,21 +4530,13 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
         </div>
       )}
 
-      {/* Timer info */}
-      <div style={{ borderRadius:12, padding:'8px 14px', background:'rgba(108,92,231,0.06)', border:'1px solid rgba(108,92,231,0.1)', marginBottom:12 }}>
-        <div style={{ fontSize:11, fontWeight:600, color:'#A29BFE', textAlign:'center' }}>
-          {levelConfig?.timedMode
-            ? `⏱️ ${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时 · 时间到未清完即失败`
-            : '🎮 教学关 · 无时间限制'}
-        </div>
-      </div>
-
       {/* Title */}
       <div style={{ textAlign:'center', marginBottom:14 }}>
         <div style={{ fontSize:20, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px' }}>
           今日出击阵容
         </div>
       </div>
+
 
       {cats.length > 0 ? (
         <>
@@ -4890,13 +4882,17 @@ function Game() {
 
   // ═══ 波斯双域开局提示（2秒轻量提示） ═══
   useEffect(() => {
-    if (currentLevel === 10 && gameState === GAME_PLAYING && !window._areaToastShown) {
+    if (levelConfig.areaRuleEnable && gameState === GAME_PLAYING && !window._areaToastShown) {
       setAreaToast('双域玩法：蓝色和绿色区域的卡牌，跨区域无法消除哦～');
       window._areaToastShown = true;
       const t = setTimeout(() => { setAreaToast(''); }, 2000);
       return () => clearTimeout(t);
     }
-  }, [gameState, currentLevel]);
+    // 离开双域关时清除提示
+    if (!levelConfig.areaRuleEnable && areaToast) {
+      setAreaToast('');
+    }
+  }, [gameState, currentLevel, levelConfig.areaRuleEnable]);
 
   // ═══ 三花牌：全局3秒变身计时器 ═══
   // 胆小性格减免：高好感度下，三花牌变换间隔从3秒延长至6秒
@@ -5107,6 +5103,38 @@ function Game() {
 
   // P2: Skill system
   const [skillSlots, setSkillSlots] = useState([]); // [active1, active2, active3, passive1, passive2, passive3]
+  const [notifIndex, setNotifIndex] = useState(0);
+
+  // ═══ 通知栏消息（干扰/禁用/被动 合一轮播） ═══
+  const notifications = React.useMemo(() => {
+    const list = [];
+    if (levelConfig.interference && levelConfig.interference.id !== 'none') {
+      list.push({ type: 'warn', icon: '⚠️', text: levelConfig.interference.desc, emoji: levelConfig.interference.emoji, color: levelConfig.interference.color });
+    }
+    if (levelConfig.disabledSkills && levelConfig.disabledSkills.length > 0) {
+      list.push({ type: 'disable', icon: '🚫', text: `本关禁用：${levelConfig.disabledSkills.join('、')}的「蹦跶」`, color: '#FF6B6B' });
+    }
+    if (skillSlots.slice(3).some(s => s)) {
+      skillSlots.slice(3).forEach(breed => {
+        if (!breed) return;
+        const eff = PASSIVE_EFFECTS[breed];
+        if (!eff) return;
+        list.push({ type: 'passive', icon: '🛡️', breed, text: eff.desc });
+      });
+    }
+    return list;
+  }, [levelConfig, skillSlots]);
+
+  // 通知轮播
+  React.useEffect(() => { setNotifIndex(0); }, [notifications]);
+  React.useEffect(() => {
+    if (notifications.length <= 1) return;
+    const timer = setInterval(() => {
+      setNotifIndex(prev => (prev + 1) % notifications.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [notifications.length]);
+
   const [skillUseCount, setSkillUseCount] = useState({ active0: 0, active1: 0, active2: 0 }); // 已使用次数
   const [skillUseMax, setSkillUseMax] = useState({ active0: 1, active1: 1, active2: 1 });     // 最大可用次数
   const [skillCooldowns, setSkillCooldowns] = useState({ active0: 0, active1: 0, active2: 0 }); // 冷却剩余秒数
@@ -6831,22 +6859,22 @@ function Game() {
 
         {/* 顶部渐变遮罩 */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 120,
+          position: 'absolute', top: 0, left: 0, right: 0, height: 80,
           background: 'linear-gradient(180deg, rgba(15,10,30,0.8) 0%, transparent 100%)',
           pointerEvents: 'none', zIndex: 2,
         }} />
 
         {/* ═══ HEADER ═══ */}
         <div style={{
-          padding: '48px 8px 4px',
+          padding: '35px 8px 2px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           position: 'relative', zIndex: 3,
           gap: 4,
         }}>
           <a href="app.html" style={{
             display: 'flex', alignItems: 'center', gap: 2,
-            textDecoration: 'none', color: 'rgba(240,237,255,0.7)', fontSize: 11, fontWeight: 500,
-            padding: '4px 8px',
+            textDecoration: 'none', color: 'rgba(240,237,255,0.7)', fontSize: 10, fontWeight: 500,
+            padding: '3px 8px', lineHeight: 1.2,
             borderRadius: 6,
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -6870,7 +6898,7 @@ function Game() {
             {/* 关卡信息 */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 2,
-              padding: '3px 6px', borderRadius: 6,
+              padding: '3px 6px', borderRadius: 6, lineHeight: 1.2,
               background: 'rgba(253,150,68,0.15)',
               border: '1px solid rgba(253,150,68,0.25)',
               flexShrink: 0,
@@ -6883,7 +6911,7 @@ function Game() {
             {/* 鱼干计数 */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 3,
-              padding: '3px 8px', borderRadius: 6,
+              padding: '3px 8px', borderRadius: 6, lineHeight: 1.2,
               background: 'rgba(253,150,68,0.1)',
               border: '1px solid rgba(253,150,68,0.2)',
               flexShrink: 0,
@@ -6895,33 +6923,38 @@ function Game() {
               )}
             </div>
             
-            {/* 计时器（限时关显示） */}
-            {phase === 'playing' && isTimed && (
+            {/* 计时器/教学关标识 — 始终渲染占位，保证各关卡布局一致 */}
+            {phase === 'playing' && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 2,
-                padding: '3px 6px', borderRadius: 6,
-                background: timerVisual === 'idle'
-                  ? 'rgba(85,239,196,0.15)'
-                  : timerVisual === 'warn'
-                    ? 'rgba(253,150,68,0.18)'
-                    : timerVisual === 'danger' || timerVisual === 'critical'
-                      ? 'rgba(255,107,107,0.2)'
-                      : 'rgba(108,92,231,0.12)',
-                border: timerVisual === 'idle'
-                  ? '1px solid rgba(85,239,196,0.3)'
-                  : timerVisual === 'warn'
-                    ? '1px solid rgba(253,150,68,0.35)'
-                    : timerVisual === 'danger' || timerVisual === 'critical'
-                      ? '1px solid rgba(255,107,107,0.3)'
-                      : '1px solid rgba(108,92,231,0.2)',
+                padding: '3px 6px', borderRadius: 6, lineHeight: 1.2,
+                background: !isTimed
+                  ? 'rgba(108,92,231,0.1)'
+                  : timerVisual === 'idle'
+                    ? 'rgba(85,239,196,0.15)'
+                    : timerVisual === 'warn'
+                      ? 'rgba(253,150,68,0.18)'
+                      : timerVisual === 'danger' || timerVisual === 'critical'
+                        ? 'rgba(255,107,107,0.2)'
+                        : 'rgba(108,92,231,0.12)',
+                border: !isTimed
+                  ? '1px solid rgba(108,92,231,0.15)'
+                  : timerVisual === 'idle'
+                    ? '1px solid rgba(85,239,196,0.3)'
+                    : timerVisual === 'warn'
+                      ? '1px solid rgba(253,150,68,0.35)'
+                      : timerVisual === 'danger' || timerVisual === 'critical'
+                        ? '1px solid rgba(255,107,107,0.3)'
+                        : '1px solid rgba(108,92,231,0.2)',
                 flexShrink: 0,
               }}>
                 <span style={{ fontSize: 10 }}>
-                  {timerVisual === 'idle' ? '🛡️' : (timerVisual === 'danger' || timerVisual === 'critical') ? '⏰' : '⏱️'}
+                  {!isTimed ? '📖' : timerVisual === 'idle' ? '🛡️' : (timerVisual === 'danger' || timerVisual === 'critical') ? '⏰' : '⏱️'}
                 </span>
                 <span style={{
                   fontSize: 10, fontWeight: 700,
-                  color: timerVisual === 'idle' ? '#55EFC4'
+                  color: !isTimed ? 'rgba(240,237,255,0.5)'
+                    : timerVisual === 'idle' ? '#55EFC4'
                     : timerVisual === 'warn' ? '#FD9644'
                     : (timerVisual === 'danger' || timerVisual === 'critical') ? '#FF6B6B'
                     : '#A29BFE',
@@ -6931,7 +6964,7 @@ function Game() {
                       ? 'timerBounce 0.15s ease-in-out infinite'
                       : 'none',
                 }}>
-                  {timerVisual === 'idle'
+                  {!isTimed ? '不限时间' : timerVisual === 'idle'
                     ? `${timerDelay}s`
                     : `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`}
                 </span>
@@ -6942,7 +6975,7 @@ function Game() {
           <button onClick={handleNextLevel} style={{
             background: 'rgba(253,150,68,0.2)',
             border: '1px solid rgba(253,150,68,0.3)',
-            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+            borderRadius: 6, padding: '3px 8px', cursor: 'pointer', lineHeight: 1.2,
             fontSize: 10, fontWeight: 700, color: '#FD9644',
             display: 'flex', alignItems: 'center', gap: 2,
             flexShrink: 0,
@@ -6953,10 +6986,10 @@ function Game() {
         </div>
 
         {/* ═══ PROGRESS ═══ */}
-        <div style={{ 
-          padding: '0 16px 6px', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          padding: '0 16px 2px',
+          display: 'flex',
+          alignItems: 'center',
           gap: 12,
           position: 'relative', zIndex: 3,
         }}>
@@ -7009,84 +7042,48 @@ function Game() {
           </div>
         </div>
 
-        {/* P5: 干扰牌警告提示 - 增强 */}
-        {levelConfig.interference && levelConfig.interference.id !== 'none' && phase === 'playing' && (
-          <div style={{
-            padding: '8px 16px',
-            background: `linear-gradient(90deg, ${levelConfig.interference.color}15, transparent)`,
-            borderBottom: `1px solid ${levelConfig.interference.color}30`,
-            position: 'relative', zIndex: 3,
-            animation: 'fadeIn 0.3s ease-out',
-          }}>
-            <span style={{ 
-              fontSize: 12, 
-              color: levelConfig.interference.color,
+        {/* ═══ 通知栏（干扰/禁用/被动 合一轮播） ═══ */}
+        <div style={{
+          padding: '0 16px 2px',
+          position: 'relative', zIndex: 3,
+          minHeight: 23,
+        }}>
+          {phase === 'playing' && notifications.length > 0 && (
+            <div key={notifIndex} style={{
               display: 'flex', alignItems: 'center', gap: 6,
+              padding: '4px 10px',
+              borderRadius: 8,
+              background: 'rgba(108,92,231,0.12)',
+              border: '1px solid rgba(108,92,231,0.2)',
+              animation: 'fadeIn 0.35s ease-out',
             }}>
-              <span style={{ fontSize: 16 }}>⚠️</span>
-              {levelConfig.interference.emoji} {levelConfig.interference.desc}
-            </span>
-          </div>
-        )}
-
-        {/* P5: 禁用技能警告 - 增强 */}
-        {levelConfig.disabledSkills && levelConfig.disabledSkills.length > 0 && phase === 'playing' && (
-          <div style={{
-            padding: '6px 16px',
-            background: 'linear-gradient(90deg, rgba(255,107,107,0.12), transparent)',
-            borderBottom: '1px solid rgba(255,107,107,0.2)',
-            position: 'relative', zIndex: 3,
-          }}>
-            <span style={{ 
-              fontSize: 11, 
-              color: '#FF6B6B',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <span style={{ fontSize: 14 }}>🚫</span>
-              本关禁用：{levelConfig.disabledSkills.join('、')}的「蹦跶」
-            </span>
-          </div>
-        )}
-
-        {/* ═══ 被动技能通知横幅 ═══ */}
-        {skillSlots.slice(3).some(s => s) && (
-          <div style={{
-            padding: '6px 16px 8px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-          }}>
-            {skillSlots.slice(3).map((breed, i) => {
-              if (!breed) return null;
-              const eff = PASSIVE_EFFECTS[breed];
-              if (!eff) return null;
-              const slotNum = i + 4; // 4号位或家园5-6位
-              return (
-                <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 10px',
-                  borderRadius: 8,
-                  background: 'rgba(108,92,231,0.12)',
-                  border: '1px solid rgba(108,92,231,0.2)',
-                  animation: 'fadeIn 0.4s ease-out',
-                }}>
-                  <span style={{ fontSize: 11 }}>🛡️</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#A29BFE' }}>{breed}：</span>
-                  <span style={{ fontSize: 10, color: 'rgba(240,237,255,0.7)' }}>{eff.desc}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+              <span style={{ fontSize: 13 }}>
+                {notifications[notifIndex].icon}
+              </span>
+              {notifications[notifIndex].emoji && (
+                <span style={{ fontSize: 12 }}>{notifications[notifIndex].emoji}</span>
+              )}
+              {notifications[notifIndex].breed && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#A29BFE', flexShrink: 0 }}>
+                  {notifications[notifIndex].breed}：
+                </span>
+              )}
+              <span style={{
+                fontSize: 10, color: 'rgba(240,237,255,0.7)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {notifications[notifIndex].text}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* ═══ 棋盘区域（独立容器）═══ */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0, position: 'relative', paddingBottom: 4 }}>
           {/* GAME BOARD - 固定高度容器，棋盘在内部居中缩放 */}
           <div ref={boardContainerRef} style={{
             position: 'relative',
-            height: Math.min(400, Math.ceil(boardHeight * Math.min(boardScale, 1)) + 20),
+            height: Math.min(400, Math.ceil(boardHeight * Math.min(boardScale, 1)) + 4),
             overflow: 'hidden',
             opacity: gameState === GAME_PLAYING ? 1 : 0,
           }}>
@@ -7115,13 +7112,12 @@ function Game() {
         </div>
 
         {/* ═══ P2: 牌堆区 ═══ */}
-        {piles.length > 0 && (
           <div style={{
             display: 'flex',
             justifyContent: 'space-evenly',
             width: '100%',
-            height: Math.ceil(78 * boardScale),
-            padding: '4px 0',
+            height: Math.ceil(68 * boardScale),
+            padding: '2px 0',
             transform: `scale(${boardScale})`,
             transformOrigin: 'top center',
           }}>
@@ -7230,19 +7226,12 @@ function Game() {
               );
             })}
           </div>
-        )}
 
         {/* ═══ 临时存放层 + 收集槽（技能栏上方）═══ */}
-        <div style={{ padding: '0 2px', position: 'relative', marginTop: 10 }}>
-          {/* 有牌堆的关卡：始终预留临时存放层空间，避免版面跳动 */}
-          {piles.length > 0 && (
-            <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} compact />
-          )}
-          {/* 无牌堆的关卡：仅在有临时牌时显示 */}
-          {piles.length === 0 && tempStorage.length > 0 && (
-            <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} compact />
-          )}
-          <div style={{ marginTop: (piles.length > 0 || tempStorage.length > 0) ? 10 : 0 }}>
+        <div style={{ padding: '0 2px', position: 'relative', marginTop: 5 }}>
+          {/* 始终预留临时存放层空间，避免版面跳动 */}
+          <CollectionSlot slot={tempStorage} matching={matching} maxSlots={3 + slotBonus} showBg={false} compact />
+          <div style={{ marginTop: 5 }}>
             <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} groomSlots={groomSlots} freezeOverride={freezeBlockOverride} freezeGridCount={freezeGridCount} />
           </div>
           {/* 舔毛牌进入收集槽提示 */}
@@ -7355,13 +7344,13 @@ function Game() {
         {/* ═══ 技能栏（底部）═══ P3: 显示猫咪头像+技能名+位置标签 */}
         {phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && (
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: 20,
-            padding: '0 10px 20px',
-            marginTop: 10,
+            display: 'flex', justifyContent: 'center', gap: 12,
+            padding: '0 10px 10px',
+            marginTop: 45,
           }}>
             {[0, 1, 2].map(i => {
               const breed = skillSlots[i];
-              if (!breed) return <div key={i} style={{ width: 82 }} />;
+              if (!breed) return <div key={i} style={{ width: 70 }} />;
               const skill = CAT_SKILLS[breed];
               const key = `active${i}`;
               const usedCount = skillUseCount[key];
@@ -7375,22 +7364,30 @@ function Game() {
               const borderColor = disabled ? 'rgba(255,255,255,0.08)' : (skill?.color || rarityColors[rarity] || '#6C5CE7');
               return (
                 <div key={i} onClick={() => !disabled && handleSkillClick(i)} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   opacity: disabled ? 0.3 : 1,
                   filter: disabled ? 'grayscale(1)' : 'none',
                   transition: 'all 0.2s',
-                  maxWidth: 90,
+                  maxWidth: 80,
                 }}>
                   <div style={{
-                    width: 70, height: 70, borderRadius: 16, overflow: 'hidden',
+                    width: 70, height: 70, borderRadius: 14, overflow: 'hidden',
                     border: `2px solid ${borderColor}`,
                     background: disabled ? 'rgba(255,255,255,0.02)' : `${borderColor}15`,
-                    boxShadow: disabled ? 'none' : `0 4px 16px ${borderColor}30`,
+                    boxShadow: disabled ? 'none' : `0 4px 12px ${borderColor}30`,
                     position: 'relative',
                   }}>
                     <img src={`cat/${breed}.png`} alt={breed} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }}
                       onError={e => { e.target.style.display = 'none'; }} />
+                    {/* 底部渐变遮罩，使技能名更清晰 */}
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      height: '25%',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent)',
+                      borderRadius: '0 0 10px 10px',
+                      pointerEvents: 'none',
+                    }} />
                     {cooling && (
                       <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -7409,20 +7406,27 @@ function Game() {
                         <span style={{ fontSize: 18, color: '#fff' }}>✓</span>
                       </div>
                     )}
+                    <span style={{
+                      position: 'absolute', bottom: 1, left: 2, right: 2,
+                      fontSize: 13, fontWeight: 700,
+                      color: disabled ? 'rgba(240,237,255,0.2)'
+                        : rarity === 'N' ? '#F0EDFF'
+                        : rarity === 'R' ? '#45B7D1'
+                        : rarity === 'SR' ? '#6C5CE7'
+                        : '#FD9644',
+                      textAlign: 'center', lineHeight: 1.2,
+                      textShadow: '0 1px 3px rgba(0,0,0,0.85)',
+                    }}>
+                      {skill ? skill.active : '???'}
+                      {maxUses >= 2 && <span style={{ fontSize: 8, color: '#55EFC4' }}> ×{remUses}</span>}
+                    </span>
                   </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: disabled ? 'rgba(240,237,255,0.2)' : '#F0EDFF',
-                    textAlign: 'center', lineHeight: 1.2,
-                  }}>
-                    {skill ? skill.active : '???'}
-                    {maxUses >= 2 && <span style={{ fontSize: 8, color: '#55EFC4' }}> ×{remUses}</span>}
-                  </span>
                 </div>
               );
             })}
           </div>
         )}
+        <div style={{ flex: 1 }} />
       </div>
 
       {/* Skill confirm modal */}
@@ -7499,9 +7503,9 @@ function App() {
         h = window.innerHeight;
       }
       if (!w || !h) return;
-      // 使用 cover 策略：取较大缩放比填满屏幕，避免黑边
-      // 溢出部分由外层 overflow:hidden + flex 居中自动裁切
-      var s = inMockup ? Math.max(w / 390, h / 844) : Math.max(w / 417, h / 876);
+      // 以宽度为基准缩放：消除侧边黑边
+      // 高度多余空间由 overflow:hidden + 居中自然处理（多数手机偏长，仅轻微裁切或留底边）
+      var s = inMockup ? w / 390 : w / 417;
       setScale(s);
     }
     fit();
@@ -7522,10 +7526,10 @@ function App() {
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: '#0F0A1E',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
       overflow: 'hidden',
     }}>
-      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
         <IosFrame>
           <Game />
         </IosFrame>
