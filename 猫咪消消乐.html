@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>喵了个咪 · 猫咪消消乐</title>
+  <title>喵呜乐消消</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,7 +87,7 @@
         position: fixed !important;
         top: 0 !important; left: 0 !important;
         transform: none !important;
-        width: 100vw !important; height: 100vh !important;
+        width: 100vw !important; height: 100vh !important; height: 100dvh !important;
         max-height: none !important;
         border-radius: 0 !important;
         border: none !important;
@@ -7482,18 +7482,27 @@ function App() {
 
   React.useEffect(() => {
     function fit() {
+      // 直接使用 window.innerWidth/innerHeight，准确反映可见区域（排除浏览器地址栏等）
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      if (!w || !h) return;
       var inMockup = !!document.querySelector('.phone-mockup');
-      var rootEl = document.getElementById('root');
-      var w = (rootEl && rootEl.parentElement) ? rootEl.parentElement.clientWidth : window.innerWidth;
-      var h = (rootEl && rootEl.parentElement) ? rootEl.parentElement.clientHeight : window.innerHeight;
-      if (!w || !h) { w = window.innerWidth; h = window.innerHeight; }
       // inMockup 模式下 IosFrame 无外壳，尺寸为 390×844；否则含外壳为 417×876
       var s = inMockup ? Math.min(w / 390, h / 844) : Math.min(w / 417, h / 876);
       setScale(s);
     }
     fit();
     window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
+    // iOS Safari 地址栏收起/展开时重新适配
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', fit);
+    }
+    return () => {
+      window.removeEventListener('resize', fit);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', fit);
+      }
+    };
   }, []);
 
   return (
@@ -7573,15 +7582,22 @@ root.render(React.createElement(ErrorBoundary, null, React.createElement(App)));
     var screen = document.querySelector('.phone-screen');
     if (!mockup || !screen) return;
     if (isMobile) {
-      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:100vw!important;height:100vh!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
+      // 使用 innerWidth/innerHeight 而非 vh/vw，避免 iOS Safari 地址栏导致的尺寸偏差
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:'+w+'px!important;height:'+h+'px!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
       screen.style.cssText = 'border-radius:0!important';
     }
   }
   adaptToDevice();
   window.addEventListener('resize', adaptToDevice);
   window.addEventListener('orientationchange', function() {
-    setTimeout(adaptToDevice, 100);
+    setTimeout(adaptToDevice, 200);
   });
+  // iOS Safari 地址栏收起/展开时 visualViewport 变化
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', adaptToDevice);
+  }
 })();
 </script>
 </body>

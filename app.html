@@ -324,7 +324,7 @@
         position: fixed !important;
         top: 0 !important; left: 0 !important;
         transform: none !important;
-        width: 100vw !important; height: 100vh !important;
+        width: 100vw !important; height: 100vh !important; height: 100dvh !important;
         max-height: none !important;
         border-radius: 0 !important;
         border: none !important;
@@ -7277,15 +7277,20 @@ root.render(<App />);
     const screen = document.querySelector('.phone-screen');
     if (!mockup || !screen) return;
     if (isMobile) {
-      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:100vw!important;height:100vh!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:'+w+'px!important;height:'+h+'px!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
       screen.style.cssText = 'border-radius:0!important';
     }
   }
   adaptToDevice();
   window.addEventListener('resize', adaptToDevice);
   window.addEventListener('orientationchange', function() {
-    setTimeout(adaptToDevice, 100);
+    setTimeout(adaptToDevice, 200);
   });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', adaptToDevice);
+  }
 })();
 </script>
 </body>
