@@ -7499,8 +7499,9 @@ function App() {
         h = window.innerHeight;
       }
       if (!w || !h) return;
-      // inMockup 模式下 IosFrame 无外壳，尺寸为 390×844；否则含外壳为 417×876
-      var s = inMockup ? Math.min(w / 390, h / 844) : Math.min(w / 417, h / 876);
+      // 使用 cover 策略：取较大缩放比填满屏幕，避免黑边
+      // 溢出部分由外层 overflow:hidden + flex 居中自动裁切
+      var s = inMockup ? Math.max(w / 390, h / 844) : Math.max(w / 417, h / 876);
       setScale(s);
     }
     fit();
