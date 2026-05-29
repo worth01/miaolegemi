@@ -64,6 +64,19 @@
       box-shadow: 0 4px 16px rgba(0, 180, 216, 0.08);
       transform: translateY(-2px); /* P9: 上移2px */
     }
+    /* ═══ 暗黑模式 备战区 ═══ */
+    .zone-battle-dark {
+      background: rgba(253,150,68,0.08);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(253,150,68,0.5);
+      box-shadow: 0 0 12px rgba(253,150,68,0.25), 0 0 24px rgba(253,150,68,0.1);
+    }
+    .zone-spectator-dark {
+      background: rgba(0,229,255,0.06);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(0,229,255,0.4);
+      box-shadow: 0 0 12px rgba(0,229,255,0.2), 0 0 24px rgba(0,229,255,0.08);
+    }
     .slot-grid { 
       display: grid; 
       grid-template-columns: repeat(3, 30%); 
@@ -87,6 +100,10 @@
     .slot.spectator-slot { border-color: rgba(0, 180, 216, 0.2); }
     .slot.filled { background: rgba(255,255,255,0.06); border: 2px solid rgba(82, 196, 26, 0.4); border-style: solid; }
     .slot.locked { background: rgba(255, 107, 107, 0.15); border: 2px solid rgba(255, 107, 107, 0.3); border-style: solid; }
+    .slot-dark { background: rgba(22,12,44,0.6); border-style: solid; transition: all 0.3s; }
+    .slot-dark.filled { border-width: 2px; background: rgba(22,12,44,0.8); }
+    .slot-dark.active-slot:not(.filled) { border-color: rgba(253,150,68,0.25); border-style: dashed; }
+    .slot-dark.spectator-slot:not(.filled) { border-color: rgba(0,229,255,0.25); border-style: dashed; }
     .slot-label {
       position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
       font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
@@ -107,6 +124,15 @@
       cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
       position: relative; user-select: none; touch-action: none;
       animation: cat-float 4s ease-in-out infinite;
+    }
+    .cat-card-p9-dark {
+      background: rgba(22,12,44,0.8);
+      border: 1px solid transparent;
+      box-shadow: 0 0 8px var(--rarity-glow, rgba(255,105,180,0.2));
+    }
+    .cat-card-p9-dark:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 16px var(--rarity-glow, rgba(255,105,180,0.3));
     }
     .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -163,6 +189,10 @@
       0% { filter: drop-shadow(0 0 2px rgba(255,46,185,0.35)) drop-shadow(0 0 4px rgba(255,90,208,0.15)); }
       100% { filter: drop-shadow(0 0 4px rgba(255,46,185,0.45)) drop-shadow(0 0 8px rgba(255,90,208,0.25)); }
     }
+    @keyframes breatheOrange {
+      0% { filter: drop-shadow(0 0 4px rgba(253,150,68,0.6)) drop-shadow(0 0 10px rgba(255,180,67,0.35)); }
+      100% { filter: drop-shadow(0 0 8px rgba(253,150,68,0.8)) drop-shadow(0 0 18px rgba(255,180,67,0.5)); }
+    }
     @keyframes breatheSoft {
       0% { filter: drop-shadow(0 0 4px #ff69b4) drop-shadow(0 0 8px #ff9ed8); }
       100% { filter: drop-shadow(0 0 10px #ff69b4) drop-shadow(0 0 20px #ff9ed8); }
@@ -215,17 +245,17 @@
       border: 2px solid rgba(0,184,148,0.7);
       box-shadow: 0 0 7px rgba(0,184,148,0.5), 0 0 16px rgba(85,239,196,0.3), 0 0 30px rgba(85,239,196,0.12);
     }
+    .battle-card-sr {
+      border: 2px solid rgba(108,92,231,0.7);
+      box-shadow: 0 0 7px rgba(108,92,231,0.5), 0 0 16px rgba(162,155,254,0.3), 0 0 30px rgba(162,155,254,0.12);
+    }
     .battle-card-r {
       border: 2px solid rgba(0,229,255,0.7);
       box-shadow: 0 0 7px rgba(0,229,255,0.5), 0 0 16px rgba(0,153,255,0.3), 0 0 30px rgba(0,153,255,0.12);
     }
-    .battle-card-sr {
-      border: 2px solid rgba(255,105,180,0.7);
-      box-shadow: 0 0 7px rgba(255,105,180,0.5), 0 0 16px rgba(255,46,185,0.3), 0 0 30px rgba(255,46,185,0.12);
-    }
     .battle-avatar-ssr {
       filter: drop-shadow(0 0 6px rgba(253,150,68,0.8)) drop-shadow(0 0 14px rgba(255,180,67,0.5));
-      animation: breathe 2.5s infinite ease-in-out alternate;
+      animation: breatheOrange 2.5s infinite ease-in-out alternate;
     }
     .battle-avatar-n {
       filter: drop-shadow(0 0 6px rgba(0,184,148,0.8)) drop-shadow(0 0 14px rgba(85,239,196,0.5));
@@ -234,7 +264,7 @@
       filter: drop-shadow(0 0 6px rgba(0,229,255,0.8)) drop-shadow(0 0 14px rgba(0,153,255,0.5));
     }
     .battle-avatar-sr {
-      filter: drop-shadow(0 0 6px rgba(255,105,180,0.8)) drop-shadow(0 0 14px rgba(255,46,185,0.5));
+      filter: drop-shadow(0 0 6px rgba(108,92,231,0.8)) drop-shadow(0 0 14px rgba(162,155,254,0.5));
     }
 
     /* ═══ 首页 中心猫咪霓虹圈 ═══ */
@@ -273,9 +303,10 @@
     /* ═══ 「我的」页面 卡片 ═══ */
     .profile-card-dark {
       background: rgba(22,12,44,0.8);
-      border: 1px solid rgba(255,105,180,0.08);
+      border: 2px solid rgba(255,105,180,0.5);
       border-radius: 16px;
       backdrop-filter: blur(8px);
+      box-shadow: 0 0 8px rgba(255,105,180,0.2), 0 0 16px rgba(255,46,185,0.1);
     }
     .profile-card-dark-stat {
       text-shadow: 0 0 8px currentColor;
@@ -305,12 +336,19 @@
       border-radius: 8px;
     }
 
+    /* ═══ 弹窗 ═══ */
+    .modal-dark {
+      border: 2px solid rgba(0,229,255,0.5) !important;
+      box-shadow: 0 0 8px rgba(0,229,255,0.25), 0 0 16px rgba(0,153,255,0.12) !important;
+    }
+
     /* ═══ 提示条 ═══ */
     .alert-bar-dark {
-      background: rgba(255,46,185,0.1);
+      background: rgba(255,46,185,0.28);
+      backdrop-filter: blur(8px);
       border: 1px solid #ff2eb9;
       color: #ff69b4;
-      filter: drop-shadow(0 0 4px #ff2eb9);
+      filter: drop-shadow(0 0 8px #ff2eb9);
     }
 
     /* ═══ 好友榜 / 每日任务 / 包裹区 霓虹 ═══ */
@@ -361,6 +399,77 @@
     .mission-reward-done-dark {
       filter: drop-shadow(0 0 3px #00e5ff);
     }
+
+    /* ═══ 赛博流光按钮 ═══ */
+    @keyframes smoothFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+    .card-flow-border {
+      position: relative;
+      overflow: hidden;
+    }
+    .card-flow-border::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 3px;
+      background: linear-gradient(90deg, #fff 0%, #333 20%, #000 40%, #555 60%, #fff 80%, #222 100%);
+      background-size: 200% 100%;
+      animation: smoothFlow 8s linear infinite;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .flow-btn {
+      position: relative;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+    }
+    .flow-btn .inner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 6px;
+      margin: 2px;
+      z-index: 2;
+      text-shadow: 0 0 5px rgba(255,255,255,0.2);
+      padding: 10px 8px;
+      font-size: 11px;
+      transition: opacity 0.2s;
+    }
+    .flow-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 10px;
+      z-index: 1;
+      background-size: 400% 400%;
+      animation: smoothFlow 6s linear infinite;
+    }
+    .flow-feed { flex: 1; }
+    .flow-feed::before { background: linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399); }
+    .flow-fill { flex: 0 0 auto; }
+    .flow-fill::before { background: linear-gradient(90deg, #00ffcc, #33ffaa, #66ff88, #00ffcc); }
+    .flow-play { flex: 1; }
+    .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
+    .flow-send { flex: 1; }
+    .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
+    .flow-lineage { width: 100%; }
+    .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
 
     /* ═══ 暖色游戏风：按钮 ═══ */
     .btn-game-primary {
@@ -663,6 +772,7 @@
     /* ═══ 暖色游戏风：出战席 ═══ */
     .battle-container-warm {
       background: rgba(255, 250, 235, 0.6);
+      border: 2px solid rgba(253,150,68,0.5);
       border-radius: 20px;
       padding: 16px;
       backdrop-filter: blur(6px);
@@ -698,8 +808,8 @@
 
     /* 待机漂浮（所有猫咪卡片默认状态） */
     @keyframes cat-float {
-      0%, 100% { transform: translateY(0px) rotate(-0.5deg); }
-      50%      { transform: translateY(-10px) rotate(0.5deg); }
+      0%, 100% { transform: translateY(0px) rotate(-0.3deg); }
+      50%      { transform: translateY(-4px) rotate(0.3deg); }
     }
 
     /* 点击互动弹跳 */
@@ -944,8 +1054,8 @@ const CL = {
   border: 'rgba(255, 200, 120, 0.5)',
 };
 let colors = CD;
-const RARITY_COLORS = { N: '#FF88CC', R: '#00E5FF', SR: '#6C5CE7', SSR: '#FF2EB9' };
-const RARITY_BG = { N: 'rgba(255,105,180,0.1)', R: 'rgba(0,229,255,0.1)', SR: 'rgba(108,92,231,0.15)', SSR: 'rgba(255,46,185,0.15)' };
+const RARITY_COLORS = { N: '#00B894', R: '#00E5FF', SR: '#6C5CE7', SSR: '#FD9644' };
+const RARITY_BG = { N: 'rgba(0,184,148,0.1)', R: 'rgba(0,229,255,0.1)', SR: 'rgba(108,92,231,0.15)', SSR: 'rgba(253,150,68,0.15)' };
 
 /* ═══════════════════════════════════════
    P2: 猫咪不和冲突检测（黑猫+三花猫）
@@ -1675,6 +1785,7 @@ function IosFrame({ children }) {
     return (
       <div style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', background:`url(assets/${colors === CL ? 'home-light' : 'home-dark'}.png) center/cover no-repeat` }}>
         <div className="bg-blur-overlay" style={{ background:`url(assets/${colors === CL ? 'home-light' : 'home-dark'}.png) center/cover no-repeat` }}/>
+        {colors !== CL && <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'50%', background:'linear-gradient(to top, #231c46 0%, transparent 100%)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', maskImage:'linear-gradient(to top, black 0%, black 40%, transparent 100%)', WebkitMaskImage:'linear-gradient(to top, black 0%, black 40%, transparent 100%)', zIndex:0, pointerEvents:'none' }} />}
         {children}
       </div>
     );
@@ -1848,10 +1959,10 @@ function GroupStageBanner({ scores, claimed, onClaim, fish }) {
   const canClaim = bracket.name === 'Gold' && !claimedToday;
 
   return (
-    <div style={{
+    <div className={colors === CL ? '' : 'profile-card-dark'} style={{
       margin: '0 16px 8px', padding: '10px 16px', borderRadius: 12,
-      background: 'linear-gradient(135deg, rgba(253,150,68,0.2), rgba(255,107,107,0.15))',
-      border: '1px solid rgba(253,150,68,0.3)',
+      background: colors === CL ? 'linear-gradient(135deg, rgba(253,150,68,0.2), rgba(255,107,107,0.15))' : undefined,
+      border: colors === CL ? '1px solid rgba(253,150,68,0.3)' : undefined,
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
       <span style={{ fontSize: 18 }}>⚽</span>
@@ -1881,12 +1992,12 @@ function KnockoutBanner({ clears, eliminated, skinClaimed }) {
   if (!isKnockoutStageActive()) return null;
 
   return (
-    <div style={{
+    <div className={colors === CL ? '' : 'profile-card-dark'} style={{
       margin: '0 16px 8px', padding: '10px 16px', borderRadius: 12,
-      background: eliminated
+      background: colors === CL ? (eliminated
         ? 'linear-gradient(135deg, rgba(255,107,107,0.15), rgba(200,50,50,0.1))'
-        : 'linear-gradient(135deg, rgba(108,92,231,0.2), rgba(69,183,209,0.15))',
-      border: eliminated ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(108,92,231,0.3)',
+        : 'linear-gradient(135deg, rgba(108,92,231,0.2), rgba(69,183,209,0.15))') : undefined,
+      border: colors === CL ? (eliminated ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(108,92,231,0.3)') : undefined,
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
       <span style={{ fontSize: 18 }}>{eliminated ? '💔' : '🏆'}</span>
@@ -2183,8 +2294,8 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
             <span style={{ fontSize:8, fontWeight:700, padding:'2px 6px', borderRadius:999, background:'rgba(255,215,0,0.2)', color:'#FFD700' }}>✦</span>
           )}
         </div>
-        <div style={{ fontSize:10, color:colors.sub, marginTop:2 }}>{cat.desc}</div>
-        <div style={{ fontSize:10, color:colors.muted, marginTop:1 }}>{sanitizePersonality(cat.personality, cat.breedId || '橘猫')} · {cat.location === 'home' ? '家园' : `包裹区 · ${getRemainingDays(cat)}天后离开`}</div>
+        <div style={{ fontSize:10, color: colors === CL ? '#4A2800' : '#fff', marginTop:2 }}>{cat.desc}</div>
+        <div style={{ fontSize:10, color: colors === CL ? '#4A2800' : '#fff', marginTop:1 }}>{sanitizePersonality(cat.personality, cat.breedId || '橘猫')} · {cat.location === 'home' ? '家园' : `包裹区 · ${getRemainingDays(cat)}天后离开`}</div>
       </div>
       {/* dots */}
       {allCats.length > 1 && (
@@ -2216,7 +2327,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
       {/* Game entrance */}
       <div style={{ padding:'14px 20px 0' }}>
         {colors === CL ? (
-          <button onClick={() => { window.location.href = '猫咪消消乐.html'; }}
+          <button onClick={() => { window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark'); }}
             className="btn-game-primary"
             style={{
             display:'flex', alignItems:'center', justifyContent:'center', gap:10,
@@ -2229,7 +2340,7 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
             <span style={{ fontSize:11, fontWeight:500, opacity:0.8 }}>赚鱼干</span>
           </button>
         ) : (
-          <button onClick={() => { window.location.href = '猫咪消消乐.html'; }}
+          <button onClick={() => { window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark'); }}
             className="btn-main-dark"
             onMouseEnter={e => { const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/btn_hover.png'; }}
             onMouseLeave={e => { const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/btn_normal.png'; }}
@@ -2385,22 +2496,22 @@ const homeCatsForPreview = nurturing.slice(0, 3); // 只显示前3只
 
 
       {/* Check-in */}
-      <div style={{ padding:'14px 20px 0' }}>
-        <div onClick={!checkedIn ? onCheckIn : undefined} style={{
-          width:'100%', padding:'12px 16px', borderRadius:14,
-          background: checkedIn ? 'rgba(0,184,148,0.1)' : 'rgba(108,92,231,0.1)',
-          border: `1px solid ${checkedIn ? 'rgba(0,184,148,0.25)' : 'rgba(108,92,231,0.2)'}`,
-          display:'flex', alignItems:'center', justifyContent:'space-between',
+      <div style={{ padding:'12px 20px 0' }}>
+        <div onClick={!checkedIn ? onCheckIn : undefined}
+          className={colors === CL ? '' : 'bag-reminder-dark'}
+          style={{
+          width:'100%', padding:'10px 14px', borderRadius:12,
+          background: colors === CL ? colors.card : undefined,
+          border: colors === CL ? `1px solid ${colors.cardBorder}` : undefined,
+          display:'flex', alignItems:'center', gap:8,
           cursor: checkedIn ? 'default' : 'pointer',
         }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ fontSize:20 }}>{checkedIn ? '✅' : '📅'}</span>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700, color: checkedIn ? colors.green : colors.ink }}>{checkedIn ? '今日已签到' : '每日签到'}</div>
-              <div style={{ fontSize:10, color:colors.sub }}>获得鱼干 ×5 · 连续7天额外+🔔×1</div>
-            </div>
+          <span style={{ fontSize:18 }}>{checkedIn ? '✅' : '📅'}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:12, fontWeight:600, color: checkedIn ? colors.green : colors.ink }}>{checkedIn ? '今日已签到' : '每日签到'}</div>
+            <div style={{ fontSize:10, color:colors.sub }}>获得鱼干 ×5 · 连续7天额外+🔔×1</div>
           </div>
-          {!checkedIn && <span style={{ fontSize:14, fontWeight:700, color:colors.purpleLight }}>签到 →</span>}
+          {!checkedIn && <span style={{ fontSize:12, fontWeight:600, color:colors.orange }}>签到 →</span>}
         </div>
       </div>
 
@@ -2609,16 +2720,17 @@ function LineupManager({
       )}
 
       {/* 出战席 */}
-      <div className="zone-battle" style={{ background: highlightZone === 'battle' ? 'rgba(253, 150, 68, 0.2)' : '' }}>
-        <div className="zone-title battle-title" style={{ color: colors.orange, transform: 'translateY(-10px)' }}>
+      <div className={`zone-battle${colors !== CL ? ' zone-battle-dark' : ''}`} style={colors === CL ? { background: highlightZone === 'battle' ? 'rgba(253,150,68,0.3)' : '#FFF8E1', border: '2px solid rgba(253,150,68,0.5)' } : { background: highlightZone === 'battle' ? 'rgba(253, 150, 68, 0.2)' : '' }}>
+        <div className="zone-title battle-title" style={{ color: colors === CL ? colors.orange : '#FD9644', transform: 'translateY(-10px)' }}>
           <span><span style={{ fontSize: 12 }}>⚔️</span> <span style={{ fontWeight: 800 }}>出战席</span></span>
-          <span style={{ fontSize: 11, color: '#fff', fontWeight: 400, opacity: 0.4, marginLeft: 4 }}>猫咪在游戏中可使用主动技能</span>
+          <span style={{ fontSize: 11, color: colors === CL ? '#FF7A00' : '#fff', fontWeight: 400, opacity: colors === CL ? 0.7 : 0.4, marginLeft: 4 }}>猫咪在游戏中可使用主动技能</span>
         </div>
         <div className="slot-grid">
           {[1, 2, 3].map(slotNum => {
             const cat = battleCats.find(c => c.battleSlot === slotNum);
             return (
-              <div key={slotNum} className={`slot active-slot ${cat ? 'filled' : ''}`}>
+              <div key={slotNum} className={`slot active-slot ${cat ? 'filled' : ''}${colors !== CL ? ' slot-dark' : ''}`}
+                style={colors !== CL && cat ? { borderColor: RARITY_COLORS[cat.rarity] + '60', boxShadow: `0 0 10px ${RARITY_COLORS[cat.rarity]}20` } : {}}>
                 <div className="slot-label">🎯 {slotNum}</div>
                 {cat ? (
                   <div className="slotted-cat" onClick={() => onWithdraw(cat)}>
@@ -2657,7 +2769,7 @@ function LineupManager({
         <div style={{ padding: '0 20px', marginBottom: 8, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
           <div style={{ fontSize: 13, fontWeight: 700, position: 'absolute', left: 20, color: colors.ink }}>🏠 家园猫咪</div>
           <div style={{ fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, animation: 'pulse 2s infinite' }}>
-            <span style={{ color: colors.orange }}>↑ 向上拖 上阵出战</span>
+            <span style={{ color: colors === CL ? colors.orange : '#FD9644' }}>↑ 向上拖 上阵出战</span>
             <span style={{ color: '#fff', margin: '0 4px', opacity: 0.8 }}>｜</span>
             <span style={{ color: colors.blue }}>↓ 向下拖 观战加成</span>
           </div>
@@ -2665,9 +2777,13 @@ function LineupManager({
         
         <div style={{ display: 'flex', gap: 12, padding: '4px 20px 12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {availableCats.map(cat => (
-            <div 
-              key={cat.serialId} 
-              className="cat-card-p9"
+            <div
+              key={cat.serialId}
+              className={`cat-card-p9${colors !== CL ? ' cat-card-p9-dark' : ''}`}
+              style={colors !== CL ? {
+                border: `1px solid ${RARITY_COLORS[cat.rarity]}40`,
+                ['--rarity-glow']: RARITY_COLORS[cat.rarity] + '40',
+              } : {}}
               ref={el => {
                 if (el && !el._dragTouchBound) {
                   el._dragTouchBound = true;
@@ -2676,7 +2792,7 @@ function LineupManager({
               }}
               onMouseDown={(e) => handleDragStart(e, cat)}
             >
-              <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[cat.rarity]}40`, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[cat.rarity]}40`, boxShadow: colors === CL ? '0 4px 12px rgba(0,0,0,0.2)' : 'none' }}>
                 <img src={cat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ fontSize: 10, fontWeight: 700, textAlign: 'center', color: colors.ink }}>{cat.name}</div>
@@ -2692,13 +2808,17 @@ function LineupManager({
       </div>
 
       {/* 观战区 */}
-      <div className="zone-spectator" style={{ 
+      <div className={`zone-spectator${colors !== CL ? ' zone-spectator-dark' : ''}`} style={colors === CL ? {
+        background: highlightZone === 'spectator' ? 'rgba(69,183,209,0.3)' : '#E3F4FC',
+        border: '2px solid rgba(0,180,216,0.5)',
+        marginTop: 0,
+      } : {
         background: highlightZone === 'spectator' ? 'rgba(69, 183, 209, 0.2)' : '',
-        marginTop: 0, /* 让家园猫咪区和观战区之间紧凑一点 */
+        marginTop: 0,
       }}>
         <div className="zone-title spectator-title" style={{ color: colors.blue, transform: 'translateY(-10px)' }}>
           <span><span style={{ fontSize: 12 }}>👁️</span> <span style={{ fontWeight: 800 }}>观战区</span></span>
-          <span style={{ fontSize: 11, color: '#fff', fontWeight: 400, opacity: 0.4, marginLeft: 4 }}>猫咪被动技能将在游戏中为你提供加成</span>
+          <span style={{ fontSize: 11, color: colors === CL ? '#45B7D1' : '#fff', fontWeight: 400, opacity: colors === CL ? 0.7 : 0.4, marginLeft: 4 }}>猫咪被动技能将在游戏中为你提供加成</span>
         </div>
         <div className="slot-grid">
           {[
@@ -2708,7 +2828,8 @@ function LineupManager({
           ].map(slot => {
             const cat = spectatorCats.find(c => c.battleSpectator === slot.id);
             return (
-              <div key={slot.id} className={`slot spectator-slot ${cat ? 'filled' : ''} ${!slot.unlocked ? 'locked' : ''}`}>
+              <div key={slot.id} className={`slot spectator-slot ${cat ? 'filled' : ''} ${!slot.unlocked ? 'locked' : ''}${colors !== CL && cat ? ' slot-dark' : ''}`}
+                style={colors !== CL && cat ? { borderColor: RARITY_COLORS[cat.rarity] + '60', boxShadow: `0 0 10px ${RARITY_COLORS[cat.rarity]}20` } : {}}>
                 <div className="slot-label">👀 {slot.id + 3}</div>
                 {!slot.unlocked ? (
                   <>
@@ -2758,7 +2879,7 @@ function LineupManager({
           zIndex: 9999,
           transform: 'scale(1.1)',
         }}>
-          <div className="cat-card-p9" style={{ opacity: 0.9 }}>
+          <div className={`cat-card-p9${colors !== CL ? ' cat-card-p9-dark' : ''}`} style={colors !== CL ? { opacity: 0.9, border: `1px solid ${RARITY_COLORS[draggingCat.rarity]}40` } : { opacity: 0.9 }}>
             <div style={{ width: 50, height: 50, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${RARITY_COLORS[draggingCat.rarity]}40` }}>
               <img src={draggingCat.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -2809,15 +2930,17 @@ useEffect(() => {
 
   return (
     <div style={{ paddingBottom: 0 }}>
-      {/* P2: Sub tab bar - 三区切换 - 轻标签风格 */}
+      {/* P2: Sub tab bar - 三区切换 */}
       <div style={{
         display:'flex',
         padding:4,
         gap:0,
-        background: colors === CL ? '#FFF5E0' : colors.card,
+        background: colors === CL ? '#FFF5E0' : 'transparent',
         margin: '0 20px',
         borderRadius: 24,
         marginTop: 8,
+        border: colors === CL ? undefined : '4px solid rgba(255,105,180,0.4)',
+        boxShadow: colors === CL ? undefined : '0 0 12px rgba(255,105,180,0.3), 0 0 24px rgba(255,46,185,0.15)',
       }}>
         <div onClick={() => setSubTab('battle')} style={{
           flex:1, textAlign:'center', padding:'8px 6px', borderRadius:20,
@@ -2826,10 +2949,12 @@ useEffect(() => {
             ? (colors === CL ? '#8B4513' : '#fff')
             : (colors === CL ? '#8A6D3B' : colors.orange),
           background: subTab==='battle'
-            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(135deg, rgba(253,150,68,0.9), rgba(253,100,50,0.9))')
+            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399)')
             : 'transparent',
+          backgroundSize: subTab==='battle' && colors !== CL ? '400% 400%' : undefined,
+          animation: subTab==='battle' && colors !== CL ? 'smoothFlow 6s linear infinite' : undefined,
           cursor:'pointer', transition:'all 0.25s',
-          boxShadow: subTab==='battle' && colors !== CL ? '0 0 16px rgba(0,240,255,0.3)' : 'none',
+          boxShadow: subTab==='battle' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none',
         }}>
           ⚔️ 备战区
         </div>
@@ -2840,10 +2965,12 @@ useEffect(() => {
             ? (colors === CL ? '#8B4513' : '#fff')
             : (colors === CL ? '#8A6D3B' : colors.purpleLight),
           background: subTab==='home'
-            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(135deg, rgba(108,92,231,0.9), rgba(90,75,213,0.9))')
+            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399)')
             : 'transparent',
+          backgroundSize: subTab==='home' && colors !== CL ? '400% 400%' : undefined,
+          animation: subTab==='home' && colors !== CL ? 'smoothFlow 6s linear infinite' : undefined,
           cursor:'pointer', transition:'all 0.25s',
-          boxShadow: subTab==='home' && colors !== CL ? '0 0 16px rgba(138,43,226,0.3)' : 'none',
+          boxShadow: subTab==='home' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none',
         }}>
           🏠 家园 ({homeCats.length}/{homeMaxSlots})
         </div>
@@ -2854,10 +2981,12 @@ useEffect(() => {
             ? (colors === CL ? '#8B4513' : '#fff')
             : (colors === CL ? '#8A6D3B' : colors.purpleLight),
           background: subTab==='bag'
-            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(135deg, rgba(108,92,231,0.9), rgba(90,75,213,0.9))')
+            ? (colors === CL ? '#FFE8A1' : 'linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399)')
             : 'transparent',
+          backgroundSize: subTab==='bag' && colors !== CL ? '400% 400%' : undefined,
+          animation: subTab==='bag' && colors !== CL ? 'smoothFlow 6s linear infinite' : undefined,
           cursor:'pointer', transition:'all 0.25s',
-          boxShadow: subTab==='bag' && colors !== CL ? '0 0 16px rgba(138,43,226,0.3)' : 'none',
+          boxShadow: subTab==='bag' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none',
         }}>
           📦 包裹 ({bagCats.length})
         </div>
@@ -2951,9 +3080,9 @@ const allSlots = Array.from({ length: homeMaxSlots });
 
         return (
           <div key={`slot-cat-${cat.serialId}`}
-            className={!cat.pendingRelease && colors === CL ? 'card-warm' : ''}
+            className={!cat.pendingRelease ? (colors === CL ? 'card-warm' : 'card-flow-border') : ''}
             style={{
-            borderRadius: colors === CL ? 20 : 18, padding:'14px', marginBottom:12,
+            borderRadius: colors === CL ? 20 : 18, padding:'14px', marginBottom: colors === CL ? 12 : 6,
             background: colors === CL ? undefined : (cat.pendingRelease
               ? 'linear-gradient(135deg, rgba(255,107,107,0.08) 0%, rgba(255,200,200,0.05) 100%)'
               : colors.card),
@@ -2964,7 +3093,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
             {!cat.pendingRelease && (
               <div style={{
                 position:'absolute', top:0, left:0, right:0, bottom:0, zIndex:0, borderRadius:18,
-                background: `url(assets/${colors === CL ? 'h-catbg-light' : 'home-dark'}.png) center/cover no-repeat`,
+                background: `url(assets/${colors === CL ? 'h-catbg-light' : 'h-catbg-dark'}.png) center/cover no-repeat`,
                 filter: 'blur(0px)',
               }} />
             )}
@@ -3034,7 +3163,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize:11, color:colors.sub, marginBottom:4 }}>
+                <div style={{ fontSize:11, color: colors === CL ? colors.sub : '#fff', marginBottom:4 }}>
                   性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
                 </div>
                 
@@ -3071,7 +3200,7 @@ const allSlots = Array.from({ length: homeMaxSlots });
                     <span>被动: {sk.passive}</span>
                   </div>
                 )}
-                <div style={{ fontSize:10, color:colors.muted }}>
+                <div style={{ fontSize:10, color: colors === CL ? colors.muted : '#fff' }}>
                   {cat.pendingRelease
                     ? `告别仪式中 · ${Number(cat.daysAlive) || 0}天陪伴`
                     : `陪伴 ${Number(cat.daysAlive) || 0} 天 · 上次喂食 ${Number(lastFedHours) || 0}小时前`}
@@ -3102,59 +3231,77 @@ const allSlots = Array.from({ length: homeMaxSlots });
                 }}>立即送走</button>
               </div>
             ) : (
-              <div style={{ display:'flex', gap:8, marginTop:10, position:'relative', zIndex:1 }}>
+              <div style={{ display:'flex', gap:8, marginTop: colors === CL ? 10 : 5, position:'relative', zIndex:1 }}>
                 {/* 喂食按钮 */}
-                <button onClick={() => { unlockAudio && unlockAudio(); onTriggerFeed && onTriggerFeed(cat); onFeed(cat); }} disabled={!canFeed}
-                  className={colors === CL && canFeed ? 'btn-feed-warm' : ''}
-                  style={{
-                  flex:1, height:32, borderRadius: colors === CL ? 18 : 8, border: colors === CL ? undefined : 'none', cursor: canFeed?'pointer':'not-allowed',
-                  fontSize:11, fontWeight:700,
-                  background: colors === CL ? undefined : (canFeed ? `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})` : 'rgba(255,255,255,0.05)'),
-                  color: colors === CL ? undefined : (canFeed ? '#fff' : colors.muted),
-                  opacity: colors === CL && !canFeed ? 0.5 : 1,
-                }}>
-                  {canFeed ? `🐟 喂食 -1` : '鱼干不足'}
-                </button>
-                {/* 批量补满按钮 */}
-                {intimacy < 100 && (
-                  <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={!canFullFeed(intimacy)}
-                    className={colors === CL && canFullFeed(intimacy) ? 'btn-full-warm' : ''}
+                {colors === CL ? (
+                  <button onClick={() => { unlockAudio && unlockAudio(); onTriggerFeed && onTriggerFeed(cat); onFeed(cat); }} disabled={!canFeed}
+                    className={canFeed ? 'btn-feed-warm' : ''}
                     style={{
-                    padding:'0 10px', height:32, borderRadius: colors === CL ? 18 : 8, border: colors === CL ? undefined : 'none', cursor: canFullFeed(intimacy)?'pointer':'not-allowed',
-                    fontSize:10, fontWeight:700,
-                    background: colors === CL ? undefined : (canFullFeed(intimacy) ? 'rgba(253,150,68,0.15)' : 'rgba(255,255,255,0.03)'),
-                    color: colors === CL ? undefined : (canFullFeed(intimacy) ? colors.orange : colors.muted),
-                    opacity: colors === CL && !canFullFeed(intimacy) ? 0.5 : 1,
+                    flex:1, height:32, borderRadius:18, cursor: canFeed?'pointer':'not-allowed',
+                    fontSize:11, fontWeight:700, opacity: !canFeed ? 0.5 : 1,
+                  }}>
+                    {canFeed ? '🐟 喂食 -1' : '鱼干不足'}
+                  </button>
+                ) : (
+                  <button onClick={() => { unlockAudio && unlockAudio(); onTriggerFeed && onTriggerFeed(cat); onFeed(cat); }} disabled={!canFeed}
+                    className="flow-btn flow-feed"
+                    style={{ flex:1, opacity: canFeed ? 1 : 0.4 }}>
+                    <span className="inner">{canFeed ? '🐟 喂食 -1' : '鱼干不足'}</span>
+                  </button>
+                )}
+                {/* 批量补满按钮 */}
+                {intimacy < 100 && (colors === CL ? (
+                  <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={!canFullFeed(intimacy)}
+                    className={canFullFeed(intimacy) ? 'btn-full-warm' : ''}
+                    style={{
+                    padding:'0 15px', height:32, borderRadius:18, cursor: canFullFeed(intimacy)?'pointer':'not-allowed',
+                    fontSize:10, fontWeight:700, opacity: !canFullFeed(intimacy) ? 0.5 : 1,
                   }}>
                     补满 ({fullFeedCost}🐟)
                   </button>
-                )}
+                ) : (
+                  <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={!canFullFeed(intimacy)}
+                    className="flow-btn flow-fill"
+                    style={{ flex:'0 0 auto', opacity: canFullFeed(intimacy) ? 1 : 0.4 }}>
+                    <span className="inner" style={{ padding:'10px 15px' }}>{fullFeedCost}🐟 补满</span>
+                  </button>
+                ))}
               </div>
             )}
             
             {/* P4: 第二行按钮 - 上场和送走 */}
             {!cat.pendingRelease && (
-              <div style={{ display:'flex', gap:8, marginTop:8, position:'relative', zIndex:1 }}>
-                {canBeDeployed && onDeploy && (
+              <div style={{ display:'flex', gap:8, marginTop: colors === CL ? 8 : 4, position:'relative', zIndex:1 }}>
+                {canBeDeployed && onDeploy && (colors === CL ? (
                   <button onClick={() => onDeploy(cat)}
-                    className={colors === CL ? 'btn-deploy-warm' : ''}
+                    className="btn-deploy-warm"
                     style={{
-                    flex:1, height:32, borderRadius: colors === CL ? 18 : 8, border: colors === CL ? undefined : 'none', cursor:'pointer',
+                    flex:1, height:32, borderRadius:18, cursor:'pointer',
                     fontSize:11, fontWeight:700,
-                    background: colors === CL ? undefined : 'rgba(0,184,148,0.15)',
-                    color: colors === CL ? undefined : colors.green,
                   }}>
                     ⚔️ 上场
                   </button>
+                ) : (
+                  <button onClick={() => onDeploy(cat)}
+                    className="flow-btn flow-play"
+                    style={{ flex:1 }}>
+                    <span className="inner">⚔️ 上场</span>
+                  </button>
+                ))}
+                {colors === CL ? (
+                  <button onClick={() => onRelease(cat)}
+                    className="btn-send-warm"
+                    style={{
+                    flex:1, height:32, borderRadius:18, cursor:'pointer',
+                    fontSize:11, fontWeight:700,
+                  }}>送走</button>
+                ) : (
+                  <button onClick={() => onRelease(cat)}
+                    className="flow-btn flow-send"
+                    style={{ flex:1 }}>
+                    <span className="inner">送走</span>
+                  </button>
                 )}
-                <button onClick={() => onRelease(cat)}
-                  className={colors === CL ? 'btn-send-warm' : ''}
-                  style={{
-                  flex:1, height:32, borderRadius: colors === CL ? 18 : 8, border: colors === CL ? undefined : 'none', cursor:'pointer',
-                  fontSize:11, fontWeight: colors === CL ? 700 : 600,
-                  background: colors === CL ? undefined : 'rgba(255,107,107,0.1)',
-                  color: colors === CL ? undefined : colors.red,
-                }}>送走</button>
               </div>
             )}
           </div>
@@ -3201,7 +3348,7 @@ if (cats.length === 0) {
 
         return (
           <div key={cat.serialId}
-            className={colors === CL ? 'card-warm' : ''}
+            className={colors === CL ? 'card-warm' : 'card-flow-border'}
             style={{
             borderRadius: colors === CL ? 20 : 16, padding:'12px', marginBottom:10,
             background: colors === CL ? undefined : colors.card,
@@ -3224,33 +3371,45 @@ if (cats.length === 0) {
                   <span style={{ fontSize:14, fontWeight:800, color:colors.ink }}>{cat.name}</span>
                   <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:999, background:RARITY_BG[cat.rarity], color:RARITY_COLORS[cat.rarity] }}>#{String(cat.breedSerial || cat.serialId).padStart(3,'0')} {cat.rarity}</span>
                 </div>
-                <div style={{ fontSize:11, color:colors.sub, marginBottom:3 }}>
+                <div style={{ fontSize:11, color: colors === CL ? colors.sub : '#fff', marginBottom:3 }}>
                   性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}
                 </div>
-                <div style={{ fontSize:11, fontWeight:600, color: isUrgent ? colors.red : colors.sub }}>
+                <div style={{ fontSize:11, fontWeight:600, color: isUrgent ? colors.red : (colors === CL ? colors.sub : '#fff') }}>
                   ⏰ 还有 {daysLeft} 天会离开
                 </div>
               </div>
             </div>
             <div style={{ display:'flex', gap:8, marginTop:10, position:'relative', zIndex:1 }}>
-              <button onClick={() => onAdopt(cat)}
-                className={colors === CL && canAdopt ? 'btn-adopt-bag-warm' : ''}
-                style={{
-                flex:1, height:34, borderRadius: colors === CL ? 22 : 10, border: colors === CL ? undefined : 'none', cursor: canAdopt?'pointer':'not-allowed',
-                fontSize:12, fontWeight:700,
-                background: colors === CL ? undefined : (canAdopt ? `linear-gradient(135deg, ${colors.green}, #55EFC4)` : 'rgba(255,255,255,0.05)'),
-                color: colors === CL ? undefined : (canAdopt ? '#fff' : colors.muted),
-                opacity: canAdopt ? 1 : 0.5,
-              }}>
-                {canAdopt ? `领养(${homeCount}/${homeMaxSlots})` : `已满(${homeCount}/${homeMaxSlots})`}
-              </button>
-              <button onClick={() => onDiscard && onDiscard(cat)}
-                className={colors === CL ? 'btn-discard-bag-warm' : ''}
-                style={{
-                padding:'0 14px', height:34, borderRadius: colors === CL ? 22 : 10, border: colors === CL ? undefined : '1px solid rgba(255,107,107,0.25)',
-                background: colors === CL ? undefined : 'rgba(255,107,107,0.08)', cursor:'pointer',
-                fontSize:11, fontWeight: colors === CL ? 700 : 600, color: colors === CL ? undefined : colors.red,
-              }}>丢弃</button>
+              {colors === CL ? (
+                <button onClick={() => onAdopt(cat)}
+                  className={canAdopt ? 'btn-adopt-bag-warm' : ''}
+                  style={{
+                  flex:1, height:34, borderRadius:22, cursor: canAdopt?'pointer':'not-allowed',
+                  fontSize:12, fontWeight:700, opacity: canAdopt ? 1 : 0.5,
+                }}>
+                  {canAdopt ? `领养(${homeCount}/${homeMaxSlots})` : `已满(${homeCount}/${homeMaxSlots})`}
+                </button>
+              ) : (
+                <button onClick={() => onAdopt(cat)}
+                  className="flow-btn flow-fill"
+                  style={{ flex:1, opacity: canAdopt ? 1 : 0.4 }}>
+                  <span className="inner">{canAdopt ? `领养(${homeCount}/${homeMaxSlots})` : `已满(${homeCount}/${homeMaxSlots})`}</span>
+                </button>
+              )}
+              {colors === CL ? (
+                <button onClick={() => onDiscard && onDiscard(cat)}
+                  className="btn-discard-bag-warm"
+                  style={{
+                  padding:'0 14px', height:34, borderRadius:22, cursor:'pointer',
+                  fontSize:11, fontWeight:700,
+                }}>丢弃</button>
+              ) : (
+                <button onClick={() => onDiscard && onDiscard(cat)}
+                  className="flow-btn flow-send"
+                  style={{ flex: '0 0 auto' }}>
+                  <span className="inner" style={{ padding:'10px 10px' }}>丢弃</span>
+                </button>
+              )}
             </div>
           </div>
         );
@@ -3275,23 +3434,41 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
   const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div style={{ padding: '16px 20px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+    <div style={{ padding: '16px 20px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto',
+      background: colors === CL ? '#FFF8E1' : undefined,
+      border: colors === CL ? '2px solid rgba(253,150,68,0.5)' : undefined,
+      borderRadius: colors === CL ? 20 : undefined,
+      margin: colors === CL ? '12px' : undefined,
+    }}>
       {/* 返回按钮 */}
-      <div onClick={onBack} style={{ display:'flex', alignItems:'center', gap:4, cursor:'pointer', fontSize:13, color:colors.sub, fontWeight:500, marginBottom:16 }}>
-        <span>←</span> 返回
-      </div>
-      
+      {colors === CL ? (
+        <button onClick={onBack} style={{
+          display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+          width:'100%', height:38, borderRadius:22, marginBottom:16,
+          background:'linear-gradient(180deg, #FFD1DC 0%, #FFB8C6 100%)',
+          border:'2px solid #FF8FA3',
+          cursor:'pointer', fontSize:13, fontWeight:700, color:'#8B3A50',
+          boxShadow:'0 4px 0 #E6A0B0, 0 2px 8px rgba(255,143,163,0.25)',
+        }}>
+          <span>←</span> 返回
+        </button>
+      ) : (
+        <button onClick={onBack} className="flow-btn flow-send" style={{ width:'100%', marginBottom:16 }}>
+          <span className="inner">← 返回</span>
+        </button>
+      )}
+
       {/* 标题 */}
       <div style={{ textAlign:'center', marginBottom:20 }}>
         <div style={{ fontSize:24, fontWeight:800, color:colors.ink, marginBottom:4 }}>🎮今日出击阵容</div>
         <div style={{ fontSize:12, color:colors.sub }}>确认你的猫咪阵容，准备乐消消</div>
       </div>
-      
+
       {/* 出战席猫咪 */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, rgba(253,150,68,0.12) 0%, rgba(108,92,231,0.08) 100%)',
+      <div className={colors === CL ? '' : 'zone-battle-dark'} style={{
+        background: colors === CL ? 'linear-gradient(135deg, rgba(253,150,68,0.12) 0%, rgba(108,92,231,0.08) 100%)' : undefined,
         borderRadius:20, padding:'16px', marginBottom:16,
-        border:'1px solid rgba(253,150,68,0.2)',
+        border: colors === CL ? '1px solid rgba(253,150,68,0.2)' : undefined,
       }}>
         <div style={{ fontSize:13, fontWeight:700, color:colors.orange, marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
           <span>⚔️</span> 出战猫咪
@@ -3334,10 +3511,10 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
       </div>
       
       {/* 观战猫咪加成 */}
-      <div style={{ 
-        background: 'linear-gradient(180deg, rgba(0,180,216,0.08) 0%, rgba(0,212,255,0.04) 100%)',
+      <div className={colors === CL ? '' : 'zone-spectator-dark'} style={{
+        background: colors === CL ? 'linear-gradient(180deg, rgba(0,180,216,0.08) 0%, rgba(0,212,255,0.04) 100%)' : undefined,
         borderRadius:20, padding:'16px', marginBottom:16,
-        border:'1px solid rgba(0,180,216,0.15)',
+        border: colors === CL ? '1px solid rgba(0,180,216,0.15)' : undefined,
       }}>
         <div style={{ fontSize:13, fontWeight:700, color:'#00B4D8', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
           <span>🥳</span> 观战猫咪加成
@@ -3377,17 +3554,19 @@ function PreBattlePage({ cats, onStartGame, onBack, slot4Unlocked, slot5Unlocked
       </div>
 
       {/* 开始消消乐按钮 */}
-      <button onClick={onStartGame} style={{
-        width:'100%', height:52, borderRadius:16, marginTop:20,
-        background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
-        border:'none', cursor:'pointer',
-        fontSize:16, fontWeight:800, color:'#fff',
-        boxShadow:'0 8px 28px rgba(253,150,68,0.3)',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-      }}>
-        <span style={{ fontSize:20 }}>🎮</span>
-        开始消消乐
-      </button>
+      {colors === CL ? (
+        <button onClick={onStartGame} className="btn-gacha-warm" style={{
+          width:'100%', height:52, borderRadius:16, marginTop:20,
+          fontSize:16, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+        }}>
+          <span style={{ fontSize:20 }}>🎮</span>
+          开始消消乐
+        </button>
+      ) : (
+        <button onClick={onStartGame} className="flow-btn flow-play" style={{ width:'100%', marginTop:20 }}>
+          <span className="inner"><span style={{ fontSize:20 }}>🎮</span> 开始消消乐</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -3411,7 +3590,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
   return (
     <div style={{ paddingBottom: 0 }}>
       {/* Back button */}
-      <div onClick={onBack} style={{ padding:'12px 20px', display:'flex', alignItems:'center', gap:4, cursor:'pointer', fontSize:13, color:colors.sub, fontWeight:500 }}>
+      <div onClick={onBack} style={{ padding:'12px 20px', display:'flex', alignItems:'center', gap:4, cursor:'pointer', fontSize:13, color:colors.sub, fontWeight:500, textShadow: colors === CL ? undefined : '0 0 6px rgba(0,229,255,0.6), 0 0 12px rgba(0,153,255,0.3)', transition: 'all 0.2s' }}>
         <span>←</span> 返回
       </div>
 
@@ -3454,8 +3633,8 @@ const cat = cats.find(c => c.serialId === catSerialId);
             <span style={{ fontSize:9, fontWeight:700, padding:'3px 8px', borderRadius:999, background:'linear-gradient(135deg, rgba(255,215,0,0.3), rgba(253,150,68,0.2))', color:'#FFD700', border:'1px solid rgba(255,215,0,0.5)' }}>✦ 创世编号</span>
           )}
         </div>
-        <div style={{ fontSize:12, color:colors.sub, marginTop:6, lineHeight:1.5 }}>{cat.desc}</div>
-        <div style={{ fontSize:12, color:colors.sub, marginTop:2 }}>
+        <div style={{ fontSize:12, color: colors === CL ? '#4A2800' : '#fff', marginTop:6, lineHeight:1.5 }}>{cat.desc}</div>
+        <div style={{ fontSize:12, color: colors === CL ? '#4A2800' : '#fff', marginTop:2 }}>
           性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}·{PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')] || ''}
         </div>
         {cat.battleSlot != null && (
@@ -3476,7 +3655,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
 
       {/* P2: 亲密度系统 - 家园猫咪 */}
       <div style={{ padding:'16px 20px 0' }}>
-        <div className={colors === CL ? 'card-warm' : ''} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : colors.card, border: colors === CL ? undefined : `1px solid ${colors.cardBorder}` }}>
+        <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : undefined, border: colors === CL ? undefined : undefined }}>
           {cat.location === 'home' ? (
             <>
               {/* 家园：亲密度 + 技能栏 */}
@@ -3597,26 +3776,34 @@ const cat = cats.find(c => c.serialId === catSerialId);
               </div>
               {canFeed ? (
                 <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={() => onFeed(cat)}
-                    className={colors === CL ? 'btn-feed-warm' : ''}
-                    style={{
-                    flex:1, height:36, borderRadius: colors === CL ? 22 : 10, border: colors === CL ? undefined : 'none', cursor:'pointer',
-                    background: colors === CL ? undefined : `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
-                    fontSize:13, fontWeight:700, color: colors === CL ? undefined : '#fff',
-                    boxShadow: colors === CL ? undefined : undefined,
-                  }}>🐟 喂食 +5 (-1🐟)</button>
-                  {intimacy < 100 && (
-                    <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={fish < calcFullFeedCost(intimacy)}
-                      className={colors === CL && fish >= calcFullFeedCost(intimacy) ? 'btn-full-warm' : ''}
+                  {colors === CL ? (
+                    <button onClick={() => onFeed(cat)}
+                      className="btn-feed-warm"
                       style={{
-                      padding:'0 14px', height:36, borderRadius: colors === CL ? 22 : 10, border: colors === CL ? undefined : 'none', cursor: fish >= calcFullFeedCost(intimacy) ? 'pointer' : 'not-allowed',
-                      fontSize:12, fontWeight:700,
-                      background: colors === CL ? undefined : (fish >= calcFullFeedCost(intimacy) ? 'rgba(253,150,68,0.2)' : 'rgba(255,255,255,0.05)'),
-                      color: colors === CL ? undefined : (fish >= calcFullFeedCost(intimacy) ? colors.orange : colors.muted),
-                      boxShadow: colors === CL ? undefined : undefined,
-                      opacity: colors === CL && fish < calcFullFeedCost(intimacy) ? 0.5 : 1,
-                    }}>补满 ({calcFullFeedCost(intimacy)}🐟)</button>
+                      flex:1, height:36, borderRadius:22, cursor:'pointer',
+                      fontSize:13, fontWeight:700,
+                    }}>🐟 喂食 +5 (-1🐟)</button>
+                  ) : (
+                    <button onClick={() => onFeed(cat)}
+                      className="flow-btn flow-feed"
+                      style={{ flex:1 }}>
+                      <span className="inner">🐟 喂食 +5 (-1🐟)</span>
+                    </button>
                   )}
+                  {intimacy < 100 && (colors === CL ? (
+                    <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={fish < calcFullFeedCost(intimacy)}
+                      className={fish >= calcFullFeedCost(intimacy) ? 'btn-full-warm' : ''}
+                      style={{
+                      padding:'0 14px', height:36, borderRadius:22, cursor: fish >= calcFullFeedCost(intimacy) ? 'pointer' : 'not-allowed',
+                      fontSize:12, fontWeight:700, opacity: fish < calcFullFeedCost(intimacy) ? 0.5 : 1,
+                    }}>补满 ({calcFullFeedCost(intimacy)}🐟)</button>
+                  ) : (
+                    <button onClick={() => onBatchFeed && onBatchFeed(cat)} disabled={fish < calcFullFeedCost(intimacy)}
+                      className="flow-btn flow-fill"
+                      style={{ flex: '0 0 auto', opacity: fish >= calcFullFeedCost(intimacy) ? 1 : 0.4 }}>
+                      <span className="inner" style={{ padding:'10px 15px' }}>补满 ({calcFullFeedCost(intimacy)}🐟)</span>
+                    </button>
+                  ))}
                 </div>
               ) : (
                 <div style={{ textAlign:'center', fontSize:11, color:colors.muted }}>
@@ -3659,14 +3846,20 @@ const cat = cats.find(c => c.serialId === catSerialId);
               })()}
 
               <div style={{ fontSize:11, color:colors.sub, textAlign:'center', marginBottom:12 }}>领养后开始记录成长档案，永生不流浪</div>
-              {canAdopt ? (
+              {canAdopt ? (colors === CL ? (
                 <button onClick={() => onAdopt(cat)}
-                  className={colors === CL ? 'btn-adopt-warm' : ''}
+                  className="btn-adopt-warm"
                   style={{
-                  width:'100%', height:36, borderRadius: colors === CL ? 22 : 10, border: colors === CL ? undefined : 'none', cursor:'pointer',
-                  background: colors === CL ? undefined : `linear-gradient(135deg, ${colors.green}, #55EFC4)`,
-                  fontSize:13, fontWeight:700, color: colors === CL ? undefined : '#fff',
+                  width:'100%', height:36, borderRadius:22, cursor:'pointer',
+                  fontSize:13, fontWeight:700,
                 }}>领养它({homeCount}/{homeMaxSlots})</button>
+              ) : (
+                <button onClick={() => onAdopt(cat)}
+                  className="flow-btn flow-fill"
+                  style={{ width:'100%' }}>
+                  <span className="inner">领养它({homeCount}/{homeMaxSlots})</span>
+                </button>
+              )
               ) : (
                 <div style={{ textAlign:'center', fontSize:11, color:colors.muted }}>家园已满({homeCount}/{homeMaxSlots})，需要先送走一只猫</div>
               )}
@@ -3678,7 +3871,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
       {/* Growth record (home only) */}
       {cat.location === 'home' && (
         <div style={{ padding:'12px 20px 0' }}>
-          <div className={colors === CL ? 'card-warm' : ''} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : colors.card, border: colors === CL ? undefined : `1px solid ${colors.cardBorder}` }}>
+          <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : undefined, border: colors === CL ? undefined : undefined }}>
             <div style={{ fontSize:12, fontWeight:700, color:colors.ink, marginBottom:8 }}>📈 成长档案</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 0' }}>
               <div><span style={{ fontSize:11, color:colors.sub }}>陪伴天数</span><div style={{ fontSize:16, fontWeight:800, color:colors.ink }}>{cat.daysAlive} 天</div></div>
@@ -3694,7 +3887,7 @@ const cat = cats.find(c => c.serialId === catSerialId);
 
       {/* Lineage */}
       <div style={{ padding:'12px 20px 0' }}>
-        <div className={colors === CL ? 'card-warm' : ''} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : colors.card, border: colors === CL ? undefined : `1px solid ${cat.isGenesis ? 'rgba(255,215,0,0.3)' : colors.cardBorder}` }}>
+        <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{ borderRadius: colors === CL ? 20 : 16, padding:'14px', background: colors === CL ? undefined : undefined, border: colors === CL ? undefined : (cat.isGenesis ? '2px solid rgba(255,215,0,0.5)' : undefined) }}>
           {/* P4: 创世区特殊标记 */}
           {cat.isGenesis && (
             <div style={{
@@ -3738,38 +3931,66 @@ const cat = cats.find(c => c.serialId === catSerialId);
               ? <>历经 {cat.previousOwners.length} 任主人</>
               : cat.location === 'home' ? '你是第 1 任主人' : '暂无血统记录'}
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onShowLineage(cat); }} style={{
-            width:'100%', height:32, borderRadius:8, marginTop:10,
-            background: cat.isGenesis ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.04)', 
-            border: `1px solid ${cat.isGenesis ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.08)'}`,
-            cursor:'pointer', fontSize:11, fontWeight:600, color: cat.isGenesis ? '#FFD700' : colors.purpleLight,
-          }}>查看完整血统 →</button>
+          {colors === CL || cat.isGenesis ? (
+            <button onClick={(e) => { e.stopPropagation(); onShowLineage(cat); }} style={{
+              width:'100%', height:36, borderRadius:22, marginTop:10,
+              background: cat.isGenesis ? 'rgba(255,215,0,0.1)' : 'rgba(108,92,231,0.12)',
+              border: `1px solid ${cat.isGenesis ? 'rgba(255,215,0,0.3)' : 'rgba(108,92,231,0.3)'}`,
+              cursor:'pointer', fontSize:13, fontWeight:700, color: cat.isGenesis ? '#FFD700' : '#6C5CE7',
+            }}>查看完整血统 →</button>
+          ) : (
+            <button onClick={(e) => { e.stopPropagation(); onShowLineage(cat); }}
+              className="flow-btn flow-lineage"
+              style={{ width:'100%', marginTop:10 }}>
+              <span className="inner">查看完整血统 →</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Release button + 推荐 (home only) */}
       {cat.location === 'home' && (
         <div style={{ padding:'16px 20px 0', display:'flex', gap:10 }}>
-          <button onClick={() => {
-            const code = getOrCreateInviteCode();
-            const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(msg).catch(() => {});
-            }
-          }}
-            className={colors === CL ? 'btn-deploy-warm' : ''}
-            style={{
-            flex:1, height:40, borderRadius: colors === CL ? 22 : 12, border: colors === CL ? undefined : '1px solid rgba(108,92,231,0.2)',
-            background: colors === CL ? undefined : 'rgba(108,92,231,0.06)', cursor:'pointer',
-            fontSize:13, fontWeight: colors === CL ? 700 : 600, color: colors === CL ? undefined : colors.purpleLight,
-          }}>📤 推荐这只猫</button>
-          <button onClick={() => onRelease(cat)}
-            className={colors === CL ? 'btn-send-warm' : ''}
-            style={{
-            flex:1, height:40, borderRadius: colors === CL ? 22 : 12, border: colors === CL ? undefined : '1px solid rgba(255,107,107,0.25)',
-            background: colors === CL ? undefined : 'rgba(255,107,107,0.06)', cursor:'pointer',
-            fontSize:13, fontWeight: colors === CL ? 700 : 600, color: colors === CL ? undefined : colors.red,
-          }}>送去流浪</button>
+          {colors === CL ? (
+            <button onClick={() => {
+              const code = getOrCreateInviteCode();
+              const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(msg).catch(() => {});
+              }
+            }}
+              className="btn-deploy-warm"
+              style={{
+              flex:1, height:40, borderRadius:22, cursor:'pointer',
+              fontSize:13, fontWeight:700,
+            }}>📤 推荐这只猫</button>
+          ) : (
+            <button onClick={() => {
+              const code = getOrCreateInviteCode();
+              const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(msg).catch(() => {});
+              }
+            }}
+              className="flow-btn flow-play"
+              style={{ flex:1 }}>
+              <span className="inner">📤 推荐这只猫</span>
+            </button>
+          )}
+          {colors === CL ? (
+            <button onClick={() => onRelease(cat)}
+              className="btn-send-warm"
+              style={{
+              flex:1, height:40, borderRadius:22, cursor:'pointer',
+              fontSize:13, fontWeight:700,
+            }}>送去流浪</button>
+          ) : (
+            <button onClick={() => onRelease(cat)}
+              className="flow-btn flow-send"
+              style={{ flex:1 }}>
+              <span className="inner">送去流浪</span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -3946,11 +4167,19 @@ const [phase, setPhase] = useState('enter'); // enter → sweep → flip → bac
                   fontSize:11, fontWeight:600, color:colors.red,
                 }}>丢弃</button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{
-                flex:1, height:32, borderRadius:8, border:`1px solid ${colors.cardBorder}`,
-                background:colors.card, cursor:'pointer',
-                fontSize:11, fontWeight:600, color:colors.muted,
-              }}>关闭</button>
+              {colors === CL ? (
+                <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{
+                  flex:1, height:32, borderRadius:8, border:`1px solid ${colors.cardBorder}`,
+                  background:colors.card, cursor:'pointer',
+                  fontSize:11, fontWeight:600, color:colors.muted,
+                }}>关闭</button>
+              ) : (
+                <button onClick={(e) => { e.stopPropagation(); onClose(); }}
+                  className="flow-btn flow-lineage"
+                  style={{ flex:1 }}>
+                  <span className="inner">关闭</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -4056,10 +4285,11 @@ function FriendLeaderboard({ todayFish, user }) {
       {/* Player self row (if not in top 3) */}
       {playerScore < (mockFriends[2]?.score || 0) && (
         <div style={{ padding: '0 20px 8px' }}>
-          <div style={{
+          <div className={colors === CL ? '' : 'leaderboard-self-dark'} style={{
             display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-            borderRadius: 12, background: 'rgba(253,150,68,0.15)',
-            border: '1px solid rgba(253,150,68,0.3)',
+            borderRadius: 12,
+            background: colors === CL ? 'rgba(253,150,68,0.15)' : undefined,
+            border: colors === CL ? '1px solid rgba(253,150,68,0.3)' : undefined,
           }}>
             <div style={{
               width: 24, height: 24, borderRadius: '50%',
@@ -4069,7 +4299,7 @@ function FriendLeaderboard({ todayFish, user }) {
             }}>?</div>
             <span style={{ fontSize: 18 }}>👤</span>
             <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: colors.orange }}>我</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: colors.orange }}>{playerScore.toLocaleString()}</span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: colors.orange }}>{playerScore.toLocaleString()}</span>
             <span style={{ fontSize: 9, color: colors.muted }}>分</span>
           </div>
         </div>
@@ -4085,9 +4315,10 @@ function FriendLeaderboard({ todayFish, user }) {
           <div key={friend.id} style={{ padding: '0 20px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
-              borderRadius: 10, background: 'rgba(255,255,255,0.02)', marginBottom: 4,
+              borderRadius: 10, marginBottom: 4,
+              background: colors === CL ? 'rgba(255,255,255,0.02)' : 'linear-gradient(90deg, rgba(0,229,255,0.22) 0%, rgba(0,229,255,0.08) 50%, transparent 100%)',
             }}>
-              <div style={{
+              <div className={colors === CL ? '' : 'leaderboard-rank-dark'} style={{
                 width: 24, height: 24, borderRadius: '50%',
                 background: rankBg || 'rgba(255,255,255,0.08)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4099,7 +4330,7 @@ function FriendLeaderboard({ todayFish, user }) {
                 <div style={{ fontSize: 13, fontWeight: 500, color: colors.ink }}>{friend.name}</div>
                 <div style={{ fontSize: 9, color: colors.muted }}>出战: {friend.cat}</div>
               </div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: colors.orange }}>{friend.score.toLocaleString()}</span>
+              <span className={colors === CL ? '' : 'leaderboard-score-dark'} style={{ fontSize: 18, fontWeight: 700, color: colors.orange }}>{friend.score.toLocaleString()}</span>
               <span style={{ fontSize: 9, color: colors.muted }}>分</span>
             </div>
           </div>
@@ -4124,10 +4355,10 @@ function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClea
   return (
     <div style={{ padding: '0 20px 20px' }}>
       {isWorldCupActive() && (
-        <div style={{
+        <div className={colors === CL ? '' : 'profile-card-dark'} style={{
           padding: '12px 16px', borderRadius: 12, marginBottom: 12,
-          background: 'linear-gradient(135deg, rgba(253,150,68,0.15), rgba(255,215,0,0.1))',
-          border: '1px solid rgba(253,150,68,0.3)',
+          background: colors === CL ? 'linear-gradient(135deg, rgba(253,150,68,0.15), rgba(255,215,0,0.1))' : undefined,
+          border: colors === CL ? '1px solid rgba(253,150,68,0.3)' : undefined,
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: colors.ink }}>⚽ 2026 世界杯联动进行中</div>
           <div style={{ fontSize: 10, color: colors.sub, marginTop: 4 }}>6月12日 - 7月20日 · 限定皮肤 + 深夜加成 + 淘汰赛挑战</div>
@@ -4137,7 +4368,7 @@ function EventPage({ bets, onPlaceBet, onShareBet, fish, knockoutConsecutiveClea
       <KnockoutBanner clears={knockoutConsecutiveClears || 0} eliminated={knockoutEliminatedToday || false} skinClaimed={knockoutSkinClaimed || false} />
       <FinalDayBanner />
       <BettingPanel bets={bets || []} onPlaceBet={onPlaceBet} onShareBet={onShareBet} fish={fish} showConfirmModal={showConfirmModal} />
-      <div style={{ background: colors.card, borderRadius: 16, padding: '16px', border: '1px solid ' + colors.cardBorder, marginTop: 12 }}>
+      <div className={colors === CL ? '' : 'profile-card-dark'} style={{ background: colors === CL ? colors.card : undefined, borderRadius: 16, padding: '16px', border: colors === CL ? '1px solid ' + colors.cardBorder : undefined, marginTop: 12 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: colors.ink, marginBottom: 12 }}>世界杯特别活动-赛程对阵表</div>
         {getAllMatches().map(function(m) {
           var matchTime = new Date(m.date + 'T20:00:00+08:00');
@@ -4172,8 +4403,10 @@ function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, u
     <div>
       <div style={{
         display: 'flex', margin: '12px 20px',
-        background: colors === CL ? '#FFF5E0' : colors.card,
-        borderRadius: 24, padding: 4, border: colors === CL ? undefined : `1px solid ${colors.cardBorder}`,
+        background: colors === CL ? '#FFF5E0' : 'transparent',
+        borderRadius: 24, padding: 4,
+        border: colors === CL ? undefined : '4px solid rgba(255,105,180,0.4)',
+        boxShadow: colors === CL ? undefined : '0 0 12px rgba(255,105,180,0.3), 0 0 24px rgba(255,46,185,0.15)',
       }}>
         {[
           { key: 'gacha', icon: '🎁', label: '抽卡' },
@@ -4184,13 +4417,16 @@ function MarketPage({ bells, pityCount, onGacha, cats, onCardClick, todayFish, u
             flex: 1, textAlign: 'center', padding: '8px 6px', borderRadius: 20, cursor: 'pointer',
             fontSize: 12, fontWeight: subTab === t.key ? 700 : 500,
             background: subTab === t.key
-              ? (colors === CL ? '#FFE8A1' : 'linear-gradient(135deg, #6C5CE7, #A29BFE)')
+              ? (colors === CL ? '#FFE8A1' : 'linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399)')
               : 'transparent',
+            backgroundSize: subTab === t.key && colors !== CL ? '400% 400%' : undefined,
+            animation: subTab === t.key && colors !== CL ? 'smoothFlow 6s linear infinite' : undefined,
             color: subTab === t.key
               ? (colors === CL ? '#8B4513' : '#fff')
               : (colors === CL ? '#8A6D3B' : colors.sub),
             transition: 'all 0.2s',
-            boxShadow: subTab === t.key && colors !== CL ? '0 0 16px rgba(138,43,226,0.3)' : 'none',
+            boxShadow: subTab === t.key && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4), 0 0 4px rgba(255,105,180,0.3) inset' : 'none',
+            filter: subTab !== t.key && colors !== CL ? 'drop-shadow(0 0 3px rgba(255,105,180,0.2))' : 'none',
           }}>
             {t.icon} {t.label}
           </div>
@@ -4313,9 +4549,9 @@ function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSki
       
 
       {/* 鱼干兑换铃铛 */}
-      <div className={colors === CL ? 'card-warm' : ''} style={{
-        background: colors === CL ? undefined : colors.card, borderRadius: colors === CL ? 20 : 16, padding: '16px',
-        border: colors === CL ? undefined : `1px solid ${colors.cardBorder}`, marginBottom: 12,
+      <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{
+        background: colors === CL ? undefined : undefined, borderRadius: colors === CL ? 20 : 16, padding: '16px',
+        border: colors === CL ? undefined : undefined, marginBottom: 12,
       }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>💱 鱼干兑换铃铛</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -4334,9 +4570,9 @@ function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSki
 
       {/* P2: 已装备皮肤概览 */}
       {equippedCats.length > 0 && (
-        <div className={colors === CL ? 'card-warm' : ''} style={{
-          background: colors === CL ? undefined : colors.card, borderRadius: colors === CL ? 20 : 16, padding: '12px 16px',
-          border: colors === CL ? undefined : '1px solid rgba(108,92,231,0.25)', marginBottom: 12,
+        <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{
+          background: colors === CL ? undefined : undefined, borderRadius: colors === CL ? 20 : 16, padding: '12px 16px',
+          border: colors === CL ? undefined : undefined, marginBottom: 12,
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: colors.ink, marginBottom: 8 }}>👔 我的皮肤</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -4358,9 +4594,9 @@ function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSki
       )}
 
       {/* P2: 皮肤商店 - 子标签切换 */}
-      <div className={colors === CL ? 'card-warm' : ''} style={{
-        background: colors === CL ? undefined : colors.card, borderRadius: colors === CL ? 20 : 16, padding: '16px',
-        border: colors === CL ? undefined : '1px solid rgba(253,150,68,0.2)', marginBottom: 12,
+      <div className={colors === CL ? 'card-warm' : 'profile-card-dark'} style={{
+        background: colors === CL ? undefined : undefined, borderRadius: colors === CL ? 20 : 16, padding: '16px',
+        border: colors === CL ? undefined : undefined, marginBottom: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <span style={{ fontSize: 18 }}>⚽</span>
@@ -4464,7 +4700,7 @@ function ShopPage({ fish, bells, user, onExchange, cats, ownedSkins, equippedSki
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 60,
         }} onClick={() => setShowExchangeConfirm(false)}>
-          <div onClick={e => e.stopPropagation()} style={{
+          <div onClick={e => e.stopPropagation()} className={colors === CL ? '' : 'modal-dark'} style={{
             width: 280, background: colors.card, borderRadius: 24,
             padding: '28px 22px', textAlign: 'center',
             border: '1px solid ' + colors.cardBorder,
@@ -4580,13 +4816,18 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
     <div style={{ paddingBottom: 0 }}>
       {/* Gacha area */}
       <div style={{ padding:'16px 20px 12px', textAlign:'center' }}>
-        <div style={{ fontSize:14, fontWeight:700, color:colors.ink, marginBottom:4 }}>🎁 猫咪抽卡· 现有{bells} 颗🔔· 消耗1枚抽一次</div>
+        <div style={{ fontSize:16, fontWeight:700, color:colors.ink, marginBottom:4 }}>🎁 猫咪抽卡· 现有{bells} 颗🔔· 消耗1枚抽一次</div>
         
         {/* 双轨保底进度条 */}
         <div style={{ marginBottom:16 }}>
           {/* SSR大保底进度 */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:8 }}>
-            <span style={{ fontSize:10, color:colors.muted }}>✨SSR</span>
+            <span style={{ fontSize:10, color:'#fff',
+              background: colors === CL ? undefined : 'linear-gradient(90deg, rgba(253,150,68,0.3), rgba(255,180,67,0.2), rgba(253,150,68,0.3))',
+              backgroundSize: colors !== CL ? '200% 100%' : undefined,
+              animation: colors !== CL ? 'smoothFlow 4s linear infinite' : undefined,
+              padding:'2px 8px', borderRadius:4,
+            }}>✨SSR</span>
             <div className={colors === CL ? 'progress-warm-wrap' : ''} style={{ width:120, height:6, borderRadius:3, background: colors === CL ? undefined : colors.bg2, overflow:'hidden', position:'relative' }}>
               <div style={{ 
                 height:'100%', 
@@ -4606,13 +4847,22 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
             <span style={{ fontSize:10, fontWeight:600, color: pityInfo.ssrRemaining <= 10 ? colors.red : colors.orange }}>
               {pityInfo.ssrRemaining <= 10 ? `🔥${pityInfo.ssrRemaining}` : pityInfo.ssrProgress}/{pityInfo.ssrTotal}
             </span>
-            <span style={{ fontSize:8, color:colors.muted, background:'rgba(253,150,68,0.2)', padding:'2px 6px', borderRadius:4 }}>
+            <span style={{ fontSize:8, color:'#fff', padding:'2px 6px', borderRadius:4,
+              background: colors === CL ? 'rgba(253,150,68,0.2)' : 'linear-gradient(90deg, rgba(253,150,68,0.4), rgba(255,180,67,0.3), rgba(253,150,68,0.4))',
+              backgroundSize: colors !== CL ? '200% 100%' : undefined,
+              animation: colors !== CL ? 'smoothFlow 4s linear infinite' : undefined,
+            }}>
               {pityInfo.currentSSRRate}%
             </span>
           </div>
           {/* SR小保底进度 */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-            <span style={{ fontSize:10, color:colors.muted }}>💎SR</span>
+            <span style={{ fontSize:10, color:'#fff',
+              background: colors === CL ? undefined : 'linear-gradient(90deg, rgba(108,92,231,0.3), rgba(162,155,254,0.2), rgba(108,92,231,0.3))',
+              backgroundSize: colors !== CL ? '200% 100%' : undefined,
+              animation: colors !== CL ? 'smoothFlow 4s linear infinite' : undefined,
+              padding:'2px 8px', borderRadius:4,
+            }}>💎SR</span>
             <div className={colors === CL ? 'progress-warm-wrap' : ''} style={{ width:120, height:4, borderRadius: colors === CL ? 50 : 2, background: colors === CL ? undefined : colors.bg2, overflow:'hidden' }}>
               <div style={{ 
                 height:'100%', 
@@ -4632,13 +4882,14 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
         {/* Gacha display area — shrunk 10%, centered */}
         <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
           <div
-            className={colors === CL ? `bell-box-warm${animPhase === 'shake' ? ' jump' : ''}` : ''}
+            className={colors === CL ? `bell-box-warm${animPhase === 'shake' ? ' jump' : ''}` : 'card-flow-border'}
             style={{
             width:'90%', aspectRatio:'1', borderRadius: colors === CL ? 26 : 18, overflow:'hidden',
-            background: colors === CL ? undefined : colors.card,
-            border: colors === CL ? undefined : `1px solid ${colors.cardBorder}`,
+            background: colors === CL ? undefined : 'transparent',
+            border: colors === CL ? undefined : 'none',
             display:'flex', alignItems:'center', justifyContent:'center',
             position:'relative',
+            boxShadow: colors === CL ? undefined : '0 0 15px rgba(0,229,255,0.4), 0 0 30px rgba(0,153,255,0.2)',
           }}>
             {/* Idle: cat bell */}
             {animPhase === 'idle' && (
@@ -4727,20 +4978,30 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
           </div>
         </div>
 
-        <button onClick={handleGacha} disabled={isAnimating || bells < 1}
-          className={colors === CL && !(isAnimating || bells < 1) ? 'btn-gacha-warm' : ''}
-          style={{
-          width:'100%', height:50, borderRadius: colors === CL ? 22 : 16,
-          background: colors === CL ? undefined : ((isAnimating || bells < 1) ? colors.bg2 : 'linear-gradient(135deg, #6C5CE7, #A29BFE)'),
-          border: colors === CL ? undefined : ((isAnimating || bells < 1) ? `1px solid ${colors.border}` : 'none'),
-          cursor:(isAnimating||bells<1)?'not-allowed':'pointer',
-          fontSize:16, fontWeight:800,
-          color: colors === CL ? undefined : ((isAnimating||bells<1)?colors.muted:'#fff'),
-          opacity:(isAnimating||bells<1)?0.6:1,
-          boxShadow: colors === CL ? undefined : ((isAnimating||bells<1)?'none':'0 8px 24px rgba(108,92,231,0.35)'),
-        }}>
-          {isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'}
-        </button>
+        {colors === CL ? (
+          <button onClick={handleGacha} disabled={isAnimating || bells < 1}
+            className={!(isAnimating || bells < 1) ? 'btn-gacha-warm' : ''}
+            style={{
+            width:'100%', height:50, borderRadius:22,
+            cursor:(isAnimating||bells<1)?'not-allowed':'pointer',
+            fontSize:16, fontWeight:800, color:'#fff',
+            opacity:(isAnimating||bells<1)?0.6:1,
+          }}>
+            {isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'}
+          </button>
+        ) : (
+          <button onClick={handleGacha} disabled={isAnimating || bells < 1}
+            className="btn-main-dark"
+            style={{ opacity:(isAnimating||bells<1)?0.5:1 }}
+            onMouseEnter={e => { if (isAnimating||bells<1) return; const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/mchou_hover.png'; }}
+            onMouseLeave={e => { if (isAnimating||bells<1) return; const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/mchou_normal.png'; }}
+            onMouseDown={e => { if (isAnimating||bells<1) return; const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/mchou_down.png'; }}
+            onMouseUp={e => { if (isAnimating||bells<1) return; const img = e.currentTarget.querySelector('img'); if(img) img.src = 'assets/mchou_hover.png'; }}
+          >
+            <img src="assets/mchou_normal.png" alt="" />
+            <span className="btn-main-text">{isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'}</span>
+          </button>
+        )}
       </div>
 
       {/* Cat collection grid */}
@@ -4765,9 +5026,10 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
                     display:'flex', flexDirection:'column', alignItems:'center', gap:4,
                     animation:`slideUp 0.4s ease-out ${i * 0.05}s both`,
                     transition:'transform 0.15s, box-shadow 0.15s',
+                    boxShadow: colors === CL ? 'none' : `0 0 8px ${RARITY_COLORS[cat.rarity]}30`,
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = `0 0 16px ${RARITY_COLORS[cat.rarity]}20`; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = `0 0 16px ${RARITY_COLORS[cat.rarity]}40`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 0 8px ${RARITY_COLORS[cat.rarity]}30`; }}
                   >
                     <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', border:`1.5px solid ${RARITY_COLORS[cat.rarity]}40` }}>
                       <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
@@ -5124,7 +5386,7 @@ function AdoptConfirmModal({ cat, show, onConfirm, onCancel, canAdopt, homeCount
 if (!show || !cat) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onCancel}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} className={colors === CL ? '' : 'modal-dark'} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, animation:'slideUp 0.3s ease-out' }}>
         <div style={{ width:64, height:64, borderRadius:'50%', overflow:'hidden', margin:'0 auto 14px', border:`2px solid ${RARITY_COLORS[cat.rarity]}50` }}>
           <img src={cat.img} alt={cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
             onError={e => { e.target.style.display='none'; }} />
@@ -5175,7 +5437,7 @@ function CheckInModal({ show, onClose }) {
 if (!show) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.4s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} className={colors === CL ? '' : 'modal-dark'} style={{ width:280, background: colors.card, borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', animation:'slideUp 0.4s ease-out' }}>
         <div style={{ fontSize:48, marginBottom:8 }}>🐾</div>
         <div style={{ fontSize:20, fontWeight:800, color:colors.ink, marginBottom:4 }}>签到成功！</div>
         <div style={{ fontSize:12, color:colors.sub, marginBottom:16 }}>新的一天，和猫咪一起加油</div>
@@ -5237,7 +5499,7 @@ function MilestoneUnlockModal({ alert, onClose }) {
 if (!alert) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:70 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', boxShadow:'0 0 60px rgba(108,92,231,0.25)', animation:'slideUp 0.4s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:'1px solid rgba(108,92,231,0.3)', boxShadow:'0 0 60px rgba(108,92,231,0.25)', animation:'slideUp 0.4s ease-out' }}>
         <div style={{ fontSize:56, marginBottom:8, animation:'coinPop 0.6s ease-out' }}>🎉</div>
         <div style={{ fontSize:18, fontWeight:800, color:colors.purpleLight, marginBottom:6 }}>观赛区{alert.slotName}已解锁！</div>
         <div style={{ fontSize:12, color:colors.sub, marginBottom:6 }}>{alert.label}</div>
@@ -5484,7 +5746,7 @@ function InfoModal({ show, title, children, onClose }) {
 if (!show) return null;
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors.card, borderRadius:20, padding:'24px 20px', border:`1px solid ${colors.border}`, animation:'slideUp 0.3s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} className={colors === CL ? '' : 'modal-dark'} style={{ width:280, background: colors.card, borderRadius:20, padding:'24px 20px', border:`1px solid ${colors.border}`, animation:'slideUp 0.3s ease-out' }}>
         <div style={{ fontSize:14, fontWeight:700, color:colors.ink, marginBottom:12 }}>{title}</div>
         <div style={{ fontSize:12, color:colors.sub, lineHeight:1.6 }}>{children}</div>
         <button onClick={onClose} style={{ marginTop:16, width:'100%', height:36, borderRadius:10, background: colors.bg2, border:`1px solid ${colors.border}`, cursor:'pointer', fontSize:13, fontWeight:600, color:colors.ink }}>知道了</button>
@@ -5531,11 +5793,12 @@ if (!show || !cat) return null;
               marginBottom: 8,
               padding: '4px 12px',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(253,150,68,0.3), rgba(253,100,68,0.2))',
+              background: colors === CL ? 'linear-gradient(135deg, rgba(139,90,0,0.3), rgba(101,67,0,0.25))' : 'linear-gradient(135deg, rgba(253,150,68,0.3), rgba(253,100,68,0.2))',
               border: '1px solid rgba(253,150,68,0.5)',
-              display: 'inline-block',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700' }}>✦ 创世编号</span>
+              <span style={{ fontSize: 10, lineHeight: 1 }}>✦</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', lineHeight: 1 }}>创世编号</span>
             </div>
           )}
           <div style={{ width:72, height:72, borderRadius:'50%', overflow:'hidden', margin:'0 auto 10px', border:`3px solid ${isGenesis ? '#FFD700' : RARITY_COLORS[cat.rarity] + '60'}`, boxShadow: isGenesis ? '0 0 20px rgba(255,215,0,0.4)' : 'none' }}>
@@ -5678,7 +5941,7 @@ if (!show || !cat) return null;
   
   return (
     <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:60 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width:280, background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}20`, animation:'slideUp 0.4s ease-out' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)', borderRadius:24, padding:'28px 22px', textAlign:'center', border:`1px solid ${RARITY_COLORS[cat.rarity]}30`, boxShadow:`0 0 40px ${RARITY_COLORS[cat.rarity]}20`, animation:'slideUp 0.4s ease-out' }}>
         {/* 保底触发提示 */}
         {isPity && (
           <div style={{
@@ -5703,7 +5966,13 @@ if (!show || !cat) return null;
         <div style={{ fontSize:18, fontWeight:800, color:colors.ink, marginBottom:2 }}>{cat.name} · #{String(cat.breedSerial || cat.serialId).padStart(3,'0')}</div>
         <div style={{ fontSize:11, color:colors.sub, marginBottom:6 }}>性格：{sanitizePersonality(cat.personality, cat.breedId || '橘猫')}</div>
         <div style={{ fontSize:11, fontWeight:600, color:colors.green, marginBottom:20 }}>✅ 已放入包裹区 · 30天内记得领养</div>
-        <button onClick={onClose} style={{ width:'100%', height:40, borderRadius:12, background:`linear-gradient(135deg, ${RARITY_COLORS[cat.rarity]}, ${RARITY_COLORS[cat.rarity]}CC)`, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'#fff' }}>收下啦</button>
+        {colors === CL ? (
+          <button onClick={onClose} className="btn-gacha-warm" style={{ width:'100%', height:40, fontSize:14, fontWeight:700 }}>收下啦</button>
+        ) : (
+          <button onClick={onClose} className="flow-btn flow-play" style={{ width:'100%' }}>
+            <span className="inner">收下啦</span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -5884,7 +6153,7 @@ function AgreementModal({ show, onAgree, onReject, onViewPrivacy, onViewAgreemen
     }}>
       <div style={{
         width:'100%', maxWidth:340,
-        background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
         borderRadius:24, padding:'32px 24px 24px',
         border:'1px solid rgba(108,92,231,0.3)',
         boxShadow:'0 0 80px rgba(108,92,231,0.2)',
@@ -5939,7 +6208,7 @@ function LoginAuthModal({ show, onAuthorize, onGuest, onViewPrivacy, onViewAgree
     }}>
       <div style={{
         width:'100%', maxWidth:340,
-        background:'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+        background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
         borderRadius:24, padding:'32px 24px 24px',
         border:'1px solid rgba(108,92,231,0.3)',
         boxShadow:'0 0 80px rgba(108,92,231,0.2)',
@@ -7823,7 +8092,7 @@ function App() {
               onBack={() => { setShowPreBattle(false); setActiveTab('home'); }}
               onStartGame={() => {
                 setShowPreBattle(false);
-                window.location.href = '猫咪消消乐.html';
+                window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark');
               }}
             />
           )}

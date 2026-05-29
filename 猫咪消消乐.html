@@ -28,6 +28,12 @@
     @keyframes disguiseReveal { 0%{opacity:0.3;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
     @keyframes timerBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
     @keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
+    @keyframes smoothFlow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+    .flow-btn { position: relative; background: transparent; border: none; cursor: pointer; padding: 0; overflow: hidden; }
+    .flow-btn .inner { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; background: #111; color: #fff; font-weight: 700; text-align: center; border-radius: 6px; margin: 2px; z-index: 2; text-shadow: 0 0 5px rgba(255,255,255,0.2); padding: 10px 8px; font-size: 13px; }
+    .flow-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 10px; z-index: 1; background-size: 400% 400%; animation: smoothFlow 6s linear infinite; }
+    .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
+    .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
 
     /* ═══ 技能动效弹窗动画 ═══ */
     @keyframes skillCardPop { from{transform:scale(0.75) translateY(40px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
@@ -182,6 +188,10 @@
 <script src="utils/boardShapes.js"></script>
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
+
+// 主题模式读取
+const urlParams = new URLSearchParams(window.location.search);
+const isLightMode = urlParams.get('theme') === 'light';
 
 /* ═══════════════════════════════════════
    P7: 性格系统配置（鱼干与性格系统需求）
@@ -4452,9 +4462,9 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
     }}>
       <div style={{
         width:360, maxHeight:'80vh', borderRadius:24,
-        background:'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
-        border:'1px solid rgba(108,92,231,0.3)',
-        boxShadow:'none',
+        background: isLightMode ? '#FFF8E1' : 'linear-gradient(180deg, #1A1235 0%, #0F0A1E 100%)',
+        border: isLightMode ? '2px solid rgba(253,150,68,0.5)' : '2px solid rgba(0,229,255,0.5)',
+        boxShadow: isLightMode ? 'none' : '0 0 15px rgba(0,229,255,0.35), 0 0 30px rgba(0,153,255,0.2)',
         padding:'20px 18px',
         overflowY:'auto',
         animation:'slideUp 0.4s ease-out',
@@ -4463,18 +4473,19 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       <div style={{ textAlign:'center', marginBottom:12 }}>
         <div style={{
           display:'inline-flex', alignItems:'center', gap:6,
-          background: 'rgba(253,150,68,0.12)',
+          background: isLightMode ? 'rgba(255,248,225,0.8)' : 'rgba(253,150,68,0.12)',
           borderRadius:12, padding:'6px 14px',
+          border: isLightMode ? '1px solid rgba(255,180,80,0.3)' : 'none',
           whiteSpace: 'nowrap',
         }}>
-          <span style={{ fontSize:14, fontWeight:800, color:'#FD9644' }}>
+          <span style={{ fontSize:14, fontWeight:800, color: isLightMode ? '#FF7A00' : '#FD9644' }}>
             第{currentLevel}关
           </span>
           <span style={{ fontSize:16 }}>{levelConfig?.breed ? '🐱' : '❓'}</span>
-          <span style={{ fontSize:14, fontWeight:700, color:'#F0EDFF' }}>
+          <span style={{ fontSize:14, fontWeight:700, color: isLightMode ? '#4A2800' : '#F0EDFF' }}>
             {levelConfig?.name || '??关'}
           </span>
-          <span style={{ fontSize:12, fontWeight:500, color:'rgba(240,237,255,0.45)' }}>
+          <span style={{ fontSize:12, fontWeight:500, color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.45)' }}>
             · {levelConfig?.timedMode
               ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时`
               : '教学关'}
@@ -4486,18 +4497,18 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       {hasInterference && (
         <div style={{ 
           borderRadius:12, padding:'10px 14px', 
-          background:`${interference.color}10`, 
-          border:`1px solid ${interference.color}30`, 
+          background: isLightMode ? 'rgba(255,248,225,0.8)' : `${interference.color}10`,
+          border: isLightMode ? `1px solid ${interference.color}40` : `1px solid ${interference.color}30`, 
           marginBottom:12 
         }}>
-          <div style={{ fontSize:13, fontWeight:700, color: interference.color, textAlign:'center', marginBottom:4 }}>
+          <div style={{ fontSize:13, fontWeight:700, color: isLightMode ? '#8B5A00' : interference.color, textAlign:'center', marginBottom:4 }}>
             {interference.emoji} {interference.name}
           </div>
-          <div style={{ fontSize:11, color:'rgba(240,237,255,0.6)', textAlign:'center' }}>
+          <div style={{ fontSize:11, color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.6)', textAlign:'center' }}>
             {interference.desc}
           </div>
           {levelConfig.interferenceCount > 0 && (
-            <div style={{ fontSize:10, color:'rgba(240,237,255,0.4)', textAlign:'center', marginTop:4 }}>
+            <div style={{ fontSize:10, color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.4)', textAlign:'center', marginTop:4 }}>
               本关固定出现 {levelConfig.interferenceCount} 张
             </div>
           )}
@@ -4508,11 +4519,11 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       {levelConfig?.specialRule === 'zone_isolated' && (
         <div style={{ 
           borderRadius:12, padding:'8px 14px', 
-          background:'rgba(108,92,231,0.1)', 
-          border:'1px solid rgba(108,92,231,0.2)', 
+          background: isLightMode ? 'rgba(108,92,231,0.08)' : 'rgba(108,92,231,0.1)',
+          border: isLightMode ? '1px solid rgba(108,92,231,0.25)' : '1px solid rgba(108,92,231,0.2)', 
           marginBottom:12 
         }}>
-          <div style={{ fontSize:11, color:'#A29BFE', textAlign:'center' }}>
+          <div style={{ fontSize:11, color: isLightMode ? '#5A4BD5' : '#A29BFE', textAlign:'center' }}>
             🐾 猫爪五指棋盘 · 各区域独立消除
           </div>
         </div>
@@ -4520,11 +4531,11 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       {levelConfig?.specialRule === 'dual_zone' && (
         <div style={{ 
           borderRadius:12, padding:'8px 14px', 
-          background:'rgba(0,206,201,0.1)', 
-          border:'1px solid rgba(0,206,201,0.2)', 
+          background: isLightMode ? 'rgba(0,206,201,0.06)' : 'rgba(0,206,201,0.1)',
+          border: isLightMode ? '1px solid rgba(0,206,201,0.25)' : '1px solid rgba(0,206,201,0.2)', 
           marginBottom:12 
         }}>
-          <div style={{ fontSize:11, color:'#00CEC9', textAlign:'center' }}>
+          <div style={{ fontSize:11, color: isLightMode ? '#00897B' : '#00CEC9', textAlign:'center' }}>
             🏛️ 波斯双域 · 左右分割独立消除
           </div>
         </div>
@@ -4532,7 +4543,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
 
       {/* Title */}
       <div style={{ textAlign:'center', marginBottom:14 }}>
-        <div style={{ fontSize:20, fontWeight:900, color:'#F0EDFF', letterSpacing:'-0.5px' }}>
+        <div style={{ fontSize:20, fontWeight:900, color: isLightMode ? '#4A2800' : '#F0EDFF', letterSpacing:'-0.5px' }}>
           今日出击阵容
         </div>
       </div>
@@ -4542,7 +4553,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
         <>
           {/* Active skills */}
           <div style={{ width:'100%', marginBottom:14 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#FD9644', marginBottom:8, textAlign:'center' }}>⚔️ 出战席 · 主动技能</div>
+            <div style={{ fontSize:11, fontWeight:700, color: isLightMode ? '#FF7A00' : '#FD9644', marginBottom:8, textAlign:'center' }}>⚔️ 出战席 · 主动技能</div>
             <div style={{ display:'flex', justifyContent:'space-evenly' }}>
               {activeSlots.map((s, i) => {
                 const skill = s.breed ? CAT_SKILLS[s.breed] : null;
@@ -4558,7 +4569,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                           <img src={s.cat.img} alt={s.cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
                             onError={e => { e.target.style.display='none'; }} />
                         </div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.cat.name}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color: isLightMode ? '#4A2800' : '#F0EDFF', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.cat.name}</div>
                         <div style={{ fontSize:8, color: getPersonalityColor(sanitizePersonality(s.cat.personality, s.cat.breedId || s.breed || '橘猫')), marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                           性格：{sanitizePersonality(s.cat.personality, s.cat.breedId || s.breed || '橘猫')}
                         </div>
@@ -4583,7 +4594,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
 
           {/* Passive skills */}
           <div style={{ width:'100%', marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#6C5CE7', marginBottom:8, textAlign:'center' }}>👁️ 观战区 · 被动加成</div>
+            <div style={{ fontSize:11, fontWeight:700, color: isLightMode ? '#5A4BD5' : '#6C5CE7', marginBottom:8, textAlign:'center' }}>👁️ 观战区 · 被动加成</div>
             <div style={{ display:'flex', justifyContent:'space-evenly' }}>
               {passiveSlots.map((s, i) => {
                 const eff = s.breed ? PASSIVE_EFFECTS[s.breed] : null;
@@ -4599,7 +4610,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                           <img src={s.cat.img} alt={s.cat.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
                             onError={e => { e.target.style.display='none'; }} />
                         </div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'#F0EDFF', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.cat.name}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color: isLightMode ? '#4A2800' : '#F0EDFF', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.cat.name}</div>
                         <div style={{ fontSize:8, color: getPersonalityColor(sanitizePersonality(s.cat.personality, s.cat.breedId || s.breed || '橘猫')), marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                           性格：{sanitizePersonality(s.cat.personality, s.cat.breedId || s.breed || '橘猫')}
                         </div>
@@ -4623,26 +4634,43 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
           </div>
         </>
       ) : (
-        <div style={{ textAlign:'center', padding:'20px', background:'rgba(255,255,255,0.03)', borderRadius:14, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <span style={{ fontSize:14, color:'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧！</span>
+        <div style={{ textAlign:'center', padding:'20px', background: isLightMode ? 'rgba(255,248,225,0.5)' : 'rgba(255,255,255,0.03)', borderRadius:14, border: isLightMode ? '1px solid rgba(255,180,80,0.2)' : '1px solid rgba(255,255,255,0.06)' }}>
+          <span style={{ fontSize:14, color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.4)' }}>当前没有猫咪出战，快去领养吧！</span>
         </div>
       )}
 
       {/* Action buttons */}
       <div style={{ display:'flex', gap:10, marginTop:16 }}>
-        <a href="app.html?tab=home" style={{
-          flex:1, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
-          cursor:'pointer', textDecoration:'none',
-          fontSize:13, fontWeight:600, color:'rgba(240,237,255,0.5)',
-        }}>返回</a>
-        <button onClick={onStart} style={{
-          flex:1, height:38, borderRadius:12,
-          background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
-          border:'none', cursor:'pointer',
-          fontSize:13, fontWeight:700, color:'#fff',
-          boxShadow:'0 4px 16px rgba(253,150,68,0.3)',
-        }}>开始</button>
+        {isLightMode ? (
+          <a href="app.html?tab=home" style={{
+            flex:1, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center',
+            background: 'linear-gradient(180deg, #FFD1DC 0%, #FFB8C6 100%)',
+            border: '2px solid #FF8FA3',
+            cursor:'pointer', textDecoration:'none',
+            fontSize:13, fontWeight:700,
+            color: '#8B3A50',
+            boxShadow: '0 4px 0 #E6A0B0, 0 2px 8px rgba(255,143,163,0.25)',
+          }}>返回</a>
+        ) : (
+          <button onClick={() => window.location.href = 'app.html?tab=home'} className="flow-btn flow-send" style={{ flex:1 }}>
+            <span className="inner">返回</span>
+          </button>
+        )}
+        {isLightMode ? (
+          <button onClick={onStart} style={{
+            flex:1, height:38, borderRadius:12,
+            background: 'linear-gradient(180deg, #FFE8A1 0%, #FFD979 100%)',
+            border: '2px solid #FFBB54',
+            cursor:'pointer',
+            fontSize:13, fontWeight:700,
+            color: '#AA5A2A',
+            boxShadow: '0 4px 0 #E6B050, 0 2px 8px rgba(255,180,50,0.25)',
+          }}>开始</button>
+        ) : (
+          <button onClick={onStart} className="flow-btn flow-play" style={{ flex:1 }}>
+            <span className="inner">开始</span>
+          </button>
+        )}
       </div>
       </div>
     </div>
