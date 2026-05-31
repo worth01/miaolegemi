@@ -4361,7 +4361,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
                   🔄 再来一次
                 </button>
               )}
-              <a href="app.html" style={{
+              <a href="index.html" style={{
                 flex: 1, height: 48, borderRadius: 14,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(255,255,255,0.08)',
@@ -4384,7 +4384,7 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
         ) : (
           /* 挑战成功：返回大厅 + 下一关 */
           <div style={{ display: 'flex', gap: 7 }}>
-            <a href="app.html" style={{
+            <a href="index.html" style={{
               flex: 1, height: 48, borderRadius: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: 'rgba(255,255,255,0.08)',
@@ -4578,7 +4578,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                         </div>
                       </>
                     ) : (
-                      <div onClick={() => window.location.href = 'app.html?tab=battle'} style={{
+                      <div onClick={() => window.location.href = 'index.html?tab=battle'} style={{
                         width:56, height:56, borderRadius:'50%', margin:'0 auto 5',
                         border:'2px dashed rgba(253,150,68,0.4)', display:'flex', alignItems:'center', justifyContent:'center',
                         fontSize:18, color:'rgba(253,150,68,0.5)', cursor:'pointer',
@@ -4619,7 +4619,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
                         </div>
                       </>
                     ) : (
-                      <div onClick={() => window.location.href = 'app.html?tab=battle'} style={{
+                      <div onClick={() => window.location.href = 'index.html?tab=battle'} style={{
                         width:56, height:56, borderRadius:'50%', margin:'0 auto 5',
                         border:'2px dashed rgba(108,92,231,0.4)', display:'flex', alignItems:'center', justifyContent:'center',
                         fontSize:18, color:'rgba(108,92,231,0.5)', cursor:'pointer',
@@ -4642,7 +4642,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
       {/* Action buttons */}
       <div style={{ display:'flex', gap:10, marginTop:16 }}>
         {isLightMode ? (
-          <a href="app.html?tab=home" style={{
+          <a href="index.html?tab=home" style={{
             flex:1, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center',
             background: 'linear-gradient(180deg, #FFD1DC 0%, #FFB8C6 100%)',
             border: '2px solid #FF8FA3',
@@ -4652,7 +4652,7 @@ function BattlePrep({ cats, skillSlots, onStart, levelConfig, onChangeLevel, cur
             boxShadow: '0 4px 0 #E6A0B0, 0 2px 8px rgba(255,143,163,0.25)',
           }}>返回</a>
         ) : (
-          <button onClick={() => window.location.href = 'app.html?tab=home'} className="flow-btn flow-send" style={{ flex:1 }}>
+          <button onClick={() => window.location.href = 'index.html?tab=home'} className="flow-btn flow-send" style={{ flex:1 }}>
             <span className="inner">返回</span>
           </button>
         )}
@@ -4809,7 +4809,7 @@ function LevelSelect({ onSelectLevel, onBack }) {
         </div>
 
         {/* 返回按钮 */}
-        <a href="app.html" style={{
+        <a href="index.html" style={{
           display:'block',
           height:44, borderRadius:14,
           background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
@@ -6817,7 +6817,7 @@ function Game() {
       {/* {phase === 'levelSelect' && (
         <LevelSelect
           onSelectLevel={handleLevelSelect}
-          onBack={() => window.location.href = 'app.html'}
+          onBack={() => window.location.href = 'index.html'}
         />
       )} */}
 
@@ -6874,7 +6874,7 @@ function Game() {
         onExtraRestart={handleExtraRestart}
         onBack={() => window.location.href = '主页大厅.html'}
         onNextLevel={handleNextLevel}
-        onGoHome={() => window.location.href = 'app.html'}
+        onGoHome={() => window.location.href = 'index.html'}
         canRetry={canRetry}
         retryAttemptsUsed={retryAttemptsUsed}
         inviteRewardToast={inviteRewardToast}
@@ -6899,7 +6899,7 @@ function Game() {
           position: 'relative', zIndex: 3,
           gap: 4,
         }}>
-          <a href="app.html" style={{
+          <a href="index.html" style={{
             display: 'flex', alignItems: 'center', gap: 2,
             textDecoration: 'none', color: 'rgba(240,237,255,0.7)', fontSize: 10, fontWeight: 500,
             padding: '3px 8px', lineHeight: 1.2,
