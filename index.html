@@ -1648,6 +1648,37 @@ function loadSavedTitle() {
   return '新手铲屎官';
 }
 
+// 将服务器返回的状态写入 localStorage 作为离线缓存
+function saveStateOnlineCache(state) {
+  try {
+    const data = {
+      cats: state.cats ? state.cats.map(c => ({
+        serialId: c.id, breedSerial: c.breedSerial || 0,
+        breedId: c.breedId, name: c.breedId, rarity: c.rarity,
+        img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+        desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+        personality: c.personality, location: c.location,
+        bagExpiresAt: c.bagExpiresAt, acquiredAt: c.acquiredAt,
+        lastFedAt: c.lastFedAt, daysAlive: c.daysAlive || 0,
+        gamesWitnessed: c.gamesWitnessed || 0, bestCombo: c.bestCombo || 0,
+        fishSpent: c.fishSpent || 0, intimacy: c.intimacy || 0,
+        isGenesis: (c.breedSerial || 0) <= 10,
+        battleSlot: c.slotPosition, releasedAt: c.releasedAt,
+        coolingUntil: c.coolingUntil,
+      })) : [],
+      bells: state.bells || 3,
+      activeTitle: state.activeTitle || '新手铲屎官',
+      globalSerialId: state.gameData?.globalSerialId || 1,
+      fishLedger: state.gameData?.fishLedger || [],
+      breedSerialCounters: state.gameData?.breedSerialCounters || {},
+      coolingPool: state.gameData?.coolingPool || {},
+      homeMaxSlots: state.gameData?.homeMaxSlots || 3,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
 function saveState(cats, bells, activeTitle, extra) {
   try {
     const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -6765,66 +6796,85 @@ function App() {
   // Auth: check token on mount (with 5s timeout)
   useEffect(() => {
     const initAuth = async () => {
-      // 创建独立的超时 Promise，避免复用导致 unhandled rejection
-      const createTimeout = (ms) => new Promise((_, reject) => 
+      const createTimeout = (ms) => new Promise((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), ms)
       );
       try {
         if (MiaolegemiAPI.isLoggedIn()) {
           try {
-            const profile = await Promise.race([
-              MiaolegemiAPI.getProfile(),
-              createTimeout(5000)
+            // 从服务器加载完整游戏状态
+            const state = await Promise.race([
+              MiaolegemiAPI.getState(),
+              createTimeout(8000)
             ]);
-            setUser(profile);
-            setBells(profile.bells);
+            setUser({
+              id: state.userId, username: state.username,
+              nickname: state.nickname, bells: state.bells,
+            });
+            setBells(state.bells);
+            setPityCount(state.pityCount);
+            setActiveTitle(state.activeTitle);
             setIsLocalMode(false);
-            // Load cats from API
-            const apiCats = await Promise.race([
-              MiaolegemiAPI.getCats(),
-              createTimeout(5000)
-            ]);
-            if (apiCats.length > 0) {
-              const mapped = apiCats.map(c => ({
-                serialId: c.id, breedSerial: c.cat_serial_registry?.serialNumber || 0,
-                breedId: c.cat_serial_registry?.cat_species?.name || '橘猫', name: c.cat_serial_registry?.cat_species?.name || '橘猫',
-                rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
-                img: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).img,
-                desc: (BREEDS.find(b => b.id === (c.cat_serial_registry?.cat_species?.name)) || BREEDS[0]).desc,
-                personality: sanitizePersonality(c.personality, c.cat_serial_registry?.cat_species?.name || '橘猫'),
-                status: computeCatStatus({ location: c.location, lastFedAt: c.lastFedAt }),
-                location: c.location, createdAt: new Date(c.createdAt).getTime(),
+            // 加载猫
+            if (state.cats && state.cats.length > 0) {
+              const mapped = state.cats.map(c => ({
+                serialId: c.id, breedSerial: c.breedSerial || 0,
+                breedId: c.breedId, name: c.breedId, rarity: c.rarity,
+                img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+                desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+                personality: sanitizePersonality(c.personality, c.breedId),
+                location: c.location,
                 bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
-                adoptedAt: c.adoptedAt ? new Date(c.adoptedAt).getTime() : null,
-                expiresAt: c.expiresAt ? new Date(c.expiresAt).getTime() : null,
+                acquiredAt: c.acquiredAt ? new Date(c.acquiredAt).getTime() : null,
                 lastFedAt: c.lastFedAt ? new Date(c.lastFedAt).getTime() : null,
                 daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
-                bestCombo: c.bestCombo || 0, witnessMaxScore: c.witnessMaxScore || 0,
-                witnessTotalScore: c.witnessTotalScore || 0, fishSpent: c.fishSpent || 0,
-                isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
+                bestCombo: c.bestCombo || 0, fishSpent: c.fishSpent || 0,
+                intimacy: c.intimacy || 0,
+                isGenesis: (c.breedSerial || 0) <= 10,
                 battleSlot: c.slotPosition,
-                previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
+                coolingUntil: c.coolingUntil ? new Date(c.coolingUntil).getTime() : null,
                 _apiId: c.id, _serialId: c.serialId,
               }));
               setCats(mapped);
             }
+            // 恢复 gameData
+            if (state.gameData) {
+              const gd = state.gameData;
+              if (gd.fishLedger) fishLedger = gd.fishLedger;
+              if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
+              if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+              if (gd.coolingPool) coolingPool = gd.coolingPool;
+              if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
+              if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
+              if (gd.groupStageScores) setGroupStageScores(gd.groupStageScores);
+              if (gd.groupStageBellsClaimed) setGroupStageBellsClaimed(gd.groupStageBellsClaimed);
+              if (gd.knockoutConsecutiveClears !== undefined) setKnockoutConsecutiveClears(gd.knockoutConsecutiveClears);
+              if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
+              if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
+              if (gd.bets) setBets(gd.bets);
+              if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+            }
+            // 保存到 localStorage 作为离线缓存
+            saveStateOnlineCache(state);
           } catch (e) {
             if (e.message !== 'timeout') {
               MiaolegemiAPI.clearToken();
             }
+            // 服务器不可达，回退到 localStorage
+            setCats(loadState());
           }
         }
       } catch (e) {
         console.warn('Auth check failed, using local mode');
       } finally {
-        // 如果没有在线用户，检查本地存储是否有数据
-        const saved = localStorage.getItem('miaolegemi_p0_v1');
-        const localData = saved ? JSON.parse(saved) : null;
-        if (!user && localData && localData.cats && localData.cats.length > 0) {
-          // 有本地数据，自动进入离线模式
-          setUser({ id: 'local', username: '本地用户', nickname: '铲屎官', bells: localData.bells || 3 });
-          setIsLocalMode(true);
+        if (!user) {
+          const saved = localStorage.getItem('miaolegemi_p0_v1');
+          const localData = saved ? JSON.parse(saved) : null;
+          if (localData && localData.cats && localData.cats.length > 0) {
+            setUser({ id: 'local', username: '本地用户', nickname: '铲屎官', bells: localData.bells || 3 });
+            setIsLocalMode(true);
+          }
         }
         setAuthChecked(true);
       }
@@ -6857,6 +6907,45 @@ function App() {
       setBells(userData.bells || 3);
       setGuestMode(false);
       clearGuestMode();
+      // 从服务器拉取完整游戏数据
+      (async () => {
+        try {
+          const state = await MiaolegemiAPI.getState();
+          if (state.cats && state.cats.length > 0) {
+            const mapped = state.cats.map(c => ({
+              serialId: c.id, breedSerial: c.breedSerial || 0,
+              breedId: c.breedId, name: c.breedId, rarity: c.rarity,
+              img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+              desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+              personality: sanitizePersonality(c.personality, c.breedId),
+              location: c.location,
+              bagExpiresAt: c.bagExpiresAt, acquiredAt: c.acquiredAt,
+              lastFedAt: c.lastFedAt, daysAlive: c.daysAlive || 0,
+              gamesWitnessed: c.gamesWitnessed || 0, bestCombo: c.bestCombo || 0,
+              fishSpent: c.fishSpent || 0, intimacy: c.intimacy || 0,
+              isGenesis: (c.breedSerial || 0) <= 10,
+              battleSlot: c.slotPosition, releasedAt: c.releasedAt,
+              coolingUntil: c.coolingUntil,
+              _apiId: c.id, _serialId: c.serialId,
+            }));
+            setCats(mapped);
+          }
+          setBells(state.bells || 3);
+          setActiveTitle(state.activeTitle || '新手铲屎官');
+          setPityCount(state.pityCount || 0);
+          if (state.gameData) {
+            const gd = state.gameData;
+            if (gd.fishLedger) fishLedger = gd.fishLedger;
+            if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
+            if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+            if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
+            if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
+          }
+          saveStateOnlineCache(state);
+        } catch(e) {
+          // 服务器不可达，使用本地数据
+        }
+      })();
     }
   };
 
@@ -6954,9 +7043,19 @@ function App() {
     setShowLogoutConfirm(false);
     MiaolegemiAPI.logout();
     setUser(null);
-    setIsLocalMode(false);
-    setCats(loadState);
+    setIsLocalMode(true);
+    // 清除本地游戏数据，下一个用户从零开始
+    localStorage.removeItem(STORAGE_KEY);
+    // 重置全局状态
+    fishLedger = [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }];
+    globalSerialId = 1;
+    breedSerialCounters = {};
+    coolingPool = {};
+    // 种子初始猫
+    setCats(seedInitialCats());
     setBells(3);
+    setActiveTitle('新手铲屎官');
+    setPityCount(0);
   };
 
   // Info modals
@@ -7286,14 +7385,35 @@ function App() {
     prevTitlesRef.current = currentTitles;
   }, [totalAdopted, cats]);
 
-  // Save state (local mode only)
+  // Save state — 始终存 localStorage 作为缓存
+  let _syncTimer = null;
   useEffect(() => {
-    if (isLocalMode) saveState(cats, bells, activeTitle, {
+    saveState(cats, bells, activeTitle, {
       ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed,
       knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed,
-      finalTitleAwarded, bets,
+      finalTitleAwarded, bets, pityCount,
     });
-  }, [cats, bells, activeTitle, isLocalMode, ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, finalTitleAwarded, bets]);
+    // 在线时同步到服务器（防抖 5 秒）
+    if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+      if (_syncTimer) clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(async () => {
+        try {
+          const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          await MiaolegemiAPI.syncState({
+            bells, activeTitle, pityCount,
+            gameData: {
+              fishLedger, globalSerialId, breedSerialCounters, coolingPool,
+              homeMaxSlots, ownedSkins, equippedSkins,
+              groupStageScores, groupStageBellsClaimed,
+              knockoutConsecutiveClears, knockoutEliminatedToday,
+              knockoutSkinClaimed, finalTitleAwarded, bets,
+              savedAt: Date.now(),
+            }
+          });
+        } catch(e) {}
+      }, 5000);
+    }
+  }, [cats, bells, activeTitle, isLocalMode, pityCount, ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, finalTitleAwarded, bets]);
 
   // Handle feeding - P2: 亲密度系统
   const handleFeed = useCallback(async (cat) => {

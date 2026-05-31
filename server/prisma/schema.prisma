@@ -129,6 +129,9 @@ model users {
   password                                                      String
   nickname                                                      String
   pityCount                                                     Int                   @default(0)
+  bells                                                         Int                   @default(3)
+  activeTitle                                                   String                @default("新手铲屎官")
+  gameData                                                      Json?
   createdAt                                                     DateTime              @default(now())
   updatedAt                                                     DateTime              @default(now()) @updatedAt
   cat_lineage                                                   cat_lineage[]

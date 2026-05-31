@@ -158,4 +158,83 @@ router.get('/fish-history', authMiddleware, async (req, res) => {
   }
 });
 
+// 获取完整游戏状态（猫 + 铃铛 + gameData）
+router.get('/state', authMiddleware, async (req: any, res) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        player_cats: {
+          include: {
+            cat_serial_registry: {
+              include: { cat_species: true }
+            }
+          }
+        }
+      }
+    });
+    if (!user) return res.status(404).json({ error: '用户不存在' });
+
+    res.json({
+      userId: user.id,
+      username: user.username,
+      nickname: user.nickname,
+      bells: user.bells,
+      pityCount: user.pityCount,
+      activeTitle: user.activeTitle,
+      gameData: user.gameData,
+      cats: user.player_cats.map(c => ({
+        id: c.id,
+        serialId: c.serialId,
+        location: c.location,
+        slotPosition: c.slotPosition,
+        bagExpiresAt: c.bagExpiresAt,
+        acquiredAt: c.acquiredAt,
+        personality: c.personality,
+        intimacy: c.intimacy,
+        lastFedAt: c.lastFedAt,
+        gamesWitnessed: c.gamesWitnessed,
+        bestCombo: c.bestCombo,
+        fishSpent: c.fishSpent,
+        daysAlive: c.daysAlive,
+        releasedAt: c.releasedAt,
+        coolingUntil: c.coolingUntil,
+        breedSerial: c.cat_serial_registry?.serialNumber || 0,
+        breedId: c.cat_serial_registry?.cat_species?.name || '橘猫',
+        rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
+        img: c.cat_serial_registry?.cat_species?.name ? `cat/${c.cat_serial_registry.cat_species.name}.png` : '',
+      }))
+    });
+  } catch (error: any) {
+    console.error('Get state error:', error);
+    res.status(500).json({ error: '获取游戏状态失败' });
+  }
+});
+
+// 同步非猫数据到服务器
+router.post('/sync', authMiddleware, async (req: any, res) => {
+  try {
+    const { bells, activeTitle, pityCount, gameData } = req.body;
+
+    const user = await prisma.users.update({
+      where: { id: req.user.userId },
+      data: {
+        ...(bells !== undefined ? { bells } : {}),
+        ...(activeTitle !== undefined ? { activeTitle } : {}),
+        ...(pityCount !== undefined ? { pityCount } : {}),
+        ...(gameData !== undefined ? { gameData } : {}),
+      }
+    });
+
+    res.json({
+      success: true,
+      serverBells: user.bells,
+      serverPityCount: user.pityCount,
+    });
+  } catch (error: any) {
+    console.error('Sync state error:', error);
+    res.status(500).json({ error: '同步游戏状态失败' });
+  }
+});
+
 export default router;

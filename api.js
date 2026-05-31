@@ -363,6 +363,26 @@ const MiaolegemiAPI = {
     return request(`/user/fish-history?limit=${limit}&offset=${offset}`);
   },
 
+  /**
+   * 获取完整游戏状态（猫 + 铃铛 + gameData）
+   * @returns {Promise<{cats: Array, bells: number, activeTitle: string, gameData: object}>}
+   */
+  getState: async () => {
+    return request('/user/state');
+  },
+
+  /**
+   * 同步游戏状态到服务器
+   * @param {object} state - { bells, activeTitle, pityCount, gameData }
+   * @returns {Promise<{success: boolean}>}
+   */
+  syncState: async (state) => {
+    return request('/user/sync', {
+      method: 'POST',
+      body: JSON.stringify(state)
+    });
+  },
+
   // ═══════════════════════════════════════
   // 通用请求方法
   // ═══════════════════════════════════════
