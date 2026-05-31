@@ -22,9 +22,7 @@ const PORT = 3001;
 
 // 中间件
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://your-domain.com'
-    : true, // 开发环境允许所有来源（手机通过局域网IP访问需要）
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
