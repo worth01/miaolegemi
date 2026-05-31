@@ -210,18 +210,49 @@ router.put('/nickname', authMiddleware, async (req, res) => {
   try {
     const { nickname } = req.body;
 
-    if (!nickname || nickname.length < 2 || nickname.length > 10) {
+    if (!nickname || typeof nickname !== 'string') {
+      return res.status(400).json({ error: '请输入昵称' });
+    }
+
+    // 特殊字符验证：只允许中文、字母、数字、下划线
+    if (!/^[一-鿿㐀-䶿a-zA-Z0-9_]+$/.test(nickname)) {
+      return res.status(400).json({ error: '昵称只能包含中文、字母、数字和下划线' });
+    }
+
+    if (nickname.length < 2 || nickname.length > 10) {
       return res.status(400).json({ error: '昵称长度需在2-10字符之间' });
+    }
+
+    // 检查当前用户
+    const currentUser = await prisma.users.findUnique({
+      where: { id: req.user!.userId },
+      select: { nickname: true, lastNicknameChange: true }
+    });
+    if (!currentUser) return res.status(404).json({ error: '用户不存在' });
+
+    // 检查昵称是否被占用
+    if (nickname !== currentUser.nickname) {
+      const existing = await prisma.users.findFirst({
+        where: { nickname, id: { not: req.user!.userId } }
+      });
+      if (existing) {
+        return res.status(409).json({ error: '该名称已经被占用，请重新输入' });
+      }
+
+      // 1个月限制
+      if (currentUser.lastNicknameChange) {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        if (new Date(currentUser.lastNicknameChange) > oneMonthAgo) {
+          return res.status(429).json({ error: '1个月内仅支持修改一次昵称，请稍后再试' });
+        }
+      }
     }
 
     const user = await prisma.users.update({
       where: { id: req.user!.userId },
-      data: { nickname },
-      select: {
-        id: true,
-        username: true,
-        nickname: true
-      }
+      data: { nickname, lastNicknameChange: new Date() },
+      select: { id: true, username: true, nickname: true }
     });
 
     res.json({ message: '昵称更新成功', user });

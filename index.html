@@ -5125,6 +5125,64 @@ function GachaPage({ bells, pityCount, onGacha, cats, onCardClick }) {
 /* ═══════════════════════════════════════
    PROFILE PAGE (Tab 4)
    ═══════════════════════════════════════ */
+function NicknameEditBtn({ currentNickname }) {
+  const [show, setShow] = useState(false);
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const open = () => { setShow(true); setValue(currentNickname || ''); setError(''); };
+  const close = () => { setShow(false); setError(''); };
+
+  const handleSave = async () => {
+    const v = value.trim();
+    if (!v || v.length < 2 || v.length > 10) { setError('昵称长度需在2-10字符之间'); return; }
+    if (!/^[一-鿿㐀-䶿a-zA-Z0-9_]+$/.test(v)) { setError('昵称只能包含中文、字母、数字和下划线'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await MiaolegemiAPI.updateNickname(v);
+      if (res.error) {
+        setError(res.error);
+      } else {
+        close();
+        MiaolegemiAPI.logout();
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('miaolegemi_friend_auth');
+        window.location.reload();
+      }
+    } catch(e) {
+      setError('修改失败，请重试');
+    }
+    setLoading(false);
+  };
+
+  if (!show) {
+    return (
+      <span onClick={open} style={{ cursor:'pointer', fontSize:10, color:colors.purpleLight, padding:'2px 6px', borderRadius:4, background:'rgba(108,92,231,0.15)', whiteSpace:'nowrap' }}>
+        ✏️ 编辑
+      </span>
+    );
+  }
+
+  return (
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:100 }} onClick={close}>
+      <div onClick={e => e.stopPropagation()} style={{ width:280, background:colors.card, borderRadius:20, padding:'24px 20px', border:`1px solid ${colors.cardBorder}`, animation:'slideUp 0.3s ease-out' }}>
+        <div style={{ fontSize:15, fontWeight:700, color:colors.ink, marginBottom:16, textAlign:'center' }}>修改用户昵称</div>
+        <input value={value} onChange={e => setValue(e.target.value)} placeholder="请输入新昵称" maxLength={10} autoFocus
+          style={{ width:'100%', height:40, borderRadius:10, border:`1px solid ${error ? 'rgba(255,107,107,0.5)' : colors.cardBorder}`, background:colors.bg2, color:colors.ink, fontSize:14, fontWeight:500, padding:'0 14px', outline:'none', textAlign:'center' }}
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+        />
+        {error && <div style={{ fontSize:10, color:colors.red, marginTop:6, textAlign:'center' }}>{error}</div>}
+        <div style={{ display:'flex', gap:10, marginTop:16 }}>
+          <button onClick={close} disabled={loading} style={{ flex:1, height:38, borderRadius:12, border:`1px solid ${colors.cardBorder}`, background:'transparent', cursor:'pointer', fontSize:13, fontWeight:600, color:colors.sub }}>取消</button>
+          <button onClick={handleSave} disabled={loading} style={{ flex:1, height:38, borderRadius:12, border:'none', background:'linear-gradient(135deg, #6C5CE7, #A29BFE)', cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>{loading ? '处理中...' : '确定'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage({ cats, fish, bells, activeTitle, onEquipTitle, maxSlots, baseSlots, slot4Unlocked, slot5Unlocked, slot6Unlocked, totalAdopted, user, isLocalMode, guestMode, onLogout, onLogin, onViewPrivacy, onViewAgreement, onMemorialClick }) {
 
 const nurturing = cats.filter(c => c.location === 'home');
@@ -5156,7 +5214,10 @@ const nurturing = cats.filter(c => c.location === 'home');
       <div style={{ padding:'12px 20px', display:'flex', alignItems:'center', gap:12 }}>
         <div className={colors === CL ? '' : 'profile-avatar-dark'} style={{ width:52, height:52, borderRadius:'50%', background:'linear-gradient(135deg, #FFEAA7, #FD9644)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>🐱</div>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:16, fontWeight:800, color:colors.ink, textShadow: colors === CL ? undefined : '0 0 10px rgba(0,240,255,0.3)' }}>{user?.nickname || '铲屎官'}</div>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ fontSize:16, fontWeight:800, color:colors.ink, textShadow: colors === CL ? undefined : '0 0 10px rgba(0,240,255,0.3)' }}>{user?.nickname || '铲屎官'}</div>
+            {!isLocalMode && !guestMode && <NicknameEditBtn currentNickname={user?.nickname} />}
+          </div>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
             <span className={colors === CL ? '' : 'profile-title-active-dark'} style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:6, background:'rgba(108,92,231,0.2)', color:colors.purpleLight }}>{activeTitle || '无称号'}</span>
             {!isLocalMode && !guestMode && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:6, background:'rgba(0,184,148,0.15)', color:colors.green, boxShadow: colors === CL ? undefined : '0 0 6px rgba(0,184,148,0.3)' }}>在线</span>}
