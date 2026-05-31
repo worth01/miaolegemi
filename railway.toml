@@ -1,0 +1,2 @@
+[deploy]
+  startCommand = "cd server && node test-server.js"

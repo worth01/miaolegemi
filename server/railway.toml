@@ -1,2 +1,0 @@
-[deploy]
-  startCommand = "node test-server.js"
