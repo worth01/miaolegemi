@@ -1576,10 +1576,7 @@ function seedInitialCats() {
 
 // Track fish ledger
 let fishLedger = [
-  { type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() - 30*86400000 },
-  { type: 'earn', amount: 50, desc: '签到奖励', time: Date.now() - 22*86400000 },
-  { type: 'earn', amount: 18, desc: '消消乐结算', time: Date.now() - 1*86400000 },
-  { type: 'spend', amount: 22, desc: '橘猫喂食消耗', time: Date.now() - 1*86400000 },
+  { type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() },
 ];
 
 function getFishBalance() {
@@ -6981,7 +6978,7 @@ function App() {
       setKnockoutSkinClaimed(false);
       setBets([]);
       setHomeMaxSlots(3);
-      fishLedger = [];
+      fishLedger = [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }];
       globalSerialId = 1;
       breedSerialCounters = {};
       coolingPool = {};
