@@ -1,0 +1,10 @@
+{
+  "name": "miaolegemi",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node test-server.js"
+  }
+}
