@@ -6907,6 +6907,23 @@ function App() {
       setBells(userData.bells || 3);
       setGuestMode(false);
       clearGuestMode();
+      // 先重置所有状态为空，清掉上一个用户的本地数据
+      setCats([]);
+      setActiveTitle('新手铲屎官');
+      setPityCount(0);
+      setOwnedSkins([]);
+      setEquippedSkins({});
+      setGroupStageScores({});
+      setGroupStageBellsClaimed([]);
+      setKnockoutConsecutiveClears(0);
+      setKnockoutEliminatedToday(false);
+      setKnockoutSkinClaimed(false);
+      setBets([]);
+      setHomeMaxSlots(3);
+      fishLedger = [];
+      globalSerialId = 1;
+      breedSerialCounters = {};
+      coolingPool = {};
       // 从服务器拉取完整游戏数据
       (async () => {
         try {
@@ -6938,8 +6955,16 @@ function App() {
             if (gd.fishLedger) fishLedger = gd.fishLedger;
             if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
             if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+            if (gd.coolingPool) coolingPool = gd.coolingPool;
             if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
             if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
+            if (gd.groupStageScores) setGroupStageScores(gd.groupStageScores);
+            if (gd.groupStageBellsClaimed) setGroupStageBellsClaimed(gd.groupStageBellsClaimed);
+            if (gd.knockoutConsecutiveClears !== undefined) setKnockoutConsecutiveClears(gd.knockoutConsecutiveClears);
+            if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
+            if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
+            if (gd.bets) setBets(gd.bets);
+            if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
           }
           saveStateOnlineCache(state);
         } catch(e) {
