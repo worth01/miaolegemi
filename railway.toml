@@ -2,4 +2,4 @@
   buildCommand = "cd server && npm install && npx prisma generate"
 
 [deploy]
-  startCommand = "cd server && npx tsx src/index.ts"
+  startCommand = "cd server && npx prisma migrate deploy && npx tsx src/index.ts"
