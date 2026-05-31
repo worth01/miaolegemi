@@ -1,2 +1,2 @@
 [deploy]
-  startCommand = "npm start"
+  startCommand = "cd server && npm install && npx prisma generate && npx tsx src/index.ts"
