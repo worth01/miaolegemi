@@ -2267,7 +2267,7 @@ const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
         <div style={{ width:140, height:140, borderRadius:'50%', margin:'0 auto', background:'rgba(255,255,255,0.03)', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <span style={{ fontSize:48, opacity:0.3 }}>🐱</span>
         </div>
-        <div style={{ fontSize:13, color:colors.muted, marginTop:8 }}>还没有猫咪，去抽卡吧</div>
+        <div style={{ fontSize:13, color:colors.muted, marginTop:8 }}>还没有猫咪，去<span onClick={() => onNavigate('market', null, 'gacha')} style={{ color:colors.orange, cursor:'pointer', textDecoration:'underline', fontWeight:700 }}>抽卡</span>吧</div>
       </div>
     );
   }
