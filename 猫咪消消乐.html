@@ -6901,29 +6901,30 @@ function Game() {
           }} />
           <div style={{
             position:'absolute', inset:0,
-            background:'rgba(0,0,0,0.4)',
+            background: isLightMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)',
           }} />
           <div style={{
             position:'relative', zIndex:1,
-            background:'rgba(22,12,44,0.95)', borderRadius:24,
-            padding:'32px 24px', textAlign:'center',
-            border:'2px solid rgba(0,229,255,0.5)',
-            boxShadow:'0 0 20px rgba(0,229,255,0.3), 0 0 40px rgba(0,153,255,0.15)',
+            background: isLightMode ? 'rgba(255,248,225,0.97)' : 'rgba(22,12,44,0.95)',
+            borderRadius:24, padding:'32px 24px', textAlign:'center',
+            border: isLightMode ? '2px solid rgba(253,150,68,0.5)' : '2px solid rgba(0,229,255,0.5)',
+            boxShadow: isLightMode ? '0 4px 20px rgba(180,120,40,0.15)' : '0 0 20px rgba(0,229,255,0.3), 0 0 40px rgba(0,153,255,0.15)',
             animation:'slideUp 0.4s ease-out',
             maxWidth:300,
           }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
-            <div style={{ fontSize:18, fontWeight:800, color:'#F0EDFF', marginBottom:8 }}>
+            <div style={{ fontSize:18, fontWeight:800, color: isLightMode ? '#4A2800' : '#F0EDFF', marginBottom:8 }}>
               今日挑战已完成
             </div>
-            <div style={{ fontSize:13, color:'rgba(240,237,255,0.5)', marginBottom:20 }}>
+            <div style={{ fontSize:13, color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.5)', marginBottom:20 }}>
               你已通关全部 30 关，明天再来挑战吧！
             </div>
             <button onClick={() => window.location.href = 'index.html'} style={{
               width:'100%', height:42, borderRadius:12,
-              background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
-              border:'none', cursor:'pointer',
-              fontSize:15, fontWeight:700, color:'#fff',
+              background: isLightMode ? 'linear-gradient(180deg, #FFE8A1 0%, #FFD979 100%)' : 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+              border: isLightMode ? '2px solid #FFBB54' : 'none',
+              cursor:'pointer', fontSize:15, fontWeight:700,
+              color: isLightMode ? '#AA5A2A' : '#fff',
             }}>返回大厅</button>
           </div>
         </div>
