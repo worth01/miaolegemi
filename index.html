@@ -7069,8 +7069,9 @@ function App() {
     MiaolegemiAPI.logout();
     setUser(null);
     setIsLocalMode(true);
-    // 清除本地游戏数据，下一个用户从零开始
+    // 清除本地数据，下一个用户从零开始
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('miaolegemi_friend_auth');
     // 重置全局状态
     fishLedger = [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }];
     globalSerialId = 1;
