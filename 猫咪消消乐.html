@@ -1003,7 +1003,7 @@ const INTERFERENCE_TYPES = {
     effect: 'slot_block',  // 进入收集槽后占据槽位但不参与消除
     desc: '进入收集槽后无法被消除',
     card_id: 'interfere_groom_001',
-    img: '/assets/Textures/GroomCard.png',
+    img: 'assets/Textures/GroomCard.png',
   },
   freeze: {             // 冰冻牌 - 冻结收集槽前N格（N由关卡配置freeze_grid_count决定，默认1）
     id: 'freeze',
@@ -1013,7 +1013,7 @@ const INTERFERENCE_TYPES = {
     effect: 'freeze_grid',  // 冻结收集槽前N格
     desc: '冰冻牌冻结收集槽第一格，无法消除',
     card_id: 'interfere_freeze_001',
-    img: '/assets/Textures/FreezeCard.png',
+    img: 'assets/Textures/FreezeCard.png',
   },
   sticky: {             // 粘连牌 - 点击时连带相邻1张
     id: 'sticky',
@@ -1658,32 +1658,32 @@ function getColsForRow(row) {
 }
 
 const CAT_TYPES = [
-  { id: '猫爪印', img: './assets/Textures/card/猫爪印.b64', color: '#FD9644' },
-  { id: '猫薄荷', img: './assets/Textures/card/猫薄荷.b64', color: '#55EFC4' },
-  { id: '毛线球', img: './assets/Textures/card/毛线球.b64', color: '#FDCB6E' },
-  { id: '猫罐头', img: './assets/Textures/card/猫罐头.b64', color: '#74B9FF' },
-  { id: '猫爬架', img: './assets/Textures/card/猫爬架.b64', color: '#A29BFE' },
-  { id: '逗猫棒', img: './assets/Textures/card/逗猫棒.b64', color: '#FD79A8' },
-  { id: '猫铃铛', img: './assets/Textures/card/猫铃铛.b64', color: '#6C5CE7' },
-  { id: '猫条',   img: './assets/Textures/card/猫条.b64',   color: '#E17055' },
-  { id: '蝴蝶结', img: './assets/Textures/card/蝴蝶结.b64', color: '#DFE6E9' },
-  { id: '猫粮碗', img: './assets/Textures/card/猫粮碗.b64', color: '#F39C12' },
-  { id: '饮水机', img: './assets/Textures/card/饮水机.b64', color: '#3498DB' },
-  { id: '储存桶', img: './assets/Textures/card/储存桶.b64', color: '#27AE60' },
-  { id: '猫砂盆', img: './assets/Textures/card/猫砂盆.b64', color: '#D4A574' },
-  { id: '宠物梳子', img: './assets/Textures/card/宠物梳子.b64', color: '#E67E22' },
-  { id: '猫抓板', img: './assets/Textures/card/猫抓板.b64', color: '#C0392B' },
-  { id: '玩具鼠', img: './assets/Textures/card/玩具鼠.b64', color: '#8E44AD' },
-  { id: '猫窝',   img: './assets/Textures/card/猫窝.b64',   color: '#1ABC9C' },
+  { id: '猫爪印', img: '.assets/Textures/card/猫爪印.b64', color: '#FD9644' },
+  { id: '猫薄荷', img: '.assets/Textures/card/猫薄荷.b64', color: '#55EFC4' },
+  { id: '毛线球', img: '.assets/Textures/card/毛线球.b64', color: '#FDCB6E' },
+  { id: '猫罐头', img: '.assets/Textures/card/猫罐头.b64', color: '#74B9FF' },
+  { id: '猫爬架', img: '.assets/Textures/card/猫爬架.b64', color: '#A29BFE' },
+  { id: '逗猫棒', img: '.assets/Textures/card/逗猫棒.b64', color: '#FD79A8' },
+  { id: '猫铃铛', img: '.assets/Textures/card/猫铃铛.b64', color: '#6C5CE7' },
+  { id: '猫条',   img: '.assets/Textures/card/猫条.b64',   color: '#E17055' },
+  { id: '蝴蝶结', img: '.assets/Textures/card/蝴蝶结.b64', color: '#DFE6E9' },
+  { id: '猫粮碗', img: '.assets/Textures/card/猫粮碗.b64', color: '#F39C12' },
+  { id: '饮水机', img: '.assets/Textures/card/饮水机.b64', color: '#3498DB' },
+  { id: '储存桶', img: '.assets/Textures/card/储存桶.b64', color: '#27AE60' },
+  { id: '猫砂盆', img: '.assets/Textures/card/猫砂盆.b64', color: '#D4A574' },
+  { id: '宠物梳子', img: '.assets/Textures/card/宠物梳子.b64', color: '#E67E22' },
+  { id: '猫抓板', img: '.assets/Textures/card/猫抓板.b64', color: '#C0392B' },
+  { id: '玩具鼠', img: '.assets/Textures/card/玩具鼠.b64', color: '#8E44AD' },
+  { id: '猫窝',   img: '.assets/Textures/card/猫窝.b64',   color: '#1ABC9C' },
 ];
 
 // P0: 干扰牌卡牌类型（特殊卡牌，不参与普通三消）
 const INTERFERENCE_CARDS = {
-  groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: '/assets/Textures/GroomCard.png', card_id: 'interfere_groom_001' },
-  freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: '/assets/Textures/FreezeCard.png', card_id: 'interfere_freeze_001' },
+  groom: { id: '__interference_groom__', name: '舔毛牌', emoji: '🧴', color: '#FDCB6E', interference: 'groom', img: 'assets/Textures/GroomCard.png', card_id: 'interfere_groom_001' },
+  freeze: { id: '__interference_freeze__', name: '冰冻牌', emoji: '❄️', color: '#74B9FF', interference: 'freeze', img: 'assets/Textures/FreezeCard.png', card_id: 'interfere_freeze_001' },
   sticky: { id: '__interference_sticky__', name: '粘连牌', emoji: '🩹', color: '#FD79A8', interference: 'sticky', card_id: 'interfere_stick_001' },
   transform: { id: '__interference_transform__', name: '三花牌', emoji: '🔮', color: '#A29BFE', interference: 'transform', card_id: 'interfere_sanhua_001' },
-  danger: { id: '__interference_danger__', name: '小狗牌', emoji: '🐶', color: '#FF6B6B', interference: 'danger', img: '/assets/Textures/PuppyCard.png', card_id: 'interfere_dog_001' },
+  danger: { id: '__interference_danger__', name: '小狗牌', emoji: '🐶', color: '#FF6B6B', interference: 'danger', img: 'assets/Textures/PuppyCard.png', card_id: 'interfere_dog_001' },
   disguise: { id: '__interference_disguise__', name: '真身牌', emoji: '🫧', color: '#00CEC9', interference: 'disguise', card_id: 'interfere_real_001' },
 };
 
@@ -3737,7 +3737,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
               }}>
                 {/* 冰冻牌贴图 */}
                 <img
-                  src="/assets/Textures/FreezeCard.png"
+                  src="assets/Textures/FreezeCard.png"
                   alt="冰冻牌"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: 8 }}
                   onError={e => {
@@ -3819,7 +3819,7 @@ function CollectionSlot({ slot, matching, maxSlots = 7, showBg = true, frozenSlo
                     position: 'relative',
                   }}>
                     <img
-                      src="/assets/Textures/GroomCard.png"
+                      src="assets/Textures/GroomCard.png"
                       alt="舔毛牌"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: 8 }}
                       onError={e => {
@@ -6798,19 +6798,19 @@ function Game() {
   // P4: 关卡背景图映射（11-20关循环1-10关）
   const getLevelBg = (level) => {
     const bgMap = {
-      1: '/assets/Textures/bg.png',
-      2: '/assets/Textures/白猫清浴.png',
-      3: '/assets/Textures/bg.png',
-      4: '/assets/Textures/黑猫暗夜.png',
-      5: '/assets/Textures/bg.png',
-      6: '/assets/Textures/bg.png',
-      7: '/assets/Textures/折耳静坪.png',
-      8: '/assets/Textures/bg.png',
-      9: '/assets/Textures/bg.png',
-      10: '/assets/Textures/波斯双域.png',
+      1: 'assets/Textures/bg.png',
+      2: 'assets/Textures/白猫清浴.png',
+      3: 'assets/Textures/bg.png',
+      4: 'assets/Textures/黑猫暗夜.png',
+      5: 'assets/Textures/bg.png',
+      6: 'assets/Textures/bg.png',
+      7: 'assets/Textures/折耳静坪.png',
+      8: 'assets/Textures/bg.png',
+      9: 'assets/Textures/bg.png',
+      10: 'assets/Textures/波斯双域.png',
     };
     const cycleLevel = ((level - 1) % 10) + 1; // 11关=1关, 12关=2关...
-    return bgMap[cycleLevel] || '/assets/Textures/bg.png';
+    return bgMap[cycleLevel] || 'assets/Textures/bg.png';
   };
 
   return (
