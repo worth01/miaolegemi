@@ -50,7 +50,7 @@ router.post('/register', async (req, res) => {
       data: { userId: user.id }
     });
 
-    // 初始鱼干（用于测试）
+    // 初始鱼干
     await prisma.fish_ledger.create({
       data: {
         userId: user.id,
@@ -59,6 +59,38 @@ router.post('/register', async (req, res) => {
         relatedId: null
       }
     });
+
+    // 50% 概率赠送 SSR 幸运猫
+    if (Math.random() < 0.5) {
+      try {
+        const luckyBreed = await prisma.cat_species.findFirst({
+          where: { name: '幸运猫' }
+        });
+        if (luckyBreed) {
+          const serial = await prisma.cat_serial_registry.create({
+            data: {
+              speciesId: luckyBreed.id,
+              serialNumber: await prisma.cat_serial_registry.count({ where: { speciesId: luckyBreed.id } }) + 1,
+              status: 'adopted',
+              currentOwnerId: user.id,
+              firstOwnerId: user.id,
+            }
+          });
+          await prisma.player_cats.create({
+            data: {
+              ownerId: user.id,
+              serialId: serial.id,
+              location: 'home',
+              personality: { primary: '吃货', secondary: null },
+              acquiredAt: new Date(),
+            }
+          });
+          console.log(`🎁 新用户 ${username} 获得幸运猫！`);
+        }
+      } catch (e) {
+        console.error('赠送幸运猫失败:', e);
+      }
+    }
 
     // 生成Token
     const token = generateToken({
