@@ -2,4 +2,4 @@
   builder = "nixpacks"
 
 [deploy]
-  startCommand = "npm start"
+  startCommand = "npx tsx src/index.ts"
