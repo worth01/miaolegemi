@@ -6564,7 +6564,7 @@ function Game() {
     // 通关30关后显示完成画面
     if (currentLevel >= 30) {
       setShowCompletion(true);
-      setShowResult(false);
+      setGameState(GAME_PLAYING);
       console.log('[handleNextLevel] 30关全通，显示完成画面');
       return;
     }
