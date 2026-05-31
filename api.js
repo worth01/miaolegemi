@@ -5,6 +5,10 @@
 
 // API配置
 const API_BASE_URL = (() => {
+  // 部署后请将下方地址替换为你的 Railway 地址
+  const RAILWAY_URL = null; // 例如: 'https://xxx.up.railway.app'
+  if (RAILWAY_URL) return RAILWAY_URL + '/api';
+  // 本地开发兜底
   const host = window.location.hostname;
   return 'http://' + host + ':3001/api';
 })();
