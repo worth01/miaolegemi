@@ -4843,6 +4843,7 @@ function Game() {
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
+  const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
   // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
@@ -6560,7 +6561,13 @@ function Game() {
     const nextLv = currentLevel + 1;
     const nextConfig = getLevelConfig(nextLv);
     console.log('[handleNextLevel] 从关卡', currentLevel, '→', nextLv, 'nextConfig:', nextConfig?.name || '无');
-    // P0: 关卡轮回机制 - 10关通关后循环复刻
+    // 通关30关后显示完成画面
+    if (currentLevel >= 30) {
+      setShowCompletion(true);
+      setShowResult(false);
+      console.log('[handleNextLevel] 30关全通，显示完成画面');
+      return;
+    }
     // 如果没有下一关，重新从第1关开始
     if (!nextConfig) {
       console.log('[handleNextLevel] 没有下一关，回到第1关');
@@ -6881,6 +6888,46 @@ function Game() {
         newRecordAchieved={newRecordAchieved}
         previousBestScore={previousBestScore}
       />
+
+      {/* 30关全通完成画面 */}
+      {showCompletion && (
+        <div style={{
+          position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:200,
+          display:'flex', alignItems:'center', justifyContent:'center',
+        }}>
+          <div style={{
+            position:'absolute', inset:0,
+            background:'url(assets/welcome.png) center/cover no-repeat',
+          }} />
+          <div style={{
+            position:'absolute', inset:0,
+            background:'rgba(0,0,0,0.4)',
+          }} />
+          <div style={{
+            position:'relative', zIndex:1,
+            background:'rgba(22,12,44,0.95)', borderRadius:24,
+            padding:'32px 24px', textAlign:'center',
+            border:'2px solid rgba(0,229,255,0.5)',
+            boxShadow:'0 0 20px rgba(0,229,255,0.3), 0 0 40px rgba(0,153,255,0.15)',
+            animation:'slideUp 0.4s ease-out',
+            maxWidth:300,
+          }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
+            <div style={{ fontSize:18, fontWeight:800, color:'#F0EDFF', marginBottom:8 }}>
+              今日挑战已完成
+            </div>
+            <div style={{ fontSize:13, color:'rgba(240,237,255,0.5)', marginBottom:20 }}>
+              你已通关全部 30 关，明天再来挑战吧！
+            </div>
+            <button onClick={() => window.location.href = 'index.html'} style={{
+              width:'100%', height:42, borderRadius:12,
+              background:'linear-gradient(135deg, #FD9644, #FF6B6B)',
+              border:'none', cursor:'pointer',
+              fontSize:15, fontWeight:700, color:'#fff',
+            }}>返回大厅</button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
