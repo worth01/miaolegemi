@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'miaolegemi-secret-key';
+const JWT_SECRET: string = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET 环境变量未设置'); })();
 
 // JWT Payload类型
 export interface JwtPayload {
