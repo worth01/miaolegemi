@@ -54,6 +54,11 @@ app.use('/api/game', gameRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/personalities', personalityRoutes);
 
+// 启动前测试数据库连接
+prisma.$connect()
+  .then(() => console.log('  📦 数据库连接成功'))
+  .catch(err => console.error('  ❌ 数据库连接失败:', err.message));
+
 // 启动服务器
 app.listen(PORT, () => {
   console.log(`
