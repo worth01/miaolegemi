@@ -641,10 +641,10 @@ const SLOT_CAPACITY = 7;
 // P2: 牌堆系统配置
 // ═══════════════════════════════════════
 const PILE_CONFIG = {
-  '1':      { count: 0, minCards: 0, maxCards: 0 },  // 第1关教学关：无牌堆
-  '2-10':  { count: 3, minCards: 5, maxCards: 6 },
-  '11-20': { count: 3, minCards: 6, maxCards: 8 },
-  '21-30': { count: 4, minCards: 6, maxCards: 8 },
+  '1':      { count: 0, minCards: 0, maxCards: 0 },   // 第1关教学关：无牌堆
+  '2-10':  { count: 5, minCards: 6, maxCards: 9 },    // 12种，棋盘36张刚好覆盖全部12种
+  '11-20': { count: 5, minCards: 9, maxCards: 12 },   // 13种，棋盘36张缺1种，需牌堆补足
+  '21-30': { count: 6, minCards: 9, maxCards: 12 },   // 14种，棋盘36张缺2种
 };
 
 /** P2: 获取关卡对应的牌堆配置 */
@@ -737,9 +737,9 @@ const BOARD_COORDS_SET = new Set(BOARD_COORDS.map(c => `${c.row},${c.col}`));
 const LOVE_BOARD_COORDS = [
   // 第1行：{1,2}, {1,3}, {1,6}, {1,7}
   {row: 1, col: 2}, {row: 1, col: 3}, {row: 1, col: 6}, {row: 1, col: 7},
-  // 第2行：{2,1}~{2,8}
-  {row: 2, col: 1}, {row: 2, col: 2}, {row: 2, col: 3}, {row: 2, col: 4},
-  {row: 2, col: 5}, {row: 2, col: 6}, {row: 2, col: 7}, {row: 2, col: 8},
+  // 第2行：去掉{2,4}{2,5}（32→30点），中间留空形成爱心凹陷
+  {row: 2, col: 1}, {row: 2, col: 2}, {row: 2, col: 3},
+  {row: 2, col: 6}, {row: 2, col: 7}, {row: 2, col: 8},
   // 第3行：{3,1}~{3,8}
   {row: 3, col: 1}, {row: 3, col: 2}, {row: 3, col: 3}, {row: 3, col: 4},
   {row: 3, col: 5}, {row: 3, col: 6}, {row: 3, col: 7}, {row: 3, col: 8},
@@ -811,16 +811,16 @@ const BUTTERFLY_BOARD_COORDS = [
   // 第5行：{5,2}~{5,7}
   {row: 5, col: 2}, {row: 5, col: 3}, {row: 5, col: 4},
   {row: 5, col: 5}, {row: 5, col: 6}, {row: 5, col: 7},
-  // 第6行：{6,3}~{6,6}
-  {row: 6, col: 3}, {row: 6, col: 4}, {row: 6, col: 5}, {row: 6, col: 6},
+  // 第6行：{6,1}, {6,4}, {6,5}, {6,8}
+  {row: 6, col: 1}, {row: 6, col: 4}, {row: 6, col: 5}, {row: 6, col: 8},
 ];
 const BUTTERFLY_BOARD_COORDS_SET = new Set(BUTTERFLY_BOARD_COORDS.map(c => `${c.row},${c.col}`));
 
 // 花瓣棋盘 有效点位 (row, col) - 1-based索引
 // 造型像花瓣图案
 const PETAL_BOARD_COORDS = [
-  // 第1行：{1,3}~{1,6}
-  {row: 1, col: 3}, {row: 1, col: 4}, {row: 1, col: 5}, {row: 1, col: 6},
+  // 第1行：{1,3}~{1,5}（去掉{1,6}，32→30点）
+  {row: 1, col: 3}, {row: 1, col: 4}, {row: 1, col: 5},
   // 第2行：{2,2}~{2,7}
   {row: 2, col: 2}, {row: 2, col: 3}, {row: 2, col: 4},
   {row: 2, col: 5}, {row: 2, col: 6}, {row: 2, col: 7},
@@ -833,8 +833,8 @@ const PETAL_BOARD_COORDS = [
   // 第5行：{5,2}~{5,7}
   {row: 5, col: 2}, {row: 5, col: 3}, {row: 5, col: 4},
   {row: 5, col: 5}, {row: 5, col: 6}, {row: 5, col: 7},
-  // 第6行：{6,3}~{6,6}
-  {row: 6, col: 3}, {row: 6, col: 4}, {row: 6, col: 5}, {row: 6, col: 6},
+  // 第6行：{6,4}~{6,6}（去掉{6,3}，32→30点）
+  {row: 6, col: 4}, {row: 6, col: 5}, {row: 6, col: 6},
 ];
 const PETAL_BOARD_COORDS_SET = new Set(PETAL_BOARD_COORDS.map(c => `${c.row},${c.col}`));
 
@@ -923,27 +923,36 @@ function isCoordAllowed(row, col, boardType) {
    ═══════════════════════════════════════ */
 
 // 1-10关卡牌池：8种，每种6张，共48张
-const CARD_POOL_1_10 = [];
+// 第1关教学关：8种
+const CARD_POOL_1 = [];
 for (let i = 0; i < 6; i++) {
-  CARD_POOL_1_10.push('猫铃铛', '猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝');
+  CARD_POOL_1.push('猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝', '猫爪印');
 }
 
-// 11-20关卡牌池：9种，每种6张，共54张
+// 第2-10关：12种
+const CARD_POOL_2_10 = [];
+for (let i = 0; i < 4; i++) {
+  CARD_POOL_2_10.push('猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝', '猫爪印', '毛线球', '猫薄荷', '逗猫棒', '猫罐头');
+}
+
+// 第11-20关：13种
 const CARD_POOL_11_20 = [];
-for (let i = 0; i < 6; i++) {
-  CARD_POOL_11_20.push('毛线球', '猫爬架', '猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝');
+for (let i = 0; i < 4; i++) {
+  CARD_POOL_11_20.push('猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝', '猫爪印', '毛线球', '猫薄荷', '逗猫棒', '猫罐头', '蝴蝶结');
 }
 
-// 21-30关卡牌池：10种，每种6张，共60张
+// 第21-30关：14种
 const CARD_POOL_21_30 = [];
-for (let i = 0; i < 6; i++) {
-  CARD_POOL_21_30.push('毛线球', '猫抓板', '猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫爬架', '猫窝', '猫罐头');
+for (let i = 0; i < 4; i++) {
+  CARD_POOL_21_30.push('猫粮碗', '饮水机', '储存桶', '猫砂盆', '宠物梳子', '猫抓板', '猫窝', '猫爪印', '毛线球', '猫薄荷', '逗猫棒', '猫罐头', '蝴蝶结', '玩具鼠');
 }
 
 // 根据关卡获取对应牌池
 function getCardPoolByLevel(levelNum) {
-  if (levelNum >= 1 && levelNum <= 10) return [...CARD_POOL_1_10];
-  if (levelNum >= 11 && levelNum <= 20) return [...CARD_POOL_11_20];
+  const cycleLevel = ((levelNum - 1) % 30) + 1;
+  if (cycleLevel === 1) return [...CARD_POOL_1];
+  if (cycleLevel >= 2 && cycleLevel <= 10) return [...CARD_POOL_2_10];
+  if (cycleLevel >= 11 && cycleLevel <= 20) return [...CARD_POOL_11_20];
   return [...CARD_POOL_21_30];
 }
 
@@ -959,33 +968,36 @@ function shuffleCardPool(pool, rng) {
 
 // 层数配置（按关卡区间）
 const LAYER_CONFIG = {
-  // 1-10关：总48张，Layer0=20, Layer1=16, Layer2=12
-  '1-10': { 0: 20, 1: 16, 2: 12 },
-  // 11-20关：总54张，Layer0=22, Layer1=20, Layer2=12
-  '11-20': { 0: 22, 1: 20, 2: 12 },
-  // 21-30关：总60张，Layer0=26, Layer1=22, Layer2=12
-  '21-30': { 0: 26, 1: 22, 2: 12 },
+  // 第1关教学关：总48张，3层
+  '1':     { 0: 20, 1: 16, 2: 12 },
+  // 2-10关：总72张，4层（12种牌）
+  '2-10':  { 0: 26, 1: 20, 2: 16, 3: 10 },
+  // 11-20关：总78张，5层（13种牌）
+  '11-20': { 0: 24, 1: 18, 2: 16, 3: 12, 4: 8 },
+  // 21-30关：总84张，5层（14种牌）
+  '21-30': { 0: 26, 1: 22, 2: 16, 3: 12, 4: 8 },
 };
 
-// 异形棋盘最大放牌数（须为3的倍数；实际值由 getMaxCardsForBoard 按坐标数动态计算）
+// 异形棋盘最大放牌数（等比例增加，适配4-5层）
 const BOARD_COUNTS = {
-  'love': 32,
-  'diamond': 24,
-  'persia': 42,
-  'butterfly': 30,
-  'petal': 32,
-  'hourglass': 36,
-  'standard': 48,
+  'love': 48,
+  'diamond': 36,
+  'persia': 60,
+  'butterfly': 48,
+  'petal': 45,
+  'hourglass': 54,
+  'standard': 72,
 };
 
-// 异形棋盘最多放牌数 = min(关卡配置总数, floor(坐标数/3)*3)
+// 异形棋盘放牌数：层数增加后按坐标数×2（金字塔叠放），确保每种牌至少3张
 function getMaxCardsForBoard(boardType, boardCoordCount, levelNum) {
   const base = getLayerConfig(levelNum);
-  const baseTotal = base[0] + base[1] + base[2];
+  const layerKeys = Object.keys(base);
+  const baseTotal = layerKeys.reduce((sum, k) => sum + base[k], 0);
   if (boardType === 'standard') return baseTotal;
-  const shapeCap = Math.floor(boardCoordCount / 3) * 3;
-  const namedCap = BOARD_COUNTS[boardType] || shapeCap;
-  return Math.min(baseTotal, shapeCap, namedCap);
+  // 多层叠加：平均每位置 2 张牌（3层时1张，5层时2张），取 3 的倍数
+  const shapeCap = Math.floor(boardCoordCount * 2 / 3) * 3;
+  return Math.min(baseTotal, shapeCap);
 }
 
 // P0: 构建均衡牌池：每种牌恰好3张，共 cardCount 张（cardCount 须为3的倍数）
@@ -1028,8 +1040,10 @@ function getTileDisplayType(tile) {
 }
 
 function getLayerConfig(levelNum) {
-  if (levelNum >= 1 && levelNum <= 10) return LAYER_CONFIG['1-10'];
-  if (levelNum >= 11 && levelNum <= 20) return LAYER_CONFIG['11-20'];
+  const cycleLevel = ((levelNum - 1) % 30) + 1;
+  if (cycleLevel === 1) return LAYER_CONFIG['1'];
+  if (cycleLevel >= 2 && cycleLevel <= 10) return LAYER_CONFIG['2-10'];
+  if (cycleLevel >= 11 && cycleLevel <= 20) return LAYER_CONFIG['11-20'];
   return LAYER_CONFIG['21-30'];
 }
 
@@ -1127,7 +1141,7 @@ const LEVELS = {
     timedMode: false,
     desc: '教学关，8种卡牌48张，3层堆叠'
   },
-  // 第2-10关：8种卡牌，48张（Layer0=20, Layer1=16, Layer2=12）
+  // 第2-10关：12种卡牌，72张，4层堆叠
   2: {
     name: '白猫清浴',
     breed: '白猫',
@@ -1137,7 +1151,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '蝴蝶棋盘 · 棋盘上有1张🧴舔毛牌（金边标记），入槽后永久占位，不能与同款三消'
@@ -1153,7 +1167,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '冰冻牌触发后冻结收集槽第1格'
@@ -1167,7 +1181,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '爱心形状特殊造型棋盘，传递爱的力量'
@@ -1183,7 +1197,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
@@ -1197,7 +1211,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '花瓣形状特殊造型棋盘，三花牌每3秒变换'
@@ -1211,7 +1225,7 @@ const LEVELS = {
     disabledSkills: ['三花猫'],
     specialRule: 'skill_ban',
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '菱形特殊造型棋盘，禁用三花猫技能'
@@ -1226,7 +1240,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
@@ -1240,7 +1254,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '沙漏形状特殊造型棋盘，真身牌点击后露出真身'
@@ -1254,7 +1268,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 },
     ],
     timedMode: false,
     desc: '波斯双域特殊造型棋盘，中间第4列空白',
@@ -1262,7 +1276,7 @@ const LEVELS = {
     areaBlueColor: '#1677FF',
     areaGreenColor: '#00B42A'
   },
-  // 第11-20关：9种卡牌，54张（Layer0=22, Layer1=20, Layer2=12）
+  // 第11-20关：13种卡牌，78张，5层堆叠
   11: {
     name: '橘猫闲居',
     breed: '橘猫',
@@ -1272,7 +1286,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '9种卡牌挑战'
@@ -1286,7 +1300,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
@@ -1302,7 +1316,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '冰冻牌占据收集槽第一格'
@@ -1318,7 +1332,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '爱心形状特殊造型棋盘，粘连牌挑战'
@@ -1334,7 +1348,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
@@ -1348,7 +1362,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '花瓣形状特殊造型棋盘，三花牌每3秒变换'
@@ -1364,7 +1378,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '菱形特殊造型棋盘，冰冻牌挑战'
@@ -1379,7 +1393,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
@@ -1393,7 +1407,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '沙漏形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
@@ -1409,14 +1423,13 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     areaRuleEnable: true,
     desc: '波斯双域特殊造型棋盘，冰冻牌挑战'
   },
-  // 第21-30关：10种卡牌，60张（+猫罐头）
-  // 第21-30关：10种卡牌，60张（Layer0=26, Layer1=22, Layer2=12）
+  // 第21-30关：14种卡牌，84张，5层堆叠
   21: {
     name: '橘猫闲居',
     breed: '橘猫',
@@ -1428,7 +1441,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '10种卡牌挑战，粘连牌连带效果'
@@ -1442,7 +1455,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '蝴蝶形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
@@ -1458,7 +1471,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '冰冻牌占据收集槽第一格'
@@ -1474,7 +1487,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '爱心形状特殊造型棋盘，粘连牌挑战'
@@ -1490,7 +1503,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '粘连牌点击时连带相邻1张牌一同进入收集槽'
@@ -1504,7 +1517,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '花瓣形状特殊造型棋盘，三花牌每3秒变换'
@@ -1520,7 +1533,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '菱形特殊造型棋盘，冰冻牌挑战'
@@ -1535,7 +1548,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
@@ -1549,7 +1562,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     desc: '沙漏形状特殊造型棋盘，三花牌每3秒变换'
@@ -1563,7 +1576,7 @@ const LEVELS = {
     disabledSkills: [],
     specialRule: null,
     layers: [
-      { layer: 0 }, { layer: 1 }, { layer: 2 },
+      { layer: 0 }, { layer: 1 }, { layer: 2 }, { layer: 3 }, { layer: 4 },
     ],
     timedMode: false,
     areaRuleEnable: true,
