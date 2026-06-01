@@ -586,6 +586,49 @@ function savePersonalBestScore(score) {
   } catch(e) {}
 }
 /* ═══════════════════════════════════════
+   分享工具：Web Share API 优先，降级剪贴板
+   ═══════════════════════════════════════ */
+async function shareContent(_a) {
+  var a = _a || {};
+  var title = a.title || '喵呜乐消消';
+  var text = a.text || '';
+  var url = a.url || window.location.href;
+  var onSuccess = a.onSuccess;
+  var onError = a.onError;
+  // 1. Web Share API（移动端原生分享面板）
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: title, text: text, url: url });
+      if (onSuccess) onSuccess();
+      return 'shared';
+    } catch (err) {
+      if (err.name === 'AbortError') return 'cancelled';
+    }
+  }
+  // 2. 降级：剪贴板复制
+  try {
+    var copyText = text + (url ? '\n' + url : '');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(copyText);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = copyText;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    // 简单的视觉提示（游戏页面没有 toast 系统，用 alert 太粗暴，静默复制即可）
+    if (onSuccess) onSuccess();
+    return 'copied';
+  } catch (err) {
+    if (onError) onError(err);
+    return 'failed';
+  }
+}
+/* ═══════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════ */
 const TILE_W = 50; // iOS适配：50px确保6行8列在375px设备上缩放约91%
@@ -2854,8 +2897,9 @@ function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
     if (selectedCards.some(sc => sc.id === card.id)) {
       return {
         ...card,
-        // 粘连/三花保留原始type；舔毛/小狗等改为__interference_xxx__以便专属渲染
-        ...(interferenceType !== 'sticky' && interferenceType !== 'transform'
+        // 粘连/三花/小狗/舔毛保留原始type（小狗点击即失败、舔毛入槽即占位，均不参与三消匹配）；
+        // 只有真身牌/冰冻牌等改为__interference_xxx__以便专属渲染
+        ...(interferenceType !== 'sticky' && interferenceType !== 'transform' && interferenceType !== 'danger' && interferenceType !== 'groom'
           ? { type: `__interference_${interferenceType}__` } : {}),
         isInterference: true,
         interferenceType: interferenceType,
@@ -4274,10 +4318,11 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
               🎮 再玩一局
             </button>
             <button onClick={() => {
-              const msg = '喵呜乐消消战绩分享！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(msg);
-              }
+              var code = (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })();
+              shareContent({
+                title: '喵呜乐消消战绩分享！',
+                text: '🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + code + '\n一起来玩喵呜乐消消吧～🐱',
+              });
             }} style={{
               flex: 1, height: 48, borderRadius: 14,
               background: 'rgba(108,92,231,0.15)',
@@ -4297,10 +4342,11 @@ function ResultOverlay({ gameState, remaining, score, maxCombo, comboCount, fish
           <>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
               <button onClick={() => {
-                const msg = '喵呜乐消消战绩分享！\n🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })() + '\n一起来玩喵呜乐消消吧～🐱';
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                  navigator.clipboard.writeText(msg);
-                }
+                var code = (function() { try { var s = JSON.parse(localStorage.getItem('miaolegemi_p0_v1') || '{}'); return s.myInviteCode || ''; } catch(e) { return ''; } })();
+                shareContent({
+                  title: '喵呜乐消消战绩分享！',
+                  text: '🏆 得分：' + score.toLocaleString() + '\n🔥 最大连击：' + (maxCombo || 0) + '\n🐟 获得鱼干：+' + finalFish + '\n📋 推荐码：' + code + '\n一起来玩喵呜乐消消吧～🐱',
+                });
               }} style={{
                 height: 48, padding: '0 40px', borderRadius: 14,
                 background: 'rgba(108,92,231,0.15)',
@@ -4840,6 +4886,9 @@ function Game() {
   const [dangerToast, setDangerToast] = useState(''); // 小狗牌提示文案（空=不显示）
   const [disguiseToast, setDisguiseToast] = useState(''); // 真身牌提示文案（空=不显示）
   const [areaToast, setAreaToast] = useState(''); // 波斯双域提示文案（空=不显示）
+  const [toastCycIdx, setToastCycIdx] = useState(0); // 多提示轮番播放索引
+  const toastCycTimerRef = useRef(null); // 轮番计时器
+  const toastKeysRef = useRef([]); // 当前活跃提示的key列表
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
@@ -4922,6 +4971,21 @@ function Game() {
       setAreaToast('');
     }
   }, [gameState, currentLevel, levelConfig.areaRuleEnable]);
+
+  // ═══ 多提示轮番播放（波斯双域+冰冻牌等场景） ═══
+  useEffect(() => {
+    const keys = toastKeysRef.current;
+    const count = keys.length;
+    setToastCycIdx(0);
+    if (toastCycTimerRef.current) { clearInterval(toastCycTimerRef.current); toastCycTimerRef.current = null; }
+    if (count <= 1) return;
+    toastCycTimerRef.current = setInterval(() => {
+      setToastCycIdx(i => (i + 1) % toastKeysRef.current.length);
+    }, 2500);
+    return () => {
+      if (toastCycTimerRef.current) { clearInterval(toastCycTimerRef.current); toastCycTimerRef.current = null; }
+    };
+  }, [groomToast, freezeToast, frozenSlot, stickyToast, transformToast, dangerToast, disguiseToast, areaToast]);
 
   // ═══ 三花牌：全局3秒变身计时器 ═══
   // 胆小性格减免：高好感度下，三花牌变换间隔从3秒延长至6秒
@@ -5192,10 +5256,15 @@ function Game() {
     setTiles(generateBoard(level));
     setPiles(generatePileData(level)); // P2: 初始化牌堆
     setGroomSlots([]);
+    setGroomToast(false);
     setFreezeToast('');
+    setStickyToast('');
+    setTransformToast('');
     setDangerToast('');
     setDisguiseToast('');
     setAreaToast('');
+    setToastCycIdx(0);
+    if (toastCycTimerRef.current) { clearInterval(toastCycTimerRef.current); toastCycTimerRef.current = null; }
     window._dangerToastShown = false;
     window._disguiseToastShown = false;
     window._areaToastShown = false;
@@ -5950,6 +6019,21 @@ function Game() {
       }, 300);
     } else {
       setSlot(nextSlot);
+      // 舔毛牌等干扰牌入槽后不触发三消，需单独检查胜利条件
+      setTimeout(() => {
+        setTiles(prev => {
+          const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+          if (nonBlocking.length === 0) {
+            const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+            if (slotEmpty) { const pers = personalityEffectsRef.current || {}; const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200; setScore(s => s + bonus); }
+            setTimeout(() => {
+              if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);
+              else setGameState(GAME_WIN);
+            }, 300);
+          }
+          return prev;
+        });
+      }, 400);
     }
   }, [gameState, currentLevel, slotBonus, frozenSlot, groomSlots, battleCats, transformLocked]);
   useEffect(() => { handleTileClickRef.current = handleTileClick; }, [handleTileClick]);
@@ -7310,111 +7394,36 @@ function Game() {
           <div style={{ marginTop: 5 }}>
             <CollectionSlot slot={slot} matching={matching} frozenSlot={frozenSlot} groomSlots={groomSlots} freezeOverride={freezeBlockOverride} freezeGridCount={freezeGridCount} />
           </div>
-          {/* 舔毛牌进入收集槽提示 */}
-          {groomToast && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(253,203,110,0.95), rgba(243,156,18,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(253,203,110,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              舔毛牌进入收集槽，无法被消除！
-            </div>
-          )}
-          {/* 冰冻牌冻结收集槽提示：仅在有冰冻牌的关卡中显示 */}
-          {freezeToast && frozenSlot && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(116,185,255,0.95), rgba(9,132,227,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(116,185,255,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {freezeToast}
-            </div>
-          )}
-          {/* 粘连牌连带效果提示 */}
-          {stickyToast && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(253,121,168,0.95), rgba(232,67,147,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(253,121,168,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {stickyToast}
-            </div>
-          )}
-          {/* 三花牌提示 */}
-          {transformToast && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(162,155,254,0.95), rgba(108,92,231,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(162,155,254,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {transformToast}
-            </div>
-          )}
-          {/* 小狗牌提示：仅在有小狗牌的关卡中显示 */}
-          {dangerToast && tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'danger') && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(255,107,107,0.95), rgba(214,48,49,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(255,107,107,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {dangerToast}
-            </div>
-          )}
-          {/* 真身牌提示 */}
-          {disguiseToast && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(0,206,201,0.95), rgba(0,150,136,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(0,206,201,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {disguiseToast}
-            </div>
-          )}
-          {/* 波斯双域开局提示 */}
-          {areaToast && (
-            <div style={{
-              position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-              bottom: 100, zIndex: 300,
-              background: 'linear-gradient(135deg, rgba(22,119,255,0.95), rgba(0,180,42,0.9))',
-              color: '#fff', padding: '8px 18px', borderRadius: 20,
-              fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-              boxShadow: '0 4px 16px rgba(22,119,255,0.5)',
-              animation: 'fadeIn 0.2s ease-out',
-              pointerEvents: 'none',
-            }}>
-              {areaToast}
-            </div>
-          )}
+          {/* 统一提示区域（多提示轮番播放，互不遮挡） */}
+          {(() => {
+            const toasts = [];
+            if (groomToast) toasts.push({ text: '舔毛牌进入收集槽，无法被消除！', bg: 'linear-gradient(135deg, rgba(253,203,110,0.95), rgba(243,156,18,0.9))', bs: '0 4px 16px rgba(253,203,110,0.5)', key: 'groom' });
+            if (freezeToast && frozenSlot) toasts.push({ text: freezeToast, bg: 'linear-gradient(135deg, rgba(116,185,255,0.95), rgba(9,132,227,0.9))', bs: '0 4px 16px rgba(116,185,255,0.5)', key: 'freeze' });
+            if (stickyToast) toasts.push({ text: stickyToast, bg: 'linear-gradient(135deg, rgba(253,121,168,0.95), rgba(232,67,147,0.9))', bs: '0 4px 16px rgba(253,121,168,0.5)', key: 'sticky' });
+            if (transformToast) toasts.push({ text: transformToast, bg: 'linear-gradient(135deg, rgba(162,155,254,0.95), rgba(108,92,231,0.9))', bs: '0 4px 16px rgba(162,155,254,0.5)', key: 'transform' });
+            if (dangerToast && tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'danger')) toasts.push({ text: dangerToast, bg: 'linear-gradient(135deg, rgba(255,107,107,0.95), rgba(214,48,49,0.9))', bs: '0 4px 16px rgba(255,107,107,0.5)', key: 'danger' });
+            if (disguiseToast) toasts.push({ text: disguiseToast, bg: 'linear-gradient(135deg, rgba(0,206,201,0.95), rgba(0,150,136,0.9))', bs: '0 4px 16px rgba(0,206,201,0.5)', key: 'disguise' });
+            if (areaToast) toasts.push({ text: areaToast, bg: 'linear-gradient(135deg, rgba(22,119,255,0.95), rgba(0,180,42,0.9))', bs: '0 4px 16px rgba(22,119,255,0.5)', key: 'area' });
+            // 更新活跃keys供effect使用
+            toastKeysRef.current = toasts.map(t => t.key);
+            if (toasts.length === 0) return null;
+            const idx = Math.min(toastCycIdx, toasts.length - 1);
+            const t = toasts[idx];
+            return (
+              <div key={t.key + '-' + toastCycIdx} style={{
+                position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+                bottom: 100, zIndex: 300,
+                background: t.bg,
+                color: '#fff', padding: '8px 18px', borderRadius: 20,
+                fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+                boxShadow: t.bs,
+                animation: 'fadeIn 0.2s ease-out',
+                pointerEvents: 'none',
+              }}>
+                {t.text}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ═══ 技能栏（底部）═══ P3: 显示猫咪头像+技能名+位置标签 */}

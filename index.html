@@ -1704,6 +1704,59 @@ function saveState(cats, bells, activeTitle, extra) {
 }
 
 /* ═══════════════════════════════════════
+   分享工具：Web Share API 优先，降级剪贴板 + Toast
+   ═══════════════════════════════════════ */
+let _shareToastCallback = null;
+function setShareToastCallback(fn) { _shareToastCallback = fn; }
+function showShareToast(msg) { if (_shareToastCallback) _shareToastCallback(msg); }
+
+async function shareContent({ title, text, url, onSuccess, onError }) {
+  const shareData = {
+    title: title || '喵呜乐消消',
+    text: text || '',
+    url: url || window.location.href,
+  };
+
+  // 1. 优先 Web Share API（移动端原生分享面板，可分享到微信/短信等）
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      if (onSuccess) onSuccess();
+      return 'shared';
+    } catch (err) {
+      // 用户取消分享不是错误
+      if (err.name === 'AbortError') return 'cancelled';
+      // 其他错误降级到剪贴板
+    }
+  }
+
+  // 2. 降级：剪贴板复制 + Toast 提示
+  try {
+    const copyText = text + (url ? '\n' + url : '');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(copyText);
+    } else {
+      // 最后的降级方案
+      const textarea = document.createElement('textarea');
+      textarea.value = copyText;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    showShareToast('已复制到剪贴板，去粘贴分享吧～');
+    if (onSuccess) onSuccess();
+    return 'copied';
+  } catch (err) {
+    showShareToast('分享失败，请稍后再试');
+    if (onError) onError(err);
+    return 'failed';
+  }
+}
+
+/* ═══════════════════════════════════════
    P0: 好友推荐系统
    ═══════════════════════════════════════ */
 function generateInviteCode() {
@@ -3982,10 +4035,10 @@ const cat = cats.find(c => c.serialId === catSerialId);
           {colors === CL ? (
             <button onClick={() => {
               const code = getOrCreateInviteCode();
-              const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(msg).catch(() => {});
-              }
+              shareContent({
+                title: '看看我的猫咪「' + cat.name + '」！',
+                text: '🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱',
+              });
             }}
               className="btn-deploy-warm"
               style={{
@@ -3995,10 +4048,10 @@ const cat = cats.find(c => c.serialId === catSerialId);
           ) : (
             <button onClick={() => {
               const code = getOrCreateInviteCode();
-              const msg = '看看我的猫咪「' + cat.name + '」！\n🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱';
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(msg).catch(() => {});
-              }
+              shareContent({
+                title: '看看我的猫咪「' + cat.name + '」！',
+                text: '🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy)||0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱',
+              });
             }}
               className="flow-btn flow-play"
               style={{ flex:1 }}>
@@ -6735,6 +6788,8 @@ function App() {
   const [inviteCode, setInviteCode] = useState(() => getOrCreateInviteCode());
   const [inviteRewardToday, setInviteRewardToday] = useState(() => getTodayInviteRewardCount());
   const [shareToast, setShareToast] = useState(null);
+  // 注册全局分享 Toast 回调，供 shareContent() 使用
+  useEffect(() => { setShareToastCallback(setShareToast); }, []);
 
   const [milestoneAlert, setMilestoneAlert] = useState(null); // { label, slotName }
   const milestoneAlertTimer = useRef(null);
@@ -6899,7 +6954,7 @@ function App() {
             // 恢复 gameData
             if (state.gameData) {
               const gd = state.gameData;
-              if (gd.fishLedger) fishLedger = gd.fishLedger;
+              if (gd.fishLedger && gd.fishLedger.length > 0) fishLedger = gd.fishLedger;
               if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
               if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
               if (gd.coolingPool) coolingPool = gd.coolingPool;
@@ -7010,7 +7065,7 @@ function App() {
           setPityCount(state.pityCount || 0);
           if (state.gameData) {
             const gd = state.gameData;
-            if (gd.fishLedger) fishLedger = gd.fishLedger;
+            if (gd.fishLedger && gd.fishLedger.length > 0) fishLedger = gd.fishLedger;
             if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
             if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
             if (gd.coolingPool) coolingPool = gd.coolingPool;
@@ -8031,28 +8086,25 @@ function App() {
 
   // P2: 竞猜分享奖励
   const handleShareBet = useCallback((bet) => {
-    fishLedger.push({ type: 'earn', amount: 3, desc: '分享竞猜奖励', time: Date.now() });
-    setBets(prev => prev.map(b => b.matchId === bet.matchId ? { ...b, shared: true } : b));
-    showConfirmModal({ emoji:'🐟', title:'分享成功', message:'+3 鱼干 🐟', onConfirm:()=>{} });
+    shareContent({
+      title: '喵呜乐消消 · 世界杯竞猜',
+      text: '我猜对了「' + bet.matchName + '」的比赛结果！🏆 快来一起玩世界杯竞猜吧～🐱',
+      onSuccess: () => {
+        fishLedger.push({ type: 'earn', amount: 3, desc: '分享竞猜奖励', time: Date.now() });
+        setBets(prev => prev.map(b => b.matchId === bet.matchId ? { ...b, shared: true } : b));
+        showConfirmModal({ emoji:'🐟', title:'分享成功', message:'+3 鱼干 🐟', onConfirm:()=>{} });
+      },
+    });
   }, [showConfirmModal]);
 
   // P0: 好友推荐 - 分享邀请
   const handleShareInvite = useCallback(() => {
     const code = getOrCreateInviteCode();
     setInviteCode(code);
-    const shareMsg = '喵呜乐消消邀请你一起来玩！\n我的推荐码：' + code + '\n打开游戏输入推荐码，一起赚鱼干吧～🐱';
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(shareMsg).then(() => {
-        setShareToast('推荐码已复制到剪贴板！');
-        setTimeout(() => setShareToast(null), 3000);
-      }).catch(() => {
-        setShareToast('推荐码：' + code);
-        setTimeout(() => setShareToast(null), 4000);
-      });
-    } else {
-      setShareToast('推荐码：' + code);
-      setTimeout(() => setShareToast(null), 4000);
-    }
+    shareContent({
+      title: '喵呜乐消消',
+      text: '喵呜乐消消邀请你一起来玩！\n我的推荐码：' + code + '\n打开游戏输入推荐码，一起赚鱼干吧～🐱',
+    });
   }, []);
 
   // P2: 竞猜结算（自动检测未结算的投注）
