@@ -6777,7 +6777,20 @@ function App() {
   const [lineageCat, setLineageCat] = useState(null);
   const [flipCardCat, setFlipCardCat] = useState(null);
   const [notifPerm, setNotifPerm] = useState('default');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return saved?.theme || 'dark';
+    } catch(e) { return 'dark'; }
+  });
+  // 主题切换时保存到 localStorage，供下次登录恢复
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      saved.theme = theme;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    } catch(e) {}
+  }, [theme]);
   const [homeMaxSlots, setHomeMaxSlots] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -6967,6 +6980,7 @@ function App() {
               if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
               if (gd.bets) setBets(gd.bets);
               if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+              if (gd.theme) setTheme(gd.theme);
             }
             // 保存到 localStorage 作为离线缓存
             saveStateOnlineCache(state);
@@ -7078,6 +7092,7 @@ function App() {
             if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
             if (gd.bets) setBets(gd.bets);
             if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+            if (gd.theme) setTheme(gd.theme);
           }
           saveStateOnlineCache(state);
         } catch(e) {
@@ -7541,6 +7556,7 @@ function App() {
           await MiaolegemiAPI.syncState({
             bells, activeTitle, pityCount,
             gameData: {
+              theme,
               fishLedger, globalSerialId, breedSerialCounters, coolingPool,
               homeMaxSlots, ownedSkins, equippedSkins,
               groupStageScores, groupStageBellsClaimed,

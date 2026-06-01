@@ -642,9 +642,9 @@ const SLOT_CAPACITY = 7;
 // ═══════════════════════════════════════
 const PILE_CONFIG = {
   '1':      { count: 0, minCards: 0, maxCards: 0 },   // 第1关教学关：无牌堆
-  '2-10':  { count: 5, minCards: 6, maxCards: 9 },    // 12种，棋盘36张刚好覆盖全部12种
-  '11-20': { count: 5, minCards: 9, maxCards: 12 },   // 13种，棋盘36张缺1种，需牌堆补足
-  '21-30': { count: 6, minCards: 9, maxCards: 12 },   // 14种，棋盘36张缺2种
+  '2-10':  { count: 3, minCards: 6, maxCards: 6 },    // 3摞×6=18张（棋盘已覆盖全部12种）
+  '11-20': { count: 3, minCards: 6, maxCards: 9 },    // 3摞×6~9=18~27张
+  '21-30': { count: 3, minCards: 6, maxCards: 9 },    // 3摞×6~9=18~27张
 };
 
 /** P2: 获取关卡对应的牌堆配置 */
@@ -968,14 +968,14 @@ function shuffleCardPool(pool, rng) {
 
 // 层数配置（按关卡区间）
 const LAYER_CONFIG = {
-  // 第1关教学关：总48张，3层
-  '1':     { 0: 20, 1: 16, 2: 12 },
-  // 2-10关：总72张，4层（12种牌）
-  '2-10':  { 0: 26, 1: 20, 2: 16, 3: 10 },
-  // 11-20关：总78张，5层（13种牌）
-  '11-20': { 0: 24, 1: 18, 2: 16, 3: 12, 4: 8 },
-  // 21-30关：总84张，5层（14种牌）
-  '21-30': { 0: 26, 1: 22, 2: 16, 3: 12, 4: 8 },
+  // 第1关教学关：总54张，3层
+  '1':     { 0: 22, 1: 18, 2: 14 },
+  // 2-10关：总84张，4层（12种牌）
+  '2-10':  { 0: 28, 1: 24, 2: 18, 3: 14 },
+  // 11-20关：总96张，5层（13种牌）
+  '11-20': { 0: 26, 1: 22, 2: 20, 3: 16, 4: 12 },
+  // 21-30关：总102张，5层（14种牌）
+  '21-30': { 0: 28, 1: 24, 2: 20, 3: 18, 4: 12 },
 };
 
 // 异形棋盘最大放牌数（等比例增加，适配4-5层）
@@ -995,8 +995,8 @@ function getMaxCardsForBoard(boardType, boardCoordCount, levelNum) {
   const layerKeys = Object.keys(base);
   const baseTotal = layerKeys.reduce((sum, k) => sum + base[k], 0);
   if (boardType === 'standard') return baseTotal;
-  // 多层叠加：平均每位置 2 张牌（3层时1张，5层时2张），取 3 的倍数
-  const shapeCap = Math.floor(boardCoordCount * 2 / 3) * 3;
+  // 多层叠加：平均每位置 3 张牌，取 3 的倍数
+  const shapeCap = Math.floor(boardCoordCount * 3 / 3) * 3;
   return Math.min(baseTotal, shapeCap);
 }
 
@@ -1147,7 +1147,7 @@ const LEVELS = {
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 1,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -1235,7 +1235,7 @@ const LEVELS = {
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.danger,
-    interferenceCount: 1,
+    interferenceCount: 3,
     dog_card_enable: 1,
     disabledSkills: [],
     specialRule: null,
@@ -1282,7 +1282,7 @@ const LEVELS = {
     breed: '橘猫',
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 2,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -1296,7 +1296,7 @@ const LEVELS = {
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 1,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -1388,7 +1388,7 @@ const LEVELS = {
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.danger,
-    interferenceCount: 1,
+    interferenceCount: 3,
     dog_card_enable: 1,
     disabledSkills: [],
     specialRule: null,
@@ -1403,7 +1403,7 @@ const LEVELS = {
     breed: '无毛猫',
     boardType: BOARD_TYPES.hourglass,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 2,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -1451,7 +1451,7 @@ const LEVELS = {
     breed: '白猫',
     boardType: BOARD_TYPES.butterfly,
     interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 1,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [
@@ -1543,7 +1543,7 @@ const LEVELS = {
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
     interference: INTERFERENCE_TYPES.danger,
-    interferenceCount: 1,
+    interferenceCount: 3,
     dog_card_enable: 1,
     disabledSkills: [],
     specialRule: null,
