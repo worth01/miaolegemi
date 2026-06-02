@@ -2140,6 +2140,12 @@ function saveState(cats, bells, activeTitle, extra) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {}
 }
+// 页面离开前确保存盘（跳转游戏页时 useEffect saveState 可能来不及执行）
+let _latestCats = [], _latestBells = 0, _latestTitle = '';
+function registerLatestState(cats, bells, title) { _latestCats = cats; _latestBells = bells; _latestTitle = title; }
+window.addEventListener('beforeunload', () => {
+  try { saveState(_latestCats, _latestBells, _latestTitle); } catch(e) {}
+});
 
 /* ═══════════════════════════════════════
    分享工具：Web Share API 优先，降级剪贴板 + Toast
@@ -13453,6 +13459,9 @@ function App() {
     }
     prevTitlesRef.current = currentTitles;
   }, [totalAdopted, cats]);
+
+  // 实时同步最新状态，确保页面跳转前 beforeunload 能保存最新部署阵容
+  useEffect(() => { registerLatestState(cats, bells, activeTitle); }, [cats, bells, activeTitle]);
 
   // Save state — 始终存 localStorage 作为缓存
   let _syncTimer = null;
