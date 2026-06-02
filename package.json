@@ -5,6 +5,26 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node test-server.js"
+    "start": "node test-server.js",
+    "build": "node build.js"
+  },
+  "version": "1.0.0",
+  "description": "<div align=\"center\"> <br/>",
+  "main": "api.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/worth01/miaolegemi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/worth01/miaolegemi/issues"
+  },
+  "homepage": "https://github.com/worth01/miaolegemi#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.29.7",
+    "@babel/core": "^7.29.7",
+    "@babel/preset-react": "^7.29.7"
   }
 }
