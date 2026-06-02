@@ -142,3 +142,4 @@ model users {
   game_sessions                                                 game_sessions[]
   player_cats                                                   player_cats[]
 }
+
