@@ -2021,6 +2021,13 @@ function loadState() {
         }
         return c;
       });
+      // 迁移旧版猫图片路径 cat/ → assets/Textures/cat/
+      cats = cats.map(c => {
+        if (c.img && c.img.startsWith('cat/')) {
+          return { ...c, img: 'assets/Textures/' + c.img };
+        }
+        return c;
+      });
       // 修正猫咪稀有度，强制跟品种定义走
       cats = cats.map(c => {
         const breed = BREEDS.find(b => b.id === c.breedId);
