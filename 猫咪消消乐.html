@@ -7440,6 +7440,23 @@ function Game() {
         }, 200);
       }
     };
+  // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
+  const loadCatsFromStorage = () => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        // 出战席1-3号位：主动技能
+        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
+        // 观战区1-3号位：被动技能
+        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 1 && c.battleSpectator <= 3).sort((a, b) => a.battleSpectator - b.battleSpectator);
+        // 只显示备战区实际配置的猫咪
+        return [...battleCats, ...spectatorCats].filter(Boolean);
+      }
+    } catch (e) {}
+    return [];
+  };
+  const initialCats = loadCatsFromStorage();
 
     // 暂停恢复后继续计时：计算距上次变身的剩余时间
     const now = Date.now();
@@ -7455,7 +7472,9 @@ function Game() {
     }, remainingMs);
     return () => {
       clearTransformTimers();
+  const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
     };
+  const [timerPaused, setTimerPaused] = useState(false);
   }, [gameState, tiles, battleCats, timerPaused]);
 
   // P1: fish & combo tracking
@@ -7500,24 +7519,6 @@ function Game() {
   }, []);
   const lastMatchTimeRef = useRef(0);
   const [phase, setPhase] = useState('playing'); // levelSelect → prep → playing
-  // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
-  const loadCatsFromStorage = () => {
-    try {
-      const saved = localStorage.getItem('miaolegemi_p0_v1');
-      if (saved) {
-        const data = JSON.parse(saved);
-        // 出战席1-3号位：主动技能
-        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
-        // 观战区1-3号位：被动技能
-        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 1 && c.battleSpectator <= 3).sort((a, b) => a.battleSpectator - b.battleSpectator);
-        // 只显示备战区实际配置的猫咪
-        return [...battleCats, ...spectatorCats].filter(Boolean);
-      }
-    } catch (e) {}
-    return [];
-  };
-  const initialCats = loadCatsFromStorage();
-  const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
   const retryAttemptsUsedRef = useRef(0); // 黏人已使用的再来一次次数
   const cowardlyInterferenceBlockedRef = useRef(false); // 胆小：本局干扰牌是否被阻挡
   // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
@@ -7526,6 +7527,7 @@ function Game() {
     personalityEffectsRef.current = personalityEffects;
   }, [personalityEffects]);
   useEffect(() => {
+  const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
     retryAttemptsUsedRef.current = retryAttemptsUsed;
   }, [retryAttemptsUsed]);
   // 胆小：每局开始时一次性判定干扰牌是否被阻挡
@@ -7555,7 +7557,6 @@ function Game() {
   const isTimed = levelConfig.timedMode || false;
   const [timeLeft, setTimeLeft] = useState(isTimed ? levelConfig.timeLimit || 120 : 0);
   const [elapsedTime, setElapsedTime] = useState(0); // 正向计时：实际用时（秒），所有关卡通用
-  const [timerPaused, setTimerPaused] = useState(false);
   const [timerDelay, setTimerDelay] = useState(0);
   const timerVisual = getTimerVisualState(timeLeft, timerDelay, isTimed);
   const timerPauseRef = useRef(null); // timeout for auto-resume
@@ -7642,7 +7643,6 @@ function Game() {
   const [piles, setPiles] = useState(() => generatePileData(1)); // P2: 牌堆状态
   const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
   // 黏人：再来一次概率系统
-  const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
   const [canRetry, setCanRetry] = useState(false);
   const [inviteRewardToast, setInviteRewardToast] = useState(false); // P0: 推荐奖励提示
   const [newRecordAchieved, setNewRecordAchieved] = useState(false);
