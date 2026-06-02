@@ -7345,6 +7345,25 @@ function Game() {
       }
     };
   }, [groomToast, freezeToast, frozenSlot, stickyToast, transformToast, dangerToast, disguiseToast, areaToast]);
+  // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
+  const loadCatsFromStorage = () => {
+    try {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      if (saved) {
+        const data = JSON.parse(saved);
+        // 出战席1-3号位：主动技能
+        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
+        // 观战区1-3号位：被动技能
+        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 1 && c.battleSpectator <= 3).sort((a, b) => a.battleSpectator - b.battleSpectator);
+        // 只显示备战区实际配置的猫咪
+        return [...battleCats, ...spectatorCats].filter(Boolean);
+      }
+    } catch (e) {}
+    return [];
+  };
+  const initialCats = loadCatsFromStorage();
+  const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
+  const [timerPaused, setTimerPaused] = useState(false);
 
   // ═══ 三花牌：全局3秒变身计时器 ═══
   // 胆小性格减免：高好感度下，三花牌变换间隔从3秒延长至6秒
@@ -7437,25 +7456,6 @@ function Game() {
             ...t,
             transformAnimating: false
           } : t));
-  // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
-  const loadCatsFromStorage = () => {
-    try {
-      const saved = localStorage.getItem('miaolegemi_p0_v1');
-      if (saved) {
-        const data = JSON.parse(saved);
-        // 出战席1-3号位：主动技能
-        const battleCats = (data.cats || []).filter(c => c.battleSlot != null && c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
-        // 观战区1-3号位：被动技能
-        const spectatorCats = (data.cats || []).filter(c => c.battleSpectator != null && c.battleSpectator >= 1 && c.battleSpectator <= 3).sort((a, b) => a.battleSpectator - b.battleSpectator);
-        // 只显示备战区实际配置的猫咪
-        return [...battleCats, ...spectatorCats].filter(Boolean);
-      }
-    } catch (e) {}
-    return [];
-  };
-  const initialCats = loadCatsFromStorage();
-  const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
-  const [timerPaused, setTimerPaused] = useState(false);
         }, 200);
       }
     };
