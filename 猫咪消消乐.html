@@ -7215,6 +7215,7 @@ function LevelSelect({
    MAIN GAME COMPONENT
    ═══════════════════════════════════════ */
 function Game() {
+  const [currentLevel, setCurrentLevel] = useState(1);
   const levelConfig = getLevelConfig(currentLevel) || {};
   const [tiles, setTiles] = useState(() => generateBoard(1));
   const [slot, setSlot] = useState([]);
@@ -7363,8 +7364,6 @@ function Game() {
       transformTimeoutRef.current = null;
     }
   };
-  useEffect(() => {
-  const [currentLevel, setCurrentLevel] = useState(1);
   // 同步加载猫咪数据（确保 BattlePrep 显示前数据已就绪）
   const loadCatsFromStorage = () => {
     try {
@@ -7384,10 +7383,11 @@ function Game() {
   const initialCats = loadCatsFromStorage();
   const [battleCats, setBattleCats] = useState(initialCats); // 同步加载猫咪数据
   const [piles, setPiles] = useState(() => generatePileData(1)); // P2: 牌堆状态
-  const pilesRef = useRef(piles); // P2: 牌堆ref
   const [timerPaused, setTimerPaused] = useState(false);
   const [slotBonus, setSlotBonus] = useState(0);
+  const pilesRef = useRef(piles); // P2: 牌堆ref
   const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
+  useEffect(() => {
     // 仅在有transform类型干扰牌且游戏进行中且未暂停时启动
     const hasTransformCards = tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'transform');
     if (!hasTransformCards || gameState !== GAME_PLAYING || timerPaused) {
