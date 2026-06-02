@@ -7388,6 +7388,7 @@ function Game() {
   const [slotBonus, setSlotBonus] = useState(0);
   const pilesRef = useRef(piles); // P2: 牌堆ref
   const [retryAttemptsUsed, setRetryAttemptsUsed] = useState(0);
+  const tempStorageRef = useRef([]);
   useEffect(() => {
     // 仅在有transform类型干扰牌且游戏进行中且未暂停时启动
     const hasTransformCards = tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'transform');
@@ -7523,6 +7524,7 @@ function Game() {
     };
   }, []);
   const lastMatchTimeRef = useRef(0);
+  const personalityEffectsRef = useRef(null); // 性格效果缓存，避免回调中重复计算
   const [phase, setPhase] = useState('playing'); // levelSelect → prep → playing
   const retryAttemptsUsedRef = useRef(0); // 黏人已使用的再来一次次数
   // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
@@ -7544,14 +7546,12 @@ function Game() {
   const shownBattlePrep = useRef(initialCats.length === 0); // 是否有猫咪（有猫咪才显示备战弹窗）
   const uidRef = useRef(0);
   const slotRef = useRef([]);
-  const tempStorageRef = useRef([]);
   const tilesRef = useRef(tiles);
   const matchTimeoutRef = useRef(null);
   const boardContainerRef = useRef(null);
   const boardCanvasRef = useRef(null);
   const handleTileClickRef = useRef(null); // 始终指向最新的 handleTileClick，避免闭包过期
   const lastClickTimeRef = useRef(0); // 防抖：记录上次点击时间戳
-  const personalityEffectsRef = useRef(null); // 性格效果缓存，避免回调中重复计算
   const [hoveredTileId, setHoveredTileId] = useState(null);
   const [boardScale, setBoardScale] = useState(1);
 
