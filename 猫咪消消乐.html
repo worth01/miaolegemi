@@ -7238,6 +7238,9 @@ function Game() {
   const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
+  // 冰冻牌减免：胆小性格减免率达到80%(亲密)以上时，冰冻牌冻结效果失效
+  const freezeBlockOverride = frozenSlot && cowardlyInterferenceBlockedRef.current;
+  const freezeGridCount = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
   // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
   useEffect(() => {
     if (frozenSlot && !freezeBlockOverride) {
@@ -7530,10 +7533,6 @@ function Game() {
     const prob = personalityEffects.interferenceProbability;
     cowardlyInterferenceBlockedRef.current = Math.random() >= prob;
   }, [personalityEffects]);
-  // 冰冻牌减免：胆小性格减免率达到80%(亲密)以上时，冰冻牌冻结效果失效
-  const freezeBlockOverride = frozenSlot && cowardlyInterferenceBlockedRef.current;
-  // 冰冻牌冻结格数：从关卡配置读取 freeze_grid_count，默认1
-  const freezeGridCount = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
   const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
   const nourishingCats = useRef(initialCats); // 保持 ref 同步
   const fixedBattleCats = useRef(initialCats.length > 0 ? initialCats : null); // 标记已加载
