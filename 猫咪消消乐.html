@@ -7239,6 +7239,7 @@ function Game() {
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
   // 冰冻牌减免：胆小性格减免率达到80%(亲密)以上时，冰冻牌冻结效果失效
+  const cowardlyInterferenceBlockedRef = useRef(false); // 胆小：本局干扰牌是否被阻挡
   const freezeBlockOverride = frozenSlot && cowardlyInterferenceBlockedRef.current;
   const freezeGridCount = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
   // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
@@ -7524,7 +7525,6 @@ function Game() {
   const lastMatchTimeRef = useRef(0);
   const [phase, setPhase] = useState('playing'); // levelSelect → prep → playing
   const retryAttemptsUsedRef = useRef(0); // 黏人已使用的再来一次次数
-  const cowardlyInterferenceBlockedRef = useRef(false); // 胆小：本局干扰牌是否被阻挡
   // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
   const personalityEffects = React.useMemo(() => computePersonalityEffects(battleCats), [battleCats]);
   useEffect(() => {
