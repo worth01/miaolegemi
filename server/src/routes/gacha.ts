@@ -129,7 +129,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
       // 分配序列号（使用行锁保证并发安全）
       const serial = await prisma.$transaction(async (tx) => {
         // 查找该品种可用的最小编号
-        const existingSerials = await tx.catSerialRegistry.findMany({
+        const existingSerials = await prisma.catSerialRegistry.findMany({
           where: {
             speciesId: species!.id,
             status: { in: ['available'] }
@@ -143,7 +143,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
           newSerialNumber = existingSerials[0].serialNumber;
         } else {
           // 获取当前最大编号
-          const maxSerial = await tx.catSerialRegistry.findFirst({
+          const maxSerial = await prisma.catSerialRegistry.findFirst({
             where: { speciesId: species!.id },
             orderBy: { serialNumber: 'desc' }
           });
@@ -151,7 +151,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
         }
 
         // 创建序列号
-        const newSerial = await tx.catSerialRegistry.create({
+        const newSerial = await prisma.catSerialRegistry.create({
           data: {
             speciesId: species!.id,
             serialNumber: newSerialNumber,
