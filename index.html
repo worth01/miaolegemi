@@ -6248,7 +6248,7 @@ function CatDetailPage({
       fontSize: 11,
       color: colors.muted
     }
-  }, fish < 1 ? '鱼干不足，去打乐消消获得' : '喂食可提升亲密度')) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, !cat.pendingRelease && (fish < 1 ? '鱼干不足，去打乐消消获得' : '喂食可提升亲密度'))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       fontWeight: 700,
