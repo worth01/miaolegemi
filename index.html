@@ -5124,8 +5124,8 @@ function NurturingArea({
         position: 'relative',
         zIndex: 1
       }
-    }, /*#__PURE__*/React.createElement("button",
-      className: colors === CL ? "btn-feed-warm" : "", {
+    }, /*#__PURE__*/React.createElement("button", {
+        className: colors === CL ? "btn-feed-warm" : "",
       onClick: () => onSaveFromFarewell(cat),
       disabled: fish < cat.saveCost,
       style: {
@@ -5140,8 +5140,8 @@ function NurturingArea({
         color: fish >= cat.saveCost ? '#fff' : colors.muted,
         opacity: fish >= cat.saveCost ? 1 : 0.5
       }
-    }, fish >= cat.saveCost ? `💚 挽留 (${cat.saveCost}🐟)` : `鱼干不足 (需要${cat.saveCost}🐟)`), /*#__PURE__*/React.createElement("button",
-      className: colors === CL ? "btn-send-warm" : "", {
+    }, fish >= cat.saveCost ? `💚 挽留 (${cat.saveCost}🐟)` : `鱼干不足 (需要${cat.saveCost}🐟)`), /*#__PURE__*/React.createElement("button", {
+        className: colors === CL ? "btn-send-warm" : "",
       onClick: () => onImmediateRelease && onImmediateRelease(cat),
       style: {
         flex: 1,
