@@ -4094,7 +4094,7 @@ function LineupManager({
   });
 
   // 筛选家园中可用的猫咪
-  const availableCats = homeCats.filter(c => c.battleSlot == null && c.battleSpectator == null);
+  const availableCats = homeCats.filter(c => c.battleSlot == null && c.battleSpectator == null && !c.pendingRelease);
 
   // 冲突检测
   const activeBattleCats = battleCats.filter(c => c.battleSlot != null && c.battleSlot <= 3);
