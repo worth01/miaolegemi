@@ -5138,7 +5138,7 @@ function NurturingArea({
         opacity: fish >= cat.saveCost ? 1 : 0.5
       } : {
         opacity: fish >= cat.saveCost ? 1 : 0.4
-      }    }, fish >= cat.saveCost ? "挽留" : "鱼干不足"), /*#__PURE__*/React.createElement("button", {
+      }    }, /*#__PURE__*/React.createElement("span", { className: "inner" }, fish >= cat.saveCost ? "挽留" : "鱼干不足")), /*#__PURE__*/React.createElement("button", {
         className: colors === CL ? "btn-send-warm" : "flow-btn flow-send",
       onClick: () => onImmediateRelease && onImmediateRelease(cat),
       style: colors === CL ? {
@@ -5150,7 +5150,9 @@ function NurturingArea({
         fontWeight: 700
       } : {
         flex: 1
-      }    }, "\u7ACB\u5373\u9001\u8D70")) : /*#__PURE__*/React.createElement("div", {
+      }    }, /*#__PURE__*/React.createElement("span", {
+        className: "inner"
+      }, "\u7ACB\u5373\u9001\u8D70"))) : /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 8,
