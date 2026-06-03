@@ -3008,7 +3008,7 @@ function preloadSkillVideos(breeds) {
 /* ═══════════════════════════════════════
    PARTICLE ENGINE (Canvas 2D)
    ═══════════════════════════════════════ */
-const PARTICLE_MAX = 500;
+const PARTICLE_MAX = 200; // 降低粒子数节省GPU
 const _particles = new Array(PARTICLE_MAX);
 for (let i = 0; i < PARTICLE_MAX; i++) _particles[i] = {
   active: false
@@ -3246,7 +3246,7 @@ function emitWinConfetti(cx, cy) {
   }
 }
 function runParticleFrame(ctx, dt) {
-  if (_activeCount <= 0 && _comboTexts.length === 0) return;
+  if (_activeCount <= 0 && _comboTexts.length === 0) return 0;
   for (let i = 0; i < PARTICLE_MAX; i++) {
     if (_particles[i].active) {
       _pUpdate(_particles[i], dt);
@@ -3280,6 +3280,7 @@ function runParticleFrame(ctx, dt) {
     ctx.strokeText(ct.text, 0, 0);
     ctx.restore();
   }
+  return _activeCount + _comboTexts.length;
 }
 
 // ═══ Canvas 2D 棋盘绘制 ═══
@@ -7948,7 +7949,7 @@ function Game() {
     return () => ro.disconnect();
   }, [boardWidth, boardHeight]);
 
-  // Board canvas rAF loop (tiles + particles)
+  // Board canvas rAF loop（性能优化：静止时自动降帧到 10fps）
   useEffect(() => {
     const canvas = boardCanvasRef.current;
     if (!canvas) return;
@@ -7959,12 +7960,25 @@ function Game() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     let rafId;
     let last = performance.now();
+    let lastTileCount = 0;
+    let idleFrames = 0;
     function loop(now) {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      drawTiles(ctx, tilesRef.current, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
-      runParticleFrame(ctx, dt);
-      rafId = requestAnimationFrame(loop);
+      const currentTiles = tilesRef.current || [];
+      const hasParticles = runParticleFrame(ctx, dt) > 0;
+      const tileCount = currentTiles.filter(t => !t.removed).length;
+      const tileChanged = tileCount !== lastTileCount;
+      lastTileCount = tileCount;
+      // 无粒子且画面静止时跳过绘制
+      if (hasParticles || tileChanged || idleFrames < 2) {
+        drawTiles(ctx, currentTiles, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
+        idleFrames = hasParticles || tileChanged ? 0 : idleFrames + 1;
+        rafId = requestAnimationFrame(loop);
+      } else {
+        // 静止时降帧到 10fps，大幅降低功耗
+        setTimeout(() => { rafId = requestAnimationFrame(loop); }, 100);
+      }
     }
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
