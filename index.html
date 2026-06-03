@@ -10304,7 +10304,7 @@ function FarewellCeremony({
     '\u5E78\u8FD0\u732B': 'lucky',
     '\u661F\u7A7A\u732B': 'xing'
   };
-  const videoName = FAREWELL_VIDEOS[cat.breedId] || 'ju';
+  const videoName = cat && cat.breedId ? (FAREWELL_VIDEOS[cat.breedId] || 'ju') : 'ju';
   const videoSrc = "assets/solong/" + videoName + ".mp4";
   useEffect(() => {
     if (!show || !cat) return;
