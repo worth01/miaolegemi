@@ -10285,7 +10285,7 @@ function FarewellCeremony({
   show,
   onDone
 }) {
-  const [phase, setPhase] = useState(0); // 0=playing, 1=text, 2=done
+  const [phase, setPhase] = useState(0);
   const timerRef = useRef(null);
   const videoRef = useRef(null);
   const TOTAL_DURATION = 6000;
@@ -10305,15 +10305,13 @@ function FarewellCeremony({
     '\u661F\u7A7A\u732B': 'xing'
   };
   const videoName = FAREWELL_VIDEOS[cat.breedId] || 'ju';
-  const videoSrc = \`assets/solong/\${videoName}.mp4\`;
+  const videoSrc = "assets/solong/" + videoName + ".mp4";
   useEffect(() => {
     if (!show || !cat) return;
     setPhase(0);
     timerRef.current = setTimeout(() => setPhase(1), TEXT_SHOW_AT);
     timerRef.current = setTimeout(() => onDone && onDone(), TOTAL_DURATION);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [show, cat]);
   if (!show || !cat) return null;
   return /*#__PURE__*/React.createElement("div", {
@@ -10338,7 +10336,7 @@ function FarewellCeremony({
       filter: 'blur(20px)',
       transform: 'scale(1.1)',
       opacity: 0.5,
-      background: \`url(\${videoSrc}) center/cover no-repeat\`
+      background: "url(" + videoSrc + ") center/cover no-repeat"
     }
   }), /*#__PURE__*/React.createElement("video", {
     ref: videoRef,
@@ -10390,3 +10388,4600 @@ function FarewellCeremony({
   }, "\u611F\u8C22\u4F60\u7684 ", cat.daysAlive || 0, "\u5929\u966A\u4F34"))
   );
 }
+
+/* ═══════════════════════════════════════
+   纪念册详情弹窗
+   ═══════════════════════════════════════ */
+function MemorialDetailModal({
+  cat,
+  show,
+  onClose
+}) {
+  if (!show || !cat) return null;
+  const allOwners = [...(cat.previousOwners || [])];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 60
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 300,
+      maxHeight: '80%',
+      overflowY: 'auto',
+      background: `linear-gradient(180deg, ${colors.bg2} 0%, ${colors.bg} 100%)`,
+      borderRadius: 24,
+      padding: '24px 20px',
+      border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
+      animation: 'slideUp 0.3s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 72,
+      height: 72,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      margin: '0 auto 12px',
+      border: `2px solid ${RARITY_COLORS[cat.rarity]}50`,
+      filter: 'grayscale(0.5)'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: cat.img,
+    alt: cat.name,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => {
+      e.target.style.display = 'none';
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: colors.ink
+    }
+  }, cat.name, " \xB7 #", String(cat.breedSerial || cat.serialId).padStart(3, '0')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: colors.muted,
+      marginTop: 2
+    }
+  }, "\u5DF2\u79BB\u5F00 \xB7 ", cat.releasedAt ? new Date(cat.releasedAt).toLocaleDateString('zh-CN') : '')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gap: 8,
+      marginBottom: 16
+    }
+  }, [{
+    label: '陪伴天数',
+    value: cat.daysAlive,
+    color: colors.purpleLight
+  }, {
+    label: '见证游戏',
+    value: cat.gamesWitnessed,
+    color: colors.blue
+  }, {
+    label: '见证最高分',
+    value: cat.witnessMaxScore || 0,
+    color: colors.orange
+  }, {
+    label: '见证累计分',
+    value: cat.witnessTotalScore || 0,
+    color: colors.purpleLight
+  }, {
+    label: '最大连击',
+    value: cat.bestCombo + '连消',
+    color: colors.orange
+  }].map(s => /*#__PURE__*/React.createElement("div", {
+    key: s.label,
+    style: {
+      textAlign: 'center',
+      padding: '8px 0',
+      background: colors.card,
+      borderRadius: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: s.color
+    }
+  }, s.value), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, s.label)))), cat.personality && sanitizePersonality(cat.personality, cat.breedId || '橘猫') && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: colors.sub,
+      marginBottom: 6
+    }
+  }, "\u6027\u683C"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      padding: '3px 8px',
+      borderRadius: 6,
+      background: 'rgba(108,92,231,0.15)',
+      color: colors.purpleLight
+    }
+  }, sanitizePersonality(cat.personality, cat.breedId || '橘猫')))), cat.fishSpent > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: colors.sub,
+      marginBottom: 12
+    }
+  }, "\u4E3A\u4F60\u82B1\u8D39\u4E86 ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: colors.orange,
+      fontWeight: 700
+    }
+  }, cat.fishSpent), " \u6761\u9C7C\u5E72"), allOwners.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: colors.sub,
+      marginBottom: 8
+    }
+  }, "\uD83D\uDCDC \u8840\u7EDF\u8BB0\u5F55 \xB7 \u5386\u7ECF ", allOwners.length, " \u4EFB\u4E3B\u4EBA"), allOwners.map((o, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      padding: '8px 10px',
+      background: colors.card,
+      borderRadius: 10,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u7B2C", i + 1, "\u4EFB \xB7 ", o.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.sub,
+      marginTop: 2
+    }
+  }, "\u966A\u4F34 ", o.daysAlive, " \u5929 \xB7 \u82B1\u8D39 ", o.fishSpent || 0, " \u6761\u9C7C\u5E72 \xB7 \u6700\u5927\u8FDE\u51FB ", o.bestCombo || 0, " \u8FDE\u6D88"), o.dateLeft && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted,
+      marginTop: 2
+    }
+  }, o.dateLeft, " ", o.isCurrent ? '至今' : '离开')))), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      width: '100%',
+      height: 38,
+      borderRadius: 12,
+      background: colors.card,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u5173\u95ED")));
+}
+
+/* ═══════════════════════════════════════
+   称号解锁通知 Toast
+   ═══════════════════════════════════════ */
+function TitleUnlockToast({
+  title,
+  show,
+  onDone
+}) {
+  useEffect(() => {
+    if (show) {
+      const t = setTimeout(() => onDone && onDone(), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [show, onDone]);
+  if (!show || !title) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 60,
+      left: 20,
+      right: 20,
+      zIndex: 75,
+      background: 'linear-gradient(135deg, rgba(108,92,231,0.95), rgba(74,61,181,0.95))',
+      borderRadius: 14,
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      boxShadow: '0 8px 32px rgba(108,92,231,0.4)',
+      animation: 'slideUp 0.4s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 28
+    }
+  }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: '#fff'
+    }
+  }, "\u65B0\u79F0\u53F7\u89E3\u9501\uFF01"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 800,
+      color: '#FFEAA7'
+    }
+  }, title)));
+}
+function InfoModal({
+  show,
+  title,
+  children,
+  onClose
+}) {
+  if (!show) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.6)',
+      backdropFilter: 'blur(6px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 60
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    className: colors === CL ? '' : 'modal-dark',
+    style: {
+      width: 280,
+      background: colors.card,
+      borderRadius: 20,
+      padding: '24px 20px',
+      border: `1px solid ${colors.border}`,
+      animation: 'slideUp 0.3s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: colors.ink,
+      marginBottom: 12
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      lineHeight: 1.6
+    }
+  }, children), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      marginTop: 16,
+      width: '100%',
+      height: 36,
+      borderRadius: 10,
+      background: colors.bg2,
+      border: `1px solid ${colors.border}`,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u77E5\u9053\u4E86")));
+}
+
+/* ═══════════════════════════════════════
+   P4: 血统记录组件（LineageModal）
+   包含首次发现者记录和完整历史
+   ═══════════════════════════════════════ */
+function LineageModal({
+  cat,
+  show,
+  onClose
+}) {
+  if (!show || !cat) return null;
+
+  // 血统记录数据结构
+  const allOwners = [...(cat.previousOwners || [])];
+  if (cat.location === 'home') {
+    allOwners.push({
+      name: '你（当前）',
+      daysAlive: cat.daysAlive,
+      fishSpent: cat.fishSpent,
+      bestCombo: cat.bestCombo,
+      intimacy: cat.intimacy || 0,
+      dateLeft: '至今',
+      isCurrent: true
+    });
+  }
+
+  // P4: 创世区编号判断
+  const breedSerial = cat.breedSerial || cat.serialId || 0;
+  const isGenesis = breedSerial <= 10;
+  const isGenesisEarly = breedSerial <= 100; // 早期区
+
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 60
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 320,
+      maxHeight: '85%',
+      overflowY: 'auto',
+      background: colors.card,
+      borderRadius: 24,
+      padding: '24px 20px',
+      border: `1px solid ${isGenesis ? 'rgba(253,150,68,0.4)' : colors.border}`,
+      animation: 'slideUp 0.3s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      marginBottom: 16
+    }
+  }, isGenesis && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8,
+      padding: '4px 12px',
+      borderRadius: 999,
+      background: colors === CL ? 'linear-gradient(135deg, rgba(139,90,0,0.3), rgba(101,67,0,0.25))' : 'linear-gradient(135deg, rgba(253,150,68,0.3), rgba(253,100,68,0.2))',
+      border: '1px solid rgba(253,150,68,0.5)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      lineHeight: 1
+    }
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: '#FFD700',
+      lineHeight: 1
+    }
+  }, "\u521B\u4E16\u7F16\u53F7")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 72,
+      height: 72,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      margin: '0 auto 10px',
+      border: `3px solid ${isGenesis ? '#FFD700' : RARITY_COLORS[cat.rarity] + '60'}`,
+      boxShadow: isGenesis ? '0 0 20px rgba(255,215,0,0.4)' : 'none'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: cat.img,
+    alt: cat.name,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => {
+      e.target.style.display = 'none';
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: colors.ink
+    }
+  }, cat.breedId), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: isGenesis ? '#FFD700' : colors.sub,
+      marginTop: 2
+    }
+  }, "#", String(breedSerial).padStart(3, '0')), isGenesisEarly && !isGenesis && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.orange,
+      marginTop: 2
+    }
+  }, "\u65E9\u671F\u7F16\u53F7 \xB7 \u73CD\u8D35")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      padding: '10px 12px',
+      borderRadius: 12,
+      background: isGenesis ? 'rgba(253,150,68,0.1)' : 'rgba(108,92,231,0.08)',
+      border: `1px solid ${isGenesis ? 'rgba(253,150,68,0.25)' : 'rgba(108,92,231,0.15)'}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: isGenesis ? '#FFD700' : colors.purpleLight,
+      marginBottom: 4
+    }
+  }, "\uD83C\uDFF7\uFE0F \u5E8F\u5217\u53F7\u6863\u6848"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.sub,
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '4px 8px'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u54C1\u79CD\uFF1A", cat.breedId), /*#__PURE__*/React.createElement("span", null, "\u7A00\u6709\u5EA6\uFF1A", cat.rarity), /*#__PURE__*/React.createElement("span", null, "\u7F16\u53F7\uFF1A#", String(breedSerial).padStart(3, '0')), /*#__PURE__*/React.createElement("span", null, "\u5386\u7ECF\uFF1A", allOwners.length, " \u4EFB\u4E3B\u4EBA")), isGenesis && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: '#FFD700',
+      marginTop: 6,
+      fontWeight: 600
+    }
+  }, "\u26A0\uFE0F \u521B\u4E16\u533A\u9650\u5B9A \xB7 \u5168\u7403\u4EC510\u53EA"), isGenesisEarly && !isGenesis && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.orange,
+      marginTop: 6
+    }
+  }, "\uD83D\uDCDC \u65E9\u671F\u533A \xB7 \u9996\u6708\u9650\u5B9A")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      paddingTop: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: colors.ink,
+      marginBottom: 10,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6
+    }
+  }, "\uD83D\uDD17 \u8840\u7EDF\u8BB0\u5F55", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9,
+      color: colors.muted,
+      fontWeight: 400
+    }
+  }, "\uFF08\u6C38\u4E45\u4FDD\u5B58\uFF09")), allOwners.length === 0 && cat.location === 'bag' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      textAlign: 'center',
+      padding: '12px 0'
+    }
+  }, "\u6682\u65E0\u8840\u7EDF\u8BB0\u5F55") : allOwners.length === 0 && cat.location !== 'bag' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      textAlign: 'center',
+      padding: '12px 0'
+    }
+  }, "\u4F60\u662F\u7B2C 1 \u4EFB\u4E3B\u4EBA\uFF0C\u5C1A\u65E0\u524D\u4EFB\u8BB0\u5F55") : allOwners.map((owner, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      padding: '10px 0',
+      borderBottom: i < allOwners.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+      opacity: owner.isCurrent ? 1 : 0.85
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: owner.isCurrent ? colors.purpleLight : colors.ink
+    }
+  }, "\u7B2C", i + 1, "\u4EFB\u4E3B\u4EBA"), owner.isCurrent && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 8,
+      padding: '2px 6px',
+      borderRadius: 4,
+      background: 'rgba(108,92,231,0.2)',
+      color: colors.purpleLight,
+      fontWeight: 600
+    }
+  }, "\u5F53\u524D")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: owner.isCurrent ? colors.purpleLight : colors.sub,
+      marginBottom: 6
+    }
+  }, owner.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gap: '4px 8px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: colors.ink,
+      fontWeight: 600
+    }
+  }, owner.daysAlive), " \u5929"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: colors.ink,
+      fontWeight: 600
+    }
+  }, owner.fishSpent), " \u9C7C\u5E72"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: colors.ink,
+      fontWeight: 600
+    }
+  }, owner.bestCombo), " \u8FDE\u6D88")), owner.intimacy > 0 && owner.isCurrent && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4,
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, "\u6700\u9AD8\u4EB2\u5BC6\u5EA6\uFF1A", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#FD79A8',
+      fontWeight: 600
+    }
+  }, owner.intimacy)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4,
+      fontSize: 9,
+      color: colors.muted
+    }
+  }, "\u72B6\u6001\uFF1A", owner.dateLeft)))), cat.coolingUntil && Date.now() < cat.coolingUntil && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      padding: '8px 12px',
+      borderRadius: 8,
+      background: 'rgba(255,107,107,0.08)',
+      border: '1px solid rgba(255,107,107,0.2)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.red,
+      fontWeight: 600
+    }
+  }, "\u23F3 \u5E8F\u5217\u53F7\u51B7\u5374\u4E2D"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: colors.muted,
+      marginTop: 2
+    }
+  }, "\u9884\u8BA1 ", new Date(cat.coolingUntil).toLocaleDateString('zh-CN'), " \u89E3\u51BB")), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      marginTop: 16,
+      width: '100%',
+      height: 36,
+      borderRadius: 10,
+      background: 'rgba(255,255,255,0.08)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u5173\u95ED")));
+}
+function GachaResultModal({
+  cat,
+  show,
+  onClose
+}) {
+  if (!show || !cat) return null;
+
+  // 检查是否触发保底
+  const isPitySSR = cat.triggeredPity?.type === 'ssr';
+  const isPitySR = cat.triggeredPity?.type === 'sr';
+  const isPity = isPitySSR || isPitySR;
+
+  // 保底标签文案
+  const pityLabel = isPitySSR ? '🎉 大保底出SSR!' : isPitySR ? '💎 小保底出SR!' : null;
+  const pityColor = isPitySSR ? '#FD9644' : isPitySR ? '#A29BFE' : null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 60
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 280,
+      background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+      borderRadius: 24,
+      padding: '28px 22px',
+      textAlign: 'center',
+      border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
+      boxShadow: `0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
+      animation: 'slideUp 0.4s ease-out'
+    }
+  }, isPity && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      padding: '8px 16px',
+      borderRadius: 20,
+      background: `${pityColor}20`,
+      border: `1px solid ${pityColor}50`,
+      animation: 'pulse 1s ease-in-out infinite'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: pityColor
+    }
+  }, pityLabel)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 80,
+      height: 80,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      margin: '0 auto 14px',
+      border: `3px solid ${RARITY_COLORS[cat.rarity]}`,
+      boxShadow: `0 0 20px ${RARITY_COLORS[cat.rarity]}40`
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: cat.img,
+    alt: cat.name,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => {
+      e.target.style.display = 'none';
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: 2,
+      color: RARITY_COLORS[cat.rarity],
+      marginBottom: 4
+    }
+  }, cat.rarity), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 2
+    }
+  }, cat.name, " \xB7 #", String(cat.breedSerial || cat.serialId).padStart(3, '0')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: colors.sub,
+      marginBottom: 6
+    }
+  }, "\u6027\u683C\uFF1A", sanitizePersonality(cat.personality, cat.breedId || '橘猫')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: colors.green,
+      marginBottom: 20
+    }
+  }, "\u2705 \u5DF2\u653E\u5165\u5305\u88F9\u533A \xB7 30\u5929\u5185\u8BB0\u5F97\u9886\u517B"), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    className: "btn-gacha-warm",
+    style: {
+      width: '100%',
+      height: 40,
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }, "\u6536\u4E0B\u5566") : /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    className: "flow-btn flow-play",
+    style: {
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inner"
+  }, "\u6536\u4E0B\u5566"))));
+}
+
+/* ═══════════════════════════════════════
+   合规：隐私政策页面
+   ═══════════════════════════════════════ */
+function PrivacyPolicyPage({
+  onBack
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      background: colors.bg
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 20px',
+      borderBottom: `1px solid ${colors.cardBorder}`,
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onBack,
+    style: {
+      height: 32,
+      borderRadius: 10,
+      padding: '0 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: colors.card,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: 600,
+      color: colors.sub,
+      flexShrink: 0,
+      marginTop: 35
+    }
+  }, "\u2190 \u8FD4\u56DE")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '16px 20px 40px',
+      fontSize: 13,
+      lineHeight: 1.8,
+      color: colors.sub,
+      userSelect: 'text',
+      WebkitUserSelect: 'text'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: colors.ink,
+      fontWeight: 700,
+      fontSize: 14,
+      marginBottom: 16
+    }
+  }, "\u55B5\u545C\u4E50\u6D88\u6D88 \u9690\u79C1\u653F\u7B56"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: colors.muted,
+      fontSize: 11,
+      marginBottom: 20
+    }
+  }, "\u66F4\u65B0\u65E5\u671F\uFF1A2026\u5E7405\u670816\u65E5", /*#__PURE__*/React.createElement("br", null), "\u751F\u6548\u65E5\u671F\uFF1A2026\u5E7405\u670816\u65E5"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E00\u3001\u4FE1\u606F\u7684\u6536\u96C6"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC\u4EC5\u5728\u672C\u6E38\u620F\u4E3A\u60A8\u63D0\u4F9B\u670D\u52A1\u6240\u5FC5\u9700\u65F6\uFF0C\u6536\u96C6\u60A8\u7684\u4EE5\u4E0B\u4FE1\u606F\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u5FAE\u4FE1\u5934\u50CF\u3001\u6635\u79F0"), "\uFF1A\u7528\u4E8E\u60A8\u7684\u6E38\u620F\u8D26\u53F7\u5C55\u793A\u3001\u6392\u884C\u699C\u663E\u793A\u3001\u793E\u4EA4\u4E92\u52A8\u529F\u80FD\u3002\u4EC5\u5728\u60A8\u4E3B\u52A8\u70B9\u51FB\u300C\u540C\u610F\u5E76\u767B\u5F55\u300D\u6309\u94AE\u540E\uFF0C\u901A\u8FC7\u5FAE\u4FE1\u5B98\u65B9\u6388\u6743\u63A5\u53E3\u83B7\u53D6\u3002\u60A8\u62D2\u7EDD\u6388\u6743\u4E0D\u5F71\u54CD\u57FA\u7840\u6E38\u620F\u4F53\u9A8C\u3002"), /*#__PURE__*/React.createElement("p", null, "2. ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u6E38\u620F\u6570\u636E"), "\uFF1A\u5305\u62EC\u60A8\u7684\u6E38\u620F\u8FDB\u5EA6\u3001\u5173\u5361\u5F97\u5206\u3001\u732B\u54AA\u517B\u6210\u6570\u636E\u3001\u9053\u5177\u4F7F\u7528\u8BB0\u5F55\u3002\u8FD9\u4E9B\u6570\u636E\u4FDD\u5B58\u5728\u60A8\u7684\u5FAE\u4FE1\u672C\u5730\u7F13\u5B58\u548C\u6211\u4EEC\u7684\u540E\u7AEF\u670D\u52A1\u5668\u4E2D\u3002"), /*#__PURE__*/React.createElement("p", null, "3. ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 600,
+      color: colors.ink
+    }
+  }, "\u8BBE\u5907\u4FE1\u606F"), "\uFF1A\u6211\u4EEC\u4EC5\u6536\u96C6\u5FC5\u8981\u7684\u57FA\u7840\u8BBE\u5907\u4FE1\u606F\uFF08\u8BBE\u5907\u578B\u53F7\u3001\u64CD\u4F5C\u7CFB\u7EDF\u7248\u672C\u3001\u5FAE\u4FE1\u7248\u672C\uFF09\uFF0C\u7528\u4E8E\u9002\u914D\u4E0D\u540C\u624B\u673A\u5C4F\u5E55\u3001\u89E3\u51B3\u517C\u5BB9\u6027\u95EE\u9898\u3002\u6211\u4EEC", /*#__PURE__*/React.createElement("strong", null, "\u4E0D\u4F1A"), "\u6536\u96C6\u60A8\u7684IMEI\u3001MAC\u5730\u5740\u3001\u901A\u8BAF\u5F55\u3001\u77ED\u4FE1\u3001\u4F4D\u7F6E\u4FE1\u606F\u7B49\u654F\u611F\u6743\u9650\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E8C\u3001\u4FE1\u606F\u7684\u4F7F\u7528"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC\u6536\u96C6\u7684\u4FE1\u606F\u4EC5\u7528\u4E8E\u4EE5\u4E0B\u76EE\u7684\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. \u4E3A\u60A8\u63D0\u4F9B\u6E38\u620F\u670D\u52A1\uFF0C\u5305\u62EC\uFF1A\u4FDD\u5B58\u6E38\u620F\u8FDB\u5EA6\u3001\u540C\u6B65\u4E91\u7AEF\u6570\u636E\u3001\u5C55\u793A\u6392\u884C\u699C\uFF1B"), /*#__PURE__*/React.createElement("p", null, "2. \u4F18\u5316\u6E38\u620F\u4F53\u9A8C\uFF0C\u5305\u62EC\uFF1A\u4FEE\u590D\u6E38\u620Fbug\u3001\u9002\u914D\u4E0D\u540C\u8BBE\u5907\u3001\u63D0\u5347\u6E38\u620F\u6027\u80FD\uFF1B"), /*#__PURE__*/React.createElement("p", null, "3. \u4FDD\u969C\u6E38\u620F\u5B89\u5168\uFF0C\u5305\u62EC\uFF1A\u68C0\u6D4B\u5916\u6302\u3001\u811A\u672C\u7B49\u8FDD\u89C4\u884C\u4E3A\uFF0C\u7EF4\u62A4\u6E38\u620F\u516C\u5E73\u6027\u3002"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC", /*#__PURE__*/React.createElement("strong", null, "\u4E0D\u4F1A"), "\u5C06\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u7528\u4E8E\u4EFB\u4F55\u5176\u4ED6\u76EE\u7684\uFF0C\u4E0D\u4F1A\u8FDB\u884C\u7528\u6237\u753B\u50CF\u3001\u81EA\u52A8\u5316\u51B3\u7B56\uFF0C\u4E0D\u4F1A\u51FA\u552E\u3001\u51FA\u79DF\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u7ED9\u4EFB\u4F55\u7B2C\u4E09\u65B9\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E09\u3001\u4FE1\u606F\u7684\u5B58\u50A8\u4E0E\u4FDD\u62A4"), /*#__PURE__*/React.createElement("p", null, "1. \u60A8\u7684\u6E38\u620F\u6570\u636E\u5B58\u50A8\u5728\u5FAE\u4FE1\u672C\u5730\u7F13\u5B58\u548C\u6211\u4EEC\u7684\u540E\u7AEF\u670D\u52A1\u5668\u4E2D\u3002\u540E\u7AEF\u670D\u52A1\u5668\u4F4D\u4E8E\u4E2D\u534E\u4EBA\u6C11\u5171\u548C\u56FD\u5883\u5185\uFF0C\u91C7\u7528\u52A0\u5BC6\u4F20\u8F93\uFF08HTTPS\uFF09\u548C\u52A0\u5BC6\u5B58\u50A8\u6280\u672F\u4FDD\u62A4\u60A8\u7684\u6570\u636E\u5B89\u5168\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u60A8\u53EF\u4EE5\u5728\u6E38\u620F\u5185\u7684\u300C\u8BBE\u7F6E\u300D\u9875\u9762\uFF0C\u968F\u65F6\u67E5\u770B\u3001\u4FEE\u6539\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u3002\u60A8\u6CE8\u9500\u8D26\u53F7\u540E\uFF0C\u6211\u4EEC\u5C06\u572830\u5929\u5185\u5220\u9664\u60A8\u7684\u6240\u6709\u4E2A\u4EBA\u4FE1\u606F\uFF0C\u6CD5\u5F8B\u6CD5\u89C4\u53E6\u6709\u8981\u6C42\u7684\u9664\u5916\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u6211\u4EEC\u5EFA\u7ACB\u4E86\u5B8C\u5584\u7684\u6570\u636E\u5B89\u5168\u7BA1\u7406\u5236\u5EA6\uFF0C\u5B9A\u671F\u8FDB\u884C\u5B89\u5168\u8BC4\u4F30\u548C\u6F0F\u6D1E\u4FEE\u590D\uFF0C\u9632\u6B62\u6570\u636E\u6CC4\u9732\u3001\u4E22\u5931\u3001\u7BE1\u6539\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u56DB\u3001\u4FE1\u606F\u7684\u5171\u4EAB\u4E0E\u62AB\u9732"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC\u627F\u8BFA\uFF0C\u672A\u7ECF\u60A8\u7684\u660E\u786E\u540C\u610F\uFF0C", /*#__PURE__*/React.createElement("strong", null, "\u4E0D\u4F1A"), "\u5411\u4EFB\u4F55\u7B2C\u4E09\u65B9\u5171\u4EAB\u3001\u8F6C\u8BA9\u3001\u62AB\u9732\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF0C\u9664\u975E\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. \u6CD5\u5F8B\u6CD5\u89C4\u8981\u6C42\u6211\u4EEC\u62AB\u9732\uFF08\u5982\u6CD5\u9662\u3001\u516C\u5B89\u673A\u5173\u7B49\u56FD\u5BB6\u673A\u5173\u4F9D\u6CD5\u8981\u6C42\uFF09\uFF1B"), /*#__PURE__*/React.createElement("p", null, "2. \u4E3A\u4FDD\u62A4\u6211\u4EEC\u3001\u60A8\u6216\u5176\u4ED6\u7528\u6237\u7684\u5408\u6CD5\u6743\u76CA\u6240\u5FC5\u9700\uFF1B"), /*#__PURE__*/React.createElement("p", null, "3. \u60A8\u4E3B\u52A8\u8981\u6C42\u6211\u4EEC\u5171\u4EAB\u60A8\u7684\u4FE1\u606F\uFF08\u5982\u6392\u884C\u699C\u5C55\u793A\uFF09\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E94\u3001\u60A8\u7684\u6743\u5229"), /*#__PURE__*/React.createElement("p", null, "\u6839\u636E\u300A\u4E2D\u534E\u4EBA\u6C11\u5171\u548C\u56FD\u4E2A\u4EBA\u4FE1\u606F\u4FDD\u62A4\u6CD5\u300B\uFF0C\u60A8\u4EAB\u6709\u4EE5\u4E0B\u6743\u5229\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. ", /*#__PURE__*/React.createElement("strong", null, "\u77E5\u60C5\u6743"), "\uFF1A\u4E86\u89E3\u6211\u4EEC\u6536\u96C6\u3001\u4F7F\u7528\u60A8\u4E2A\u4EBA\u4FE1\u606F\u7684\u76EE\u7684\u3001\u65B9\u5F0F\u3001\u8303\u56F4\uFF1B"), /*#__PURE__*/React.createElement("p", null, "2. ", /*#__PURE__*/React.createElement("strong", null, "\u67E5\u9605\u6743"), "\uFF1A\u67E5\u770B\u6211\u4EEC\u6536\u96C6\u7684\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF1B"), /*#__PURE__*/React.createElement("p", null, "3. ", /*#__PURE__*/React.createElement("strong", null, "\u66F4\u6B63\u6743"), "\uFF1A\u8981\u6C42\u6211\u4EEC\u66F4\u6B63\u4E0D\u51C6\u786E\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF1B"), /*#__PURE__*/React.createElement("p", null, "4. ", /*#__PURE__*/React.createElement("strong", null, "\u5220\u9664\u6743"), "\uFF1A\u5728\u60A8\u6CE8\u9500\u8D26\u53F7\u3001\u64A4\u56DE\u6388\u6743\u540E\uFF0C\u8981\u6C42\u6211\u4EEC\u5220\u9664\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF1B"), /*#__PURE__*/React.createElement("p", null, "5. ", /*#__PURE__*/React.createElement("strong", null, "\u64A4\u56DE\u540C\u610F\u6743"), "\uFF1A\u60A8\u53EF\u4EE5\u5728\u5FAE\u4FE1\u300C\u8BBE\u7F6E-\u4E2A\u4EBA\u4FE1\u606F\u4E0E\u6743\u9650\u300D\u4E2D\u64A4\u56DE\u5BF9\u672C\u6E38\u620F\u7684\u6388\u6743\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u516D\u3001\u513F\u7AE5\u9690\u79C1\u4FDD\u62A4"), /*#__PURE__*/React.createElement("p", null, "\u672C\u6E38\u620F\u9762\u5411\u6240\u6709\u5E74\u9F84\u6BB5\u7684\u7528\u6237\uFF0C\u6211\u4EEC\u7279\u522B\u91CD\u89C6\u5BF9\u513F\u7AE5\u4E2A\u4EBA\u4FE1\u606F\u7684\u4FDD\u62A4\u3002\u82E5\u60A8\u662F14\u5468\u5C81\u4EE5\u4E0B\u7684\u513F\u7AE5\uFF0C\u8BF7\u5728\u76D1\u62A4\u4EBA\u7684\u966A\u540C\u4E0B\u9605\u8BFB\u672C\u9690\u79C1\u653F\u7B56\uFF0C\u5E76\u5728\u76D1\u62A4\u4EBA\u540C\u610F\u540E\u4F7F\u7528\u672C\u6E38\u620F\u670D\u52A1\u3002\u6211\u4EEC\u4E0D\u4F1A\u4E3B\u52A8\u6536\u96C614\u5468\u5C81\u4EE5\u4E0B\u513F\u7AE5\u7684\u4E2A\u4EBA\u4FE1\u606F\u3002\u82E5\u6211\u4EEC\u53D1\u73B0\u81EA\u5DF1\u6536\u96C6\u4E86\u672A\u6EE114\u5468\u5C81\u513F\u7AE5\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF0C\u5C06\u7ACB\u5373\u5220\u9664\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E03\u3001\u6E38\u5BA2\u6A21\u5F0F\u8BF4\u660E"), /*#__PURE__*/React.createElement("p", null, "\u60A8\u53EF\u4EE5\u9009\u62E9\u4EE5\u6E38\u5BA2\u6A21\u5F0F\u4F53\u9A8C\u672C\u6E38\u620F\uFF0C\u6E38\u5BA2\u6A21\u5F0F\u4E0B\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. \u60A8\u53EF\u4EE5\u6B63\u5E38\u4F53\u9A8C\u4E09\u6D88\u5173\u5361\u73A9\u6CD5\uFF0C\u65E0\u65F6\u95F4\u9650\u5236\uFF1B"), /*#__PURE__*/React.createElement("p", null, "2. \u60A8\u7684\u6E38\u620F\u8FDB\u5EA6\u3001\u6570\u636E\u4EC5\u4FDD\u5B58\u5728\u5FAE\u4FE1\u672C\u5730\u7F13\u5B58\u4E2D\uFF0C\u5378\u8F7D\u5C0F\u7A0B\u5E8F\u540E\u6570\u636E\u5C06\u4E22\u5931\uFF1B"), /*#__PURE__*/React.createElement("p", null, "3. \u60A8\u65E0\u6CD5\u4F7F\u7528\u4EE5\u4E0B\u529F\u80FD\uFF1A\u4E91\u7AEF\u6570\u636E\u540C\u6B65\u3001\u6392\u884C\u699C\u3001\u793E\u4EA4\u4E92\u52A8\u3001\u9053\u5177\u5145\u503C\u3001\u732B\u54AA\u517B\u6210\u7684\u9AD8\u9636\u529F\u80FD\u3002\u60A8\u53EF\u4EE5\u5728\u6E38\u620F\u5185\u7684\u300C\u8BBE\u7F6E\u300D\u9875\u9762\uFF0C\u968F\u65F6\u5B8C\u6210\u5FAE\u4FE1\u6388\u6743\uFF0C\u5347\u7EA7\u4E3A\u5B8C\u6574\u529F\u80FD\u6A21\u5F0F\uFF0C\u540C\u6B65\u60A8\u7684\u6E38\u620F\u6570\u636E\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u516B\u3001\u672C\u9690\u79C1\u653F\u7B56\u7684\u66F4\u65B0"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC\u53EF\u80FD\u4F1A\u6839\u636E\u56FD\u5BB6\u6CD5\u5F8B\u6CD5\u89C4\u3001\u5FAE\u4FE1\u5E73\u53F0\u8981\u6C42\u7684\u53D8\u66F4\uFF0C\u9002\u65F6\u66F4\u65B0\u672C\u9690\u79C1\u653F\u7B56\u3002\u66F4\u65B0\u540E\uFF0C\u6211\u4EEC\u4F1A\u901A\u8FC7\u6E38\u620F\u5185\u5F39\u7A97\u3001\u516C\u544A\u7B49\u65B9\u5F0F\u63D0\u524D7\u5929\u901A\u77E5\u60A8\u3002\u82E5\u60A8\u5728\u66F4\u65B0\u540E\u7EE7\u7EED\u4F7F\u7528\u672C\u6E38\u620F\uFF0C\u5373\u89C6\u4E3A\u60A8\u5DF2\u9605\u8BFB\u3001\u7406\u89E3\u5E76\u540C\u610F\u66F4\u65B0\u540E\u7684\u9690\u79C1\u653F\u7B56\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E5D\u3001\u8054\u7CFB\u6211\u4EEC"), /*#__PURE__*/React.createElement("p", null, "\u82E5\u60A8\u5BF9\u672C\u9690\u79C1\u653F\u7B56\u6709\u4EFB\u4F55\u7591\u95EE\u3001\u6295\u8BC9\u3001\u5EFA\u8BAE\uFF0C\u53EF\u901A\u8FC7\u4EE5\u4E0B\u65B9\u5F0F\u8054\u7CFB\u6211\u4EEC\uFF1A"), /*#__PURE__*/React.createElement("p", null, "\u8FD0\u8425\u4E3B\u4F53\uFF1A\u6728\u5EF6\u661F\u79D1\u6280\u6709\u9650\u516C\u53F8"), /*#__PURE__*/React.createElement("p", null, "\u8054\u7CFB\u90AE\u7BB1\uFF1A137005952@qq.com"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 32,
+      color: colors.muted,
+      fontSize: 11
+    }
+  }, "\u672C\u9690\u79C1\u653F\u7B56\u6700\u7EC8\u89E3\u91CA\u6743\u5F52\u6728\u5EF6\u661F\u79D1\u6280\u6709\u9650\u516C\u53F8\u6240\u6709\u3002")));
+}
+
+/* ═══════════════════════════════════════
+   合规：用户服务协议页面
+   ═══════════════════════════════════════ */
+function UserAgreementPage({
+  onBack
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      background: colors.bg
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 20px',
+      borderBottom: `1px solid ${colors.cardBorder}`,
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onBack,
+    style: {
+      height: 32,
+      borderRadius: 10,
+      padding: '0 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: colors.card,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: 600,
+      color: colors.sub,
+      flexShrink: 0,
+      marginTop: 35
+    }
+  }, "\u2190 \u8FD4\u56DE")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '16px 20px 40px',
+      fontSize: 13,
+      lineHeight: 1.8,
+      color: colors.sub,
+      userSelect: 'text',
+      WebkitUserSelect: 'text'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: colors.ink,
+      fontWeight: 700,
+      fontSize: 14,
+      marginBottom: 16
+    }
+  }, "\u55B5\u545C\u4E50\u6D88\u6D88 \u7528\u6237\u670D\u52A1\u534F\u8BAE"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: colors.muted,
+      fontSize: 11,
+      marginBottom: 20
+    }
+  }, "\u66F4\u65B0\u65E5\u671F\uFF1A2026\u5E7405\u670816\u65E5", /*#__PURE__*/React.createElement("br", null), "\u751F\u6548\u65E5\u671F\uFF1A2025\u5E7405\u670816\u65E5"), /*#__PURE__*/React.createElement("p", null, "\u6B22\u8FCE\u60A8\u4F7F\u7528\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u300C\u55B5\u545C\u4E50\u6D88\u6D88\u300D\uFF08\u4EE5\u4E0B\u7B80\u79F0\u300C\u672C\u6E38\u620F\u300D\uFF09\u3002\u672C\u534F\u8BAE\u662F\u60A8\u4E0E\u672C\u6E38\u620F\u8FD0\u8425\u4E3B\u4F53\uFF08\u4EE5\u4E0B\u7B80\u79F0\u300C\u6211\u4EEC\u300D\uFF09\u4E4B\u95F4\uFF0C\u5173\u4E8E\u60A8\u4F7F\u7528\u672C\u6E38\u620F\u670D\u52A1\u6240\u7B7E\u8BA2\u7684\u5408\u6CD5\u6709\u6548\u534F\u8BAE\u3002\u8BF7\u60A8\u5728\u4F7F\u7528\u672C\u6E38\u620F\u524D\uFF0C\u4ED4\u7EC6\u9605\u8BFB\u672C\u534F\u8BAE\u7684\u5168\u90E8\u5185\u5BB9\uFF0C\u60A8\u70B9\u51FB\u300C\u540C\u610F\u5E76\u8FDB\u5165\u300D\u6309\u94AE\u3001\u4F7F\u7528\u672C\u6E38\u620F\u670D\u52A1\uFF0C\u5373\u89C6\u4E3A\u60A8\u5DF2\u5B8C\u6574\u9605\u8BFB\u3001\u7406\u89E3\u5E76\u540C\u610F\u672C\u534F\u8BAE\u7684\u5168\u90E8\u6761\u6B3E\uFF0C\u4E0E\u6211\u4EEC\u7B7E\u8BA2\u672C\u534F\u8BAE\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E00\u3001\u670D\u52A1\u5185\u5BB9"), /*#__PURE__*/React.createElement("p", null, "1. \u672C\u6E38\u620F\u662F\u4E00\u6B3E\u732B\u54AA\u4E3B\u9898\u7684\u4F11\u95F2\u4E09\u6D88\u7C7B\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u6E38\u620F\uFF0C\u6211\u4EEC\u4E3A\u60A8\u63D0\u4F9B\u7684\u670D\u52A1\u5305\u62EC\uFF1A\u4E09\u6D88\u5173\u5361\u73A9\u6CD5\u3001\u732B\u54AA\u517B\u6210\u7CFB\u7EDF\u3001\u6E38\u620F\u5185\u9053\u5177\u670D\u52A1\u3001\u5E7F\u544A\u670D\u52A1\u3001\u793E\u4EA4\u4E92\u52A8\u670D\u52A1\u3001\u6E38\u620F\u6570\u636E\u540C\u6B65\u670D\u52A1\u7B49\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u6211\u4EEC\u6709\u6743\u6839\u636E\u6E38\u620F\u8FD0\u8425\u60C5\u51B5\uFF0C\u8C03\u6574\u3001\u66F4\u65B0\u3001\u6682\u505C\u3001\u7EC8\u6B62\u90E8\u5206\u6216\u5168\u90E8\u6E38\u620F\u670D\u52A1\uFF0C\u8C03\u6574\u524D\u4F1A\u901A\u8FC7\u6E38\u620F\u5185\u516C\u544A\u3001\u5F39\u7A97\u7B49\u65B9\u5F0F\u63D0\u524D\u901A\u77E5\u60A8\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u672C\u6E38\u620F\u4EC5\u652F\u6301\u60A8\u5728\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u5E73\u53F0\u5185\uFF0C\u4EE5\u4E2A\u4EBA\u975E\u5546\u4E1A\u7528\u9014\u4F7F\u7528\uFF0C\u7981\u6B62\u60A8\u5C06\u672C\u6E38\u620F\u7528\u4E8E\u4EFB\u4F55\u5546\u4E1A\u3001\u76C8\u5229\u3001\u4FB5\u6743\u3001\u8FDD\u6CD5\u8FDD\u89C4\u7528\u9014\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E8C\u3001\u8D26\u53F7\u6CE8\u518C\u4E0E\u4F7F\u7528"), /*#__PURE__*/React.createElement("p", null, "1. \u672C\u6E38\u620F\u91C7\u7528\u5FAE\u4FE1\u8D26\u53F7\u767B\u5F55\u4F53\u7CFB\uFF0C\u60A8\u4E3B\u52A8\u70B9\u51FB\u300C\u540C\u610F\u5E76\u767B\u5F55\u300D\u6309\u94AE\u540E\uFF0C\u53EF\u901A\u8FC7\u5FAE\u4FE1\u6388\u6743\u521B\u5EFA\u60A8\u7684\u6E38\u620F\u8D26\u53F7\uFF0C\u6E38\u620F\u8D26\u53F7\u7684\u6240\u6709\u6743\u5F52\u6211\u4EEC\u6240\u6709\uFF0C\u60A8\u4EC5\u83B7\u5F97\u4E2A\u4EBA\u4F7F\u7528\u6743\u9650\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u60A8\u5E94\u59A5\u5584\u4FDD\u7BA1\u60A8\u7684\u6E38\u620F\u8D26\u53F7\u3001\u5FAE\u4FE1\u8D26\u53F7\u4FE1\u606F\uFF0C\u7981\u6B62\u60A8\u5C06\u6E38\u620F\u8D26\u53F7\u51FA\u552E\u3001\u51FA\u79DF\u3001\u8F6C\u501F\u3001\u8D60\u4E0E\u7ED9\u4EFB\u4F55\u7B2C\u4E09\u65B9\u4F7F\u7528\uFF0C\u7531\u6B64\u4EA7\u751F\u7684\u6240\u6709\u635F\u5931\u3001\u8D23\u4EFB\uFF0C\u5747\u7531\u60A8\u81EA\u884C\u627F\u62C5\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u82E5\u60A8\u53D1\u73B0\u60A8\u7684\u6E38\u620F\u8D26\u53F7\u88AB\u4ED6\u4EBA\u76D7\u7528\u3001\u975E\u6CD5\u4F7F\u7528\uFF0C\u5E94\u7ACB\u5373\u901A\u8FC7\u5FAE\u4FE1\u5B89\u5168\u4E2D\u5FC3\u51BB\u7ED3\u60A8\u7684\u5FAE\u4FE1\u8D26\u53F7\uFF0C\u5E76\u901A\u8FC7\u4E0B\u65B9\u7684\u8054\u7CFB\u65B9\u5F0F\u8054\u7CFB\u6211\u4EEC\uFF0C\u6211\u4EEC\u4F1A\u534F\u52A9\u60A8\u5904\u7406\u76F8\u5173\u95EE\u9898\u3002"), /*#__PURE__*/React.createElement("p", null, "4. \u6211\u4EEC\u6709\u6743\u6839\u636E\u672C\u534F\u8BAE\u7684\u7EA6\u5B9A\uFF0C\u5BF9\u8FDD\u89C4\u4F7F\u7528\u7684\u6E38\u620F\u8D26\u53F7\uFF0C\u91C7\u53D6\u8B66\u544A\u3001\u9650\u5236\u529F\u80FD\u3001\u5C01\u7981\u8D26\u53F7\u3001\u7EC8\u6B62\u670D\u52A1\u7B49\u5904\u7406\u63AA\u65BD\uFF0C\u65E0\u9700\u63D0\u524D\u901A\u77E5\u60A8\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E09\u3001\u7528\u6237\u884C\u4E3A\u89C4\u8303"), /*#__PURE__*/React.createElement("p", null, "\u60A8\u5728\u4F7F\u7528\u672C\u6E38\u620F\u8FC7\u7A0B\u4E2D\uFF0C\u5FC5\u987B\u9075\u5B88\u56FD\u5BB6\u6CD5\u5F8B\u6CD5\u89C4\u3001\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u5E73\u53F0\u8FD0\u8425\u89C4\u8303\u3001\u672C\u534F\u8BAE\u7684\u7EA6\u5B9A\uFF0C\u7981\u6B62\u5B9E\u65BD\u4EE5\u4E0B\u884C\u4E3A\uFF1A"), /*#__PURE__*/React.createElement("p", null, "1. \u4F7F\u7528\u5916\u6302\u3001\u811A\u672C\u3001\u4F5C\u5F0A\u5668\u3001\u4FEE\u6539\u5668\u7B49\u975E\u6CD5\u5DE5\u5177\uFF0C\u4FEE\u6539\u6E38\u620F\u6570\u636E\u3001\u5237\u5206\u3001\u5237\u9053\u5177\u3001\u5237\u9C7C\u5E72\uFF0C\u7834\u574F\u6E38\u620F\u516C\u5E73\u6027\uFF1B"), /*#__PURE__*/React.createElement("p", null, "2. \u6076\u610F\u653B\u51FB\u3001\u8FB1\u9A82\u3001\u9A9A\u6270\u5176\u4ED6\u73A9\u5BB6\u3001\u6E38\u620F\u8FD0\u8425\u4EBA\u5458\uFF0C\u4F20\u64AD\u8FDD\u6CD5\u3001\u8FDD\u89C4\u3001\u8272\u60C5\u3001\u66B4\u529B\u3001\u6050\u6016\u3001\u4FB5\u6743\u7684\u5185\u5BB9\uFF1B"), /*#__PURE__*/React.createElement("p", null, "3. \u4FB5\u72AF\u672C\u6E38\u620F\u7684\u77E5\u8BC6\u4EA7\u6743\uFF0C\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\uFF1A\u590D\u5236\u3001\u4F20\u64AD\u3001\u4FEE\u6539\u6E38\u620F\u5185\u7684\u7F8E\u672F\u8D44\u6E90\u3001\u97F3\u4E50\u3001\u4EE3\u7801\u3001\u73A9\u6CD5\u8BBE\u8BA1\uFF0C\u5236\u4F5C\u3001\u4F20\u64AD\u6E38\u620F\u5916\u6302\u3001\u79C1\u670D\uFF1B"), /*#__PURE__*/React.createElement("p", null, "4. \u5229\u7528\u6E38\u620F\u6F0F\u6D1E\u3001bug\uFF0C\u83B7\u53D6\u975E\u6CD5\u5229\u76CA\u3001\u7834\u574F\u6E38\u620F\u79E9\u5E8F\uFF0C\u53D1\u73B0\u6E38\u620F\u6F0F\u6D1E\u540E\u672A\u53CA\u65F6\u5411\u6211\u4EEC\u53CD\u9988\uFF0C\u53CD\u800C\u5229\u7528\u6F0F\u6D1E\u725F\u5229\uFF1B"), /*#__PURE__*/React.createElement("p", null, "5. \u4EE5\u4EFB\u4F55\u65B9\u5F0F\u5E72\u6270\u3001\u7834\u574F\u672C\u6E38\u620F\u7684\u6B63\u5E38\u8FD0\u884C\uFF0C\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\uFF1ADDoS\u653B\u51FB\u3001\u6076\u610F\u63D0\u4EA4\u5927\u91CF\u65E0\u6548\u6570\u636E\u3001\u5E72\u6270\u6E38\u620F\u670D\u52A1\u5668\u8FD0\u884C\uFF1B"), /*#__PURE__*/React.createElement("p", null, "6. \u5176\u4ED6\u8FDD\u53CD\u56FD\u5BB6\u6CD5\u5F8B\u6CD5\u89C4\u3001\u5FAE\u4FE1\u5E73\u53F0\u89C4\u8303\u3001\u672C\u534F\u8BAE\u7EA6\u5B9A\u7684\u884C\u4E3A\u3002"), /*#__PURE__*/React.createElement("p", null, "\u82E5\u60A8\u5B9E\u65BD\u4E86\u4E0A\u8FF0\u8FDD\u89C4\u884C\u4E3A\uFF0C\u6211\u4EEC\u6709\u6743\u6839\u636E\u60C5\u8282\u4E25\u91CD\u7A0B\u5EA6\uFF0C\u91C7\u53D6\u8B66\u544A\u3001\u9650\u5236\u6E38\u620F\u529F\u80FD\u3001\u5C01\u7981\u8D26\u53F7\u3001\u6E05\u7A7A\u6E38\u620F\u6570\u636E\u3001\u7EC8\u6B62\u670D\u52A1\u3001\u4E0A\u62A5\u76F8\u5173\u90E8\u95E8\u7B49\u5904\u7406\u63AA\u65BD\uFF0C\u7531\u6B64\u4EA7\u751F\u7684\u6240\u6709\u635F\u5931\u3001\u8D23\u4EFB\uFF0C\u5747\u7531\u60A8\u81EA\u884C\u627F\u62C5\uFF0C\u6211\u4EEC\u65E0\u9700\u5411\u60A8\u9000\u8FD8\u4EFB\u4F55\u8D39\u7528\u3001\u8D54\u507F\u4EFB\u4F55\u635F\u5931\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u56DB\u3001\u77E5\u8BC6\u4EA7\u6743"), /*#__PURE__*/React.createElement("p", null, "1. \u672C\u6E38\u620F\u5185\u7684\u6240\u6709\u5185\u5BB9\uFF0C\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\uFF1A\u7F8E\u672F\u8D44\u6E90\u3001\u89D2\u8272\u5F62\u8C61\u3001\u5361\u724C\u8BBE\u8BA1\u3001\u573A\u666F\u753B\u9762\u3001\u97F3\u4E50\u97F3\u6548\u3001\u6E38\u620F\u4EE3\u7801\u3001\u73A9\u6CD5\u8BBE\u8BA1\u3001\u5546\u6807\u3001\u6807\u8BC6\u7B49\uFF0C\u6240\u6709\u77E5\u8BC6\u4EA7\u6743\u5747\u5F52\u6211\u4EEC\u6216\u6211\u4EEC\u7684\u6388\u6743\u65B9\u6240\u6709\uFF0C\u53D7\u56FD\u5BB6\u77E5\u8BC6\u4EA7\u6743\u76F8\u5173\u6CD5\u5F8B\u6CD5\u89C4\u4FDD\u62A4\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u60A8\u4EC5\u83B7\u5F97\u672C\u6E38\u620F\u7684\u4E2A\u4EBA\u975E\u5546\u4E1A\u3001\u975E\u6392\u4ED6\u6027\u7684\u4F7F\u7528\u6743\u9650\uFF0C\u672A\u7ECF\u6211\u4EEC\u4E66\u9762\u6388\u6743\uFF0C\u60A8\u4E0D\u5F97\u590D\u5236\u3001\u4F20\u64AD\u3001\u4FEE\u6539\u3001\u6539\u7F16\u3001\u53D1\u884C\u3001\u5C55\u793A\u672C\u6E38\u620F\u7684\u4EFB\u4F55\u5185\u5BB9\uFF0C\u4E0D\u5F97\u5C06\u672C\u6E38\u620F\u7684\u5185\u5BB9\u7528\u4E8E\u4EFB\u4F55\u5546\u4E1A\u3001\u76C8\u5229\u7528\u9014\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u82E5\u60A8\u4FB5\u72AF\u4E86\u672C\u6E38\u620F\u7684\u77E5\u8BC6\u4EA7\u6743\uFF0C\u6211\u4EEC\u6709\u6743\u7ACB\u5373\u7EC8\u6B62\u60A8\u7684\u6E38\u620F\u670D\u52A1\uFF0C\u5C01\u7981\u60A8\u7684\u8D26\u53F7\uFF0C\u5E76\u8FFD\u7A76\u60A8\u7684\u5168\u90E8\u6CD5\u5F8B\u8D23\u4EFB\uFF0C\u8981\u6C42\u60A8\u8D54\u507F\u6211\u4EEC\u7684\u5168\u90E8\u635F\u5931\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E94\u3001\u670D\u52A1\u7684\u4E2D\u65AD\u4E0E\u7EC8\u6B62"), /*#__PURE__*/React.createElement("p", null, "1. \u6211\u4EEC\u6709\u6743\u5728\u4EE5\u4E0B\u60C5\u51B5\u4E0B\uFF0C\u4E2D\u65AD\u3001\u6682\u505C\u3001\u7EC8\u6B62\u672C\u6E38\u620F\u7684\u90E8\u5206\u6216\u5168\u90E8\u670D\u52A1\uFF1A"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      paddingLeft: 12
+    }
+  }, "- \u6E38\u620F\u670D\u52A1\u5668\u7EF4\u62A4\u3001\u5347\u7EA7\u3001\u4F18\u5316\uFF0C\u63D0\u524D\u901A\u8FC7\u6E38\u620F\u5185\u516C\u544A\u901A\u77E5\u60A8\uFF1B"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      paddingLeft: 12
+    }
+  }, "- \u4E0D\u53EF\u6297\u529B\u56E0\u7D20\uFF0C\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\uFF1A\u81EA\u7136\u707E\u5BB3\u3001\u6218\u4E89\u3001\u653F\u5E9C\u884C\u4E3A\u3001\u7F51\u7EDC\u6545\u969C\u3001\u7535\u529B\u6545\u969C\u7B49\uFF0C\u5BFC\u81F4\u670D\u52A1\u65E0\u6CD5\u6B63\u5E38\u8FD0\u884C\uFF1B"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      paddingLeft: 12
+    }
+  }, "- \u60A8\u8FDD\u53CD\u672C\u534F\u8BAE\u7684\u7EA6\u5B9A\uFF0C\u5B9E\u65BD\u8FDD\u89C4\u884C\u4E3A\uFF0C\u6211\u4EEC\u6682\u505C\u3001\u7EC8\u6B62\u60A8\u7684\u8D26\u53F7\u670D\u52A1\uFF1B"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      paddingLeft: 12
+    }
+  }, "- \u6E38\u620F\u8FD0\u8425\u8C03\u6574\u3001\u4E1A\u52A1\u7EC8\u6B62\uFF0C\u63D0\u524D30\u5929\u901A\u8FC7\u6E38\u620F\u5185\u516C\u544A\u3001\u5FAE\u4FE1\u516C\u4F17\u53F7\u7B49\u65B9\u5F0F\u901A\u77E5\u60A8\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u670D\u52A1\u4E2D\u65AD\u3001\u7EC8\u6B62\u540E\uFF0C\u60A8\u7684\u6E38\u620F\u6570\u636E\u3001\u8D26\u53F7\u4FE1\u606F\u5C06\u6309\u6CD5\u5F8B\u6CD5\u89C4\u8981\u6C42\u7684\u671F\u9650\u4FDD\u5B58\uFF0C\u4E1A\u52A1\u7EC8\u6B62\u540E\uFF0C\u6211\u4EEC\u4F1A\u6309\u6CD5\u5F8B\u6CD5\u89C4\u8981\u6C42\u5220\u9664\u60A8\u7684\u76F8\u5173\u6570\u636E\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u56E0\u4E0D\u53EF\u6297\u529B\u3001\u6E38\u620F\u7EF4\u62A4\u3001\u60A8\u7684\u8FDD\u89C4\u884C\u4E3A\u5BFC\u81F4\u7684\u670D\u52A1\u4E2D\u65AD\u3001\u7EC8\u6B62\uFF0C\u6211\u4EEC\u65E0\u9700\u5411\u60A8\u627F\u62C5\u4EFB\u4F55\u8D54\u507F\u8D23\u4EFB\uFF0C\u65E0\u9700\u9000\u8FD8\u4EFB\u4F55\u8D39\u7528\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u516D\u3001\u514D\u8D23\u58F0\u660E"), /*#__PURE__*/React.createElement("p", null, "1. \u672C\u6E38\u620F\u670D\u52A1\u6309\u300C\u73B0\u72B6\u300D\u63D0\u4F9B\uFF0C\u6211\u4EEC\u4E0D\u505A\u4EFB\u4F55\u660E\u793A\u6216\u6697\u793A\u7684\u62C5\u4FDD\uFF0C\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\uFF1A\u6E38\u620F\u670D\u52A1\u7684\u8FDE\u7EED\u6027\u3001\u7A33\u5B9A\u6027\u3001\u5B89\u5168\u6027\u3001\u51C6\u786E\u6027\uFF0C\u6E38\u620F\u73A9\u6CD5\u3001\u5185\u5BB9\u7684\u9002\u7528\u6027\u3001\u65E0\u9519\u8BEF\u3001\u65E0\u6F0F\u6D1E\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u56E0\u4E0D\u53EF\u6297\u529B\u3001\u7B2C\u4E09\u65B9\u670D\u52A1\u6545\u969C\u3001\u60A8\u7684\u8BBE\u5907\u6545\u969C\u3001\u7F51\u7EDC\u6545\u969C\u3001\u60A8\u7684\u8FDD\u89C4\u64CD\u4F5C\u3001\u7B2C\u4E09\u65B9\u4FB5\u6743\u884C\u4E3A\uFF0C\u5BFC\u81F4\u60A8\u7684\u6E38\u620F\u6570\u636E\u4E22\u5931\u3001\u8D26\u53F7\u5C01\u7981\u3001\u8D22\u4EA7\u635F\u5931\u3001\u6E38\u620F\u4F53\u9A8C\u4E0D\u4F73\uFF0C\u6211\u4EEC\u65E0\u9700\u5411\u60A8\u627F\u62C5\u4EFB\u4F55\u8D54\u507F\u8D23\u4EFB\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u672C\u6E38\u620F\u5185\u7684\u6240\u6709\u865A\u62DF\u9053\u5177\u3001\u865A\u62DF\u8D27\u5E01\uFF08\u9C7C\u5E72\uFF09\uFF0C\u5747\u4E3A\u6E38\u620F\u5185\u7684\u865A\u62DF\u7269\u54C1\uFF0C\u65E0\u4EFB\u4F55\u73B0\u5B9E\u8D27\u5E01\u4EF7\u503C\uFF0C\u6211\u4EEC\u4E0D\u63D0\u4F9B\u4EFB\u4F55\u865A\u62DF\u7269\u54C1\u7684\u73B0\u91D1\u5151\u6362\u3001\u9000\u6B3E\u670D\u52A1\uFF0C\u6CD5\u5F8B\u6CD5\u89C4\u53E6\u6709\u8981\u6C42\u7684\u9664\u5916\u3002"), /*#__PURE__*/React.createElement("p", null, "4. \u672C\u6E38\u620F\u5185\u7684\u5E7F\u544A\u670D\u52A1\uFF0C\u7531\u7B2C\u4E09\u65B9\u5E7F\u544A\u5546\u63D0\u4F9B\uFF0C\u6211\u4EEC\u4E0D\u5BF9\u5E7F\u544A\u5185\u5BB9\u7684\u771F\u5B9E\u6027\u3001\u51C6\u786E\u6027\u3001\u5408\u6CD5\u6027\u505A\u4EFB\u4F55\u62C5\u4FDD\uFF0C\u60A8\u56E0\u5E7F\u544A\u5185\u5BB9\u4EA7\u751F\u7684\u4EFB\u4F55\u635F\u5931\u3001\u7EA0\u7EB7\uFF0C\u5747\u4E0E\u6211\u4EEC\u65E0\u5173\uFF0C\u60A8\u5E94\u76F4\u63A5\u4E0E\u5E7F\u544A\u5546\u534F\u5546\u89E3\u51B3\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E03\u3001\u534F\u8BAE\u7684\u4FEE\u6539"), /*#__PURE__*/React.createElement("p", null, "\u6211\u4EEC\u6709\u6743\u6839\u636E\u56FD\u5BB6\u6CD5\u5F8B\u6CD5\u89C4\u7684\u66F4\u65B0\u3001\u6E38\u620F\u8FD0\u8425\u7684\u8C03\u6574\uFF0C\u9002\u65F6\u4FEE\u6539\u672C\u534F\u8BAE\u7684\u6761\u6B3E\u3002\u4FEE\u6539\u540E\u7684\u534F\u8BAE\uFF0C\u4F1A\u901A\u8FC7\u672C\u6E38\u620F\u5185\u7684\u516C\u544A\u3001\u5F39\u7A97\u7B49\u65B9\u5F0F\u63D0\u524D7\u5929\u901A\u77E5\u60A8\uFF0C\u4FEE\u6539\u540E\u7684\u534F\u8BAE\u81EA\u901A\u77E5\u671F\u6EE1\u4E4B\u65E5\u8D77\u751F\u6548\u3002\u82E5\u60A8\u5728\u534F\u8BAE\u4FEE\u6539\u540E\u7EE7\u7EED\u4F7F\u7528\u672C\u6E38\u620F\u670D\u52A1\uFF0C\u5373\u89C6\u4E3A\u60A8\u5DF2\u9605\u8BFB\u3001\u7406\u89E3\u5E76\u540C\u610F\u4FEE\u6539\u540E\u7684\u534F\u8BAE\u6761\u6B3E\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u516B\u3001\u4E89\u8BAE\u89E3\u51B3"), /*#__PURE__*/React.createElement("p", null, "\u672C\u534F\u8BAE\u7684\u7B7E\u8BA2\u3001\u5C65\u884C\u3001\u89E3\u91CA\u3001\u4E89\u8BAE\u89E3\u51B3\uFF0C\u5747\u9002\u7528\u4E2D\u534E\u4EBA\u6C11\u5171\u548C\u56FD\u5927\u9646\u5730\u533A\u7684\u6CD5\u5F8B\u6CD5\u89C4\u3002\u82E5\u60A8\u4E0E\u6211\u4EEC\u4E4B\u95F4\u56E0\u672C\u534F\u8BAE\u3001\u672C\u6E38\u620F\u670D\u52A1\u4EA7\u751F\u4EFB\u4F55\u4E89\u8BAE\u3001\u7EA0\u7EB7\uFF0C\u53CC\u65B9\u5E94\u9996\u5148\u53CB\u597D\u534F\u5546\u89E3\u51B3\uFF1B\u534F\u5546\u4E0D\u6210\u7684\uFF0C\u4EFB\u4F55\u4E00\u65B9\u5747\u6709\u6743\u5411\u6211\u4EEC\u8FD0\u8425\u4E3B\u4F53\u6240\u5728\u5730\u7684\u4EBA\u6C11\u6CD5\u9662\u63D0\u8D77\u8BC9\u8BBC\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u4E5D\u3001\u5176\u4ED6\u6761\u6B3E"), /*#__PURE__*/React.createElement("p", null, "1. \u672C\u534F\u8BAE\u7684\u4EFB\u4F55\u6761\u6B3E\u88AB\u8BA4\u5B9A\u4E3A\u65E0\u6548\u3001\u4E0D\u53EF\u6267\u884C\uFF0C\u4E0D\u5F71\u54CD\u5176\u4ED6\u6761\u6B3E\u7684\u6CD5\u5F8B\u6548\u529B\u3002"), /*#__PURE__*/React.createElement("p", null, "2. \u6211\u4EEC\u672A\u884C\u4F7F\u672C\u534F\u8BAE\u7EA6\u5B9A\u7684\u4EFB\u4F55\u6743\u5229\u3001\u672A\u8FFD\u7A76\u60A8\u7684\u4EFB\u4F55\u8FDD\u7EA6\u8D23\u4EFB\uFF0C\u4E0D\u89C6\u4E3A\u6211\u4EEC\u5BF9\u8BE5\u6743\u5229\u3001\u8FDD\u7EA6\u8D23\u4EFB\u7684\u653E\u5F03\uFF0C\u6211\u4EEC\u4ECD\u6709\u6743\u5728\u540E\u7EED\u884C\u4F7F\u76F8\u5173\u6743\u5229\u3001\u8FFD\u7A76\u8FDD\u7EA6\u8D23\u4EFB\u3002"), /*#__PURE__*/React.createElement("p", null, "3. \u672C\u534F\u8BAE\u7684\u6240\u6709\u6807\u9898\uFF0C\u4EC5\u4E3A\u65B9\u4FBF\u9605\u8BFB\u800C\u8BBE\u7F6E\uFF0C\u4E0D\u5F71\u54CD\u672C\u534F\u8BAE\u6761\u6B3E\u7684\u89E3\u91CA\u3001\u6CD5\u5F8B\u6548\u529B\u3002"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontWeight: 700,
+      color: colors.ink,
+      marginTop: 20,
+      marginBottom: 8
+    }
+  }, "\u5341\u3001\u8054\u7CFB\u6211\u4EEC"), /*#__PURE__*/React.createElement("p", null, "\u82E5\u60A8\u5BF9\u672C\u534F\u8BAE\u6709\u4EFB\u4F55\u7591\u95EE\u3001\u6295\u8BC9\u3001\u5EFA\u8BAE\uFF0C\u53EF\u901A\u8FC7\u4EE5\u4E0B\u65B9\u5F0F\u8054\u7CFB\u6211\u4EEC\uFF1A"), /*#__PURE__*/React.createElement("p", null, "\u8FD0\u8425\u4E3B\u4F53\uFF1A\u6728\u5EF6\u661F\u79D1\u6280\u6709\u9650\u516C\u53F8"), /*#__PURE__*/React.createElement("p", null, "\u8054\u7CFB\u90AE\u7BB1\uFF1A137005952@qq.com"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 32,
+      color: colors.muted,
+      fontSize: 11
+    }
+  }, "\u672C\u7528\u6237\u670D\u52A1\u534F\u8BAE\u6700\u7EC8\u89E3\u91CA\u6743\u5F52\u6728\u5EF6\u661F\u79D1\u6280\u6709\u9650\u516C\u53F8\u6240\u6709\u3002")));
+}
+
+/* ═══════════════════════════════════════
+   合规：首次启动协议确认弹窗
+   ═══════════════════════════════════════ */
+function AgreementModal({
+  show,
+  onAgree,
+  onReject,
+  onViewPrivacy,
+  onViewAgreement
+}) {
+  if (!show) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.85)',
+      backdropFilter: 'blur(16px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 100,
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: 340,
+      background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+      borderRadius: 24,
+      padding: '32px 24px 24px',
+      border: '1px solid rgba(108,92,231,0.3)',
+      boxShadow: '0 0 80px rgba(108,92,231,0.2)',
+      animation: 'slideUp 0.4s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 40,
+      marginBottom: 12,
+      textAlign: 'center'
+    }
+  }, "\uD83D\uDC31"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 8,
+      textAlign: 'center'
+    }
+  }, "\u6B22\u8FCE\u4F7F\u7528\u55B5\u545C\u4E50\u6D88\u6D88"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      marginBottom: 20,
+      lineHeight: 1.8,
+      textAlign: 'center'
+    }
+  }, "\u4E3A\u4E86\u7ED9\u60A8\u63D0\u4F9B\u5B8C\u6574\u7684\u6E38\u620F\u670D\u52A1\uFF0C\u6211\u4EEC\u9700\u8981\u60A8\u786E\u8BA4\u5E76\u540C\u610F", /*#__PURE__*/React.createElement("span", {
+    onClick: onViewPrivacy,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      fontWeight: 600
+    }
+  }, "\u300A\u9690\u79C1\u653F\u7B56\u300B"), "\u548C", /*#__PURE__*/React.createElement("span", {
+    onClick: onViewAgreement,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      fontWeight: 600
+    }
+  }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"), "\u3002\u6211\u4EEC\u5C06\u4E25\u683C\u6309\u7167\u76F8\u5173\u6CD5\u5F8B\u6CD5\u89C4\uFF0C\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u5B89\u5168\u4E0E\u5408\u6CD5\u6743\u76CA\u3002"), /*#__PURE__*/React.createElement("button", {
+    onClick: onAgree,
+    style: {
+      width: '100%',
+      height: 48,
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 700,
+      marginBottom: 10,
+      boxShadow: '0 4px 20px rgba(108,92,231,0.4)',
+      transition: 'all 0.2s'
+    }
+  }, "\u540C\u610F\u5E76\u8FDB\u5165"), /*#__PURE__*/React.createElement("button", {
+    onClick: onReject,
+    style: {
+      width: '100%',
+      height: 44,
+      borderRadius: 14,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      background: 'transparent',
+      color: colors.muted,
+      fontSize: 14,
+      fontWeight: 500,
+      transition: 'all 0.2s'
+    }
+  }, "\u62D2\u7EDD"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    onClick: onViewPrivacy,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline',
+      marginRight: 12
+    }
+  }, "\u300A\u9690\u79C1\u653F\u7B56\u300B"), /*#__PURE__*/React.createElement("span", {
+    onClick: onViewAgreement,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline'
+    }
+  }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"))));
+}
+
+/* ═══════════════════════════════════════
+   合规：登录授权弹窗（含游客模式入口）
+   ═══════════════════════════════════════ */
+function LoginAuthModal({
+  show,
+  onAuthorize,
+  onGuest,
+  onViewPrivacy,
+  onViewAgreement,
+  loading
+}) {
+  if (!show) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.8)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 100,
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: 340,
+      background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
+      borderRadius: 24,
+      padding: '32px 24px 24px',
+      border: '1px solid rgba(108,92,231,0.3)',
+      boxShadow: '0 0 80px rgba(108,92,231,0.2)',
+      animation: 'slideUp 0.4s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 40,
+      marginBottom: 12,
+      textAlign: 'center'
+    }
+  }, "\uD83D\uDD10"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 8,
+      textAlign: 'center'
+    }
+  }, "\u5FAE\u4FE1\u767B\u5F55\u6388\u6743"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      marginBottom: 20,
+      lineHeight: 1.8,
+      padding: '0 8px'
+    }
+  }, "\u4E3A\u4E86\u7ED9\u60A8\u63D0\u4F9B\u5B8C\u6574\u7684\u6E38\u620F\u670D\u52A1\uFF0C\u5305\u62EC\u4FDD\u5B58\u60A8\u7684\u6E38\u620F\u8FDB\u5EA6\u3001\u5173\u5361\u5F97\u5206\u3001\u732B\u54AA\u517B\u6210\u6570\u636E\uFF0C\u6211\u4EEC\u9700\u8981\u83B7\u53D6\u60A8\u7684\u5FAE\u4FE1\u5934\u50CF\u3001\u6635\u79F0\u4FE1\u606F\u3002", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), "\u6211\u4EEC\u5C06\u4E25\u683C\u6309\u7167", /*#__PURE__*/React.createElement("span", {
+    onClick: onViewPrivacy,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      fontWeight: 600
+    }
+  }, "\u300A\u9690\u79C1\u653F\u7B56\u300B"), "\u548C", /*#__PURE__*/React.createElement("span", {
+    onClick: onViewAgreement,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      fontWeight: 600
+    }
+  }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"), "\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF0C\u4E0D\u4F1A\u7528\u4E8E\u5176\u4ED6\u7528\u9014\u3002"), /*#__PURE__*/React.createElement("button", {
+    onClick: onAuthorize,
+    disabled: loading,
+    style: {
+      width: '100%',
+      height: 48,
+      borderRadius: 14,
+      border: 'none',
+      cursor: 'pointer',
+      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 700,
+      marginBottom: 10,
+      opacity: loading ? 0.6 : 1,
+      boxShadow: '0 4px 20px rgba(108,92,231,0.4)',
+      transition: 'all 0.2s'
+    }
+  }, loading ? '授权中...' : '同意并登录'), /*#__PURE__*/React.createElement("button", {
+    onClick: onGuest,
+    style: {
+      width: '100%',
+      height: 44,
+      borderRadius: 14,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      background: 'transparent',
+      color: colors.sub,
+      fontSize: 14,
+      fontWeight: 500,
+      transition: 'all 0.2s'
+    }
+  }, "\u62D2\u7EDD\uFF08\u6E38\u5BA2\u6A21\u5F0F\u4F53\u9A8C\uFF09"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      padding: '8px 12px',
+      borderRadius: 8,
+      background: 'rgba(253,150,68,0.08)',
+      border: '1px solid rgba(253,150,68,0.15)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.orange,
+      lineHeight: 1.6
+    }
+  }, "\uD83D\uDCA1 \u6E38\u5BA2\u6A21\u5F0F\u4E0B\u53EF\u6B63\u5E38\u4F53\u9A8C\u4E09\u6D88\u5173\u5361\uFF0C\u4F46\u65E0\u6CD5\u4F7F\u7528\u4E91\u7AEF\u540C\u6B65\u3001\u6392\u884C\u699C\u3001\u793E\u4EA4\u4E92\u52A8\u3001\u9053\u5177\u5145\u503C\u7B49\u529F\u80FD\uFF0C\u6E38\u620F\u6570\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u5730\u3002")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    onClick: onViewPrivacy,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline',
+      marginRight: 12
+    }
+  }, "\u300A\u9690\u79C1\u653F\u7B56\u300B"), /*#__PURE__*/React.createElement("span", {
+    onClick: onViewAgreement,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline'
+    }
+  }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"))));
+}
+
+/* ═══════════════════════════════════════
+   合规：游客模式横幅提示
+   ═══════════════════════════════════════ */
+function GuestModeBanner({
+  onLogin
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '8px 16px',
+      padding: '10px 16px',
+      borderRadius: 12,
+      background: 'rgba(253,150,68,0.12)',
+      border: '1px solid rgba(253,150,68,0.25)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: colors.orange,
+      marginBottom: 2
+    }
+  }, "\uD83C\uDFF7\uFE0F \u6E38\u5BA2\u6A21\u5F0F"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.sub
+    }
+  }, "\u6570\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u5730\uFF0C\u5378\u8F7D\u540E\u4E22\u5931")), /*#__PURE__*/React.createElement("button", {
+    onClick: onLogin,
+    style: {
+      padding: '6px 14px',
+      borderRadius: 8,
+      border: 'none',
+      cursor: 'pointer',
+      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+      color: '#fff',
+      fontSize: 11,
+      fontWeight: 600,
+      whiteSpace: 'nowrap'
+    }
+  }, "\u767B\u5F55\u540C\u6B65"));
+}
+
+/* ═══════════════════════════════════════
+   TAB BAR
+   ═══════════════════════════════════════ */
+function TabBar({
+  active,
+  onChange
+}) {
+  const tabs = [{
+    key: 'home',
+    icon: '🏠',
+    label: '首页'
+  }, {
+    key: 'market',
+    icon: '🎪',
+    label: '喵市'
+  }, {
+    key: 'cathome',
+    icon: '🐱',
+    label: '家园'
+  }, {
+    key: 'shop',
+    icon: '🛒',
+    label: '猫铺'
+  }, {
+    key: 'me',
+    icon: '👤',
+    label: '我的'
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 68,
+      background: colors === CL ? 'rgba(255,248,225,0.88)' : 'rgba(10,5,30,0.95)',
+      backdropFilter: 'blur(20px)',
+      borderTop: colors === CL ? '1px solid rgba(255,200,120,0.4)' : '1px solid rgba(255,105,180,0.1)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      zIndex: 20,
+      paddingBottom: 8
+    }
+  }, tabs.map(tab => {
+    const isActive = tab.key === active;
+    return /*#__PURE__*/React.createElement("div", {
+      key: tab.key,
+      onClick: () => onChange(tab.key),
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        cursor: 'pointer',
+        padding: '4px 10px',
+        borderRadius: 12,
+        background: isActive ? colors === CL ? 'rgba(255,180,80,0.18)' : 'rgba(255,105,180,0.12)' : 'transparent',
+        transition: 'all 0.2s'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 20,
+        filter: isActive ? colors === CL ? 'none' : 'drop-shadow(0 0 6px #00e5ff)' : colors === CL ? 'grayscale(0.5) opacity(0.5)' : 'drop-shadow(0 0 4px #ff69b4)'
+      }
+    }, tab.icon), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: isActive ? 700 : 400,
+        color: isActive ? colors === CL ? '#8B5A00' : '#00e5ff' : colors.muted,
+        filter: isActive && colors !== CL ? 'drop-shadow(0 0 6px #00e5ff)' : !isActive && colors !== CL ? 'drop-shadow(0 0 4px #ff69b4)' : 'none'
+      }
+    }, tab.label));
+  }));
+}
+
+/* ═══════════════════════════════════════
+   LOGIN / REGISTER PAGE
+   ═══════════════════════════════════════ */
+function LoginPage({
+  onLogin,
+  onViewPrivacy,
+  onViewAgreement
+}) {
+  const [mode, setMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // 验证码系统
+  const generateCaptcha = () => {
+    const a = Math.floor(Math.random() * 9) + 1;
+    const b = Math.floor(Math.random() * 9) + 1;
+    const ops = ['+', '×'];
+    const op = ops[Math.floor(Math.random() * 2)];
+    const answer = op === '+' ? a + b : a * b;
+    return {
+      a,
+      b,
+      op,
+      answer,
+      text: `${a} ${op} ${b} = ?`
+    };
+  };
+  const [captcha, setCaptcha] = useState(generateCaptcha);
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
+  const refreshCaptcha = () => {
+    setCaptcha(generateCaptcha());
+    setCaptchaInput('');
+    setCaptchaError(false);
+  };
+  const handleSubmit = async () => {
+    setError('');
+    setCaptchaError(false);
+    if (!username.trim()) {
+      setError('请输入用户名');
+      return;
+    }
+    if (username.trim().length < 3) {
+      setError('用户名至少3个字符');
+      return;
+    }
+    if (!password.trim()) {
+      setError('请输入密码');
+      return;
+    }
+    if (password.length < 6) {
+      setError('密码至少6个字符');
+      return;
+    }
+    if (!captchaInput.trim()) {
+      setCaptchaError(true);
+      setError('请填写验证码');
+      return;
+    }
+    if (parseInt(captchaInput) !== captcha.answer) {
+      setCaptchaError(true);
+      setError('验证码错误，请重新输入');
+      refreshCaptcha();
+      return;
+    }
+    setLoading(true);
+    try {
+      const fn = mode === 'login' ? MiaolegemiAPI.login : MiaolegemiAPI.register;
+      const data = await fn(username.trim(), password);
+      onLogin(data.user, false);
+    } catch (e) {
+      const rawMsg = e && e.message ? e.message : String(e || '操作失败');
+      const msgLower = rawMsg.toLowerCase();
+      if (msgLower.includes('网络') || msgLower.includes('failed to fetch') || msgLower.includes('fetch') || msgLower.includes('networkerror')) {
+        setError('⚠️ 网络连接失败，请确认：1.后端已启动(端口3001) 2.使用http访问而非file:// 3.刷新页面后重试');
+      } else if (msgLower.includes('用户名') || msgLower.includes('密码')) {
+        setError('❌ ' + rawMsg);
+      } else {
+        setError('❌ ' + rawMsg);
+      }
+      refreshCaptcha();
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleLocalMode = () => {
+    onLogin({
+      id: 'local',
+      username: '本地用户',
+      nickname: '铲屎官',
+      bells: 3
+    }, true);
+  };
+  const pwdStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : /(?=.*[a-zA-Z])(?=.*\d)/.test(password) ? 3 : password.length >= 6 ? 2 : 1;
+  const strengthColors = ['transparent', colors.red, colors.orange, colors.green];
+  const strengthLabels = ['', '太短', '一般', '较强'];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: colors.bg,
+      padding: 30,
+      position: 'relative',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundImage: 'url(assets/login_bg.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      filter: 'blur(2px)',
+      opacity: 0.6,
+      zIndex: 0
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(15,10,30,0.5)',
+      zIndex: 1
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      zIndex: 2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 4,
+      textAlign: 'center',
+      textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+    }
+  }, "\u55B5\u545C\u4E50\u6D88\u6D88"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      marginBottom: 36,
+      textAlign: 'center',
+      textShadow: '0 1px 5px rgba(0,0,0,0.5)'
+    }
+  }, "\u517B\u597D\u732B\xB7\u8DA3\u95EF\u5173"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      maxWidth: 300
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      marginBottom: 20,
+      background: colors.card,
+      borderRadius: 12,
+      padding: 3
+    }
+  }, ['login', 'register'].map(m => /*#__PURE__*/React.createElement("div", {
+    key: m,
+    onClick: () => {
+      setMode(m);
+      setError('');
+      setCaptchaError(false);
+      refreshCaptcha();
+    },
+    style: {
+      flex: 1,
+      textAlign: 'center',
+      padding: '8px 0',
+      borderRadius: 10,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: mode === m ? 700 : 400,
+      background: mode === m ? colors.purple : 'transparent',
+      color: mode === m ? '#fff' : colors.sub,
+      transition: 'all 0.2s'
+    }
+  }, m === 'login' ? '登录' : '注册'))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: username,
+    onChange: e => {
+      setUsername(e.target.value);
+      setError('');
+    },
+    placeholder: "\u7528\u6237\u540D (\u81F3\u5C113\u4E2A\u5B57\u7B26)",
+    maxLength: 20,
+    style: {
+      width: '100%',
+      padding: '10px 14px',
+      borderRadius: 10,
+      border: `1px solid ${colors.cardBorder}`,
+      background: colors.card,
+      color: colors.ink,
+      fontSize: 14,
+      outline: 'none',
+      boxSizing: 'border-box'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8,
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: password,
+    onChange: e => {
+      setPassword(e.target.value);
+      setError('');
+    },
+    type: showPwd ? 'text' : 'password',
+    placeholder: "\u5BC6\u7801 (\u81F3\u5C116\u4E2A\u5B57\u7B26)",
+    maxLength: 40,
+    style: {
+      width: '100%',
+      padding: '10px 40px 10px 14px',
+      borderRadius: 10,
+      border: `1px solid ${colors.cardBorder}`,
+      background: colors.card,
+      color: colors.ink,
+      fontSize: 14,
+      outline: 'none',
+      boxSizing: 'border-box'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    onClick: () => setShowPwd(!showPwd),
+    style: {
+      position: 'absolute',
+      right: 12,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      cursor: 'pointer',
+      fontSize: 14,
+      opacity: 0.5,
+      userSelect: 'none'
+    }
+  }, showPwd ? '🙈' : '👁️')), mode === 'register' && password.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 3,
+      borderRadius: 2,
+      background: colors.cardBorder,
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${pwdStrength / 3 * 100}%`,
+      height: '100%',
+      borderRadius: 2,
+      background: strengthColors[pwdStrength],
+      transition: 'width 0.3s'
+    }
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: strengthColors[pwdStrength],
+      fontWeight: 600
+    }
+  }, strengthLabels[pwdStrength])), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 10,
+      alignItems: 'stretch',
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 42,
+      borderRadius: 10,
+      background: 'linear-gradient(135deg, rgba(108,92,231,0.15), rgba(108,92,231,0.05))',
+      border: `1px solid ${captchaError ? colors.red : colors.cardBorder}`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      userSelect: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      opacity: 0.06,
+      pointerEvents: 'none'
+    }
+  }, Array.from({
+    length: 8
+  }, (_, i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: Math.random() * 200,
+    y1: Math.random() * 42,
+    x2: Math.random() * 200,
+    y2: Math.random() * 42,
+    stroke: i % 2 === 0 ? '#fff' : '#6C5CE7',
+    strokeWidth: 1 + i % 2
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: colors.ink,
+      letterSpacing: 2,
+      fontFamily: 'monospace',
+      textShadow: '0 0 8px rgba(108,92,231,0.3)'
+    }
+  }, captcha.text)), /*#__PURE__*/React.createElement("div", {
+    onClick: refreshCaptcha,
+    style: {
+      width: 42,
+      height: 42,
+      borderRadius: 10,
+      cursor: 'pointer',
+      background: 'rgba(108,92,231,0.1)',
+      border: `1px solid ${colors.cardBorder}`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 16,
+      transition: 'all 0.2s',
+      flexShrink: 0
+    },
+    title: "\u6362\u4E00\u4E2A"
+  }, "\uD83D\uDD04")), /*#__PURE__*/React.createElement("input", {
+    value: captchaInput,
+    onChange: e => {
+      setCaptchaInput(e.target.value.replace(/\D/g, ''));
+      setCaptchaError(false);
+      setError('');
+    },
+    onKeyDown: e => e.key === 'Enter' && handleSubmit(),
+    placeholder: "\u8F93\u5165\u9A8C\u8BC1\u7801\u7B54\u6848",
+    maxLength: 3,
+    style: {
+      width: '100%',
+      padding: '10px 14px',
+      borderRadius: 10,
+      fontSize: 14,
+      outline: 'none',
+      border: `1px solid ${captchaError ? colors.red : colors.cardBorder}`,
+      background: colors.card,
+      color: colors.ink,
+      boxSizing: 'border-box'
+    }
+  })), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: colors.red,
+      fontSize: 12,
+      marginBottom: 12,
+      textAlign: 'center'
+    }
+  }, error), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSubmit,
+    disabled: loading,
+    style: {
+      width: '100%',
+      padding: '12px',
+      borderRadius: 12,
+      border: 'none',
+      cursor: 'pointer',
+      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 700,
+      opacity: loading ? 0.6 : 1
+    }
+  }, loading ? '处理中...' : mode === 'login' ? '登录' : '注册'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      margin: '20px 0',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 1,
+      background: colors.cardBorder
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: colors.muted
+    }
+  }, "\u6216"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 1,
+      background: colors.cardBorder
+    }
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: handleLocalMode,
+    style: {
+      width: '100%',
+      padding: '10px',
+      borderRadius: 12,
+      border: `1px solid ${colors.cardBorder}`,
+      cursor: 'pointer',
+      background: 'transparent',
+      color: colors.sub,
+      fontSize: 13
+    }
+  }, "\uD83D\uDCE6 \u79BB\u7EBF\u6A21\u5F0F\uFF08\u6570\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A\uFF09"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    onClick: onViewPrivacy,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline',
+      marginRight: 12
+    }
+  }, "\u300A\u9690\u79C1\u653F\u7B56\u300B"), /*#__PURE__*/React.createElement("span", {
+    onClick: onViewAgreement,
+    style: {
+      color: colors.blue,
+      cursor: 'pointer',
+      fontSize: 11,
+      textDecoration: 'underline'
+    }
+  }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B")))));
+}
+
+/* ═══════════════════════════════════════
+   CAT MEOW SOUND (Web Audio API 合成喵叫)
+   ═══════════════════════════════════════ */
+let _globalAudioCtx = null;
+function getGlobalAudioCtx() {
+  if (!_globalAudioCtx) {
+    _globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_globalAudioCtx.state === 'suspended') {
+    _globalAudioCtx.resume();
+  }
+  return _globalAudioCtx;
+}
+function playMeowSound(pitch = 600) {
+  try {
+    const ctx = getGlobalAudioCtx();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    // 模拟猫叫声：音高先升后降
+    osc.frequency.setValueAtTime(pitch, t);
+    osc.frequency.exponentialRampToValueAtTime(pitch * 1.3, t + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(pitch * 0.6, t + 0.2);
+    osc.frequency.linearRampToValueAtTime(pitch * 0.3, t + 0.4);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  } catch (e) {/* 降级：不支持则静默 */}
+}
+function unlockAudioCtx() {
+  const ctx = getGlobalAudioCtx();
+  if (ctx.state === 'suspended') {
+    ctx.resume();
+  }
+  // 播放无声 buffer 彻底解锁 iOS
+  try {
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch (e) {}
+}
+
+/* ═══════════════════════════════════════
+   MAIN APP
+   ═══════════════════════════════════════ */
+function App() {
+  // 合规：协议同意状态
+  const [agreementStatus, setAgreementStatusState] = useState(getAgreementStatus);
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
+  const [showLoginAuthModal, setShowLoginAuthModal] = useState(false);
+  const [loginAuthLoading, setLoginAuthLoading] = useState(false);
+  // 合规：页面路由（隐私政策/用户协议/设置）
+  const [currentPage, setCurrentPage] = useState(null); // 'privacy' | 'agreement' | null
+  const [guestMode, setGuestMode] = useState(isGuestMode);
+  const [guestToast, setGuestToast] = useState(null); // toast message for guest mode
+
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [isLocalMode, setIsLocalMode] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // State
+  const [cats, setCats] = useState(loadState);
+  const [bells, setBells] = useState(3);
+  // 从URL参数决定默认tab: ?tab=battle/bag 时切换到cat标签页, ?tab=home 保持首页
+  const getInitialActiveTab = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    return tab && ['battle', 'bag'].includes(tab) ? 'cathome' : 'home';
+  };
+  const [activeTab, setActiveTab] = useState(getInitialActiveTab);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [selectedCat, setSelectedCat] = useState(null);
+  const [showCatDetail, setShowCatDetail] = useState(false);
+  const [showPreBattle, setShowPreBattle] = useState(false);
+  const [adoptTarget, setAdoptTarget] = useState(null);
+  const [releaseTarget, setReleaseTarget] = useState(null);
+  const [gachaResult, setGachaResult] = useState(null);
+  const [showGachaResult, setShowGachaResult] = useState(false);
+  const [bagTab, setBagTab] = useState(null);
+  const [marketTab, setMarketTab] = useState(null);
+  const [gachaDone, setGachaDone] = useState(false);
+  // 通用确认弹窗
+  const [confirmModal, setConfirmModal] = useState(null); // { emoji, title, message, onConfirm }
+  const [pityCount, setPityCount] = useState(47); // 保底计数器 max 80
+  const [activeTitle, setActiveTitle] = useState(loadSavedTitle);
+  const [lineageCat, setLineageCat] = useState(null);
+  const [flipCardCat, setFlipCardCat] = useState(null);
+  const [notifPerm, setNotifPerm] = useState('default');
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return saved?.theme || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+  // 主题切换时保存到 localStorage，供下次登录恢复
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      saved.theme = theme;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    } catch (e) {}
+  }, [theme]);
+  const [homeMaxSlots, setHomeMaxSlots] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      return saved?.homeMaxSlots || 10;
+    } catch (e) {
+      return 10;
+    }
+  });
+  // P0: 好友推荐系统
+  const [inviteCode, setInviteCode] = useState(() => getOrCreateInviteCode());
+  const [inviteRewardToday, setInviteRewardToday] = useState(() => getTodayInviteRewardCount());
+  const [shareToast, setShareToast] = useState(null);
+  // 注册全局分享 Toast 回调，供 shareContent() 使用
+  useEffect(() => {
+    setShareToastCallback(setShareToast);
+  }, []);
+  const [milestoneAlert, setMilestoneAlert] = useState(null); // { label, slotName }
+  const milestoneAlertTimer = useRef(null);
+  const milestoneState = useRef(JSON.parse(localStorage.getItem('milestoneAlertsShown') || 'null') || {
+    slot4: false,
+    slot5: false,
+    slot6: false
+  });
+
+  // P5: Farewell ceremony, memorial detail, title unlock toast
+  const [farewellCat, setFarewellCat] = useState(null);
+  const [showFarewell, setShowFarewell] = useState(false);
+  const [memorialDetailCat, setMemorialDetailCat] = useState(null);
+  const [titleUnlockToast, setTitleUnlockToast] = useState(null);
+  const prevTitlesRef = useRef(new Set());
+
+  // 猫咪卡片动效系统 — 状态
+  const [bubbles, setBubbles] = useState({}); // { [serialId]: { text, hiding } }
+  const [animatingCats, setAnimatingCats] = useState({}); // { [serialId]: animationName }
+  const [feedToast, setFeedToast] = useState(null); // { text, timestamp }
+  const [isSleepTime, setIsSleepTime] = useState(false);
+  const [nightBonusDismissed, setNightBonusDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('miaolegemi_night_dismiss') === new Date().toISOString().slice(0, 10);
+    } catch (e) {
+      return false;
+    }
+  });
+  const dismissNightBonus = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('miaolegemi_night_dismiss', today);
+    setNightBonusDismissed(true);
+  }, []);
+  const audioUnlockedRef = useRef(false);
+
+  // 台词气泡：显示指定文本，duration ms 后自动消失
+  const showBubble = useCallback((catSerialId, text, duration = 2200) => {
+    setBubbles(prev => ({
+      ...prev,
+      [catSerialId]: {
+        text,
+        hiding: false
+      }
+    }));
+    clearTimeout(window[`_bubble_timer_${catSerialId}`]);
+    window[`_bubble_timer_${catSerialId}`] = setTimeout(() => {
+      setBubbles(prev => {
+        const cur = prev[catSerialId];
+        if (!cur || cur.hiding) return prev;
+        return {
+          ...prev,
+          [catSerialId]: {
+            ...cur,
+            hiding: true
+          }
+        };
+      });
+      setTimeout(() => {
+        setBubbles(prev => {
+          const n = {
+            ...prev
+          };
+          delete n[catSerialId];
+          return n;
+        });
+      }, 250);
+    }, duration);
+  }, []);
+
+  // 通用动效触发器：给 catId 施加 animName 动效，持续 duration ms
+  const triggerAnimation = useCallback((catSerialId, animName, duration = 500) => {
+    setAnimatingCats(prev => ({
+      ...prev,
+      [catSerialId]: animName
+    }));
+    setTimeout(() => {
+      setAnimatingCats(prev => {
+        const n = {
+          ...prev
+        };
+        delete n[catSerialId];
+        return n;
+      });
+    }, duration);
+  }, []);
+
+  // 点击互动：弹跳动效 + 随机 normal 台词 + 喵叫
+  const triggerTap = useCallback(cat => {
+    const lines = CAT_LINES.normal;
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    showBubble(cat.serialId, line, 2200);
+    triggerAnimation(cat.serialId, 'cat-bounce-click', 500);
+    playMeowSound(500 + Math.random() * 400); // 随机音高 500-900
+  }, [showBubble, triggerAnimation]);
+
+  // 喂食反馈：跳跃动效 + 喂食台词 + Toast
+  const triggerFeed = useCallback(cat => {
+    const lines = CAT_LINES.feed;
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    showBubble(cat.serialId, line, 2500);
+    triggerAnimation(cat.serialId, 'cat-feed-jump', 800);
+  }, [showBubble, triggerAnimation]);
+
+  // 通关庆祝：所有出战猫咪依次播放 celebrate 动效
+  const triggerWinCelebrate = useCallback(() => {
+    const deployed = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
+    if (deployed.length === 0) return;
+    deployed.forEach((cat, i) => {
+      setTimeout(() => {
+        const lines = CAT_LINES.win;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        showBubble(cat.serialId, line, 3000);
+        triggerAnimation(cat.serialId, 'cat-celebrate', 650);
+      }, i * 200);
+    });
+  }, [cats, showBubble, triggerAnimation]);
+
+  // 失败安慰：所有家园猫咪依次播放 console 摇摆
+  const triggerFailConsole = useCallback(() => {
+    const homeCats = cats.filter(c => c.location === 'home');
+    if (homeCats.length === 0) return;
+    homeCats.forEach((cat, i) => {
+      setTimeout(() => {
+        const lines = CAT_LINES.fail;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        showBubble(cat.serialId, line, 3000);
+        triggerAnimation(cat.serialId, 'cat-console', 1200);
+      }, i * 250);
+    });
+  }, [cats, showBubble, triggerAnimation]);
+
+  // 通用确认弹窗辅助函数
+  const showConfirmModal = useCallback(({
+    emoji,
+    title,
+    message,
+    onConfirm
+  }) => {
+    setConfirmModal({
+      emoji,
+      title,
+      message,
+      onConfirm
+    });
+  }, []);
+
+  // P6: Ref for executeRealRelease to use in interval
+  const executeRealReleaseRef = useRef(null);
+
+  // Auto-dismiss milestone alert
+  useEffect(() => {
+    if (milestoneAlert) {
+      milestoneAlertTimer.current = setTimeout(() => setMilestoneAlert(null), 5000);
+      return () => clearTimeout(milestoneAlertTimer.current);
+    }
+  }, [milestoneAlert]);
+
+  // Auth: check token on mount (with 5s timeout)
+  useEffect(() => {
+    const initAuth = async () => {
+      const createTimeout = ms => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+      try {
+        if (MiaolegemiAPI.isLoggedIn()) {
+          try {
+            // 从服务器加载完整游戏状态
+            const state = await Promise.race([MiaolegemiAPI.getState(), createTimeout(8000)]);
+            setUser({
+              id: state.userId,
+              username: state.username,
+              nickname: state.nickname,
+              bells: state.bells
+            });
+            setBells(state.bells);
+            setPityCount(state.pityCount);
+            setActiveTitle(state.activeTitle);
+            setIsLocalMode(false);
+            // 加载猫
+            if (state.cats && state.cats.length > 0) {
+              const mapped = state.cats.map(c => ({
+                serialId: c.id,
+                breedSerial: c.breedSerial || 0,
+                breedId: c.breedId,
+                name: c.breedId,
+                rarity: c.rarity,
+                img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+                desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+                personality: sanitizePersonality(c.personality, c.breedId),
+                location: c.location,
+                bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
+                acquiredAt: c.acquiredAt ? new Date(c.acquiredAt).getTime() : null,
+                lastFedAt: c.lastFedAt ? new Date(c.lastFedAt).getTime() : null,
+                daysAlive: c.daysAlive || 0,
+                gamesWitnessed: c.gamesWitnessed || 0,
+                bestCombo: c.bestCombo || 0,
+                fishSpent: c.fishSpent || 0,
+                intimacy: c.intimacy || 0,
+                isGenesis: (c.breedSerial || 0) <= 10,
+                battleSlot: c.slotPosition,
+                releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
+                coolingUntil: c.coolingUntil ? new Date(c.coolingUntil).getTime() : null,
+                _apiId: c.id,
+                _serialId: c.serialId
+              }));
+              setCats(mapped);
+            }
+            // 恢复 gameData
+            if (state.gameData) {
+              const gd = state.gameData;
+              if (gd.fishLedger && gd.fishLedger.length > 0) fishLedger = gd.fishLedger;
+              if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
+              if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+              if (gd.coolingPool) coolingPool = gd.coolingPool;
+              if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
+              if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
+              if (gd.groupStageScores) setGroupStageScores(gd.groupStageScores);
+              if (gd.groupStageBellsClaimed) setGroupStageBellsClaimed(gd.groupStageBellsClaimed);
+              if (gd.knockoutConsecutiveClears !== undefined) setKnockoutConsecutiveClears(gd.knockoutConsecutiveClears);
+              if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
+              if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
+              if (gd.bets) setBets(gd.bets);
+              if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+              if (gd.theme) setTheme(gd.theme);
+            }
+            // 保存到 localStorage 作为离线缓存
+            saveStateOnlineCache(state);
+          } catch (e) {
+            if (e.message !== 'timeout') {
+              MiaolegemiAPI.clearToken();
+            }
+            // 服务器不可达，回退到 localStorage
+            setCats(loadState());
+          }
+        }
+      } catch (e) {
+        console.warn('Auth check failed, using local mode');
+      } finally {
+        if (!user) {
+          const saved = localStorage.getItem('miaolegemi_p0_v1');
+          const localData = saved ? JSON.parse(saved) : null;
+          if (localData && localData.cats && localData.cats.length > 0) {
+            setUser({
+              id: 'local',
+              username: '本地用户',
+              nickname: '铲屎官',
+              bells: localData.bells || 3
+            });
+            setIsLocalMode(true);
+          }
+        }
+        setAuthChecked(true);
+      }
+    };
+    initAuth();
+  }, []);
+
+  // 合规：auth check完成后检查协议同意状态
+  useEffect(() => {
+    if (!authChecked) return;
+    const status = getAgreementStatus();
+    // 未同意或协议版本过低，需要重新确认
+    if (!status.agreed || status.version < AGREEMENT_VERSION) {
+      setShowAgreementModal(true);
+    }
+  }, [authChecked]);
+
+  // 合规：游客模式toast自动消失
+  useEffect(() => {
+    if (guestToast) {
+      const timer = setTimeout(() => setGuestToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [guestToast]);
+  const handleLogin = (userData, localMode) => {
+    setUser(userData);
+    setIsLocalMode(localMode);
+    if (!localMode) {
+      setBells(userData.bells || 3);
+      setGuestMode(false);
+      clearGuestMode();
+      // 先重置所有状态为空，清掉上一个用户的本地数据
+      setCats([]);
+      setActiveTitle('新手铲屎官');
+      setPityCount(0);
+      setOwnedSkins([]);
+      setEquippedSkins({});
+      setGroupStageScores({});
+      setGroupStageBellsClaimed([]);
+      setKnockoutConsecutiveClears(0);
+      setKnockoutEliminatedToday(false);
+      setKnockoutSkinClaimed(false);
+      setBets([]);
+      setHomeMaxSlots(3);
+      fishLedger = [{
+        type: 'earn',
+        amount: 100,
+        desc: '初始赠送',
+        time: Date.now()
+      }];
+      globalSerialId = 1;
+      breedSerialCounters = {};
+      coolingPool = {};
+      // 从服务器拉取完整游戏数据
+      (async () => {
+        try {
+          const state = await MiaolegemiAPI.getState();
+          if (state.cats && state.cats.length > 0) {
+            const mapped = state.cats.map(c => ({
+              serialId: c.id,
+              breedSerial: c.breedSerial || 0,
+              breedId: c.breedId,
+              name: c.breedId,
+              rarity: c.rarity,
+              img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+              desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+              personality: sanitizePersonality(c.personality, c.breedId),
+              location: c.location,
+              bagExpiresAt: c.bagExpiresAt,
+              acquiredAt: c.acquiredAt,
+              lastFedAt: c.lastFedAt,
+              daysAlive: c.daysAlive || 0,
+              gamesWitnessed: c.gamesWitnessed || 0,
+              bestCombo: c.bestCombo || 0,
+              fishSpent: c.fishSpent || 0,
+              intimacy: c.intimacy || 0,
+              isGenesis: (c.breedSerial || 0) <= 10,
+              battleSlot: c.slotPosition,
+              releasedAt: c.releasedAt,
+              coolingUntil: c.coolingUntil,
+              _apiId: c.id,
+              _serialId: c.serialId
+            }));
+            setCats(mapped);
+          }
+          setBells(state.bells || 3);
+          setActiveTitle(state.activeTitle || '新手铲屎官');
+          setPityCount(state.pityCount || 0);
+          if (state.gameData) {
+            const gd = state.gameData;
+            if (gd.fishLedger && gd.fishLedger.length > 0) fishLedger = gd.fishLedger;
+            if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
+            if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+            if (gd.coolingPool) coolingPool = gd.coolingPool;
+            if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
+            if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
+            if (gd.groupStageScores) setGroupStageScores(gd.groupStageScores);
+            if (gd.groupStageBellsClaimed) setGroupStageBellsClaimed(gd.groupStageBellsClaimed);
+            if (gd.knockoutConsecutiveClears !== undefined) setKnockoutConsecutiveClears(gd.knockoutConsecutiveClears);
+            if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
+            if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
+            if (gd.bets) setBets(gd.bets);
+            if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+            if (gd.theme) setTheme(gd.theme);
+          }
+          saveStateOnlineCache(state);
+        } catch (e) {
+          // 服务器不可达，使用本地数据
+        }
+      })();
+    }
+  };
+
+  // 合规：协议同意处理
+  const handleAgreeAgreement = () => {
+    setAgreementStatus();
+    setShowAgreementModal(false);
+    setAgreementStatusState(getAgreementStatus());
+  };
+  const handleRejectAgreement = () => {
+    // 模拟退出小程序的逻辑 - 在web环境下关闭窗口或显示提示
+    if (window.WeixinJSBridge) {
+      // 微信环境尝试退出
+      try {
+        wx && wx.exitMiniProgram && wx.exitMiniProgram();
+      } catch (e) {}
+    }
+    // Web fallback: 关闭窗口
+    window.close();
+    // 如果无法关闭，显示退出提示
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0F0A1E;color:#F0EDFF;font-family:sans-serif;text-align:center;padding:40px;"><div><div style="font-size:48px;margin-bottom:16px;">👋</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">感谢关注喵呜乐消消</div><div style="font-size:13px;opacity:0.6;">您需要同意协议才能使用游戏服务<br/>请关闭本页面</div></div></div>';
+  };
+
+  // 合规：登录授权弹窗
+  const handleShowLoginAuth = () => {
+    setShowLoginAuthModal(true);
+  };
+  const handleAuthorizeLogin = async () => {
+    setLoginAuthLoading(true);
+    try {
+      if (window.wx && window.wx.getUserProfile) {
+        // 微信环境：调用 getUserProfile
+        window.wx.getUserProfile({
+          desc: '用于游戏账号展示和社交互动',
+          success: res => {
+            const userInfo = res.userInfo;
+            const userData = {
+              id: 'wx_' + Date.now(),
+              username: userInfo.nickName || '微信用户',
+              nickname: userInfo.nickName || '铲屎官',
+              avatar: userInfo.avatarUrl || '',
+              bells: 3
+            };
+            handleLogin(userData, false);
+            setShowLoginAuthModal(false);
+            setLoginAuthLoading(false);
+            setGuestToast('✅ 登录成功！游戏数据将同步到云端');
+          },
+          fail: () => {
+            // 用户取消授权，进入游客模式
+            handleGuestMode();
+            setLoginAuthLoading(false);
+          }
+        });
+      } else {
+        // 非微信环境：模拟授权
+        const userData = {
+          id: 'local_' + Date.now(),
+          username: '在线用户',
+          nickname: '铲屎官',
+          bells: 3
+        };
+        handleLogin(userData, false);
+        setShowLoginAuthModal(false);
+        setLoginAuthLoading(false);
+        setGuestToast('✅ 登录成功！');
+      }
+    } catch (e) {
+      handleGuestMode();
+      setLoginAuthLoading(false);
+    }
+  };
+  const handleGuestMode = () => {
+    setGuestMode(true);
+    setGuestMode();
+    setShowLoginAuthModal(false);
+    // 如果还没有用户，创建一个本地游客账号
+    if (!user) {
+      const saved = localStorage.getItem('miaolegemi_p0_v1');
+      const localData = saved ? JSON.parse(saved) : null;
+      if (localData && localData.cats && localData.cats.length > 0) {
+        setUser({
+          id: 'guest',
+          username: '游客',
+          nickname: '铲屎官',
+          bells: localData.bells || 3
+        });
+      } else {
+        setUser({
+          id: 'guest',
+          username: '游客',
+          nickname: '铲屎官',
+          bells: 3
+        });
+      }
+      setIsLocalMode(true);
+    }
+    setGuestToast('您已拒绝授权，将以游客模式体验游戏，部分功能将无法使用');
+  };
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const handleLogout = () => {
+    setShowLogoutConfirm(false);
+    MiaolegemiAPI.logout();
+    setUser(null);
+    setIsLocalMode(true);
+    // 清除本地数据，下一个用户从零开始
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('miaolegemi_friend_auth');
+    // 重置全局状态
+    fishLedger = [{
+      type: 'earn',
+      amount: 100,
+      desc: '初始赠送',
+      time: Date.now()
+    }];
+    globalSerialId = 1;
+    breedSerialCounters = {};
+    coolingPool = {};
+    // 种子初始猫
+    setCats(seedInitialCats());
+    setBells(3);
+    setActiveTitle('新手铲屎官');
+    setPityCount(0);
+  };
+
+  // Info modals
+  const [infoModal, setInfoModal] = useState(null);
+  // P2: 皮肤系统状态
+  const [ownedSkins, setOwnedSkins] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).ownedSkins || [] : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [equippedSkins, setEquippedSkins] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).equippedSkins || {} : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  // P2: 赛程活动状态
+  const [groupStageScores, setGroupStageScores] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).groupStageScores || {} : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  const [groupStageBellsClaimed, setGroupStageBellsClaimed] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).groupStageBellsClaimed || [] : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [knockoutConsecutiveClears, setKnockoutConsecutiveClears] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).knockoutConsecutiveClears || 0 : 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+  const [knockoutEliminatedToday, setKnockoutEliminatedToday] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).knockoutEliminatedToday || false : false;
+    } catch (e) {
+      return false;
+    }
+  });
+  const [knockoutSkinClaimed, setKnockoutSkinClaimed] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).knockoutSkinClaimed || false : false;
+    } catch (e) {
+      return false;
+    }
+  });
+  const [finalTitleAwarded, setFinalTitleAwarded] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).finalTitleAwarded || false : false;
+    } catch (e) {
+      return false;
+    }
+  });
+  // P2: 竞猜状态
+  const [bets, setBets] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).bets || [] : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const fish = getFishBalance();
+  const nurturing = cats.filter(c => c.location === 'home');
+  const memorial = cats.filter(c => c.location === 'memorial');
+  const totalAdopted = cats.filter(c => c.location === 'home' || c.location === 'memorial').length;
+  const baseSlots = 3;
+  const slot4Unlocked = totalAdopted >= 10;
+  // P2: slot5 解锁条件：家园或纪念册中任意一只猫存活 90 天以上
+  const slot5Unlocked = nurturing.concat(memorial).some(c => c.daysAlive >= 90);
+  const slot6Unlocked = totalAdopted >= 30;
+  const maxSlots = baseSlots + (slot4Unlocked ? 1 : 0) + (slot5Unlocked ? 1 : 0) + (slot6Unlocked ? 1 : 0);
+
+  // Today's fish earned (for home page display)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayFish = fishLedger.filter(t => t.type === 'earn' && t.time > todayStart.getTime()).reduce((s, t) => s + t.amount, 0);
+  // 今日累积积分（从 localStorage 读取，每日0点清零）
+  const [todayTotalScore, setTodayTotalScore] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const today = new Date().toISOString().slice(0, 10);
+      if (saved && saved.todayDate === today) return saved.todayTotalScore || 0;
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+  // 定期同步今日累积积分（游戏结束后自动更新）
+  useEffect(() => {
+    const timer = setInterval(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        const today = new Date().toISOString().slice(0, 10);
+        if (saved && saved.todayDate === today) {
+          setTodayTotalScore(saved.todayTotalScore || 0);
+        } else {
+          setTodayTotalScore(0);
+        }
+      } catch (e) {}
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Compute statuses periodically (simulate hourly backend job) + auto-wander
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCats(prev => prev.map(c => {
+        // P2: 家园猫咪不计算饥饿状态，使用亲密度系统
+        if (c.location === 'home') {
+          // P2: 亲密度衰减：每自然日-1
+          const lastOnline = c.lastOnlineAt || c.adoptedAt || Date.now();
+          const daysSinceOnline = Math.floor((Date.now() - lastOnline) / 86400000);
+          if (daysSinceOnline >= 1) {
+            const decay = Math.min(c.intimacy || 0, daysSinceOnline);
+            return {
+              ...c,
+              intimacy: Math.max(0, (c.intimacy || 0) - decay)
+            };
+          }
+        }
+        // P6: 检查告别仪式是否结束（24小时）
+        if (c.pendingRelease && c.farewellStartedAt) {
+          const elapsed = Date.now() - c.farewellStartedAt;
+          if (elapsed >= c.farewellDuration) {
+            // 告别仪式结束，执行真正的送走
+            executeRealReleaseRef.current(c);
+          }
+        }
+        if (c.location === 'bag' && c.bagExpiresAt && Date.now() > c.bagExpiresAt) {
+          return {
+            ...c,
+            location: 'memorial',
+            releasedAt: c.bagExpiresAt
+          };
+        }
+        return c;
+      }));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Sync data when returning from game (visibility change)
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        // 检查消消乐通关/失败标记（动效联动）
+        try {
+          const flagsStr = localStorage.getItem('miaolegemi_game_flags');
+          if (flagsStr) {
+            const flags = JSON.parse(flagsStr);
+            const elapsed = Date.now() - (flags.timestamp || 0);
+            if (elapsed < 30000) {
+              if (flags.justWon) triggerWinCelebrate();else if (flags.justFailed) triggerFailConsole();
+            }
+            localStorage.removeItem('miaolegemi_game_flags');
+          }
+        } catch (e) {}
+
+        // P0: 刷新邀请奖励计数
+        setInviteRewardToday(getTodayInviteRewardCount());
+
+        // Online mode: sync from API
+        if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+          try {
+            const apiCats = await MiaolegemiAPI.getCats();
+            if (apiCats.length > 0) {
+              const mapped = apiCats.map(c => ({
+                serialId: c.id,
+                breedSerial: c.cat_serial_registry?.serialNumber || 0,
+                breedId: c.cat_serial_registry?.cat_species?.name || '橘猫',
+                name: c.cat_serial_registry?.cat_species?.name || '橘猫',
+                rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
+                img: (BREEDS.find(b => b.id === c.cat_serial_registry?.cat_species?.name) || BREEDS[0]).img,
+                desc: (BREEDS.find(b => b.id === c.cat_serial_registry?.cat_species?.name) || BREEDS[0]).desc,
+                personality: sanitizePersonality(c.personality, c.cat_serial_registry?.cat_species?.name || '橘猫'),
+                status: computeCatStatus({
+                  location: c.location,
+                  lastFedAt: c.lastFedAt
+                }),
+                location: c.location,
+                createdAt: new Date(c.createdAt).getTime(),
+                bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : null,
+                adoptedAt: c.adoptedAt ? new Date(c.adoptedAt).getTime() : null,
+                expiresAt: c.expiresAt ? new Date(c.expiresAt).getTime() : null,
+                lastFedAt: c.lastFedAt ? new Date(c.lastFedAt).getTime() : null,
+                daysAlive: c.daysAlive || 0,
+                gamesWitnessed: c.gamesWitnessed || 0,
+                bestCombo: c.bestCombo || 0,
+                witnessMaxScore: c.witnessMaxScore || 0,
+                witnessTotalScore: c.witnessTotalScore || 0,
+                fishSpent: c.fishSpent || 0,
+                isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
+                battleSlot: c.slotPosition,
+                previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
+                releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
+                _apiId: c.id,
+                _serialId: c.serialId
+              }));
+              setCats(mapped);
+            }
+            const profile = await MiaolegemiAPI.getProfile();
+            setBells(profile.bells);
+          } catch (e) {}
+          return;
+        }
+        // Local mode: sync from localStorage
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const data = JSON.parse(saved);
+            const savedLedger = data.fishLedger;
+            if (Array.isArray(savedLedger)) {
+              const localLen = fishLedger.length;
+              const savedLen = savedLedger.length;
+              if (savedLen > localLen) {
+                const newEntries = savedLedger.slice(localLen);
+                fishLedger.push(...newEntries);
+              }
+            }
+            if (data.cats) {
+              const savedCats = data.cats;
+              setCats(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(savedCats)) return savedCats;
+                return prev;
+              });
+            }
+            if (data.globalSerialId && data.globalSerialId > globalSerialId) {
+              globalSerialId = data.globalSerialId;
+            }
+            setCats(prev => [...prev]);
+          }
+        } catch (e) {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isLocalMode]);
+
+  // Request notification permission on first interaction
+  useEffect(() => {
+    if (notifPerm !== 'default') return;
+    const timer = setTimeout(() => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(p => setNotifPerm(p));
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [notifPerm]);
+
+  // 深夜睡眠检测（22:00 - 06:00）
+  useEffect(() => {
+    const checkSleep = () => {
+      const h = new Date().getHours();
+      setIsSleepTime(h >= 22 || h < 6);
+    };
+    checkSleep();
+    const timer = setInterval(checkSleep, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 首次用户交互时解锁 AudioContext（满足浏览器自动播放策略）
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    unlockAudioCtx();
+    audioUnlockedRef.current = true;
+  }, []);
+
+  // 摇一摇检测（DeviceMotion API）
+  useEffect(() => {
+    let lastShakeTime = 0;
+    const handleMotion = e => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitude = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+      const now = Date.now();
+      if (magnitude > 25 && now - lastShakeTime > 3000) {
+        lastShakeTime = now;
+        const homeCats = cats.filter(c => c.location === 'home');
+        homeCats.slice(0, 3).forEach((cat, i) => {
+          setTimeout(() => {
+            showBubble(cat.serialId, '😱 喵？！地震了？', 2000);
+            triggerAnimation(cat.serialId, 'cat-bounce-click', 500);
+          }, i * 150);
+        });
+        playMeowSound(300);
+      }
+    };
+    if (window.DeviceMotionEvent) {
+      window.addEventListener('devicemotion', handleMotion);
+    }
+    return () => window.removeEventListener('devicemotion', handleMotion);
+  }, [cats, showBubble, triggerAnimation]);
+
+  // Push notifications: check cat statuses periodically
+  const notifSentRef = useRef({});
+  useEffect(() => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const checkAndNotify = () => {
+      const now = Date.now();
+      const homeCats = cats.filter(c => c.location === 'home');
+      const bagCats = cats.filter(c => c.location === 'bag');
+
+      // P2: Check home cats for low intimacy
+      for (const cat of homeCats) {
+        const intimacy = cat.intimacy || 0;
+        const key = `home_${cat.serialId}_${intimacy}`;
+        const lastSent = notifSentRef.current[key];
+        // Don't re-send same notification within 6 hours
+        if (lastSent && now - lastSent < 6 * 3600000) continue;
+        let title, body;
+        if (intimacy <= 10) {
+          title = `${cat.name} 与你渐行渐远`;
+          body = `#${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 亲密度仅剩${intimacy}%，它需要你的陪伴`;
+          try {
+            new Notification(title, {
+              body,
+              icon: cat.img,
+              tag: key
+            });
+          } catch (e) {}
+          notifSentRef.current[key] = now;
+        } else if (intimacy <= 30) {
+          title = `${cat.name} 想你了`;
+          body = `#${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 亲密度${intimacy}%，快去陪陪它`;
+          try {
+            new Notification(title, {
+              body,
+              icon: cat.img,
+              tag: key
+            });
+          } catch (e) {}
+          notifSentRef.current[key] = now;
+        }
+      }
+
+      // Check bag cats for expiration
+      for (const cat of bagCats) {
+        const daysLeft = getRemainingDays(cat);
+        if (daysLeft <= 7 && daysLeft > 0) {
+          const key = `bag_${cat.serialId}_${daysLeft}`;
+          const lastSent = notifSentRef.current[key];
+          if (lastSent && now - lastSent < 6 * 3600000) continue;
+          try {
+            new Notification('包裹有猫即将离开', {
+              body: `${cat.name} #${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 还有${daysLeft}天就要离开了`,
+              icon: cat.img,
+              tag: key
+            });
+          } catch (e) {}
+          notifSentRef.current[key] = now;
+        }
+      }
+    };
+    checkAndNotify();
+    const timer = setInterval(checkAndNotify, 120000); // every 2 minutes
+    return () => clearInterval(timer);
+  }, [cats]);
+
+  // Detect newly unlocked milestones + titles
+  useEffect(() => {
+    const slot4 = totalAdopted >= 10;
+    const slot5 = cats.some(c => c.daysAlive >= 90);
+    const slot6 = totalAdopted >= 30;
+    if (slot4 && !milestoneState.current.slot4) {
+      setMilestoneAlert({
+        label: '历史领养达到10只！',
+        slotName: '第4格'
+      });
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('观赛区第4格已解锁！', {
+            body: '快去领养新猫咪吧'
+          });
+        } catch (e) {}
+      }
+    }
+    if (slot5 && !milestoneState.current.slot5) {
+      setMilestoneAlert({
+        label: '有猫咪存活超过90天！',
+        slotName: '第5格'
+      });
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('观赛区第5格已解锁！', {
+            body: '猫咪与你的羁绊越来越深了'
+          });
+        } catch (e) {}
+      }
+    }
+    if (slot6 && !milestoneState.current.slot6) {
+      setMilestoneAlert({
+        label: '历史领养达到30只！',
+        slotName: '第6格'
+      });
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('观赛区第6格已解锁！', {
+            body: '你已经是资深铲屎官了'
+          });
+        } catch (e) {}
+      }
+    }
+    milestoneState.current = {
+      slot4,
+      slot5,
+      slot6
+    };
+    localStorage.setItem('milestoneAlertsShown', JSON.stringify(milestoneState.current));
+
+    // P5: Detect newly unlocked titles
+    const currentTitles = new Set();
+    if (totalAdopted >= 1) currentTitles.add('新手铲屎官');
+    if (totalAdopted >= 5) currentTitles.add('合格铲屎官');
+    if (cats.some(c => c.daysAlive >= 90)) currentTitles.add('资深铲屎官');
+    if (totalAdopted >= 20) currentTitles.add('猫咪守护者');
+    if (cats.some(c => c.daysAlive >= 180)) currentTitles.add('老铲屎官');
+    const memorialCount = cats.filter(c => c.location === 'memorial').length;
+    if (memorialCount >= 3) currentTitles.add('猫咪绝情者');
+    if (cats.some(c => c.isGenesis && (c.location === 'home' || c.location === 'bag'))) currentTitles.add('初代发现者');
+    if (prevTitlesRef.current.size > 0) {
+      for (const t of currentTitles) {
+        if (!prevTitlesRef.current.has(t)) {
+          setTitleUnlockToast(t);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('新称号解锁！', {
+                body: t
+              });
+            } catch (e) {}
+          }
+          break; // show one at a time
+        }
+      }
+    }
+    prevTitlesRef.current = currentTitles;
+  }, [totalAdopted, cats]);
+
+  // 实时同步最新状态，确保页面跳转前 beforeunload 能保存最新部署阵容
+  useEffect(() => { registerLatestState(cats, bells, activeTitle); }, [cats, bells, activeTitle]);
+
+  // Save state — 始终存 localStorage 作为缓存
+  let _syncTimer = null;
+  useEffect(() => {
+    saveState(cats, bells, activeTitle, {
+      ownedSkins,
+      equippedSkins,
+      groupStageScores,
+      groupStageBellsClaimed,
+      knockoutConsecutiveClears,
+      knockoutEliminatedToday,
+      knockoutSkinClaimed,
+      finalTitleAwarded,
+      bets,
+      pityCount
+    });
+    // 在线时同步到服务器（防抖 5 秒）
+    if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+      if (_syncTimer) clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(async () => {
+        try {
+          const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          await MiaolegemiAPI.syncState({
+            bells,
+            activeTitle,
+            pityCount,
+            gameData: {
+              theme,
+              fishLedger,
+              globalSerialId,
+              breedSerialCounters,
+              coolingPool,
+              homeMaxSlots,
+              ownedSkins,
+              equippedSkins,
+              groupStageScores,
+              groupStageBellsClaimed,
+              knockoutConsecutiveClears,
+              knockoutEliminatedToday,
+              knockoutSkinClaimed,
+              finalTitleAwarded,
+              bets,
+              savedAt: Date.now()
+            }
+          });
+        } catch (e) {}
+      }, 5000);
+    }
+  }, [cats, bells, activeTitle, isLocalMode, pityCount, ownedSkins, equippedSkins, groupStageScores, groupStageBellsClaimed, knockoutConsecutiveClears, knockoutEliminatedToday, knockoutSkinClaimed, finalTitleAwarded, bets]);
+
+  // Handle feeding - P2: 亲密度系统
+  const handleFeed = useCallback(async cat => {
+    if (getFishBalance() < 1 && isLocalMode) return;
+    if (!isLocalMode && cat._apiId) {
+      try {
+        await MiaolegemiAPI.feedCat(cat._apiId);
+      } catch (e) {
+        showConfirmModal({
+          emoji: '❌',
+          title: '喂食失败',
+          message: e.message,
+          onConfirm: () => {}
+        });
+        return;
+      }
+    }
+    fishLedger.push({
+      type: 'spend',
+      amount: 1,
+      desc: `${cat.name}喂食`,
+      time: Date.now()
+    });
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      const currentIntimacy = c.intimacy || 0;
+      const newIntimacy = Math.min(INTIMACY_MAX, currentIntimacy + INTIMACY_PER_FEED);
+      return {
+        ...c,
+        lastFedAt: Date.now(),
+        lastOnlineAt: Date.now(),
+        intimacy: newIntimacy,
+        fishSpent: (c.fishSpent || 0) + 1,
+        daysAlive: (c.daysAlive || 0) + 1,
+        status: 'alive'
+      };
+    }));
+    // 喂食Toast
+    setFeedToast({
+      text: `🐟 -1 ｜ ❤️ 好感度 +5！`,
+      timestamp: Date.now()
+    });
+    setTimeout(() => setFeedToast(null), 2000);
+  }, [isLocalMode]);
+
+  // P0: Handle batch feed (批量补满亲密度)
+  const handleBatchFeed = useCallback(async cat => {
+    const currentIntimacy = cat.intimacy || 0;
+    if (currentIntimacy >= 100) return;
+    const feedsNeeded = Math.ceil((100 - currentIntimacy) / INTIMACY_PER_FEED);
+    if (getFishBalance() < feedsNeeded && isLocalMode) return;
+    if (!isLocalMode && cat._apiId) {
+      try {
+        (await MiaolegemiAPI.batchFeedCat) && MiaolegemiAPI.batchFeedCat(cat._apiId);
+      } catch (e) {
+        showConfirmModal({
+          emoji: '❌',
+          title: '批量补满失败',
+          message: e.message,
+          onConfirm: () => {}
+        });
+        return;
+      }
+    }
+    fishLedger.push({
+      type: 'spend',
+      amount: feedsNeeded,
+      desc: `${cat.name}批量补满`,
+      time: Date.now()
+    });
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        lastFedAt: Date.now(),
+        lastOnlineAt: Date.now(),
+        intimacy: INTIMACY_MAX,
+        fishSpent: (c.fishSpent || 0) + feedsNeeded,
+        status: 'alive'
+      };
+    }));
+  }, [isLocalMode]);
+
+  // Handle adoption
+  const handleAdopt = useCallback(cat => {
+    const homeCatsCount = cats.filter(c => c.location === 'home').length;
+    if (homeCatsCount >= homeMaxSlots) return;
+    setAdoptTarget(cat);
+  }, [cats, homeMaxSlots]);
+  const confirmAdopt = useCallback(async () => {
+    if (!adoptTarget) return;
+    if (!isLocalMode && adoptTarget._apiId) {
+      try {
+        await MiaolegemiAPI.adoptCat(adoptTarget._apiId);
+      } catch (e) {
+        showConfirmModal({
+          emoji: '❌',
+          title: '领养失败',
+          message: e.message,
+          onConfirm: () => {}
+        });
+        return;
+      }
+    }
+    const now = Date.now();
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== adoptTarget.serialId) return c;
+
+      // P4: 检查是否是初次发现者（第一次被领养）
+      const isFirstDiscovery = !c.firstOwner;
+      return {
+        ...c,
+        location: 'home',
+        // P2: 领养进家园
+        adoptedAt: now,
+        expiresAt: now + 30 * 86400000,
+        lastFedAt: now,
+        lastOnlineAt: now,
+        // P2: 更新在线时间
+        status: 'alive',
+        intimacy: 0,
+        // P2: 亲密度初始为0
+        daysAlive: 0,
+        gamesWitnessed: 0,
+        bestCombo: 0,
+        witnessMaxScore: 0,
+        witnessTotalScore: 0,
+        fishSpent: 0,
+        // P4: 记录初次发现者（创世猫）
+        firstOwner: isFirstDiscovery ? user?.nickname || '本地用户' : c.firstOwner,
+        // P4: 清空冷却信息（被救回）
+        coolingUntil: null,
+        coolingKey: null
+      };
+    }));
+
+    // P4: 如果是创世区猫咪，显示特殊提示
+    const adoptBreedSerial = adoptTarget.breedSerial || adoptTarget.serialId || 0;
+    if (adoptBreedSerial <= 10) {
+      showConfirmModal({
+        emoji: '🎉',
+        title: '创世区猫咪',
+        message: `恭喜！你发现了创世区猫咪 ${adoptTarget.name} #${String(adoptBreedSerial).padStart(3, '0')}！\n这是全球仅有的10只创世猫咪之一，请好好珍惜！`,
+        onConfirm: () => {}
+      });
+    }
+    setAdoptTarget(null);
+  }, [adoptTarget, isLocalMode, user]);
+
+  // P2: Handle deploy (家园 → 出战席/观战席)
+  const handleDeploy = useCallback(cat => {
+    const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
+    const targetSlot = findEmptyBattleSlot(battleCats);
+    if (targetSlot !== null) {
+      // 出战席有空位，直接上场
+      const newBattleCats = [...battleCats, {
+        ...cat,
+        battleSlot: targetSlot
+      }];
+      const conflict = validateBattleLineup(newBattleCats.filter(c => c.battleSlot != null));
+      if (!conflict.valid) {
+        showConfirmModal({
+          emoji: '⚠️',
+          title: '性格不合',
+          message: `${conflict.conflict[0].name} 和 ${conflict.conflict[1].name} 性格不合，不能同时出战！`,
+          onConfirm: () => {}
+        });
+        return;
+      }
+      setCats(prev => prev.map(c => {
+        if (c.serialId !== cat.serialId) return c;
+        return {
+          ...c,
+          battleSlot: targetSlot
+        };
+      }));
+      return;
+    }
+
+    // 出战席已满，检查观战席
+    const spectatorCats = cats.filter(c => c.battleSpectator != null);
+    const maxSpectatorSlots = slot4Unlocked ? slot6Unlocked ? 3 : slot5Unlocked ? 2 : 1 : 0;
+    const hasSpectatorSpace = spectatorCats.length < maxSpectatorSlots && maxSpectatorSlots > 0;
+    if (hasSpectatorSpace) {
+      // 出战席已满但观战席有空位，弹窗确认
+      showConfirmModal({
+        emoji: '👁️',
+        title: '出战席已满',
+        message: `"出战席"已满，是否前往"观战区"观战？`,
+        onConfirm: () => {
+          // 找到空观战槽位（仅已解锁的）
+          const usedSlots = new Set(spectatorCats.map(c => c.battleSpectator).filter(s => s != null));
+          const specUnlocked = [slot4Unlocked, slot5Unlocked, slot6Unlocked];
+          let targetSpectatorSlot = null;
+          for (let i = 1; i <= 3; i++) {
+            if (!usedSlots.has(i) && specUnlocked[i - 1]) {
+              targetSpectatorSlot = i;
+              break;
+            }
+          }
+          if (targetSpectatorSlot !== null) {
+            setCats(prev => prev.map(c => {
+              if (c.serialId !== cat.serialId) return c;
+              return {
+                ...c,
+                battleSpectator: targetSpectatorSlot
+              };
+            }));
+          }
+        }
+      });
+      return;
+    }
+
+    // 出战席和观战席都满了
+    showConfirmModal({
+      emoji: '😔',
+      title: '备战区已满',
+      message: '出战席和观战席都已满，无法上场。',
+      onConfirm: () => {}
+    });
+  }, [cats, slot4Unlocked, slot5Unlocked, slot6Unlocked, showConfirmModal]);
+
+  // P2: Find empty battle slot
+  function findEmptyBattleSlot(battleCats) {
+    const usedSlots = new Set(battleCats.map(c => c.battleSlot).filter(s => s != null));
+    for (let i = 1; i <= 3; i++) {
+      // P9: 仅限1-3号位为主动位
+      if (!usedSlots.has(i)) return i;
+    }
+    return null;
+  }
+
+  // P2: Handle spectator deploy (家园 → 观战席)
+  const handleSpectatorDeploy = useCallback(cat => {
+    const spectatorCats = cats.filter(c => c.battleSpectator != null);
+    const slotUnlocked = [slot4Unlocked, slot5Unlocked, slot6Unlocked];
+    const maxUnlocked = slotUnlocked.filter(Boolean).length;
+    if (maxUnlocked === 0) {
+      showConfirmModal({
+        emoji: '🔒',
+        title: '观战区未解锁',
+        message: '已解锁0个观战区，请在解锁后再进行观战',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    if (spectatorCats.length >= maxUnlocked) {
+      if (maxUnlocked < 3) {
+        showConfirmModal({
+          emoji: '🔒',
+          title: '观战区未解锁',
+          message: `已解锁${maxUnlocked}个观战区，请在解锁后再进行观战`,
+          onConfirm: () => {}
+        });
+      } else {
+        showConfirmModal({
+          emoji: '📋',
+          title: '观战区已满',
+          message: '3个观战区已满，请先撤回再上阵',
+          onConfirm: () => {}
+        });
+      }
+      return;
+    }
+
+    // 找到空槽位（仅已解锁的）
+    const usedSlots = new Set(spectatorCats.map(c => c.battleSpectator).filter(s => s != null));
+    let targetSlot = null;
+    for (let i = 1; i <= 3; i++) {
+      if (!usedSlots.has(i) && slotUnlocked[i - 1]) {
+        targetSlot = i;
+        break;
+      }
+    }
+    if (targetSlot === null) {
+      showConfirmModal({
+        emoji: '📋',
+        title: '观战席已满',
+        message: '所有已解锁的观战席已有猫咪',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        battleSpectator: targetSlot
+      };
+    }));
+  }, [cats, slot4Unlocked, slot5Unlocked, slot6Unlocked]);
+
+  // P2: Handle spectator withdraw (观战席 → 家园)
+  const handleSpectatorWithdraw = useCallback(cat => {
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        battleSpectator: null
+      };
+    }));
+  }, []);
+
+  // P2: Handle withdraw (出战席 → 家园)
+  const handleWithdraw = useCallback(cat => {
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        battleSlot: null
+      };
+    }));
+  }, []);
+
+  // Handle release
+  const handleRelease = useCallback(cat => {
+    setReleaseTarget(cat);
+  }, []);
+  const confirmRelease = useCallback(async () => {
+    if (!releaseTarget) return;
+
+    // P6: 进入24小时告别仪式（不直接送走）
+    const rt = releaseTarget;
+    const now = Date.now();
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== rt.serialId) return c;
+      return {
+        ...c,
+        pendingRelease: true,
+        // 开启告别仪式状态
+        farewellStartedAt: now,
+        // 开始时间
+        farewellDuration: c.farewellDuration || 24 * 60 * 60 * 1000,
+        // 确保有默认值
+        canBeSaved: true,
+        // 可以挽回
+        saveCost: 100 // 挽留费用
+      };
+    }));
+    setReleaseTarget(null);
+    if (showCatDetail && selectedCat?.serialId === rt.serialId) {
+      setShowCatDetail(false);
+      setSelectedCat(null);
+    }
+
+    // 简短提示告别仪式开始
+    showConfirmModal({
+      emoji: '💫',
+      title: '告别仪式',
+      message: `${rt.name} 开始告别仪式，24小时内可以挽留～`,
+      onConfirm: () => {}
+    });
+  }, [releaseTarget, showCatDetail, selectedCat, showConfirmModal]);
+
+  // P6: 挽留告别仪式中的猫咪
+  const handleSaveFromFarewell = useCallback(async cat => {
+    if (fish < cat.saveCost) {
+      showConfirmModal({
+        emoji: '🐟',
+        title: '鱼干不足',
+        message: `挽留需要 ${cat.saveCost} 鱼干`,
+        onConfirm: () => {}
+      });
+      return;
+    }
+    showConfirmModal({
+      emoji: '💚',
+      title: '确认挽留',
+      message: `花费 ${cat.saveCost} 鱼干挽留 ${cat.name}？它将留在家园。`,
+      onConfirm: () => {
+        // 扣除鱼干
+        fishLedger.push({
+          type: 'spend',
+          amount: cat.saveCost,
+          desc: `${cat.name}挽留`,
+          time: Date.now()
+        });
+        try {
+          const key = 'miaolegemi_p0_v1';
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const data = JSON.parse(saved);
+            data.fishLedger = fishLedger;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+        } catch (e) {}
+        // 取消告别仪式状态
+        setCats(prev => prev.map(c => {
+          if (c.serialId !== cat.serialId) return c;
+          return {
+            ...c,
+            pendingRelease: false,
+            farewellStartedAt: null,
+            canBeSaved: false
+          };
+        }));
+      }
+    });
+    return;
+  }, [fish, showConfirmModal]);
+
+  // P6: 执行真正的送走（24小时后调用）
+  const executeRealRelease = useCallback(async cat => {
+    if (!isLocalMode && cat._apiId) {
+      try {
+        await MiaolegemiAPI.releaseCat(cat._apiId);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    const now = Date.now();
+    const coolingDuration = 60 * 24 * 60 * 60 * 1000; // 60天冷却
+    const coolingKey = `${cat.breedId}_${cat.breedSerial || cat.serialId}`;
+
+    // 进入冷却池
+    coolingPool[coolingKey] = now;
+
+    // 构建血统记录
+    const ownerRecord = {
+      name: '你',
+      daysAlive: cat.daysAlive || 0,
+      fishSpent: cat.fishSpent || 0,
+      bestCombo: cat.bestCombo || 0,
+      gamesWitnessed: cat.gamesWitnessed || 0,
+      intimacy: cat.intimacy || 0,
+      dateLeft: new Date().toLocaleDateString('zh-CN'),
+      releaseType: '主动送走'
+    };
+    setCats(prev => prev.map(c => {
+      if (c.serialId !== cat.serialId) return c;
+      return {
+        ...c,
+        location: 'memorial',
+        releasedAt: now,
+        coolingUntil: now + coolingDuration,
+        coolingKey: coolingKey,
+        previousOwners: [...(c.previousOwners || []), ownerRecord],
+        lineage: [...(c.lineage || []), ownerRecord],
+        // 清除告别仪式状态
+        pendingRelease: false,
+        farewellStartedAt: null,
+        canBeSaved: false
+      };
+    }));
+  }, [isLocalMode]);
+
+  // P6: 设置 executeRealRelease ref
+  useEffect(() => {
+    executeRealReleaseRef.current = executeRealRelease;
+  }, [executeRealRelease]);
+
+  // P6: 立即送走 — 跳过24小时等待，直接进入告别画面
+  const handleImmediateRelease = useCallback(cat => {
+    if (!cat) return;
+    showConfirmModal({
+      emoji: '😿',
+      title: '确认立即送走',
+      message: `${cat.name}将直接离开家园去流浪，不可挽回。`,
+      onConfirm: () => {
+        setFarewellCat(cat);
+        setShowFarewell(true);
+      }
+    });
+  }, [showConfirmModal]);
+
+  // Handle discard — remove cat from bag permanently
+  const handleDiscard = useCallback(async cat => {
+    if (!cat) return;
+    showConfirmModal({
+      emoji: '🗑️',
+      title: '确认丢弃',
+      message: `${cat.name}将被直接丢弃，不可找回。`,
+      onConfirm: async () => {
+        if (!isLocalMode && cat._apiId) {
+          try {
+            await MiaolegemiAPI.releaseCat(cat._apiId);
+          } catch (e) {
+            showConfirmModal({
+              emoji: '❌',
+              title: '丢弃失败',
+              message: e.message,
+              onConfirm: () => {}
+            });
+            return;
+          }
+        }
+        setCats(prev => prev.filter(c => c.serialId !== cat.serialId));
+        setFlipCardCat(null);
+      }
+    });
+  }, [isLocalMode, showConfirmModal]);
+
+  // 拓展家园
+  const handleExpandHome = useCallback(() => {
+    const cost = 1500;
+    if (getFishBalance() < cost) {
+      showConfirmModal({
+        emoji: '🐟',
+        title: '鱼干不足',
+        message: '拓展家园需要1500鱼干，快去消消乐赚取吧！',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    showConfirmModal({
+      emoji: '🏠',
+      title: '拓展家园',
+      message: `你要花费 ${cost} 鱼干拓展 1 格家园吗？`,
+      onConfirm: () => {
+        fishLedger.push({
+          type: 'spend',
+          amount: cost,
+          desc: '拓展家园',
+          time: Date.now()
+        });
+        setHomeMaxSlots(prev => prev + 1);
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          saved.homeMaxSlots = (saved.homeMaxSlots || 10) + 1;
+          saved.fishLedger = fishLedger;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        } catch (e) {}
+      }
+    });
+  }, [showConfirmModal]);
+
+  // Handle gacha — breedId/rarity pre-rolled by GachaPage for animation sync
+  // 支持新参数: breedId, rarity, newPityCount, triggeredPity
+  const handleGacha = useCallback(async (breedId, rarity, newPityCount, triggeredPity) => {
+    if (bells < 1) return;
+    if (!isLocalMode) {
+      try {
+        const data = await MiaolegemiAPI.pullGacha();
+        const c = data.cat;
+        const breed = BREEDS.find(b => b.id === c.serial.species.name) || BREEDS[0];
+        const newCat = {
+          serialId: c.id,
+          breedSerial: c.serial.serialNumber,
+          breedId: breed.id,
+          name: breed.id,
+          rarity: c.serial.species.rarity,
+          img: breed.img,
+          desc: breed.desc,
+          personality: sanitizePersonality(c.personality, breed.id),
+          status: 'alive',
+          location: 'bag',
+          createdAt: Date.now(),
+          bagExpiresAt: c.bagExpiresAt ? new Date(c.bagExpiresAt).getTime() : Date.now() + 30 * 86400000,
+          adoptedAt: null,
+          expiresAt: null,
+          lastFedAt: null,
+          daysAlive: 0,
+          gamesWitnessed: 0,
+          bestCombo: 0,
+          witnessMaxScore: 0,
+          witnessTotalScore: 0,
+          fishSpent: 0,
+          isGenesis: c.serial.serialNumber <= 10,
+          previousOwners: [],
+          releasedAt: null,
+          _apiId: c.id,
+          _serialId: c.serialId,
+          triggeredPity: data.triggeredPity || null
+        };
+        setBells(data.bellsRemaining);
+        setCats(prev => [...prev, newCat]);
+        setGachaResult(newCat);
+        setTimeout(() => setShowGachaResult(true), 500);
+        setGachaDone(true);
+        // 更新保底计数
+        if (data.pityCount !== undefined) {
+          setPityCount(data.pityCount);
+        }
+        return;
+      } catch (e) {
+        showConfirmModal({
+          emoji: '❌',
+          title: '抽卡失败',
+          message: e.message,
+          onConfirm: () => {}
+        });
+        return;
+      }
+    }
+    setBells(prev => prev - 1);
+    setGachaDone(true);
+    // 使用新的保底系统
+    const finalPityCount = newPityCount !== undefined ? newPityCount : rarity === 'SSR' ? 0 : pityCount + 1;
+    const newCat = makeCatInstance(breedId, rarity, null, 30);
+    newCat.triggeredPity = triggeredPity; // 标记触发的保底
+    setCats(prev => [...prev, newCat]);
+    setGachaResult(newCat);
+    setTimeout(() => setShowGachaResult(true), 500);
+    setPityCount(finalPityCount);
+  }, [bells, isLocalMode, pityCount]);
+
+  // Handle check-in
+  const handleCheckIn = useCallback(async () => {
+    if (!isLocalMode) {
+      try {
+        const data = await MiaolegemiAPI.checkin();
+        fishLedger.push({
+          type: 'earn',
+          amount: data.fishEarned,
+          desc: '每日签到',
+          time: Date.now()
+        });
+        if (data.bellsEarned > 0) setBells(prev => prev + data.bellsEarned);
+      } catch (e) {
+        showConfirmModal({
+          emoji: '❌',
+          title: '签到失败',
+          message: e.message,
+          onConfirm: () => {}
+        });
+        return;
+      }
+    } else {
+      fishLedger.push({
+        type: 'earn',
+        amount: 5,
+        desc: '每日签到',
+        time: Date.now()
+      });
+    }
+    setCheckedIn(true);
+    setShowCheckIn(true);
+  }, [isLocalMode]);
+
+  // P1: 鱼干兑换铃铛
+  const handleExchangeBells = useCallback(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayExchanges = fishLedger.filter(t => t.type === 'exchange' && t.time > todayStart.getTime());
+    const exchangedToday = todayExchanges.length;
+    const dailyLimit = 5;
+    if (exchangedToday >= dailyLimit) {
+      showConfirmModal({
+        emoji: '📊',
+        title: '兑换上限',
+        message: '今日兑换已达上限（5次/天）',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    if (getFishBalance() < 100) {
+      showConfirmModal({
+        emoji: '🐟',
+        title: '鱼干不足',
+        message: '需要100条鱼干',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    fishLedger.push({
+      type: 'spend',
+      amount: 100,
+      desc: '兑换铃铛',
+      time: Date.now()
+    });
+    fishLedger.push({
+      type: 'exchange',
+      amount: 0,
+      desc: '兑换铃铛',
+      time: Date.now()
+    });
+    setBells(prev => prev + 1);
+    setCats(prev => [...prev]); // trigger re-render to update fish display
+  }, [showConfirmModal]);
+
+  // P2: 皮肤购买
+  const handleBuySkin = useCallback(skinId => {
+    const skin = ALL_SKINS[skinId];
+    if (!skin) return;
+    if (bells < skin.price) {
+      showConfirmModal({
+        emoji: '🔔',
+        title: '铃铛不足',
+        message: '铃铛不足，无法购买皮肤',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    setBells(prev => prev - skin.price);
+    setOwnedSkins(prev => [...prev, skinId]);
+    fishLedger.push({
+      type: 'spend',
+      amount: 0,
+      desc: '购买皮肤:' + skinId,
+      time: Date.now()
+    });
+  }, [bells, showConfirmModal]);
+
+  // P2: 皮肤装备
+  const handleEquipSkin = useCallback((catKey, skinId) => {
+    setEquippedSkins(prev => ({
+      ...prev,
+      [catKey]: skinId
+    }));
+  }, []);
+
+  // P2: 皮肤卸下
+  const handleUnequipSkin = useCallback(catKey => {
+    setEquippedSkins(prev => {
+      const next = {
+        ...prev
+      };
+      delete next[catKey];
+      return next;
+    });
+  }, []);
+
+  // P2: 免费皮肤领取
+  const handleClaimFreeSkin = useCallback(skinId => {
+    if (ownedSkins.includes(skinId)) {
+      showConfirmModal({
+        emoji: '✅',
+        title: '已拥有',
+        message: '已拥有该皮肤',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    setOwnedSkins(prev => [...prev, skinId]);
+    fishLedger.push({
+      type: 'earn',
+      amount: 0,
+      desc: '领取免费皮肤:' + skinId,
+      time: Date.now()
+    });
+  }, [ownedSkins, showConfirmModal]);
+
+  // P2: 分组赛领取铃铛奖励
+  const handleClaimGroupStageBell = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (groupStageBellsClaimed.includes(today)) return;
+    const todayScore = groupStageScores[today] || 0;
+    if (getGroupStageBracket(todayScore).name !== 'Gold') return;
+    setGroupStageBellsClaimed(prev => [...prev, today]);
+    setBells(prev => prev + 1);
+    fishLedger.push({
+      type: 'earn',
+      amount: 0,
+      desc: '分组赛Gold奖励:1铃铛',
+      time: Date.now()
+    });
+  }, [groupStageScores, groupStageBellsClaimed]);
+
+  // P2: 竞猜投注
+  const handlePlaceBet = useCallback((matchId, catBreedId, teamName, fishWagered) => {
+    if (getFishBalance() < fishWagered) {
+      showConfirmModal({
+        emoji: '🐟',
+        title: '鱼干不足',
+        message: '投注所需鱼干不足',
+        onConfirm: () => {}
+      });
+      return;
+    }
+    fishLedger.push({
+      type: 'spend',
+      amount: fishWagered,
+      desc: '竞猜投注:' + matchId,
+      time: Date.now()
+    });
+    const newBet = {
+      matchId,
+      catBreedId,
+      teamName,
+      fishWagered,
+      won: null,
+      settled: false,
+      shared: false,
+      placedAt: Date.now()
+    };
+    setBets(prev => [...prev, newBet]);
+  }, [showConfirmModal]);
+
+  // P2: 竞猜分享奖励
+  const handleShareBet = useCallback(bet => {
+    shareContent({
+      title: '喵呜乐消消 · 世界杯竞猜',
+      text: '我猜对了「' + bet.matchName + '」的比赛结果！🏆 快来一起玩世界杯竞猜吧～🐱',
+      onSuccess: () => {
+        fishLedger.push({
+          type: 'earn',
+          amount: 3,
+          desc: '分享竞猜奖励',
+          time: Date.now()
+        });
+        setBets(prev => prev.map(b => b.matchId === bet.matchId ? {
+          ...b,
+          shared: true
+        } : b));
+        showConfirmModal({
+          emoji: '🐟',
+          title: '分享成功',
+          message: '+3 鱼干 🐟',
+          onConfirm: () => {}
+        });
+      }
+    });
+  }, [showConfirmModal]);
+
+  // P0: 好友推荐 - 分享邀请
+  const handleShareInvite = useCallback(() => {
+    const code = getOrCreateInviteCode();
+    setInviteCode(code);
+    shareContent({
+      title: '喵呜乐消消',
+      text: '喵呜乐消消邀请你一起来玩！\n我的推荐码：' + code + '\n打开游戏输入推荐码，一起赚鱼干吧～🐱'
+    });
+  }, []);
+
+  // P2: 竞猜结算（自动检测未结算的投注）
+  useEffect(() => {
+    const now = Date.now();
+    let changed = false;
+    const updated = bets.map(bet => {
+      if (bet.settled) return bet;
+      const match = KNOCKOUT_MATCHES.find(m => m.matchId === bet.matchId);
+      if (!match) return bet;
+      const matchTime = new Date(match.date + 'T22:00:00+08:00').getTime();
+      if (now < matchTime) return bet;
+      // Simulate result (55% home win)
+      const homeWins = Math.random() < 0.55;
+      const winner = homeWins ? match.home : match.away;
+      const won = winner === bet.teamName;
+      changed = true;
+      if (won) {
+        const bonus = Math.floor(bet.fishWagered * 0.5);
+        fishLedger.push({
+          type: 'earn',
+          amount: bet.fishWagered + bonus,
+          desc: '竞猜获胜+奖金:' + bet.matchId,
+          time: Date.now()
+        });
+      }
+      return {
+        ...bet,
+        won,
+        settled: true
+      };
+    });
+    if (changed) setBets(updated);
+  }, [bets]);
+
+  // P2: 每日重置逻辑（淘汰赛状态 + 分组赛新一天）
+  useEffect(() => {
+    const checkReset = () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          const lastDate = data._lastDate || '';
+          if (lastDate !== today) {
+            // 新的一天：重置淘汰状态
+            setKnockoutEliminatedToday(false);
+            // 更新日期标记
+            data._lastDate = today;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          }
+        } catch (e) {}
+      }
+    };
+    checkReset();
+    const timer = setInterval(checkReset, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // P2: 检测淘汰赛3连胜自动发放皮肤
+  useEffect(() => {
+    if (isKnockoutStageActive() && knockoutConsecutiveClears >= 3 && !knockoutSkinClaimed) {
+      const unownedWC = Object.keys(ALL_SKINS).filter(id => ALL_SKINS[id].category === 'worldcup' && !ownedSkins.includes(id));
+      if (unownedWC.length > 0) {
+        const pick = unownedWC[Math.floor(Math.random() * unownedWC.length)];
+        setKnockoutSkinClaimed(true);
+        setOwnedSkins(prev => [...prev, pick]);
+        showConfirmModal({
+          emoji: '🏆',
+          title: '3连胜',
+          message: '淘汰赛3连胜！获得限定皮肤: ' + (ALL_SKINS[pick].team || ALL_SKINS[pick].name),
+          onConfirm: () => {}
+        });
+      }
+    }
+  }, [knockoutConsecutiveClears, knockoutSkinClaimed, ownedSkins, showConfirmModal]);
+
+  // P2: 大决战高分数称号
+  useEffect(() => {
+    if (isFinalDayActive() && !finalTitleAwarded) {
+      const personalBest = (() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? JSON.parse(saved).personalBestScore || 0 : 0;
+        } catch (e) {
+          return 0;
+        }
+      })();
+      if (personalBest >= 10000) {
+        setFinalTitleAwarded(true);
+        showConfirmModal({
+          emoji: '🏆',
+          title: '大决战',
+          message: '突破10000分！获得专属称号「2026世界杯冠军」',
+          onConfirm: () => {}
+        });
+      }
+    }
+  }, [finalTitleAwarded, showConfirmModal]);
+
+  // Navigation
+  const handleNavigate = useCallback((tab, cat, subTab) => {
+    if (tab === 'catDetail' && cat) {
+      setSelectedCat(cat);
+      setShowCatDetail(true);
+    } else if (tab === 'preBattle') {
+      setShowPreBattle(true);
+    } else {
+      setActiveTab(tab);
+      if (subTab) {
+        if (tab === 'market') {
+          setMarketTab(subTab);
+        } else {
+          setBagTab(subTab);
+        }
+        // 设置URL参数以确保CatPage能获取正确的subTab
+        const url = new URL(window.location);
+        url.searchParams.set('tab', subTab);
+        window.history.replaceState({}, '', url);
+      }
+    }
+  }, []);
+  colors = theme === 'light' ? CL : CD;
+
+  // Show loading
+  if (!authChecked) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: '100vh',
+        background: '#0E0E16',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: '#F0EDFF',
+        fontSize: 14
+      }
+    }, "\u52A0\u8F7D\u4E2D..."));
+  }
+
+  // 合规：隐私政策独立页面
+  if (currentPage === 'privacy') {
+    return /*#__PURE__*/React.createElement(IosFrame, null, /*#__PURE__*/React.createElement(PrivacyPolicyPage, {
+      onBack: () => setCurrentPage(null)
+    }));
+  }
+
+  // 合规：用户服务协议独立页面
+  if (currentPage === 'agreement') {
+    return /*#__PURE__*/React.createElement(IosFrame, null, /*#__PURE__*/React.createElement(UserAgreementPage, {
+      onBack: () => setCurrentPage(null)
+    }));
+  }
+
+  // Show login page if not authenticated
+  if (authChecked && !user) {
+    return /*#__PURE__*/React.createElement(IosFrame, null, /*#__PURE__*/React.createElement(LoginPage, {
+      onLogin: handleLogin,
+      onViewPrivacy: () => setCurrentPage('privacy'),
+      onViewAgreement: () => setCurrentPage('agreement')
+    }), /*#__PURE__*/React.createElement(AgreementModal, {
+      show: showAgreementModal,
+      onAgree: handleAgreeAgreement,
+      onReject: handleRejectAgreement,
+      onViewPrivacy: () => setCurrentPage('privacy'),
+      onViewAgreement: () => setCurrentPage('agreement')
+    }));
+  }
+  return /*#__PURE__*/React.createElement(IosFrame, {
+    key: theme
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 54,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 32px',
+      fontSize: 16,
+      fontWeight: 600,
+      color: (theme === 'light' ? CL : CD).ink,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "9:41"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "10",
+    viewBox: "0 0 14 10",
+    fill: "none"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "9",
+    y: "0",
+    width: "2",
+    height: "10",
+    rx: "0.5",
+    fill: (theme === 'light' ? CL : CD).ink
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "6",
+    y: "2",
+    width: "2",
+    height: "8",
+    rx: "0.5",
+    fill: (theme === 'light' ? CL : CD).ink,
+    opacity: "0.8"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "4",
+    width: "2",
+    height: "6",
+    rx: "0.5",
+    fill: (theme === 'light' ? CL : CD).ink,
+    opacity: "0.6"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "0",
+    y: "6",
+    width: "2",
+    height: "4",
+    rx: "0.5",
+    fill: (theme === 'light' ? CL : CD).ink,
+    opacity: "0.4"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 26,
+      height: 12,
+      border: `1.5px solid ${(theme === 'light' ? CL : CD).ink}`,
+      borderRadius: 3,
+      padding: 2,
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '75%',
+      height: '100%',
+      background: (theme === 'light' ? CL : CD).ink,
+      borderRadius: 1
+    }
+  })))), guestMode && /*#__PURE__*/React.createElement(GuestModeBanner, {
+    onLogin: handleShowLoginAuth
+  }), /*#__PURE__*/React.createElement(CurrencyBar, {
+    fish: fish,
+    bells: bells,
+    theme: theme,
+    onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
+    onFishClick: () => setInfoModal({
+      title: '🐟 鱼干',
+      content: '日常高频资源，用于喂猫。通过签到和消消乐获得。'
+    }),
+    onBellClick: () => setInfoModal({
+      title: '🔔 猫铃铛',
+      content: '稀缺资源，用于抽卡获得新猫咪。可通过连续签到和特殊活动获得。'
+    }),
+    left: /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 14
+      }
+    }, "\uD83D\uDC4B"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        color: colors === CL ? '#6B3A00' : colors.sub,
+        textShadow: colors === CL ? '0 1px 2px rgba(255,220,160,0.35)' : '0 0 6px rgba(255,105,180,0.3)'
+      }
+    }, "\u4F60\u597D\uFF0C", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: colors === CL ? '#4A2800' : colors.ink,
+        fontWeight: 700,
+        textShadow: colors === CL ? '0 1px 2px rgba(255,220,160,0.4)' : '0 0 6px rgba(255,105,180,0.3)'
+      }
+    }, user?.nickname || '铲屎官')))
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      scrollbarWidth: 'none',
+      paddingBottom: 74
+    }
+  }, /*#__PURE__*/React.createElement("style", null, `div::-webkit-scrollbar{display:none}`), /*#__PURE__*/React.createElement(NightBonusBanner, {
+    dismissed: nightBonusDismissed,
+    onClose: dismissNightBonus
+  }), /*#__PURE__*/React.createElement(GroupStageBanner, {
+    scores: groupStageScores,
+    claimed: groupStageBellsClaimed,
+    onClaim: handleClaimGroupStageBell,
+    fish: fish
+  }), /*#__PURE__*/React.createElement(KnockoutBanner, {
+    clears: knockoutConsecutiveClears,
+    eliminated: knockoutEliminatedToday,
+    skinClaimed: knockoutSkinClaimed
+  }), /*#__PURE__*/React.createElement(FinalDayBanner, null), /*#__PURE__*/React.createElement(BettingPanel, {
+    bets: bets,
+    onPlaceBet: handlePlaceBet,
+    onShareBet: handleShareBet,
+    fish: fish,
+    showConfirmModal: showConfirmModal
+  }), showCatDetail ? /*#__PURE__*/React.createElement(CatDetailPage, {
+    cats: cats,
+    catSerialId: selectedCat?.serialId,
+    onBack: () => {
+      setShowCatDetail(false);
+      setSelectedCat(null);
+    },
+    onFeed: handleFeed,
+    onBatchFeed: handleBatchFeed,
+    onRelease: handleRelease,
+    onAdopt: handleAdopt,
+    onShowLineage: cat => setLineageCat(cat),
+    fish: fish,
+    homeCount: nurturing.length,
+    homeMaxSlots: homeMaxSlots
+  }) : activeTab === 'cat' || activeTab === 'cathome' ? /*#__PURE__*/React.createElement(CatPage, {
+    cats: cats,
+    fish: fish,
+    onFeed: handleFeed,
+    onBatchFeed: handleBatchFeed,
+    onAdopt: handleAdopt,
+    onRelease: handleRelease,
+    onNavigate: handleNavigate,
+    onSaveFromFarewell: handleSaveFromFarewell,
+    onImmediateRelease: handleImmediateRelease,
+    onDiscard: handleDiscard,
+    onDeploy: handleDeploy,
+    onWithdraw: handleWithdraw,
+    onSpectatorDeploy: handleSpectatorDeploy,
+    onSpectatorWithdraw: handleSpectatorWithdraw,
+    initialTab: new URLSearchParams(window.location.search).get('tab') || (activeTab === 'cathome' ? 'home' : bagTab),
+    baseSlots: baseSlots,
+    slot4Unlocked: slot4Unlocked,
+    slot5Unlocked: slot5Unlocked,
+    slot6Unlocked: slot6Unlocked,
+    bubbles: bubbles,
+    animatingCats: animatingCats,
+    isSleepTime: isSleepTime,
+    onCatTap: triggerTap,
+    onTriggerFeed: triggerFeed,
+    unlockAudio: unlockAudio,
+    homeMaxSlots: homeMaxSlots,
+    onExpandHome: handleExpandHome
+  }) : activeTab === 'home' ? /*#__PURE__*/React.createElement(HomePage, {
+    cats: cats,
+    fish: fish,
+    bells: bells,
+    todayFish: todayFish,
+    todayTotalScore: todayTotalScore,
+    checkedIn: checkedIn,
+    gachaDone: gachaDone,
+    onCheckIn: handleCheckIn,
+    onNavigate: handleNavigate,
+    activeTitle: activeTitle,
+    battleMaxSlots: maxSlots,
+    user: user,
+    inviteRewardToday: inviteRewardToday,
+    onShareInvite: handleShareInvite,
+    shareToast: shareToast
+  }) : activeTab === 'market' ? /*#__PURE__*/React.createElement(MarketPage, {
+    bells: bells,
+    pityCount: pityCount,
+    onGacha: handleGacha,
+    cats: cats,
+    onCardClick: setFlipCardCat,
+    todayFish: todayFish,
+    todayTotalScore: todayTotalScore,
+    user: user,
+    bets: bets,
+    onPlaceBet: handlePlaceBet,
+    onShareBet: handleShareBet,
+    fish: fish,
+    knockoutConsecutiveClears: knockoutConsecutiveClears,
+    knockoutEliminatedToday: knockoutEliminatedToday,
+    knockoutSkinClaimed: knockoutSkinClaimed,
+    groupStageScores: groupStageScores,
+    groupStageBellsClaimed: groupStageBellsClaimed,
+    onClaimGroupStageBell: handleClaimGroupStageBell,
+    initialSubTab: marketTab,
+    showConfirmModal: showConfirmModal
+  }) : activeTab === 'shop' ? /*#__PURE__*/React.createElement(ShopPage, {
+    fish: fish,
+    bells: bells,
+    user: user,
+    onExchange: handleExchangeBells,
+    cats: cats,
+    ownedSkins: ownedSkins,
+    equippedSkins: equippedSkins,
+    onBuySkin: handleBuySkin,
+    onEquipSkin: handleEquipSkin,
+    onClaimFreeSkin: handleClaimFreeSkin,
+    showConfirmModal: showConfirmModal
+  }) : /*#__PURE__*/React.createElement(ProfilePage, {
+    cats: cats,
+    fish: fish,
+    bells: bells,
+    activeTitle: activeTitle,
+    onEquipTitle: setActiveTitle,
+    maxSlots: maxSlots,
+    baseSlots: baseSlots,
+    slot4Unlocked: slot4Unlocked,
+    slot5Unlocked: slot5Unlocked,
+    slot6Unlocked: slot6Unlocked,
+    totalAdopted: totalAdopted,
+    user: user,
+    isLocalMode: isLocalMode,
+    guestMode: guestMode,
+    onLogout: () => setShowLogoutConfirm(true),
+    onLogin: handleShowLoginAuth,
+    onViewPrivacy: () => setCurrentPage('privacy'),
+    onViewAgreement: () => setCurrentPage('agreement'),
+    onMemorialClick: setMemorialDetailCat
+  })), showPreBattle && /*#__PURE__*/React.createElement(PreBattlePage, {
+    cats: cats,
+    slot4Unlocked: slot4Unlocked,
+    slot5Unlocked: slot5Unlocked,
+    slot6Unlocked: slot6Unlocked,
+    onBack: () => {
+      setShowPreBattle(false);
+      setActiveTab('home');
+    },
+    onStartGame: () => {
+      setShowPreBattle(false);
+      window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark');
+    }
+  }), !showCatDetail && !showPreBattle && /*#__PURE__*/React.createElement(TabBar, {
+    active: activeTab,
+    onChange: tab => {
+      setActiveTab(tab);
+      setBagTab(null);
+      setMarketTab(null);
+      const url = new URL(window.location);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
+    }
+  }), /*#__PURE__*/React.createElement(CheckInModal, {
+    show: showCheckIn,
+    onClose: () => setShowCheckIn(false)
+  }), /*#__PURE__*/React.createElement(AdoptConfirmModal, {
+    cat: adoptTarget,
+    show: !!adoptTarget,
+    canAdopt: nurturing.length < homeMaxSlots,
+    homeCount: nurturing.length,
+    homeMaxSlots: homeMaxSlots,
+    onConfirm: confirmAdopt,
+    onCancel: () => setAdoptTarget(null)
+  }), /*#__PURE__*/React.createElement(ReleaseConfirmModal, {
+    cat: releaseTarget,
+    show: !!releaseTarget,
+    onConfirm: confirmRelease,
+    onCancel: () => setReleaseTarget(null)
+  }), /*#__PURE__*/React.createElement(GachaResultModal, {
+    cat: gachaResult,
+    show: showGachaResult,
+    onClose: () => setShowGachaResult(false)
+  }), /*#__PURE__*/React.createElement(InfoModal, {
+    show: !!infoModal,
+    title: infoModal?.title,
+    onClose: () => setInfoModal(null)
+  }, infoModal?.content), /*#__PURE__*/React.createElement(LineageModal, {
+    cat: lineageCat,
+    show: !!lineageCat,
+    onClose: () => setLineageCat(null)
+  }), /*#__PURE__*/React.createElement(MilestoneUnlockModal, {
+    alert: milestoneAlert,
+    onClose: () => setMilestoneAlert(null)
+  }), showLogoutConfirm && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 70
+    },
+    onClick: () => setShowLogoutConfirm(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 290,
+      background: colors.card,
+      borderRadius: 24,
+      padding: '28px 22px',
+      textAlign: 'center',
+      border: `1px solid ${colors.border}`,
+      animation: 'slideUp 0.3s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 12
+    }
+  }, "\uD83D\uDC4B"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 8
+    }
+  }, "\u786E\u8BA4\u8981\u9000\u51FA\u8BE5\u8D26\u53F7\u5417\uFF1F"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 20
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowLogoutConfirm(false),
+    style: {
+      flex: 1,
+      height: 40,
+      borderRadius: 12,
+      background: colors.bg2,
+      border: `1px solid ${colors.border}`,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.muted
+    }
+  }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleLogout,
+    style: {
+      flex: 1,
+      height: 40,
+      borderRadius: 12,
+      background: 'linear-gradient(135deg, #FF6B6B, #E05555)',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 700,
+      color: '#fff'
+    }
+  }, "\u786E\u8BA4")))), confirmModal && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 80
+    },
+    onClick: () => setConfirmModal(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 290,
+      background: colors.card,
+      borderRadius: 24,
+      padding: '28px 22px',
+      textAlign: 'center',
+      border: `1px solid ${colors.border}`,
+      animation: 'slideUp 0.3s ease-out'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 12
+    }
+  }, confirmModal.emoji), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: colors.ink,
+      marginBottom: 8
+    }
+  }, confirmModal.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.sub,
+      marginBottom: 4
+    }
+  }, confirmModal.message), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 20
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmModal(null),
+    style: {
+      flex: 1,
+      height: 40,
+      borderRadius: 12,
+      background: colors.bg2,
+      border: `1px solid ${colors.border}`,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.muted
+    }
+  }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const fn = confirmModal.onConfirm;
+      setConfirmModal(null);
+      fn && fn();
+    },
+    style: {
+      flex: 1,
+      height: 40,
+      borderRadius: 12,
+      background: 'linear-gradient(135deg, #FF6B6B, #E05555)',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 700,
+      color: '#fff'
+    }
+  }, "\u786E\u8BA4")))), /*#__PURE__*/React.createElement(CatCardFlipModal, {
+    cat: flipCardCat,
+    show: !!flipCardCat,
+    onClose: () => setFlipCardCat(null),
+    onDiscard: handleDiscard
+  }), /*#__PURE__*/React.createElement(FarewellCeremony, {
+    cat: farewellCat,
+    show: showFarewell,
+    onDone: () => {
+      // 告别动画结束后，执行真正送走
+      if (farewellCat) executeRealRelease(farewellCat);
+      setShowFarewell(false);
+      setFarewellCat(null);
+    }
+  }), /*#__PURE__*/React.createElement(MemorialDetailModal, {
+    cat: memorialDetailCat,
+    show: !!memorialDetailCat,
+    onClose: () => setMemorialDetailCat(null)
+  }), /*#__PURE__*/React.createElement(TitleUnlockToast, {
+    title: titleUnlockToast,
+    show: !!titleUnlockToast,
+    onDone: () => setTitleUnlockToast(null)
+  }), /*#__PURE__*/React.createElement(AgreementModal, {
+    show: showAgreementModal,
+    onAgree: handleAgreeAgreement,
+    onReject: handleRejectAgreement,
+    onViewPrivacy: () => setCurrentPage('privacy'),
+    onViewAgreement: () => setCurrentPage('agreement')
+  }), /*#__PURE__*/React.createElement(LoginAuthModal, {
+    show: showLoginAuthModal,
+    onAuthorize: handleAuthorizeLogin,
+    onGuest: handleGuestMode,
+    onViewPrivacy: () => setCurrentPage('privacy'),
+    onViewAgreement: () => setCurrentPage('agreement'),
+    loading: loginAuthLoading
+  }), feedToast && /*#__PURE__*/React.createElement("div", {
+    className: "feed-toast in",
+    key: feedToast.timestamp
+  }, feedToast.text), guestToast && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: 100,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'rgba(0,0,0,0.85)',
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 500,
+      padding: '10px 20px',
+      borderRadius: 20,
+      zIndex: 90,
+      animation: 'slideUp 0.3s ease-out',
+      whiteSpace: 'nowrap'
+    }
+  }, guestToast)));
+}
+
+// P0: 检查URL邀请码参数
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const inviteParam = params.get('invite');
+  if (inviteParam && inviteParam.length === 8) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      saved.pendingInviteCode = inviteParam;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    } catch (e) {}
+  }
+})();
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(/*#__PURE__*/React.createElement(App, null));</script>
+<script>
+(function() {
+  function adaptToDevice() {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+                  || window.innerWidth <= 480;
+    const mockup = document.querySelector('.phone-mockup');
+    const screen = document.querySelector('.phone-screen');
+    if (!mockup || !screen) return;
+    if (isMobile) {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      mockup.style.cssText = 'position:fixed!important;top:0!important;left:0!important;transform:none!important;width:'+w+'px!important;height:'+h+'px!important;max-height:none!important;border-radius:0!important;border:none!important;box-shadow:none!important';
+      screen.style.cssText = 'border-radius:0!important';
+    }
+  }
+  adaptToDevice();
+  window.addEventListener('resize', adaptToDevice);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(adaptToDevice, 200);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', adaptToDevice);
+  }
+})();
+</script>
+</body>
+</html>
