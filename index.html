@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang=
-      className: colors === CL ? "btn-feed-warm" : "","zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -5135,8 +5134,7 @@ function NurturingArea({
         background: fish >= cat.saveCost ? 'linear-gradient(135deg, #00B894, #55EFC4)' : 'rgba(255,255,255,0.05)',
         color: fish >= cat.saveCost ? '#fff' : colors.muted
       }
-    }, fish >= cat.saveCost ? `💚 挽留 (${cat.saveCost}🐟)` : `鱼干不足 (需要${cat.saveCost}🐟)`), /*#__PURE__*/React.createElement("button",
-      className: colors === CL ? "btn-discard-bag-warm" : "", {
+    }, fish >= cat.saveCost ? `💚 挽留 (${cat.saveCost}🐟)` : `鱼干不足 (需要${cat.saveCost}🐟)`), /*#__PURE__*/React.createElement("button", {
       onClick: () => onImmediateRelease && onImmediateRelease(cat),
       style: {
         padding: '0 14px',
