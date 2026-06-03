@@ -5136,7 +5136,6 @@ function NurturingArea({
         cursor: fish >= cat.saveCost ? 'pointer' : 'not-allowed',
         fontSize: 12,
         fontWeight: 700,
-        background: fish >= cat.saveCost ? 'linear-gradient(135deg, #00B894, #55EFC4)' : 'rgba(255,255,255,0.05)',
         opacity: fish >= cat.saveCost ? 1 : 0.5
       }
     }, fish >= cat.saveCost ? `💚 挽留 (${cat.saveCost}🐟)` : `鱼干不足 (需要${cat.saveCost}🐟)`), /*#__PURE__*/React.createElement("button", {
@@ -5147,7 +5146,6 @@ function NurturingArea({
         height: 34,
         borderRadius: colors === CL ? 22 : 10,
         border: colors === CL ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(255,107,107,0.2)',
-        background: 'linear-gradient(135deg, #FF6B6B, #E05555)',
         cursor: 'pointer',
         fontSize: 12,
         fontWeight: 700
