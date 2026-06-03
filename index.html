@@ -6180,13 +6180,13 @@ function CatDetailPage({
       fontSize: 11,
       color: colors.sub
     }
-  }, "\u4E0A\u6B21\u5582\u98DF"), /*#__PURE__*/React.createElement("span", {
+  }, !cat.pendingRelease && "\u4E0A\u6B21\u5582\u98DF"), !cat.pendingRelease && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       fontWeight: 600,
       color: colors.ink
     }
-  }, lastFedHours, "\u5C0F\u65F6\u524D")), canFeed ? /*#__PURE__*/React.createElement("div", {
+  }, lastFedHours, "\u5C0F\u65F6\u524D")), !cat.pendingRelease && canFeed ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8
@@ -6577,7 +6577,7 @@ function CatDetailPage({
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "inner"
-  }, "\u67E5\u770B\u5B8C\u6574\u8840\u7EDF \u2192")))), cat.location === 'home' && /*#__PURE__*/React.createElement("div", {
+  }, "\u67E5\u770B\u5B8C\u6574\u8840\u7EDF \u2192")))), cat.location === 'home' && !cat.pendingRelease && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 20px 0',
       display: 'flex',
