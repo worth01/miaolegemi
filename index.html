@@ -5128,27 +5128,33 @@ function NurturingArea({
         className: colors === CL ? "btn-full-warm" : "flow-btn flow-fill",
       onClick: () => onSaveFromFarewell(cat),
       disabled: fish < cat.saveCost,
-      style: {
+      className: colors === CL ? "btn-full-warm" : "flow-btn flow-fill",
+      style: colors === CL ? {
         flex: 1,
         height: 32,
-        borderRadius: colors === CL ? 18 : 10,
-        border: colors === CL ? '1px solid #9CCC65' : 'none',
+        borderRadius: 18,
         cursor: fish >= cat.saveCost ? 'pointer' : 'not-allowed',
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: 700,
         opacity: fish >= cat.saveCost ? 1 : 0.5
+      } : {
+        flex: 1,
+        minHeight: 34,
+        opacity: fish >= cat.saveCost ? 1 : 0.4
       }
     }, /*#__PURE__*/React.createElement("span", { className: "inner" }, fish >= cat.saveCost ? "挽留" : "鱼干不足")), /*#__PURE__*/React.createElement("button", {
         className: colors === CL ? "btn-send-warm" : "flow-btn flow-send",
       onClick: () => onImmediateRelease && onImmediateRelease(cat),
-      style: {
+      style: colors === CL ? {
         flex: 1,
         height: 32,
-        borderRadius: colors === CL ? 18 : 10,
-        border: colors === CL ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(255,107,107,0.2)',
+        borderRadius: 18,
         cursor: 'pointer',
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: 700
+      } : {
+        flex: 1,
+        minHeight: 34
       }
     }, /*#__PURE__*/React.createElement("span", { className: "inner" }, "\u7ACB\u5373\u9001\u8D70"))) : /*#__PURE__*/React.createElement("div", {
       style: {
