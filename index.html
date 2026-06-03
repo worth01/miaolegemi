@@ -5130,8 +5130,8 @@ function NurturingArea({
       disabled: fish < cat.saveCost,
       style: {
         flex: 1,
-        height: 34,
-        borderRadius: colors === CL ? 22 : 10,
+        height: 32,
+        borderRadius: colors === CL ? 18 : 10,
         border: colors === CL ? '1px solid #9CCC65' : 'none',
         cursor: fish >= cat.saveCost ? 'pointer' : 'not-allowed',
         fontSize: 12,
@@ -5143,8 +5143,8 @@ function NurturingArea({
       onClick: () => onImmediateRelease && onImmediateRelease(cat),
       style: {
         flex: 1,
-        height: 34,
-        borderRadius: colors === CL ? 22 : 10,
+        height: 32,
+        borderRadius: colors === CL ? 18 : 10,
         border: colors === CL ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(255,107,107,0.2)',
         cursor: 'pointer',
         fontSize: 12,
