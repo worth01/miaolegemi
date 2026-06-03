@@ -251,8 +251,6 @@ npm run dev
 喵鸣乐消消/
 ├── index.html              # 主页入口
 ├── 猫咪消消乐.html          # 消消乐核心游戏
-├── app.html                # 主应用页面
-├── 主页大厅.html            # 首页大厅
 ├── utils/
 │   ├── boardShapes.js      # 6种异形棋盘坐标定义
 │   └── boardGenerator.js   # 配额随机牌型生成器
