@@ -10170,7 +10170,8 @@ function AdoptConfirmModal({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onCancel,
-    style: {
+    className: colors === CL ? 'btn-secondary-spec' : '',
+    style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
@@ -10183,7 +10184,8 @@ function AdoptConfirmModal({
     }
   }, "\u53D6\u6D88"), canAdopt && /*#__PURE__*/React.createElement("button", {
     onClick: onConfirm,
-    style: {
+    className: colors === CL ? 'btn-green-spec' : '',
+    style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
