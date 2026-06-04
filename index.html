@@ -15206,5 +15206,31 @@ root.render(/*#__PURE__*/React.createElement(App, null));</script>
   }
 })();
 </script>
+
+  <script>
+(function() {
+  if (!window.CL) return;
+  function applySpec() {
+    document.querySelectorAll('[style*="z-index: 60"], [style*="z-index:65"], [style*="z-index:70"], [style*="z-index:80"]').forEach(function(ov) {
+      var inner = ov.querySelector('[style*="border-radius: 24px"], [style*="border-radius:20px"]');
+      if (!inner || inner.classList.contains("spec-applied")) return;
+      inner.classList.add("spec-applied");
+      inner.querySelectorAll("button").forEach(function(btn) {
+        var bg = (btn.style || {}).background || "";
+        if (bg.indexOf("FD9644")>-1 || bg.indexOf("FF8C00")>-1 || bg.indexOf("FF9F4A")>-1)
+          btn.classList.add("btn-primary-spec");
+        else if (bg.indexOf("00B894")>-1 || bg.indexOf("55EFC4")>-1)
+          btn.classList.add("btn-green-spec");
+        else if (bg.indexOf("E05555")>-1 || bg.indexOf("FF6B6B")>-1)
+          btn.classList.add("btn-danger-spec");
+        else if (bg.indexOf("colors.bg2")>-1 || bg.indexOf("255,255,255,0.05")>-1)
+          btn.classList.add("btn-secondary-spec");
+      });
+    });
+  }
+  setInterval(applySpec, 500);
+  applySpec();
+})();
+  </script>
 </body>
 </html>
