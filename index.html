@@ -478,6 +478,15 @@
 
     /* ═══ 弹窗规范：通用按钮 ═══ */
     .btn-primary-spec {
+      background: linear-gradient(180deg, #FFB347, #FF8C00 55%, #CC5500) !important;
+      border: 2px solid #CC5500 !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #AA3D00, 0 6px 16px rgba(255,140,0,0.35) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      padding: 13px 0 !important;
+      height: auto !important;
       flex: 1; padding: 13px 0;
       background: linear-gradient(180deg, #FFB347, #FF8C00 55%, #CC5500);
       border: 2px solid #CC5500;
@@ -495,6 +504,15 @@
     .btn-primary-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #AA3D00; }
 
     .btn-secondary-spec {
+      background: linear-gradient(180deg, #f5f5f5, #e0e0e0 55%, #cccccc) !important;
+      border: 2px solid #bbbbbb !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #999999, 0 6px 16px rgba(120,120,120,0.2) !important;
+      color: #555555 !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      padding: 13px 0 !important;
+      height: auto !important;
       flex: 1; padding: 13px 0;
       background: linear-gradient(180deg, #f5f5f5, #e0e0e0 55%, #cccccc);
       border: 2px solid #bbbbbb;
@@ -513,6 +531,15 @@
     .btn-secondary-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #999999; }
 
     .btn-danger-spec {
+      background: linear-gradient(180deg, #FF7875, #FF4D4F) !important;
+      border: 2px solid #CF1322 !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #A8071A, 0 6px 16px rgba(255,77,79,0.3) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      padding: 13px 0 !important;
+      height: auto !important;
       flex: 1; padding: 13px 0;
       background: linear-gradient(180deg, #FF7875, #FF4D4F);
       border: 2px solid #CF1322;
@@ -530,6 +557,15 @@
     .btn-danger-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #A8071A; }
 
     .btn-green-spec {
+      background: linear-gradient(180deg, #95DE64, #52C41A) !important;
+      border: 2px solid #389E0D !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #237804, 0 6px 16px rgba(82,196,26,0.3) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      padding: 13px 0 !important;
+      height: auto !important;
       flex: 1; padding: 13px 0;
       background: linear-gradient(180deg, #95DE64, #52C41A);
       border: 2px solid #389E0D;
@@ -547,6 +583,13 @@
     .btn-green-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #237804; }
 
     .btn-ghost-spec {
+      background: rgba(255,140,0,0.06) !important;
+      border: 1.5px solid rgba(255,180,80,0.4) !important;
+      border-radius: 50px !important;
+      color: #B08040 !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      padding: 11px 0 !important;
       flex: 1; padding: 11px 0;
       background: rgba(255,140,0,0.06);
       border: 1.5px solid rgba(255,180,80,0.4);
@@ -554,6 +597,56 @@
       color: #B08040; font-size: 12px; font-weight: 700;
       cursor: pointer; width: 100%;
     }
+    /* 明亮模式弹窗按钮自动匹配规范样式 */
+    .modal-sm-spec button[style*="FD9644"],
+    .modal-sm-spec button[style*="FF8C00"],
+    .modal-sm-spec button[style*="FF9F4A"] {
+      background: linear-gradient(180deg, #FFB347, #FF8C00 55%, #CC5500) !important;
+      border: 2px solid #CC5500 !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #AA3D00, 0 6px 16px rgba(255,140,0,0.35) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      height: auto !important;
+      padding: 13px 0 !important;
+    }
+    .modal-sm-spec button[style*="colors.bg2"],
+    .modal-sm-spec button[style*="rgba(255,255,255,0.05)"] {
+      background: linear-gradient(180deg, #f5f5f5, #e0e0e0 55%, #cccccc) !important;
+      border: 2px solid #bbbbbb !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #999999, 0 6px 16px rgba(120,120,120,0.2) !important;
+      color: #555555 !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      height: auto !important;
+      padding: 13px 0 !important;
+    }
+    .modal-sm-spec button[style*="00B894"],
+    .modal-sm-spec button[style*="55EFC4"] {
+      background: linear-gradient(180deg, #95DE64, #52C41A) !important;
+      border: 2px solid #389E0D !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #237804, 0 6px 16px rgba(82,196,26,0.3) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      height: auto !important;
+      padding: 13px 0 !important;
+    }
+    .modal-sm-spec button[style*="E05555"] {
+      background: linear-gradient(180deg, #FF7875, #FF4D4F) !important;
+      border: 2px solid #CF1322 !important;
+      border-radius: 50px !important;
+      box-shadow: 0 5px 0 #A8071A, 0 6px 16px rgba(255,77,79,0.3) !important;
+      color: #fff !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      height: auto !important;
+      padding: 13px 0 !important;
+    }
+
 
     /* ═══ 弹窗规范：容器 ═══ */
     .modal-sm-spec {
@@ -7388,6 +7481,7 @@ function FriendLeaderboard({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: `1px solid ${colors.cardBorder}`,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -8333,6 +8427,7 @@ function ShopPage({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: '1px solid ' + colors.cardBorder,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10030,6 +10125,7 @@ function AdoptConfirmModal({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10130,6 +10226,7 @@ function ReleaseConfirmModal({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: '1px solid rgba(255,107,107,0.3)',
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10215,6 +10312,7 @@ function CheckInModal({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: '1px solid rgba(108,92,231,0.3)',
       animation: 'slideUp 0.4s ease-out'
     }
@@ -10344,6 +10442,7 @@ function MilestoneUnlockModal({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: '1px solid rgba(108,92,231,0.3)',
       boxShadow: '0 0 60px rgba(108,92,231,0.25)',
       animation: 'slideUp 0.4s ease-out'
@@ -11193,6 +11292,7 @@ function GachaResultModal({
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       boxShadow: `0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
       animation: 'slideUp 0.4s ease-out'
@@ -14881,6 +14981,7 @@ function App() {
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: `1px solid ${colors.border}`,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -14951,6 +15052,7 @@ function App() {
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
+      className: colors === CL ? 'modal-sm-spec' : '',
       border: `1px solid ${colors.border}`,
       animation: 'slideUp 0.3s ease-out'
     }
