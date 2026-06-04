@@ -476,6 +476,109 @@
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
 
+    /* ═══ 弹窗规范：通用按钮 ═══ */
+    .btn-primary-spec {
+      flex: 1; padding: 13px 0;
+      background: linear-gradient(180deg, #FFB347, #FF8C00 55%, #CC5500);
+      border: 2px solid #CC5500;
+      border-radius: 50px;
+      box-shadow: 0 5px 0 #AA3D00, 0 6px 16px rgba(255,140,0,0.35);
+      color: #fff; font-size: 14px; font-weight: 900;
+      cursor: pointer; text-align: center;
+      position: relative; overflow: hidden;
+      transition: all .15s;
+    }
+    .btn-primary-spec::before {
+      content: ''; position: absolute; top: 3px; left: 10px; right: 10px; height: 6px;
+      background: rgba(255,255,250,0.25); border-radius: 50px;
+    }
+    .btn-primary-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #AA3D00; }
+
+    .btn-secondary-spec {
+      flex: 1; padding: 13px 0;
+      background: linear-gradient(180deg, #f5f5f5, #e0e0e0 55%, #cccccc);
+      border: 2px solid #bbbbbb;
+      border-radius: 50px;
+      box-shadow: 0 5px 0 #999999, 0 6px 16px rgba(120,120,120,0.2);
+      color: #555555; font-size: 14px; font-weight: 700;
+      cursor: pointer; text-align: center;
+      position: relative;
+      transition: all .15s;
+    }
+    .btn-secondary-spec::before {
+      content: ''; position: absolute; top: 3px; left: 10px; right: 10px; height: 6px;
+      background: rgba(255,255,255,0.6); border-radius: 50px;
+    }
+    .btn-secondary-spec:hover { background: linear-gradient(180deg, #e8e8e8, #d6d6d6 55%, #c0c0c0); }
+    .btn-secondary-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #999999; }
+
+    .btn-danger-spec {
+      flex: 1; padding: 13px 0;
+      background: linear-gradient(180deg, #FF7875, #FF4D4F);
+      border: 2px solid #CF1322;
+      border-radius: 50px;
+      box-shadow: 0 5px 0 #A8071A, 0 6px 16px rgba(255,77,79,0.3);
+      color: #fff; font-size: 14px; font-weight: 900;
+      cursor: pointer;
+      position: relative;
+      transition: all .15s;
+    }
+    .btn-danger-spec::before {
+      content: ''; position: absolute; top: 3px; left: 10px; right: 10px; height: 6px;
+      background: rgba(255,255,250,0.25); border-radius: 50px;
+    }
+    .btn-danger-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #A8071A; }
+
+    .btn-green-spec {
+      flex: 1; padding: 13px 0;
+      background: linear-gradient(180deg, #95DE64, #52C41A);
+      border: 2px solid #389E0D;
+      border-radius: 50px;
+      box-shadow: 0 5px 0 #237804, 0 6px 16px rgba(82,196,26,0.3);
+      color: #fff; font-size: 14px; font-weight: 900;
+      cursor: pointer;
+      position: relative;
+      transition: all .15s;
+    }
+    .btn-green-spec::before {
+      content: ''; position: absolute; top: 3px; left: 10px; right: 10px; height: 6px;
+      background: rgba(255,255,250,0.25); border-radius: 50px;
+    }
+    .btn-green-spec:active { transform: translateY(4px); box-shadow: 0 1px 0 #237804; }
+
+    .btn-ghost-spec {
+      flex: 1; padding: 11px 0;
+      background: rgba(255,140,0,0.06);
+      border: 1.5px solid rgba(255,180,80,0.4);
+      border-radius: 50px;
+      color: #B08040; font-size: 12px; font-weight: 700;
+      cursor: pointer; width: 100%;
+    }
+
+    /* ═══ 弹窗规范：容器 ═══ */
+    .modal-sm-spec {
+      width: 290px; border-radius: 24px;
+      background: var(--card, #FFFCF0);
+      border: 4px solid rgba(255,180,80,0.45);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12);
+      padding: 28px 22px; position: relative; overflow: hidden;
+    }
+    .modal-sm-spec::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    }
+    .modal-md-spec {
+      width: 340px; border-radius: 24px;
+      background: var(--card, #FFFCF0);
+      border: 4px solid rgba(255,180,80,0.45);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12);
+      padding: 32px 24px; position: relative; overflow: hidden;
+    }
+    .modal-md-spec::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    }
+
     /* ═══ 暖色游戏风：按钮 ═══ */
     .btn-game-primary {
       background: linear-gradient(180deg, #FF9F4A 0%, #FF7A00 100%);
@@ -8129,7 +8232,7 @@ function ShopPage({
       }
     }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : skin.price + ' 🔔'));
   })), equipTarget && /*#__PURE__*/React.createElement("div", {
-    className: colors === CL ? 'card-warm' : '',
+    className: colors === CL ? 'modal-sm-spec' : '',
     style: {
       marginTop: 12,
       padding: '10px',
@@ -8179,7 +8282,7 @@ function ShopPage({
       marginTop: 10
     }
   }, "\u76AE\u80A4\u4EC5\u6539\u53D8\u5916\u89C2\uFF0C\u4E0D\u5F71\u54CD\u4EFB\u4F55\u6E38\u620F\u6570\u503C \xB7 \u5DF2\u8D2D\u4E70\u76AE\u80A4\u6C38\u4E45\u4FDD\u7559")), /*#__PURE__*/React.createElement("div", {
-    className: colors === CL ? 'card-warm' : '',
+    className: colors === CL ? 'modal-sm-spec' : '',
     style: {
       background: colors === CL ? undefined : colors.card,
       borderRadius: colors === CL ? 20 : 16,
@@ -10022,7 +10125,7 @@ function ReleaseConfirmModal({
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
     style: {
-      width: 290,
+      width: colors === CL ? 290 : 290,
       background: colors.card,
       borderRadius: 24,
       padding: '28px 22px',
@@ -14773,7 +14876,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
     style: {
-      width: 290,
+      width: colors === CL ? 290 : 290,
       background: colors.card,
       borderRadius: 24,
       padding: '28px 22px',
@@ -14843,7 +14946,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
     style: {
-      width: 290,
+      width: colors === CL ? 290 : 290,
       background: colors.card,
       borderRadius: 24,
       padding: '28px 22px',
