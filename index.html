@@ -7479,9 +7479,13 @@ function FriendLeaderboard({
       width: 300,
       background: colors.card,
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: `1px solid ${colors.cardBorder}`,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -8425,9 +8429,13 @@ function ShopPage({
       width: 280,
       background: colors.card,
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: '1px solid ' + colors.cardBorder,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10123,9 +10131,13 @@ function AdoptConfirmModal({
       width: 280,
       background: colors.card,
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10224,9 +10236,13 @@ function ReleaseConfirmModal({
       width: colors === CL ? 290 : 290,
       background: colors.card,
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: '1px solid rgba(255,107,107,0.3)',
       animation: 'slideUp 0.3s ease-out'
     }
@@ -10310,9 +10326,13 @@ function CheckInModal({
       width: 280,
       background: colors.card,
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: '1px solid rgba(108,92,231,0.3)',
       animation: 'slideUp 0.4s ease-out'
     }
@@ -10440,9 +10460,13 @@ function MilestoneUnlockModal({
       width: 280,
       background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: '1px solid rgba(108,92,231,0.3)',
       boxShadow: '0 0 60px rgba(108,92,231,0.25)',
       animation: 'slideUp 0.4s ease-out'
@@ -11290,9 +11314,13 @@ function GachaResultModal({
       width: 280,
       background: colors === CL ? '#FFFBF0' : 'linear-gradient(180deg, #1E1440 0%, #0F0A1E 100%)',
       borderRadius: 24,
-      padding: '28px 22px',
-      textAlign: 'center',
       className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+        width: 290,
+        textAlign: 'center',
+        padding: '28px 22px',
+        border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+        boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       border: `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       boxShadow: `0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
       animation: 'slideUp 0.4s ease-out'
@@ -14975,42 +15003,49 @@ function App() {
     onClick: () => setShowLogoutConfirm(false)
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       width: colors === CL ? 290 : 290,
       background: colors.card,
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
-      className: colors === CL ? 'modal-sm-spec' : '',
-      border: `1px solid ${colors.border}`,
+      
+      border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+      boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       animation: 'slideUp 0.3s ease-out'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       fontSize: 48,
       marginBottom: 12
     }
   }, "\uD83D\uDC4B"), /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       fontSize: 16,
       fontWeight: 800,
       color: colors.ink,
       marginBottom: 8
     }
   }, "\u786E\u8BA4\u8981\u9000\u51FA\u8BE5\u8D26\u53F7\u5417\uFF1F"), /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       display: 'flex',
       gap: 10,
       marginTop: 20
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowLogoutConfirm(false),
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       flex: 1,
       height: 40,
       borderRadius: 12,
       background: colors.bg2,
-      border: `1px solid ${colors.border}`,
+      border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+      boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       cursor: 'pointer',
       fontSize: 13,
       fontWeight: 600,
@@ -15018,7 +15053,8 @@ function App() {
     }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
     onClick: handleLogout,
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       flex: 1,
       height: 40,
       borderRadius: 12,
@@ -15030,7 +15066,8 @@ function App() {
       color: '#fff'
     }
   }, "\u786E\u8BA4")))), confirmModal && /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       position: 'absolute',
       top: 0,
       left: 0,
@@ -15046,48 +15083,55 @@ function App() {
     onClick: () => setConfirmModal(null)
   }, /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
-    style: {
-      width: colors === CL ? 290 : 290,
+    
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
+      width: 290,
       background: colors.card,
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
-      className: colors === CL ? 'modal-sm-spec' : '',
-      border: `1px solid ${colors.border}`,
+      border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+      boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       animation: 'slideUp 0.3s ease-out'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       fontSize: 48,
       marginBottom: 12
     }
   }, confirmModal.emoji), /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       fontSize: 16,
       fontWeight: 800,
       color: colors.ink,
       marginBottom: 8
     }
   }, confirmModal.title), /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       fontSize: 12,
       color: colors.sub,
       marginBottom: 4
     }
   }, confirmModal.message), /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       display: 'flex',
       gap: 10,
       marginTop: 20
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmModal(null),
-    style: {
+    className: colors === CL ? 'btn-secondary-spec' : '', style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
       background: colors.bg2,
-      border: `1px solid ${colors.border}`,
+      border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
+      boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       cursor: 'pointer',
       fontSize: 13,
       fontWeight: 600,
@@ -15099,7 +15143,7 @@ function App() {
       setConfirmModal(null);
       fn && fn();
     },
-    style: {
+    className: colors === CL ? 'btn-danger-spec' : '', style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
@@ -15149,7 +15193,8 @@ function App() {
     className: "feed-toast in",
     key: feedToast.timestamp
   }, feedToast.text), guestToast && /*#__PURE__*/React.createElement("div", {
-    style: {
+    className: colors === CL ? 'modal-sm-spec' : '',
+      style: {
       position: 'absolute',
       bottom: 100,
       left: '50%',
