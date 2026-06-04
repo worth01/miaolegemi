@@ -15025,7 +15025,8 @@ function App() {
     }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
     onClick: handleLogout,
-    style: {
+    className: colors === CL ? 'btn-danger-spec' : '',
+    style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
@@ -15106,7 +15107,8 @@ function App() {
       setConfirmModal(null);
       fn && fn();
     },
-    style: {
+    className: colors === CL ? 'btn-danger-spec' : '',
+    style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
