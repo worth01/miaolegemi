@@ -8272,15 +8272,18 @@ function ShopPage({
       boxShadow: canExchange ? '0 4px 0 #AA5500, 0 4px 12px rgba(255,140,0,0.3)' : 'none'
     } : {
       width: '100%',
-      padding: '12px',
-      borderRadius: 12,
-      border: 'none',
-      background: canExchange ? 'linear-gradient(135deg, #FD9644, #FF6B6B)' : 'rgba(255,255,255,0.05)',
-      color: canExchange ? '#fff' : colors.muted,
+      padding: '13px 0',
+      borderRadius: 50,
+      border: canExchange ? '2px solid #FF8C00' : '2px solid rgba(255,255,255,0.1)',
+      background: 'rgba(0,0,0,0.4)',
+      color: canExchange ? '#FFB347' : colors.muted,
       fontSize: 14,
-      fontWeight: 700,
+      fontWeight: 900,
       cursor: canExchange ? 'pointer' : 'not-allowed',
-      opacity: canExchange ? 1 : 0.5
+      opacity: canExchange ? 1 : 0.5,
+      boxShadow: canExchange ? '0 0 8px #FF8C0066, 0 4px 0 #663300' : 'none',
+      textShadow: canExchange ? '0 0 8px rgba(255,180,80,0.5)' : 'none',
+      animation: canExchange ? 'flowPinkOrange 2.3s ease-in-out infinite' : 'none'
     }
   }, canExchange ? '兑换 1 铃铛' : fish < 100 ? '鱼干不足（需100条）' : '今日兑换已达上限')), equippedCats.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? 'card-warm' : 'profile-card-dark',
