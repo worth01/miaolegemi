@@ -483,53 +483,51 @@
       z-index: 10;
     }
     .flow-btn {
-      width:100%; padding:13px 0;
-      background: rgba(0,0,0,0.4);
-      border: 2px solid;
-      border-radius: 50px;
-      color: #fff;
-      font-size: 14px; font-weight: 900; letter-spacing: 1px;
-      cursor: pointer; font-family: inherit; text-align: center;
-      transition: transform .15s; position: relative;
+      position: relative;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
     }
-    .flow-btn:active { transform: translateY(3px); }
     .flow-btn .inner {
-      position: relative; display: flex; align-items: center; justify-content: center;
-      gap: 4px; color: inherit; font-weight: inherit; text-align: center;
-      z-index: 2; padding: 0; font-size: inherit;
-      text-shadow: inherit; background: none; border-radius: 0; margin: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 6px;
+      margin: 2px;
+      z-index: 2;
+      text-shadow: 0 0 5px rgba(255,255,255,0.2);
+      padding: 10px 8px;
+      font-size: 11px;
+      transition: opacity 0.2s;
     }
-    .flow-fill {
-      border-color: #00ffcc;
-      box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #008055;
-      animation: flowGreen 2.5s ease-in-out infinite;
-      color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.5);
+    .flow-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 10px;
+      z-index: 1;
+      background-size: 400% 400%;
+      animation: smoothFlow 6s linear infinite;
     }
-    .flow-send {
-      border-color: #ff3366;
-      box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022;
-      animation: flowPink 2.5s ease-in-out infinite;
-      color: #ff80aa; text-shadow: 0 0 8px rgba(255,51,102,0.5);
-    }
-    .flow-play {
-      border-color: #00ffff;
-      box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366;
-      animation: flowBlue 2.5s ease-in-out infinite;
-      color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.5);
-    }
-    .flow-lineage {
-      border-color: #9933ff;
-      box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066;
-      animation: flowPurple 2.5s ease-in-out infinite;
-      color: #bb88ff; text-shadow: 0 0 8px rgba(153,51,255,0.5);
-    }
-    .flow-cancel {
-      border-color: #FF4D79;
-      background: rgba(0,0,0,0.4);
-      animation: flowPinkOrange 2.3s ease-in-out infinite;
-      color: #FFA0B9; text-shadow: 0 0 8px #FF4D79;
-    }
-    .flow-feed { display: none; }
+    .flow-feed { flex: 1; }
+    .flow-feed::before { background: linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399); }
+    .flow-fill { flex: 0 0 auto; }
+    .flow-fill::before { background: linear-gradient(90deg, #00ffcc, #33ffaa, #66ff88, #00ffcc); }
+    .flow-play { flex: 1; }
+    .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
+    .flow-send { flex: 1; }
+    .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
+    .flow-lineage { width: 100%; }
+    .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
+    .flow-cancel { display: none; }
     /* 弹窗内流光按钮（暗黑模式新样式） */
     .modal-dark .flow-btn,
     .modal-sm-spec .flow-btn,
