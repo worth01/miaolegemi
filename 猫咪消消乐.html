@@ -1899,7 +1899,7 @@ const INTERFERENCE_TYPES = {
     // 进入收集槽后占据槽位但不参与消除
     desc: '进入收集槽后无法被消除',
     card_id: 'interfere_groom_001',
-    img: 'assets/Textures/GroomCard.png'
+    img: 'assets/Textures/GroomCard.webp'
   },
   freeze: {
     // 冰冻牌 - 冻结收集槽前N格（N由关卡配置freeze_grid_count决定，默认1）
@@ -1911,7 +1911,7 @@ const INTERFERENCE_TYPES = {
     // 冻结收集槽前N格
     desc: '冰冻牌冻结收集槽第一格，无法消除',
     card_id: 'interfere_freeze_001',
-    img: 'assets/Textures/FreezeCard.png'
+    img: 'assets/Textures/FreezeCard.webp'
   },
   sticky: {
     // 粘连牌 - 点击时连带相邻1张
@@ -2894,7 +2894,7 @@ const INTERFERENCE_CARDS = {
     emoji: '🧴',
     color: '#FDCB6E',
     interference: 'groom',
-    img: 'assets/Textures/GroomCard.png',
+    img: 'assets/Textures/GroomCard.webp',
     card_id: 'interfere_groom_001'
   },
   freeze: {
@@ -2903,7 +2903,7 @@ const INTERFERENCE_CARDS = {
     emoji: '❄️',
     color: '#74B9FF',
     interference: 'freeze',
-    img: 'assets/Textures/FreezeCard.png',
+    img: 'assets/Textures/FreezeCard.webp',
     card_id: 'interfere_freeze_001'
   },
   sticky: {
@@ -2928,7 +2928,7 @@ const INTERFERENCE_CARDS = {
     emoji: '🐶',
     color: '#FF6B6B',
     interference: 'danger',
-    img: 'assets/Textures/PuppyCard.png',
+    img: 'assets/Textures/PuppyCard.webp',
     card_id: 'interfere_dog_001'
   },
   disguise: {
@@ -5228,7 +5228,7 @@ function SkillConfirmModal({
       boxShadow: `0 0 20px ${color}30`
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/Textures/cat/${breed}.png`,
+    src: `assets/Textures/cat/${breed}.webp`,
     alt: breed,
     style: {
       width: '100%',
@@ -5653,7 +5653,7 @@ function CollectionSlot({
         animation: 'freezePulse 2s ease-in-out infinite'
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: "assets/Textures/FreezeCard.png",
+      src: "assets/Textures/FreezeCard.webp",
       alt: "\u51B0\u51BB\u724C",
       style: {
         width: '100%',
@@ -5770,7 +5770,7 @@ function CollectionSlot({
             position: 'relative'
           }
         }, /*#__PURE__*/React.createElement("img", {
-          src: "assets/Textures/GroomCard.png",
+          src: "assets/Textures/GroomCard.webp",
           alt: "\u8214\u6BDB\u724C",
           style: {
             width: '100%',
@@ -6312,7 +6312,7 @@ function ResultOverlay({
       background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/Textures/cat/${cat.breed}.png`,
+    src: `assets/Textures/cat/${cat.breed}.webp`,
     alt: cat.breed,
     style: {
       width: '100%',
@@ -9639,19 +9639,19 @@ function Game() {
   // P4: 关卡背景图映射（11-20关循环1-10关）
   const getLevelBg = level => {
     const bgMap = {
-      1: 'assets/Textures/bg.png',
-      2: 'assets/Textures/白猫清浴.png',
-      3: 'assets/Textures/bg.png',
-      4: 'assets/Textures/黑猫暗夜.png',
-      5: 'assets/Textures/bg.png',
-      6: 'assets/Textures/bg.png',
-      7: 'assets/Textures/折耳静坪.png',
-      8: 'assets/Textures/bg.png',
-      9: 'assets/Textures/bg.png',
-      10: 'assets/Textures/波斯双域.png'
+      1: 'assets/Textures/bg.webp',
+      2: 'assets/Textures/白猫清浴.webp',
+      3: 'assets/Textures/bg.webp',
+      4: 'assets/Textures/黑猫暗夜.webp',
+      5: 'assets/Textures/bg.webp',
+      6: 'assets/Textures/bg.webp',
+      7: 'assets/Textures/折耳静坪.webp',
+      8: 'assets/Textures/bg.webp',
+      9: 'assets/Textures/bg.webp',
+      10: 'assets/Textures/波斯双域.webp'
     };
     const cycleLevel = (level - 1) % 10 + 1; // 11关=1关, 12关=2关...
-    return bgMap[cycleLevel] || 'assets/Textures/bg.png';
+    return bgMap[cycleLevel] || 'assets/Textures/bg.webp';
   };
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9736,7 +9736,7 @@ function Game() {
     style: {
       position: 'absolute',
       inset: 0,
-      background: 'url(assets/welcome.png) center/cover no-repeat'
+      background: 'url(assets/welcome.webp) center/cover no-repeat'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10364,7 +10364,7 @@ function Game() {
         position: 'relative'
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: `assets/Textures/cat/${breed}.png`,
+      src: `assets/Textures/cat/${breed}.webp`,
       alt: breed,
       style: {
         width: '100%',

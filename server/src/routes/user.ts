@@ -202,7 +202,7 @@ router.get('/state', authMiddleware, async (req: any, res) => {
         breedSerial: c.cat_serial_registry?.serialNumber || 0,
         breedId: c.cat_serial_registry?.cat_species?.name || '橘猫',
         rarity: c.cat_serial_registry?.cat_species?.rarity || 'N',
-        img: c.cat_serial_registry?.cat_species?.name ? `assets/Textures/cat/${c.cat_serial_registry.cat_species.name}.png` : '',
+        img: c.cat_serial_registry?.cat_species?.name ? `assets/Textures/cat/${c.cat_serial_registry.cat_species.name}.webp` : '',
       }))
     });
   } catch (error: any) {
