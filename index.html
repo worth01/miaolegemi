@@ -527,7 +527,7 @@
     .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
-    .flow-cancel { display: none; }
+    .flow-cancel { display: none; } /* 全局隐藏，弹窗用 .modal-dark .flow-cancel 覆盖 */
     /* 弹窗内流光按钮（暗黑模式新样式） */
     .modal-dark .flow-btn,
     .modal-sm-spec .flow-btn,
@@ -546,6 +546,7 @@
     .modal-md-spec .flow-btn:active { transform: translateY(3px); }
     .modal-dark .flow-fill,
     .modal-sm-spec .flow-fill {
+      display: flex; align-items: center; justify-content: center;
       border-color: #00ffcc;
       box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #008055;
       animation: flowGreen 2.5s ease-in-out infinite;
@@ -553,6 +554,7 @@
     }
     .modal-dark .flow-send,
     .modal-sm-spec .flow-send {
+      display: flex; align-items: center; justify-content: center;
       border-color: #ff3366;
       box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022;
       animation: flowPink 2.5s ease-in-out infinite;
@@ -560,6 +562,7 @@
     }
     .modal-dark .flow-play,
     .modal-sm-spec .flow-play {
+      display: flex; align-items: center; justify-content: center;
       border-color: #00ffff;
       box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366;
       animation: flowBlue 2.5s ease-in-out infinite;
@@ -567,6 +570,7 @@
     }
     .modal-dark .flow-lineage,
     .modal-sm-spec .flow-lineage {
+      display: flex; align-items: center; justify-content: center;
       border-color: #9933ff;
       box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066;
       animation: flowPurple 2.5s ease-in-out infinite;
@@ -574,6 +578,7 @@
     }
     .modal-dark .flow-cancel,
     .modal-sm-spec .flow-cancel {
+      display: flex; align-items: center; justify-content: center;
       border-color: #FF4D79;
       background: rgba(0,0,0,0.4);
       animation: flowPinkOrange 2.3s ease-in-out infinite;
