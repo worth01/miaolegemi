@@ -342,9 +342,61 @@
     }
 
     /* ═══ 弹窗 ═══ */
+    @keyframes modalGlowDark {
+      0%,100% { box-shadow: 0 0 12px rgba(0,229,255,0.4), 0 0 28px rgba(0,153,255,0.2), 0 20px 60px rgba(0,0,0,0.7); }
+      50%      { box-shadow: 0 0 16px rgba(0,229,255,0.6), 0 0 36px rgba(0,153,255,0.25), 0 20px 60px rgba(0,0,0,0.7); }
+    }
+    @keyframes flowGreen {
+      0%   { border-color: #00ffcc; box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #00805566; }
+      33%  { border-color: #33ffaa; box-shadow: 0 0 12px #33ffaa55, 0 4px 0 #00805566; }
+      66%  { border-color: #66ff88; box-shadow: 0 0 8px #66ff8855, 0 4px 0 #00805566; }
+      100% { border-color: #00ffcc; box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #00805566; }
+    }
+    @keyframes flowPink {
+      0%   { border-color: #ff3366; box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022; }
+      33%  { border-color: #9933ff; box-shadow: 0 0 12px #9933ff55, 0 4px 0 #330066; }
+      66%  { border-color: #cc33ff; box-shadow: 0 0 8px #cc33ff55, 0 4px 0 #550066; }
+      100% { border-color: #ff3366; box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022; }
+    }
+    @keyframes flowBlue {
+      0%   { border-color: #00ffff; box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366; }
+      33%  { border-color: #3399ff; box-shadow: 0 0 12px #3399ff55, 0 4px 0 #002255; }
+      66%  { border-color: #66ccff; box-shadow: 0 0 8px #66ccff55, 0 4px 0 #003366; }
+      100% { border-color: #00ffff; box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366; }
+    }
+    @keyframes flowPurple {
+      0%   { border-color: #9933ff; box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066; }
+      33%  { border-color: #6666ff; box-shadow: 0 0 12px #6666ff55, 0 4px 0 #220055; }
+      66%  { border-color: #8066ff; box-shadow: 0 0 8px #8066ff55, 0 4px 0 #2a0066; }
+      100% { border-color: #9933ff; box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066; }
+    }
+    @keyframes flowPinkOrange {
+      0%   { border-color: #FF4D79; box-shadow: 0 0 8px #FF4D79, 0 3px 0 #662233; }
+      33%  { border-color: #FF774D; box-shadow: 0 0 10px #FF774D, 0 3px 0 #663322; }
+      66%  { border-color: #FF5C6F; box-shadow: 0 0 8px #FF5C6F, 0 3px 0 #662233; }
+      100% { border-color: #FF4D79; box-shadow: 0 0 8px #FF4D79, 0 3px 0 #662233; }
+    }
     .modal-dark {
-      border: 2px solid rgba(0,229,255,0.5) !important;
-      box-shadow: 0 0 8px rgba(0,229,255,0.25), 0 0 16px rgba(0,153,255,0.12) !important;
+      border: 3px solid rgba(0,229,255,0.9) !important;
+      box-shadow: 0 0 12px rgba(0,229,255,0.4), 0 0 28px rgba(0,153,255,0.2), 0 20px 60px rgba(0,0,0,0.7) !important;
+      animation: modalGlowDark 4s ease-in-out infinite;
+    }
+    .modal-dark::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4), rgba(255,105,180,0.3), transparent);
+    }
+    /* 全屏弹窗卡片 */
+    .fs-card-dark {
+      background: rgba(22,12,44,0.92);
+      border: 3px solid rgba(0,229,255,0.9);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 0 12px rgba(0,229,255,0.4), 0 0 28px rgba(0,153,255,0.2), 0 20px 60px rgba(0,0,0,0.7);
+      position: relative; overflow: hidden;
+    }
+    .fs-card-dark::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,229,255,0.4), rgba(255,105,180,0.3), transparent);
     }
 
     /* ═══ 提示条 ═══ */
@@ -431,50 +483,53 @@
       z-index: 10;
     }
     .flow-btn {
-      position: relative;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      overflow: hidden;
-    }
-    .flow-btn .inner {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      background: #111;
+      width:100%; padding:13px 0;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid;
+      border-radius: 50px;
       color: #fff;
-      font-weight: 700;
-      text-align: center;
-      border-radius: 6px;
-      margin: 2px;
-      z-index: 2;
-      text-shadow: 0 0 5px rgba(255,255,255,0.2);
-      padding: 10px 8px;
-      font-size: 11px;
-      transition: opacity 0.2s;
+      font-size: 14px; font-weight: 900; letter-spacing: 1px;
+      cursor: pointer; font-family: inherit; text-align: center;
+      transition: transform .15s; position: relative;
     }
-    .flow-btn::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      border-radius: 10px;
-      z-index: 1;
-      background-size: 400% 400%;
-      animation: smoothFlow 6s linear infinite;
+    .flow-btn:active { transform: translateY(3px); }
+    .flow-btn .inner {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      gap: 4px; color: inherit; font-weight: inherit; text-align: center;
+      z-index: 2; padding: 0; font-size: inherit;
+      text-shadow: inherit; background: none; border-radius: 0; margin: 0;
     }
-    .flow-feed { flex: 1; }
-    .flow-feed::before { background: linear-gradient(90deg, #ff3399, #cc66ff, #9966ff, #ff3399); }
-    .flow-fill { flex: 0 0 auto; }
-    .flow-fill::before { background: linear-gradient(90deg, #00ffcc, #33ffaa, #66ff88, #00ffcc); }
-    .flow-play { flex: 1; }
-    .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
-    .flow-send { flex: 1; }
-    .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
-    .flow-lineage { width: 100%; }
-    .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
+    .flow-fill {
+      border-color: #00ffcc;
+      box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #008055;
+      animation: flowGreen 2.5s ease-in-out infinite;
+      color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.5);
+    }
+    .flow-send {
+      border-color: #ff3366;
+      box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022;
+      animation: flowPink 2.5s ease-in-out infinite;
+      color: #ff80aa; text-shadow: 0 0 8px rgba(255,51,102,0.5);
+    }
+    .flow-play {
+      border-color: #00ffff;
+      box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366;
+      animation: flowBlue 2.5s ease-in-out infinite;
+      color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.5);
+    }
+    .flow-lineage {
+      border-color: #9933ff;
+      box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066;
+      animation: flowPurple 2.5s ease-in-out infinite;
+      color: #bb88ff; text-shadow: 0 0 8px rgba(153,51,255,0.5);
+    }
+    .flow-cancel {
+      border-color: #FF4D79;
+      background: rgba(0,0,0,0.4);
+      animation: flowPinkOrange 2.3s ease-in-out infinite;
+      color: #FFA0B9; text-shadow: 0 0 8px #FF4D79;
+    }
+    .flow-feed { display: none; }
 
     /* ═══ 弹窗规范：通用按钮 ═══ */
     .btn-primary-spec {
@@ -7517,7 +7572,7 @@ function FriendLeaderboard({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAuthModal(false),
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -7531,7 +7586,7 @@ function FriendLeaderboard({
     }
   }, "\u62D2\u7EDD"), /*#__PURE__*/React.createElement("button", {
     onClick: handleAuthorize,
-    className: colors === CL ? 'btn-primary-spec' : '', style: colors === CL ? { flex: 1 } : {
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play', style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
       borderRadius: 12,
@@ -8491,7 +8546,7 @@ function ShopPage({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowExchangeConfirm(false),
-    className: colors === CL ? 'btn-secondary-spec' : '', style: colors === CL ? { flex: 1 } : {
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel', style: colors === CL ? { flex: 1 } : {
       flex: 1,
       padding: '12px',
       borderRadius: 12,
@@ -8504,7 +8559,7 @@ function ShopPage({
     }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
     onClick: confirmExchange,
-    className: colors === CL ? 'btn-primary-spec' : '', style: colors === CL ? { flex: 1 } : {
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play', style: colors === CL ? { flex: 1 } : {
       flex: 1,
       padding: '12px',
       borderRadius: 12,
@@ -10189,7 +10244,7 @@ function AdoptConfirmModal({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onCancel,
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -10203,7 +10258,7 @@ function AdoptConfirmModal({
     }
   }, "\u53D6\u6D88"), canAdopt && /*#__PURE__*/React.createElement("button", {
     onClick: onConfirm,
-    className: colors === CL ? 'btn-green-spec' : '',
+    className: colors === CL ? 'btn-green-spec' : 'flow-btn flow-fill',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -10279,7 +10334,7 @@ function ReleaseConfirmModal({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onCancel,
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -10293,7 +10348,7 @@ function ReleaseConfirmModal({
     }
   }, "\u518D\u60F3\u60F3"), /*#__PURE__*/React.createElement("button", {
     onClick: onConfirm,
-    className: colors === CL ? 'btn-danger-spec' : '',
+    className: colors === CL ? 'btn-danger-spec' : 'flow-btn flow-send',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -10374,7 +10429,7 @@ function CheckInModal({
     }
   }, "\u9C7C\u5E72\u5DF2\u5230\u8D26"), /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
-    className: colors === CL ? 'btn-primary-spec' : '',
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play',
     style: colors === CL ? { width: '100%' } : {
       width: '100%',
       height: 40,
@@ -11799,7 +11854,7 @@ function AgreementModal({
     }
   }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"), "\u3002\u6211\u4EEC\u5C06\u4E25\u683C\u6309\u7167\u76F8\u5173\u6CD5\u5F8B\u6CD5\u89C4\uFF0C\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u5B89\u5168\u4E0E\u5408\u6CD5\u6743\u76CA\u3002"), /*#__PURE__*/React.createElement("button", {
     onClick: onAgree,
-    className: colors === CL ? 'btn-primary-spec' : '',
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play',
     style: colors === CL ? { width: '100%', marginBottom: 10 } : {
       width: '100%',
       height: 48,
@@ -11816,7 +11871,7 @@ function AgreementModal({
     }
   }, "\u540C\u610F\u5E76\u8FDB\u5165"), /*#__PURE__*/React.createElement("button", {
     onClick: onReject,
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { width: '100%' } : {
       width: '100%',
       height: 44,
@@ -11934,7 +11989,7 @@ function LoginAuthModal({
   }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"), "\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\uFF0C\u4E0D\u4F1A\u7528\u4E8E\u5176\u4ED6\u7528\u9014\u3002"), /*#__PURE__*/React.createElement("button", {
     onClick: onAuthorize,
     disabled: loading,
-    className: colors === CL ? 'btn-primary-spec' : '',
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play',
     style: colors === CL ? { width: '100%', marginBottom: 10, opacity: loading ? 0.6 : 1 } : {
       width: '100%',
       height: 48,
@@ -11952,7 +12007,7 @@ function LoginAuthModal({
     }
   }, loading ? '授权中...' : '同意并登录'), /*#__PURE__*/React.createElement("button", {
     onClick: onGuest,
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { width: '100%' } : {
       width: '100%',
       height: 44,
@@ -15043,7 +15098,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowLogoutConfirm(false),
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -15057,7 +15112,7 @@ function App() {
     }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
     onClick: handleLogout,
-    className: colors === CL ? 'btn-danger-spec' : '',
+    className: colors === CL ? 'btn-danger-spec' : 'flow-btn flow-send',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -15123,7 +15178,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmModal(null),
-    className: colors === CL ? 'btn-secondary-spec' : '',
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
@@ -15141,7 +15196,7 @@ function App() {
       setConfirmModal(null);
       fn && fn();
     },
-    className: colors === CL ? 'btn-danger-spec' : '',
+    className: colors === CL ? 'btn-danger-spec' : 'flow-btn flow-send',
     style: colors === CL ? { flex: 1 } : {
       flex: 1,
       height: 40,
