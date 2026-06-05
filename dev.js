@@ -12,6 +12,7 @@ const MIME = {
   '.js': 'application/javascript',
   '.css': 'text/css',
   '.png': 'image/png',
+  '.webp': 'image/webp',
   '.jpg': 'image/jpeg',
   '.mp4': 'video/mp4',
   '.json': 'application/json',
@@ -21,6 +22,8 @@ const MIME = {
 };
 
 http.createServer((req, res) => {
+  // favicon 忽略
+  if (req.url === '/favicon.ico') { res.writeHead(204); res.end(); return; }
   let filePath = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
   if (filePath.endsWith('/')) filePath = path.join(filePath, 'index.html');
 

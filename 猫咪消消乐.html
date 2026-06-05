@@ -5981,7 +5981,8 @@ function ResultOverlay({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      paddingTop: 120,
       zIndex: 500,
       animation: 'fadeIn 0.4s ease-out'
     }
@@ -6638,7 +6639,8 @@ function BattlePrep({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      paddingTop: 120,
       zIndex: 100,
       animation: 'fadeIn 0.4s ease-out'
     }
@@ -10610,6 +10612,8 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      width: 390,
+      height: 844,
       transform: `scale(${scale})`,
       transformOrigin: 'top center'
     }
