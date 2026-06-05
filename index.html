@@ -530,6 +530,63 @@
       color: #FFA0B9; text-shadow: 0 0 8px #FF4D79;
     }
     .flow-feed { display: none; }
+    /* 弹窗内流光按钮（暗黑模式新样式） */
+    .modal-dark .flow-btn,
+    .modal-sm-spec .flow-btn,
+    .modal-md-spec .flow-btn {
+      width:100%; padding:13px 0;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid;
+      border-radius: 50px;
+      color: #fff;
+      font-size: 14px; font-weight: 900; letter-spacing: 1px;
+      cursor: pointer; font-family: inherit; text-align: center;
+      transition: transform .15s; position: relative;
+    }
+    .modal-dark .flow-btn:active,
+    .modal-sm-spec .flow-btn:active,
+    .modal-md-spec .flow-btn:active { transform: translateY(3px); }
+    .modal-dark .flow-fill,
+    .modal-sm-spec .flow-fill {
+      border-color: #00ffcc;
+      box-shadow: 0 0 8px #00ffcc66, 0 4px 0 #008055;
+      animation: flowGreen 2.5s ease-in-out infinite;
+      color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.5);
+    }
+    .modal-dark .flow-send,
+    .modal-sm-spec .flow-send {
+      border-color: #ff3366;
+      box-shadow: 0 0 8px #ff336666, 0 4px 0 #660022;
+      animation: flowPink 2.5s ease-in-out infinite;
+      color: #ff80aa; text-shadow: 0 0 8px rgba(255,51,102,0.5);
+    }
+    .modal-dark .flow-play,
+    .modal-sm-spec .flow-play {
+      border-color: #00ffff;
+      box-shadow: 0 0 8px #00ffff66, 0 4px 0 #003366;
+      animation: flowBlue 2.5s ease-in-out infinite;
+      color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.5);
+    }
+    .modal-dark .flow-lineage,
+    .modal-sm-spec .flow-lineage {
+      border-color: #9933ff;
+      box-shadow: 0 0 8px #9933ff66, 0 4px 0 #330066;
+      animation: flowPurple 2.5s ease-in-out infinite;
+      color: #bb88ff; text-shadow: 0 0 8px rgba(153,51,255,0.5);
+    }
+    .modal-dark .flow-cancel,
+    .modal-sm-spec .flow-cancel {
+      border-color: #FF4D79;
+      background: rgba(0,0,0,0.4);
+      animation: flowPinkOrange 2.3s ease-in-out infinite;
+      color: #FFA0B9; text-shadow: 0 0 8px #FF4D79;
+    }
+    /* 弹窗内隐藏 inner span 样式（由新系统接管） */
+    .modal-dark .flow-btn .inner,
+    .modal-sm-spec .flow-btn .inner {
+      background: none; border-radius: 0; margin: 0; padding: 0;
+      font-size: inherit; color: inherit; text-shadow: inherit;
+    }
 
     /* ═══ 弹窗规范：通用按钮 ═══ */
     .btn-primary-spec {
@@ -8536,30 +8593,10 @@ function ShopPage({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowExchangeConfirm(false),
-    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel', style: colors === CL ? { flex: 1 } : {
-      flex: 1,
-      padding: '12px',
-      borderRadius: 12,
-      border: '1px solid ' + colors.cardBorder,
-      background: 'transparent',
-      color: colors.sub,
-      fontSize: 14,
-      fontWeight: 600,
-      cursor: 'pointer'
-    }
+    className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel', style: { flex: 1 }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
     onClick: confirmExchange,
-    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play', style: colors === CL ? { flex: 1 } : {
-      flex: 1,
-      padding: '12px',
-      borderRadius: 12,
-      border: 'none',
-      background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: 'pointer'
-    }
+    className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play', style: { flex: 1 }
   }, "\u786E\u8BA4")))));
 }
 
