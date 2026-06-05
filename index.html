@@ -11855,31 +11855,11 @@ function AgreementModal({
   }, "\u300A\u7528\u6237\u670D\u52A1\u534F\u8BAE\u300B"), "\u3002\u6211\u4EEC\u5C06\u4E25\u683C\u6309\u7167\u76F8\u5173\u6CD5\u5F8B\u6CD5\u89C4\uFF0C\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u5B89\u5168\u4E0E\u5408\u6CD5\u6743\u76CA\u3002"), /*#__PURE__*/React.createElement("button", {
     onClick: onAgree,
     className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play',
-    style: colors === CL ? { width: '100%', marginBottom: 10 } : {
-      width: '100%',
-      height: 48,
-      borderRadius: 14,
-      border: 'none',
-      cursor: 'pointer',
-      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 700,
-      marginBottom: 10,
-      boxShadow: '0 4px 20px rgba(108,92,231,0.4)',
-      transition: 'all 0.2s'
-    }
+    style: { width: '100%', marginBottom: 10 }
   }, "\u540C\u610F\u5E76\u8FDB\u5165"), /*#__PURE__*/React.createElement("button", {
     onClick: onReject,
     className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
-    style: colors === CL ? { width: '100%' } : {
-      width: '100%',
-      height: 44,
-      borderRadius: 14,
-      border: `1px solid ${colors.cardBorder}`,
-      cursor: 'pointer',
-      background: 'transparent',
-      color: colors.muted,
+    style: { width: '100%' }
       fontSize: 14,
       fontWeight: 500,
       transition: 'all 0.2s'
@@ -11990,36 +11970,11 @@ function LoginAuthModal({
     onClick: onAuthorize,
     disabled: loading,
     className: colors === CL ? 'btn-primary-spec' : 'flow-btn flow-play',
-    style: colors === CL ? { width: '100%', marginBottom: 10, opacity: loading ? 0.6 : 1 } : {
-      width: '100%',
-      height: 48,
-      borderRadius: 14,
-      border: 'none',
-      cursor: 'pointer',
-      background: `linear-gradient(135deg, ${colors.purple}, ${colors.purpleDark})`,
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 700,
-      marginBottom: 10,
-      opacity: loading ? 0.6 : 1,
-      boxShadow: '0 4px 20px rgba(108,92,231,0.4)',
-      transition: 'all 0.2s'
-    }
+    style: { width: '100%', marginBottom: 10, opacity: loading ? 0.6 : 1 }
   }, loading ? '授权中...' : '同意并登录'), /*#__PURE__*/React.createElement("button", {
     onClick: onGuest,
     className: colors === CL ? 'btn-secondary-spec' : 'flow-btn flow-cancel',
-    style: colors === CL ? { width: '100%' } : {
-      width: '100%',
-      height: 44,
-      borderRadius: 14,
-      border: `1px solid ${colors.cardBorder}`,
-      cursor: 'pointer',
-      background: 'transparent',
-      color: colors.sub,
-      fontSize: 14,
-      fontWeight: 500,
-      transition: 'all 0.2s'
-    }
+    style: { width: '100%' }
   }, "\u62D2\u7EDD\uFF08\u6E38\u5BA2\u6A21\u5F0F\u4F53\u9A8C\uFF09"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
