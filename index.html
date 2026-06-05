@@ -7571,16 +7571,20 @@ function FriendLeaderboard({
       }
     }, "\u6388\u6743\u597D\u53CB\u5173\u7CFB\u540E\u53EF\u67E5\u770B\u597D\u53CB\u6218\u51B5"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowAuthModal(true),
-      style: {
-        padding: '9px 24px',
+      className: colors === CL ? 'btn-primary-spec' : '',
+      style: colors === CL ? { padding: '9px 24px' } : {
+        padding: '13px 24px',
+        background: 'rgba(0,0,0,0.4)',
+        border: '2px solid #00ffff',
         borderRadius: 50,
-        border: '2px solid #1A6DD4',
-        background: 'linear-gradient(180deg, #7EB8FF, #4D94FF 55%, #1A6DD4)',
-        color: '#fff',
+        color: '#00ffff',
         fontSize: 14,
-        fontWeight: 800,
+        fontWeight: 900,
         cursor: 'pointer',
-        boxShadow: '0 4px 0 #1350A0, 0 4px 12px rgba(30,100,200,0.3)'
+        fontFamily: 'inherit',
+        boxShadow: '0 0 8px #00ffff66, 0 4px 0 #003366',
+        textShadow: '0 0 8px rgba(0,255,255,0.5)',
+        animation: 'flowBlue 2.5s ease-in-out infinite'
       }
     }, "\u6388\u6743\u597D\u53CB\u5173\u7CFB")));
   }
