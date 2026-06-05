@@ -9550,13 +9550,24 @@ function ProfilePage({
     }
   }, /*#__PURE__*/React.createElement("div", {
     onClick: onLogout,
-    style: {
+    style: colors === CL ? {
       cursor: 'pointer',
       padding: '6px 12px',
       borderRadius: 8,
       border: `1px solid ${colors.cardBorder}`,
       fontSize: 11,
       color: colors.sub
+    } : {
+      cursor: 'pointer',
+      padding: '6px 12px',
+      borderRadius: 8,
+      border: '2px solid #ff3366',
+      background: 'rgba(0,0,0,0.3)',
+      fontSize: 11,
+      fontWeight: 700,
+      color: '#fff',
+      boxShadow: '0 0 8px #ff336666',
+      textShadow: '0 0 6px rgba(255,255,255,0.6)'
     }
   }, "\u9000\u51FA\u767B\u5F55"))), /*#__PURE__*/React.createElement("div", {
     style: {
