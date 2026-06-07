@@ -14,7 +14,7 @@
     html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
     #root, .phone-screen { width: 100%; height: 100%; overflow: hidden; }
     @keyframes tileIn { 0%{transform:scale(0.3) rotate(-10deg);opacity:0} 60%{transform:scale(1.1) rotate(2deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
-    @keyframes toSlot { 0%{transform:scale(1)} 50%{transform:scale(0.5)} 100%{transform:scale(0.45)} }
+    @keyframes toSlot { 0%{transform:scale(0.7);opacity:0.5} 100%{transform:scale(1);opacity:1} }
     @keyframes matchPop { 0%{transform:scale(1);opacity:1} 40%{transform:scale(1.5);opacity:0.8;box-shadow:0 0 30px currentColor} 100%{transform:scale(0);opacity:0} }
     @keyframes winBounce { 0%{transform:scale(0)} 50%{transform:scale(1.2)} 70%{transform:scale(0.9)} 100%{transform:scale(1)} }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
@@ -26,6 +26,8 @@
     @keyframes sparkle { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:0.8;transform:scale(1.2)} }
     @keyframes btnPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
     @keyframes freezePulse { 0%,100%{box-shadow:0 0 20px rgba(116,185,255,0.8),0 0 40px rgba(116,185,255,0.4),inset 0 1px 0 rgba(255,255,255,0.3)} 50%{box-shadow:0 0 30px rgba(116,185,255,1),0 0 60px rgba(116,185,255,0.6),inset 0 1px 0 rgba(255,255,255,0.5)} }
+    @keyframes orangeGlow { 0%,100%{background-position:0% 50%;box-shadow:0 0 20px rgba(253,150,68,0.6),0 0 40px rgba(255,107,107,0.3)} 50%{background-position:100% 50%;box-shadow:0 0 30px rgba(253,150,68,0.9),0 0 60px rgba(255,107,107,0.5),0 0 80px rgba(253,150,68,0.2)} }
+    @keyframes orangeBorderGlow { 0%,100%{border-color:#FD9644;box-shadow:0 0 16px rgba(253,150,68,0.5),0 0 32px rgba(253,150,68,0.25),inset 0 0 8px rgba(253,150,68,0.15)} 50%{border-color:#FFB347;box-shadow:0 0 24px rgba(253,150,68,0.8),0 0 48px rgba(253,150,68,0.4),inset 0 0 16px rgba(253,150,68,0.25)} }
     @keyframes frostRise { 0%{transform:translateY(0) scale(1);opacity:0.8} 100%{transform:translateY(-30px) scale(1.5);opacity:0} }
     @keyframes dangerPulse { 0%,100%{box-shadow:0 0 6px rgba(255,80,80,0.25),0 0 12px rgba(255,80,80,0.15)} 50%{box-shadow:0 0 14px rgba(255,80,80,0.55),0 0 28px rgba(255,80,80,0.35)} }
     @keyframes glassShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
@@ -1425,10 +1427,10 @@ const BUTTERFLY_BOARD_COORDS = [
   row: 5,
   col: 7
 },
-// 第6行：{6,1}, {6,4}, {6,5}, {6,8}
+// 第6行：{6,3}, {6,4}, {6,5}, {6,6}（与 BoardShapes 保持一致）
 {
   row: 6,
-  col: 1
+  col: 3
 }, {
   row: 6,
   col: 4
@@ -1437,7 +1439,7 @@ const BUTTERFLY_BOARD_COORDS = [
   col: 5
 }, {
   row: 6,
-  col: 8
+  col: 6
 }];
 const BUTTERFLY_BOARD_COORDS_SET = new Set(BUTTERFLY_BOARD_COORDS.map(c => `${c.row},${c.col}`));
 
@@ -1785,18 +1787,140 @@ function shuffleCardPool(pool, rng) {
 
 // 层数配置（按关卡区间）
 const LAYER_CONFIG = {
-  // 第1关教学关：总54张，3层
+  // 第1关教学关：总48张，3层
   '1': {
-    0: 22,
-    1: 18,
-    2: 14
+    0: 20,
+    1: 16,
+    2: 12
   },
-  // 2-10关：总84张，4层（12种牌）
-  '2-10': {
-    0: 28,
-    1: 24,
+  // 第2关：总72张，4层
+  '2': {
+    0: 24,
+    1: 20,
+    2: 16,
+    3: 12
+  },
+  // 第4关：总81张，5层（爱心棋盘）
+  '4': {
+    0: 22,
+    1: 20,
+    2: 16,
+    3: 14,
+    4: 9
+  },
+  // 第6关：总78张，5层（花瓣棋盘）
+  '6': {
+    0: 20,
+    1: 18,
+    2: 16,
+    3: 14,
+    4: 10
+  },
+  // 第7关：总72张，5层（菱形棋盘）
+  '7': {
+    0: 19,
+    1: 17,
+    2: 14,
+    3: 12,
+    4: 10
+  },
+  // 第9关：总72张，5层（沙漏棋盘）
+  '9': {
+    0: 16,
+    1: 16,
+    2: 14,
+    3: 14,
+    4: 12
+  },
+  // ═══ 第2轮 (11-20关) 异形棋盘专属配置 ═══
+  // 第12关：总84张，5层（蝴蝶棋盘）
+  '12': {
+    0: 22,
+    1: 20,
+    2: 16,
+    3: 14,
+    4: 12
+  },
+  // 第14关：总93张，5层（爱心棋盘）
+  '14': {
+    0: 24,
+    1: 22,
     2: 18,
-    3: 14
+    3: 16,
+    4: 13
+  },
+  // 第16关：总90张，5层（花瓣棋盘）
+  '16': {
+    0: 24,
+    1: 20,
+    2: 18,
+    3: 16,
+    4: 12
+  },
+  // 第17关：总84张，5层（菱形棋盘）
+  '17': {
+    0: 22,
+    1: 20,
+    2: 16,
+    3: 14,
+    4: 12
+  },
+  // 第19关：总84张，5层（沙漏棋盘）
+  '19': {
+    0: 19,
+    1: 18,
+    2: 16,
+    3: 16,
+    4: 15
+  },
+  // ═══ 第3轮 (21-30关) 异形棋盘专属配置 ═══
+  // 第22关：总90张，5层（蝴蝶棋盘）
+  '22': {
+    0: 24,
+    1: 20,
+    2: 18,
+    3: 16,
+    4: 12
+  },
+  // 第24关：总99张，5层（爱心棋盘）
+  '24': {
+    0: 26,
+    1: 22,
+    2: 20,
+    3: 18,
+    4: 13
+  },
+  // 第26关：总96张，5层（花瓣棋盘）
+  '26': {
+    0: 26,
+    1: 22,
+    2: 18,
+    3: 16,
+    4: 14
+  },
+  // 第27关：总84张，5层（菱形棋盘）
+  '27': {
+    0: 22,
+    1: 20,
+    2: 16,
+    3: 14,
+    4: 12
+  },
+  // 第29关：总90张，5层（沙漏棋盘）
+  '29': {
+    0: 20,
+    1: 20,
+    2: 18,
+    3: 16,
+    4: 16
+  },
+  // 3/5/8/10关：总84张，5层（12种牌）
+  '3-10': {
+    0: 24,
+    1: 20,
+    2: 18,
+    3: 14,
+    4: 8
   },
   // 11-20关：总96张，5层（13种牌）
   '11-20': {
@@ -1878,8 +2002,10 @@ function getTileDisplayType(tile) {
 }
 function getLayerConfig(levelNum) {
   const cycleLevel = (levelNum - 1) % 30 + 1;
-  if (cycleLevel === 1) return LAYER_CONFIG['1'];
-  if (cycleLevel >= 2 && cycleLevel <= 10) return LAYER_CONFIG['2-10'];
+  // 异形棋盘关卡（三轮循环：2/12/22 蝴蝶, 4/14/24 爱心, 6/16/26 花瓣, 7/17/27 菱形, 9/19/29 沙漏）
+  if (LAYER_CONFIG[cycleLevel]) return LAYER_CONFIG[cycleLevel];
+  // 标准棋盘按区间
+  if (cycleLevel >= 1 && cycleLevel <= 10) return LAYER_CONFIG['3-10'];
   if (cycleLevel >= 11 && cycleLevel <= 20) return LAYER_CONFIG['11-20'];
   return LAYER_CONFIG['21-30'];
 }
@@ -2673,11 +2799,11 @@ function getLevelTimeConfig(levelNum) {
     timeLimit: 0
   };
   let timeLimit = 120;
-  if (n <= 3) timeLimit = 150; // 2-3关 2分30秒
-  else if (n <= 6) timeLimit = 120; // 4-6关 2分钟
-  else if (n <= 10) timeLimit = 105; // 7-10关 1分45秒
-  else if (n <= 20) timeLimit = 120; // 11-20关 2分钟
-  else timeLimit = 135; // 21-30关 2分15秒
+  if (n <= 3) timeLimit = 180; // 2-3关 3分钟
+  else if (n <= 6) timeLimit = 150; // 4-6关 2分30秒
+  else if (n <= 10) timeLimit = 135; // 7-10关 2分15秒
+  else if (n <= 20) timeLimit = 150; // 11-20关 2分30秒
+  else timeLimit = 165; // 21-30关 2分45秒
   return {
     timedMode: true,
     timeLimit
@@ -4069,177 +4195,392 @@ function getLevelLayers(levelNum) {
 
 // 棋盘生成（按需求文档）
 // 使用1-based坐标系统：row 1-6, col 1-8
+// ═══════════════════════════════════════════════════════════
+// 逆向生成法：关卡生成系统重构
+// ═══════════════════════════════════════════════════════════
+
+// ─── 难度配置表（线性插值） ─────────────────────────────────
+const DIFFICULTY_CONFIG = {
+  1:  { buryRate: 0.10, pathWidth: 3, noiseRate: 0.10 },
+  5:  { buryRate: 0.20, pathWidth: 2, noiseRate: 0.15 },
+  10: { buryRate: 0.25, pathWidth: 2, noiseRate: 0.18 },
+  15: { buryRate: 0.35, pathWidth: 2, noiseRate: 0.22 },
+  20: { buryRate: 0.40, pathWidth: 1, noiseRate: 0.25 },
+  25: { buryRate: 0.50, pathWidth: 1, noiseRate: 0.30 },
+  30: { buryRate: 0.55, pathWidth: 1, noiseRate: 0.32 },
+};
+
+function getDifficultyConfig(levelNum) {
+  const cycleLevel = (levelNum - 1) % 30 + 1;
+  const keys = Object.keys(DIFFICULTY_CONFIG).map(Number).sort((a,b) => a-b);
+  if (DIFFICULTY_CONFIG[cycleLevel]) return { ...DIFFICULTY_CONFIG[cycleLevel] };
+  if (cycleLevel <= keys[0]) return { ...DIFFICULTY_CONFIG[keys[0]] };
+  if (cycleLevel >= keys[keys.length-1]) return { ...DIFFICULTY_CONFIG[keys[keys.length-1]] };
+  let lo = keys[0], hi = keys[1];
+  for (let i = 0; i < keys.length-1; i++) {
+    if (keys[i] <= cycleLevel && cycleLevel < keys[i+1]) { lo=keys[i]; hi=keys[i+1]; break; }
+  }
+  const t = (cycleLevel-lo)/(hi-lo);
+  const a = DIFFICULTY_CONFIG[lo], b = DIFFICULTY_CONFIG[hi];
+  return {
+    buryRate: a.buryRate + t*(b.buryRate - a.buryRate),
+    pathWidth: Math.round(a.pathWidth + t*(b.pathWidth - a.pathWidth)),
+    noiseRate: a.noiseRate + t*(b.noiseRate - a.noiseRate),
+  };
+}
+
+// ─── 槽位骨架构建（从原 generateBoard 抽出） ──────────────────
+function buildSlotsForLevel(levelNum, rng) {
+  const lv = getLevelConfig(levelNum);
+  const { boardType } = lv;
+  const boardCoords = getBoardCoordsByType(boardType);
+  const boardCoordCount = boardCoords.length;
+  const isShaped = boardType !== BOARD_TYPES.standard;
+  const baseLayerConfig = getLayerConfig(levelNum);
+  const totalCards = getMaxCardsForBoard(boardType, boardCoordCount, levelNum);
+  const layerKeysAll = Object.keys(baseLayerConfig).map(Number).sort((a,b)=>a-b);
+  const maxLayer = layerKeysAll[layerKeysAll.length-1];
+
+  const totalBase = layerKeysAll.reduce((s,k) => s+baseLayerConfig[k], 0);
+  const rawConfig = {};
+  let allocated = 0;
+  layerKeysAll.forEach((k,i) => {
+    if (i === layerKeysAll.length-1) { rawConfig[k] = totalCards - allocated; }
+    else { rawConfig[k] = Math.floor(baseLayerConfig[k]*totalCards/totalBase); allocated+=rawConfig[k]; }
+  });
+
+  var layerConfig;
+  if (isShaped) {
+    // 金字塔：layer 0 底座填满全部坐标，层号越大牌越少（逐层收窄）
+    layerConfig = {};
+    layerConfig[0] = boardCoordCount;
+    var upperTotal = totalCards - boardCoordCount;
+    if (upperTotal < 0) upperTotal = 0;
+    var upperLayers = maxLayer; // 层 1..maxLayer
+    // 权重：layer 1 权重=maxLayer, layer 2 权重=maxLayer-1, ... → 逐层递减
+    var totalWeight = 0;
+    for (var _lw = 0; _lw < upperLayers; _lw++) totalWeight += (maxLayer - _lw);
+    var upperAllocated = 0;
+    for (var _ly = 1; _ly <= upperLayers; _ly++) {
+      var w = maxLayer - _ly + 1;
+      if (_ly === upperLayers) {
+        layerConfig[_ly] = upperTotal - upperAllocated;
+      } else {
+        layerConfig[_ly] = Math.floor(upperTotal * w / totalWeight);
+        upperAllocated += layerConfig[_ly];
+      }
+      // 安全兜底：上层牌数不超过底座坐标数
+      if (layerConfig[_ly] > boardCoordCount) layerConfig[_ly] = boardCoordCount;
+    }
+  } else {
+    layerConfig = rawConfig;
+  }
+
+  // 异形棋盘：按到中心距离排序，上层填中心、边缘露底层 → 形状轮廓清晰
+  // 标准棋盘：共用打乱顺序
+  var centerSorted;
+  if (isShaped) {
+    // 计算形状中心点
+    var sumR = 0, sumC = 0;
+    for (var _ci = 0; _ci < boardCoordCount; _ci++) { sumR += boardCoords[_ci].row; sumC += boardCoords[_ci].col; }
+    var cenR = sumR / boardCoordCount, cenC = sumC / boardCoordCount;
+    // 按到中心距离排序（近→远），上层取前面（中心），底层取全部
+    centerSorted = [...boardCoords].sort(function(a, b) {
+      var da = (a.row - cenR)*(a.row - cenR) + (a.col - cenC)*(a.col - cenC);
+      var db = (b.row - cenR)*(b.row - cenR) + (b.col - cenC)*(b.col - cenC);
+      return da - db;
+    });
+  }
+  const masterShuffle = shuffleArr([...boardCoords], rng);
+
+  const slots = [];
+  for (var layer = 0; layer <= maxLayer; layer++) {
+    var count = layerConfig[layer] || 0;
+    if (isShaped && layer === 0) {
+      // 底座 layer 0：填满所有坐标 → 形状轮廓完整
+      for (var _ci2 = 0; _ci2 < boardCoordCount; _ci2++) {
+        var coordFull = boardCoords[_ci2];
+        slots.push({ row: coordFull.row, col: coordFull.col, layer: layer, zone: "default" });
+      }
+    } else if (isShaped) {
+      // 上层 layer 1..N：从中心向外取 → 中心堆叠厚、边缘只有底座 → 金字塔
+      for (var i = 0; i < count; i++) {
+        var coord = centerSorted[i];
+        slots.push({ row: coord.row, col: coord.col, layer: layer, zone: "default" });
+      }
+    } else {
+      for (var i = 0; i < count; i++) {
+        var coord = masterShuffle[i % boardCoordCount];
+        slots.push({ row: coord.row, col: coord.col, layer: layer, zone: "default" });
+      }
+    }
+  }
+  return { slots: slots, maxLayer: maxLayer };
+}
+
+// ─── 压盖判断工具（生成期使用，基于网格坐标） ──────────────────
+function isCovered(card, cards) {
+  for (var _ci = 0; _ci < cards.length; _ci++) {
+    var other = cards[_ci];
+    if (other === card) continue;
+    if (other.layer <= card.layer) continue;
+    if (Math.abs(other.row - card.row) < 1 && Math.abs(other.col - card.col) < 1) return true;
+  }
+  return false;
+}
+
+function getClickable(cards) {
+  return cards.filter(function(c) { return !isCovered(c, cards); });
+}
+
+// ─── 牌型池构建（适配 getCardPoolByLevel） ────────────────────
+function buildTypePool(levelNum, totalSlots, rng) {
+  var types = [...new Set(getCardPoolByLevel(levelNum))];
+  if (types.length === 0) return [];
+  var groupsNeeded = totalSlots / 3;
+  var baseGroups = Math.floor(groupsNeeded / types.length);
+  var remainder = groupsNeeded - baseGroups * types.length;
+  var shuffledTypes = shuffleArr([...types], rng);
+  var pool = [];
+  shuffledTypes.forEach(function(t, i) {
+    var groupCount = baseGroups + (i < remainder ? 1 : 0);
+    for (var g = 0; g < groupCount; g++) { pool.push(t, t, t); }
+  });
+  return pool;
+}
+
+// ─── 可用槽位获取 ──────────────────────────────────────────
+function getAvailableSlots(boardSlots, placed) {
+  var usedKeys = new Set();
+  for (var _pi = 0; _pi < placed.length; _pi++) {
+    var p = placed[_pi];
+    usedKeys.add(p.row + '_' + p.col + '_' + p.layer);
+  }
+  return boardSlots.filter(function(s) { return !usedKeys.has(s.row + '_' + s.col + '_' + s.layer); });
+}
+
+// ─── 核心：为一组3张同型牌找合法放置位置 ─────────────────────
+function findPlaceablePositions(boardSlots, placed, type, rng, pathWidth, buryThis, maxLayer) {
+  var available = getAvailableSlots(boardSlots, placed);
+  if (available.length < 3) return null;
+
+  // 按深埋/浅放排序，取前20个候选槽位
+  var sorted = [...available].sort(function(a,b) { return buryThis ? b.layer-a.layer : a.layer-b.layer; });
+  var MAX_TRIES = 20;
+  var candidatePool = sorted.slice(0, Math.min(sorted.length, 20));
+  var poolSize = Math.max(3, Math.min(pathWidth * 3, candidatePool.length));
+
+  for (var attempt = 0; attempt < MAX_TRIES; attempt++) {
+    var pool = shuffleArr(candidatePool.slice(0, poolSize), rng);
+    if (pool.length < 3) break;
+    var chosen = pool.slice(0, 3);
+
+    // 检查：3张候选牌之间是否有压盖（高层盖低层）
+    var hasClickable = false;
+    for (var _ci3 = 0; _ci3 < 3; _ci3++) {
+      var card = chosen[_ci3];
+      // 检查是否被 placed 中更高层的牌压盖
+      var coveredByPlaced = false;
+      for (var _pi = 0; _pi < placed.length; _pi++) {
+        var other = placed[_pi];
+        if (other.layer > card.layer && Math.abs(other.row - card.row) < 1 && Math.abs(other.col - card.col) < 1) {
+          coveredByPlaced = true; break;
+        }
+      }
+      if (coveredByPlaced) continue;
+      // 检查是否被同组中更高层的牌压盖
+      var coveredByGroup = false;
+      for (var _gi = 0; _gi < 3; _gi++) {
+        if (_gi === _ci3) continue;
+        var gc = chosen[_gi];
+        if (gc.layer > card.layer && Math.abs(gc.row - card.row) < 1 && Math.abs(gc.col - card.col) < 1) {
+          coveredByGroup = true; break;
+        }
+      }
+      if (!coveredByGroup) { hasClickable = true; break; }
+    }
+    if (hasClickable) return chosen;
+  }
+  return sorted.slice(0, 3); // fallback：放宽约束直接取前3个可用槽位
+}
+
+// ─── 逆向生成主体 ──────────────────────────────────────────
+function reverseGenerate(boardSlots, levelNum, diffCfg, maxLayer, rng) {
+  var buryRate = diffCfg.buryRate, pathWidth = diffCfg.pathWidth, noiseRate = diffCfg.noiseRate;
+  var typePool = buildTypePool(levelNum, boardSlots.length, rng);
+  var shuffled = shuffleArr([...typePool], rng);
+  var groups = [];
+  for (var i = 0; i < shuffled.length; i += 3) groups.push(shuffled[i]);
+
+  var placed = [];
+  for (var gi = 0; gi < groups.length; gi++) {
+    var type = groups[gi];
+    var buryThis = rng() < buryRate * (1 - gi/groups.length);
+    var positions = findPlaceablePositions(boardSlots, placed, type, rng, pathWidth, buryThis, maxLayer);
+    if (!positions || positions.length < 3) {
+      // fallback：直接取剩余可用槽位，确保恰好3张
+      var fallback = getAvailableSlots(boardSlots, placed);
+      var need = 3;
+      for (var _fi = 0; _fi < fallback.length && need > 0; _fi++) {
+        placed.push({ row: fallback[_fi].row, col: fallback[_fi].col, layer: fallback[_fi].layer, zone: fallback[_fi].zone||"default", type: type });
+        need--;
+      }
+      // 极端情况：可用槽位不足3个，使用已占槽位（不同层也算）
+      if (need > 0) {
+        for (var _fi2 = 0; _fi2 < boardSlots.length && need > 0; _fi2++) {
+          var bs = boardSlots[_fi2];
+          placed.push({ row: bs.row, col: bs.col, layer: bs.layer, zone: bs.zone||"default", type: type });
+          need--;
+        }
+      }
+    } else {
+      for (var _pi2 = 0; _pi2 < positions.length; _pi2++) {
+        placed.push({ row: positions[_pi2].row, col: positions[_pi2].col, layer: positions[_pi2].layer, zone: positions[_pi2].zone||"default", type: type });
+      }
+    }
+  }
+
+  // noiseRate 微扰：低层牌坐标随机偏移（纯视觉）
+  if (noiseRate > 0) {
+    for (var _ni = 0; _ni < placed.length; _ni++) {
+      var card = placed[_ni];
+      if (card.layer === 0 && rng() < noiseRate) {
+        card._noiseOffsetRow = (rng()-0.5)*0.2;
+        card._noiseOffsetCol = (rng()-0.5)*0.2;
+      }
+    }
+  }
+
+  return placed.map(function(card, idx) {
+    return {
+      id: idx,
+      row: card.row,
+      col: card.col,
+      layer: card.layer,
+      zone: card.zone||"default",
+      type: card.type,
+      noiseOffsetRow: card._noiseOffsetRow||0,
+      noiseOffsetCol: card._noiseOffsetCol||0,
+      removed: false,
+      inSlot: false,
+      matched: false
+    };
+  });
+}
+
+// ─── 区域规则：蓝/绿区域独立逆向生成 ─────────────────────────
+function reverseGenerateForArea(boardSlots, levelNum, diffCfg, maxLayer, rng, areaTag) {
+  // 区域牌池：每种牌恰好3张，区域独立
+  var uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+  var areaCount = Math.floor(boardSlots.length / 3) * 3;
+  if (areaCount === 0) return [];
+  var typeCount = areaCount / 3;
+  var pickedTypes = shuffleArr([...uniqueTypes], rng).slice(0, typeCount);
+  var areaPool = [];
+  for (var _ti = 0; _ti < pickedTypes.length; _ti++) {
+    for (var _ri = 0; _ri < 3; _ri++) areaPool.push(pickedTypes[_ti]);
+  }
+  var shuffled = shuffleCardPool(areaPool, rng);
+
+  // 截取到 areaCount 后分组
+  var groups = [];
+  for (var i = 0; i < areaCount; i += 3) groups.push(shuffled[i]);
+
+  var buryRate = diffCfg.buryRate, pathWidth = diffCfg.pathWidth, noiseRate = diffCfg.noiseRate;
+  var placed = [];
+  for (var gi = 0; gi < groups.length; gi++) {
+    var type = groups[gi];
+    var buryThis = rng() < buryRate * (1 - gi/groups.length);
+    var positions = findPlaceablePositions(boardSlots, placed, type, rng, pathWidth, buryThis, maxLayer);
+    if (!positions || positions.length < 3) {
+      var fallback = getAvailableSlots(boardSlots, placed);
+      var need = 3;
+      for (var _fi2 = 0; _fi2 < fallback.length && need > 0; _fi2++) {
+        placed.push({ row: fallback[_fi2].row, col: fallback[_fi2].col, layer: fallback[_fi2].layer, zone: fallback[_fi2].zone||"default", type: type });
+        need--;
+      }
+      if (need > 0) {
+        for (var _bsi = 0; _bsi < boardSlots.length && need > 0; _bsi++) {
+          var bs = boardSlots[_bsi];
+          placed.push({ row: bs.row, col: bs.col, layer: bs.layer, zone: bs.zone||"default", type: type });
+          need--;
+        }
+      }
+    } else {
+      for (var _pi3 = 0; _pi3 < positions.length; _pi3++) {
+        placed.push({ row: positions[_pi3].row, col: positions[_pi3].col, layer: positions[_pi3].layer, zone: positions[_pi3].zone||"default", type: type });
+      }
+    }
+  }
+
+  // noiseRate 微扰
+  if (noiseRate > 0) {
+    for (var _ni2 = 0; _ni2 < placed.length; _ni2++) {
+      var card = placed[_ni2];
+      if (card.layer === 0 && rng() < noiseRate) {
+        card._noiseOffsetRow = (rng()-0.5)*0.2;
+        card._noiseOffsetCol = (rng()-0.5)*0.2;
+      }
+    }
+  }
+
+  return placed.map(function(card, idx) {
+    return {
+      id: idx,
+      row: card.row,
+      col: card.col,
+      layer: card.layer,
+      zone: card.zone||"default",
+      type: card.type + '__' + areaTag,
+      visualType: card.type,
+      areaTag: areaTag,
+      noiseOffsetRow: card._noiseOffsetRow||0,
+      noiseOffsetCol: card._noiseOffsetCol||0,
+      removed: false,
+      inSlot: false,
+      matched: false
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+
 function generateBoard(levelNum) {
   const lv = getLevelConfig(levelNum);
   if (!lv) return [];
-  const {
-    boardType
-  } = lv;
   const rng = Math.random;
-  console.log('[generateBoard] 关卡=' + levelNum + ', boardType=' + boardType + ', isShaped=' + (boardType !== BOARD_TYPES.standard));
+  const diffCfg = getDifficultyConfig(levelNum);
 
-  // 1. 根据棋盘类型获取坐标白名单
-  const boardCoords = getBoardCoordsByType(boardType);
-  console.log('[generateBoard] 坐标数=' + boardCoords.length + ', 坐标类型=' + (boardType === BOARD_TYPES.love ? '爱心' : boardType === BOARD_TYPES.petal ? '花瓣' : boardType === BOARD_TYPES.hourglass ? '沙漏' : boardType));
-  const boardCoordCount = boardCoords.length;
+  // ① 槽位骨架（逻辑与原版一致，改为调用抽出的函数）
+  const { slots, maxLayer } = buildSlotsForLevel(levelNum, rng);
 
-  // 2. 获取层配置和卡牌池
-  const baseLayerConfig = getLayerConfig(levelNum);
-  // 限制总卡牌数量为3的倍数，且不超过异形棋盘有效格数
-  const totalCards = getMaxCardsForBoard(boardType, boardCoordCount, levelNum);
-
-  // 按比例分配各层卡牌数量（确保总和等于总卡牌数）
-  const layerKeysAll = Object.keys(baseLayerConfig).map(Number).sort((a, b) => a - b);
-  const totalBase = layerKeysAll.reduce((sum, k) => sum + baseLayerConfig[k], 0);
-  const layerConfig = {};
-  let allocated = 0;
-  layerKeysAll.forEach((k, i) => {
-    if (i === layerKeysAll.length - 1) {
-      layerConfig[k] = totalCards - allocated;
-    } else {
-      layerConfig[k] = Math.floor(baseLayerConfig[k] * totalCards / totalBase);
-      allocated += layerConfig[k];
+  // ② 逆向生成 ← 天然 100% 有解
+  let result;
+  if (lv.areaRuleEnable) {
+    // 区域规则关卡：蓝/绿区域各自独立逆向生成
+    var blueSlots = slots.filter(function(s) { return s.col <= 4; });
+    var greenSlots = slots.filter(function(s) { return s.col > 4; });
+    var blueResult = reverseGenerateForArea(blueSlots, levelNum, diffCfg, maxLayer, rng, 'blue');
+    var greenResult = reverseGenerateForArea(greenSlots, levelNum, diffCfg, maxLayer, rng, 'green');
+    result = [];
+    for (var _bi = 0; _bi < blueResult.length; _bi++) {
+      var bc = blueResult[_bi]; bc.id = result.length; result.push(bc);
     }
-  });
-
-  // 3. 生成多层槽位（动态适配 LAYER_CONFIG 层数）
-  // - 异形棋盘：打乱坐标顺序后分配，让部分坐标留空，形成清晰形状轮廓
-  // - 标准棋盘：随机选取，保持随机分布
-  const allSlots = [];
-  const isShapedBoard = boardType !== BOARD_TYPES.standard;
-  let coordIndex = 0;
-  const maxLayer = layerKeysAll.length > 0 ? layerKeysAll[layerKeysAll.length - 1] : 2;
-  // 异形棋盘：每层独立打乱坐标顺序，避免全部坐标都填满导致形状不可见
-  const shuffledByLayer = {};
-  if (isShapedBoard) {
-    for (let layer = 0; layer <= maxLayer; layer++) {
-      shuffledByLayer[layer] = shuffleArr([...boardCoords], rng);
+    for (var _gi2 = 0; _gi2 < greenResult.length; _gi2++) {
+      var gc = greenResult[_gi2]; gc.id = result.length; result.push(gc);
     }
-  }
-  for (let layer = 0; layer <= maxLayer; layer++) {
-    const count = layerConfig[layer] || 0;
-    const layerShuffled = isShapedBoard ? shuffledByLayer[layer] : null;
-    for (let i = 0; i < count; i++) {
-      let coord;
-      if (isShapedBoard) {
-        // 异形棋盘：从打乱的坐标中取，取完则循环
-        coord = layerShuffled[i % boardCoordCount];
-      } else {
-        // 标准棋盘：随机选取
-        coord = boardCoords[Math.floor(rng() * boardCoordCount)];
-      }
-      allSlots.push({
-        row: coord.row,
-        col: coord.col,
-        layer: layer,
-        zone: 'default'
-      });
-    }
+  } else {
+    result = reverseGenerate(slots, levelNum, diffCfg, maxLayer, rng);
   }
 
-  // 5. 分配类型
-  const uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+  // ③ 添加干扰牌
+  result = addInterferenceCards(result, lv, rng);
 
-  // areaRuleEnable 时：蓝/绿区域各自独立牌池，每区域每种牌恰好3张，类型带后缀天然隔离
-  function assignCardsForSlots(slots, lvConfig, rand) {
-    if (lvConfig.areaRuleEnable) {
-      const cards = [];
-      [{
-        tag: 'blue',
-        test: c => c <= 4
-      }, {
-        tag: 'green',
-        test: c => c > 4
-      }].forEach(({
-        tag,
-        test
-      }) => {
-        const areaSlots = slots.filter(s => test(s.col));
-        const areaCount = Math.floor(areaSlots.length / 3) * 3; // 保证3的倍数
-        const typeCount = areaCount / 3;
-        const pickedTypes = shuffleArr([...uniqueTypes], rand).slice(0, typeCount);
-        const areaPool = [];
-        pickedTypes.forEach(t => {
-          for (let i = 0; i < 3; i++) areaPool.push(t);
-        });
-        const shuffled = shuffleCardPool(areaPool, rand);
-        for (let i = 0; i < areaCount; i++) {
-          const s = areaSlots[i];
-          const baseType = shuffled[i];
-          cards.push({
-            id: cards.length,
-            type: baseType + '__' + tag,
-            visualType: baseType,
-            col: s.col,
-            row: s.row,
-            layer: s.layer,
-            zone: s.zone || 'default',
-            areaTag: tag,
-            removed: false,
-            inSlot: false,
-            matched: false
-          });
-        }
-      });
-      return cards;
-    } else {
-      return assignTypesFromPool(slots, levelNum, rand);
-    }
-  }
-
-  // 4. 生成可解牌局（重试直到可解或达到上限）
-  // 异形棋盘：每层独立打乱坐标，产生足够多样性
-  // 标准棋盘：多次随机尝试
-  const MAX_BOARD_ATTEMPTS = isShapedBoard ? 24 : 12;
-  let attempts = 0;
-  let result = null;
-  while (attempts < MAX_BOARD_ATTEMPTS) {
-    const trySlots = [];
-    // 每层独立打乱坐标顺序
-    const tryShuffled = {};
-    if (isShapedBoard) {
-      for (let layer = 0; layer <= maxLayer; layer++) {
-        tryShuffled[layer] = shuffleArr([...boardCoords], rng);
-      }
-    }
-    for (let layer = 0; layer <= maxLayer; layer++) {
-      const count = layerConfig[layer] || 0;
-      const layerShuffled = isShapedBoard ? tryShuffled[layer] : null;
-      for (let i = 0; i < count; i++) {
-        let coord;
-        if (isShapedBoard) {
-          coord = layerShuffled[i % boardCoordCount];
-        } else {
-          coord = boardCoords[Math.floor(rng() * boardCoordCount)];
-        }
-        trySlots.push({
-          row: coord.row,
-          col: coord.col,
-          layer: layer,
-          zone: 'default'
-        });
-      }
-    }
-    const tryCards = addInterferenceCards(assignCardsForSlots(trySlots, lv, rng), lv, rng);
-    if (isSolvable(tryCards)) {
-      result = tryCards;
-      break;
-    }
-    attempts++;
-  }
-  if (!result) {
-    // 兜底：仍用最后一次分配（理论上极少触发）
-    result = addInterferenceCards(assignCardsForSlots(allSlots, lv, rng), lv, rng);
-    console.warn(`[generateBoard] 关卡${levelNum} 在${MAX_BOARD_ATTEMPTS}次内未找到可解布局，已使用末次生成`);
-  }
-  console.log('[generateBoard] 结果: ' + result.length + '张牌, 层数=' + (maxLayer + 1) + ', 坐标样本=' + [...new Set(result.slice(0, 10).map(c => c.row + ',' + c.col))].join('|'));
-
-  // P0: 构建层样式映射（层级只影响 z-index 和阴影，不改变坐标）
-  // 动态生成，适配任意层数（包括未来5-6层及以上）
+  // ④ 构建层样式映射（动态生成，适配任意层数）
   {
-    const totalLayers = maxLayer + 1;
-    const offsetEntries = [];
-    for (let l = 0; l < totalLayers; l++) {
+    var totalLayers = maxLayer + 1;
+    var offsetEntries = [];
+    for (var l = 0; l < totalLayers; l++) {
       offsetEntries.push({
         layer: l,
         zIndex: (l + 1) * 10,
@@ -4251,48 +4592,38 @@ function generateBoard(levelNum) {
     buildLayerOffsetMap(offsetEntries);
   }
 
-  // P0: 使用 BoardGenerator 进行配额验证（兜底检查）
+  // ⑤ 逆向生成天然保证有解，不需要 isSolvable 贪心验证（会产生假阴性）
+
+  // P0: 使用 BoardGenerator 进行配额验证（排除干扰牌类型）
   if (typeof BoardGenerator !== 'undefined' && result) {
-    const typeIds = result.map(function (c) {
-      return c.type;
-    });
-    const uniqueTypes = [...new Set(typeIds)];
-    const typeToIdx = {};
-    uniqueTypes.forEach(function (t, i) {
-      typeToIdx[t] = i;
-    });
-    const typeIndices = typeIds.map(function (t) {
-      return typeToIdx[t];
-    });
-    if (!BoardGenerator.isSolvable(typeIndices, uniqueTypes.length)) {
-      console.warn('[BoardGen] P0配额验证失败，触发配额修正');
-      // 配额修正：确保每种类型是3的倍数
-      const counts = {};
-      typeIds.forEach(function (t) {
-        counts[t] = (counts[t] || 0) + 1;
-      });
-      Object.keys(counts).forEach(function (t) {
-        if (counts[t] % 3 !== 0) {
-          console.warn('[BoardGen] 类型 ' + t + ' 数量=' + counts[t] + ' 不是3的倍数!');
-        }
-      });
+    var typeIds = result.map(function(c) { return c.type; }).filter(function(t) { return !t.startsWith('__interference_'); });
+    if (typeIds.length > 0) {
+      var uniqueTypes = [...new Set(typeIds)];
+      var typeToIdx = {};
+      uniqueTypes.forEach(function(t, i) { typeToIdx[t] = i; });
+      var typeIndices = typeIds.map(function(t) { return typeToIdx[t]; });
+      if (!BoardGenerator.isSolvable(typeIndices, uniqueTypes.length)) {
+        console.warn('[BoardGen] P0配额验证失败，触发配额修正');
+        var counts = {};
+        typeIds.forEach(function(t) { counts[t] = (counts[t] || 0) + 1; });
+        Object.keys(counts).forEach(function(t) {
+          if (counts[t] % 3 !== 0) console.warn('[BoardGen] 类型 ' + t + ' 数量=' + counts[t] + ' 不是3的倍数!');
+        });
+      }
     }
   }
 
   // P1: 使用 BoardShapes 验证棋盘形状合法性
   if (typeof BoardShapes !== 'undefined' && result) {
-    const shapeKey = BoardShapes.getShapeKeyForLevel(levelNum);
-    const validCells = BoardShapes.getBoardShape(shapeKey);
-    const validSet = new Set(validCells.map(function (c) {
-      return c.row + ',' + c.col;
-    }));
-    const outOfBounds = result.filter(function (card) {
-      return !validSet.has(card.row + ',' + card.col);
-    });
+    var shapeKey = BoardShapes.getShapeKeyForLevel(levelNum);
+    var validCells = BoardShapes.getBoardShape(shapeKey);
+    var validSet = new Set(validCells.map(function(c) { return c.row + ',' + c.col; }));
+    var outOfBounds = result.filter(function(card) { return !validSet.has(card.row + ',' + card.col); });
     if (outOfBounds.length > 0) {
       console.warn('[BoardGen] P1形状验证: ' + outOfBounds.length + ' 张牌超出' + shapeKey + '棋盘边界');
     }
   }
+
   return result;
 }
 
@@ -5622,9 +5953,9 @@ function CollectionSlot({
 }) {
   const count = maxSlots;
   const [slotAnim, setSlotAnim] = useState(null);
-  const H = compact ? TILE_H : TILE_H + 38;
-  const slotW = compact ? TILE_W - 10 : TILE_W;
-  const slotH = compact ? TILE_H - 10 : TILE_H + 10;
+  const H = TILE_H;
+  const slotW = TILE_W;
+  const slotH = TILE_H;
 
   // P5: 检测新卡牌入场动画
   useEffect(() => {
@@ -9829,12 +10160,16 @@ function Game() {
       width: '100%',
       height: 42,
       borderRadius: 12,
-      background: isLightMode ? 'linear-gradient(180deg, #FFE8A1 0%, #FFD979 100%)' : 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-      border: isLightMode ? '2px solid #FFBB54' : 'none',
+      background: isLightMode ? 'linear-gradient(180deg, #FFB347 0%, #FF8C00 50%, #E67E00 100%)' : '#1a1a2e',
+      border: isLightMode ? '2px solid #FF9F43' : '2px solid #FD9644',
       cursor: 'pointer',
       fontSize: 15,
       fontWeight: 700,
-      color: isLightMode ? '#AA5A2A' : '#fff'
+      color: isLightMode ? '#fff' : '#FD9644',
+      boxShadow: isLightMode ? '0 4px 0 #CC6600, 0 6px 16px rgba(255,140,0,0.4), inset 0 2px 0 rgba(255,255,255,0.25)' : '0 0 16px rgba(253,150,68,0.5), 0 0 32px rgba(253,150,68,0.25), inset 0 0 8px rgba(253,150,68,0.15)',
+      textShadow: isLightMode ? '0 1px 2px rgba(0,0,0,0.2)' : '0 0 10px rgba(253,150,68,0.8), 0 0 20px rgba(253,150,68,0.4)',
+      animation: isLightMode ? undefined : 'orangeBorderGlow 2s ease-in-out infinite',
+      outline: 'none'
     }
   }, "\u8FD4\u56DE\u5927\u5385"))), /*#__PURE__*/React.createElement("div", {
     style: {
