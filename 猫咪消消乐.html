@@ -191,6 +191,7 @@
 <script src="api.js"></script>
 <script src="utils/boardGenerator.js"></script>
 <script src="utils/boardShapes.js"></script>
+<script src="utils/boardConstants.js"></script>
 <script type="text/javascript">const __DEV__ = new URLSearchParams(window.location.search).has('dev');
 const {
   useState,
@@ -738,10 +739,15 @@ async function shareContent(_a) {
 /* ═══════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════ */
-const TILE_W = 48; // 等比例缩小4%，适配多层叠加
-const TILE_H = 48;
-const SAFE_ZONE = 32; // 预留大偏移量空间（偏移24px + 模糊12px = 36px，取32px）
-const TILE_GAP = 0; // 牌间距
+// P2: 50px 牌 + 顶点对中偏移 25px + 格子 50px
+const TILE_W = (typeof BoardConstants !== 'undefined' ? BoardConstants.TW : 50);
+const TILE_H = (typeof BoardConstants !== 'undefined' ? BoardConstants.TH : 50);
+var HW = (typeof BoardConstants !== 'undefined' ? BoardConstants.HW : 25);
+var HH = (typeof BoardConstants !== 'undefined' ? BoardConstants.HH : 25);
+var CELL_W = (typeof BoardConstants !== 'undefined' ? BoardConstants.CELL_W : 50);
+var CELL_H = (typeof BoardConstants !== 'undefined' ? BoardConstants.CELL_H : 50);
+var SAFE_ZONE = (typeof BoardConstants !== 'undefined' ? BoardConstants.BOARD_MARGIN : 6);
+const TILE_GAP = 0;
 const SLOT_CAPACITY = 7;
 
 // ═══════════════════════════════════════
@@ -822,7 +828,7 @@ function getPileTotalCards(levelNum) {
   return config.count * avgCards;
 }
 const MATCH_COUNT = 3;
-const HALF = 25; // 层间偏移 = tileSize / 2（P0: 仅用于视觉阴影深度计算，不影响坐标）
+const HALF = (typeof BoardConstants !== 'undefined' ? BoardConstants.HW : 25);
 
 // ═══════════════════════════════════════
 // 棋盘坐标白名单（6行8列，1-based索引）
@@ -1427,8 +1433,11 @@ const BUTTERFLY_BOARD_COORDS = [
   row: 5,
   col: 7
 },
-// 第6行：{6,3}, {6,4}, {6,5}, {6,6}（与 BoardShapes 保持一致）
+// 第6行：{6,1}, {6,3}, {6,4}, {6,5}, {6,6}, {6,8}
 {
+  row: 6,
+  col: 1
+}, {
   row: 6,
   col: 3
 }, {
@@ -1440,6 +1449,9 @@ const BUTTERFLY_BOARD_COORDS = [
 }, {
   row: 6,
   col: 6
+}, {
+  row: 6,
+  col: 8
 }];
 const BUTTERFLY_BOARD_COORDS_SET = new Set(BUTTERFLY_BOARD_COORDS.map(c => `${c.row},${c.col}`));
 
@@ -2854,87 +2866,57 @@ function getDisplayLevel(levelNum) {
   return levelNum;
 }
 
-// P0: 计算棋盘像素尺寸（用于 canvas / board 容器）
-// 使用1-based坐标：row 1-6, col 1-8
-// 坐标由行列号唯一确定（与层级无关），包含安全区 + 间距
-// P1: 半偏移网格 — 奇数行(0-based)向右偏移半格
-function getBoardBounds(layers) {
-  let maxCol = 1,
-    maxRow = 1;
-  BOARD_COORDS.forEach(c => {
-    if (c.col > maxCol) maxCol = c.col;
-    if (c.row > maxRow) maxRow = c.row;
-  });
-  // P1: 宽度需额外留出半格偏移空间（奇数行最右列偏移 TILE_W/2）
-  const halfOffset = (TILE_W + TILE_GAP) / 2;
-  const boardW = SAFE_ZONE * 2 + (maxCol - 1) * (TILE_W + TILE_GAP) + TILE_W + halfOffset - TILE_GAP;
-  const boardH = SAFE_ZONE * 2 + maxRow * (TILE_H + TILE_GAP) - TILE_GAP;
-  return {
-    boardW,
-    boardH
-  };
+// P2: 棋盘尺寸 — CELL_W×CELL_H 格子，8×6，收缩保证不溢出
+function getBoardBounds(layers, boardType) {
+  var boardW = SAFE_ZONE * 2 + (BOARD_COLS - 1) * CELL_W + TILE_W;
+  var boardH = SAFE_ZONE * 2 + (BOARD_ROWS - 1) * CELL_H + TILE_H + 6;
+  return { boardW, boardH };
 }
 
 // P0: Tile 像素坐标（1-based坐标系统：row 1-6, col 1-8）
-// 坐标由行列号唯一确定，与层级无关！
-// P1: 半偏移规整网格 — 奇数行(0-based: row-1 ∈ {1,3,5})向右偏移半格
+// P2: 顶点对中 — 格子 CELL_W + 偏移 HW
 function tileX(tile) {
-  const rowOffset = (tile.row - 1) % 2 === 1 ? (TILE_W + TILE_GAP) / 2 : 0;
-  return SAFE_ZONE + (tile.col - 1) * (TILE_W + TILE_GAP) + rowOffset;
+  if (tile.x != null) return tile.x;
+  return SAFE_ZONE + (tile.col - 1) * CELL_W + tile.layer * HW;
 }
 function tileY(tile) {
-  return SAFE_ZONE + (tile.row - 1) * (TILE_H + TILE_GAP);
+  if (tile.y != null) return tile.y;
+  return SAFE_ZONE + (tile.row - 1) * CELL_H + tile.layer * HH;
 }
 
-// P0: 层级只影响 z-index 和 box-shadow，不改变任何物理位置
+// P2: 微弱阴影
 let _layerOffsetMap = {};
 function getLayerOffset(layer) {
   const offset = _layerOffsetMap[layer];
   return {
     zIndex: offset?.zIndex ?? (layer + 1) * 10,
-    shadowX: offset?.shadowX ?? layer * 3,
-    shadowY: offset?.shadowY ?? layer * 5,
-    shadowBlur: offset?.shadowBlur ?? 4 + layer * 2,
-    shadowAlpha: offset?.shadowAlpha ?? 0.12 + layer * 0.08
+    shadowX: offset?.shadowX ?? layer * 1,
+    shadowY: offset?.shadowY ?? layer * 2,
+    shadowBlur: offset?.shadowBlur ?? 2 + layer * 1,
+    shadowAlpha: offset?.shadowAlpha ?? 0.08 + layer * 0.04
   };
 }
 function buildLayerOffsetMap(layers) {
   _layerOffsetMap = {};
   layers.forEach(la => {
     const layer = la.layer;
-    // 羊了个羊风格：每层偏移量足够大，次顶层牌清晰可见
     _layerOffsetMap[layer] = {
       zIndex: (layer + 1) * 10,
-      shadowX: layer * 3,
-      // 每层右移3px
-      shadowY: layer * 5,
-      // 每层下移5px
-      shadowBlur: 4 + layer * 2,
-      // 模糊适中，不超出SAFE_ZONE
-      shadowAlpha: 0.12 + layer * 0.08
+      shadowX: layer * 1,
+      shadowY: layer * 2,
+      shadowBlur: 2 + layer * 1,
+      shadowAlpha: 0.08 + layer * 0.04
     };
   });
 }
 
-/** P0+P1: 获取牌的完整视觉样式（坐标 + 层级样式 + 半偏移） */
 function getTileStyle(row, col, layer) {
-  // P1: 半偏移网格 — 奇数行(0-based)向右偏移半格
-  const rowOffset = (row - 1) % 2 === 1 ? (TILE_W + TILE_GAP) / 2 : 0;
-  const x = SAFE_ZONE + (col - 1) * (TILE_W + TILE_GAP) + rowOffset;
-  const y = SAFE_ZONE + (row - 1) * (TILE_H + TILE_GAP);
+  const x = SAFE_ZONE + (col - 1) * CELL_W + layer * HW;
+  const y = SAFE_ZONE + (row - 1) * CELL_H + layer * HH;
   const zIndex = (layer + 1) * 10;
-  // 羊了个羊风格：大偏移量，层叠清晰可见
-  const sx = layer * 3;
-  const sy = layer * 5;
-  const blur = 4 + layer * 2; // 高层模糊适中，避免溢出边界
-  const alpha = 0.12 + layer * 0.08;
+  const sx = layer * 1, sy = layer * 2, blur = 2 + layer, alpha = 0.08 + layer * 0.04;
   const boxShadow = sx + 'px ' + sy + 'px ' + blur + 'px rgba(0,0,0,' + alpha + ')';
-  return {
-    x,
-    y,
-    zIndex,
-    boxShadow
-  };
+  return { x, y, zIndex, boxShadow };
 }
 
 /** P1: 获取指定行的最大列数（半偏移网格中奇数行少1列） */
@@ -3530,6 +3512,10 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     if (isDisguiseOnBoard && tile.disguisedAs) {
       imgKey = tile.disguisedAs; // 未暴露：渲染伪装层图片
     }
+    // 干扰牌有自己的贴图，优先使用
+    if (tile.isInterference && cat && cat.img) {
+      imgKey = cat.id;
+    }
     // 揭穿后(isDisguiseShell=false, revealed=true)直接用tile.type渲染，无需特殊处理
     const imgData = _tileImages[imgKey];
     // 检查是否是真正的Image对象且已加载完成
@@ -3560,8 +3546,21 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.fillText(fallbackText, x + TILE_W / 2, y + TILE_H / 2);
     }
 
-    // 边框
-    ctx.strokeStyle = isHighlighted ? '#FFD700' : isInSlot ? 'rgba(108,92,231,0.3)' : isBlocked ? 'rgba(255,255,255,' + Math.max(0.02, 0.12 - overlayAlpha * 0.5).toFixed(2) + ')' : (effectiveCat.color || cat.color) + '80';
+    // 边框 — 干扰牌保持自身颜色，波斯双域用区域色，普通牌用 blockedCount 渐变色
+    var lyrBorderColor;
+    if (tile.areaTag) {
+      lyrBorderColor = tile.areaTag === 'blue' ? '#1677FF' : '#00B42A';
+    } else if (tile.isInterference) {
+      lyrBorderColor = (effectiveCat.color || cat.color);
+    } else if (typeof BoardConstants !== 'undefined') {
+      lyrBorderColor = BoardConstants.getLayerBorderColor(blockedCount);
+    } else {
+      lyrBorderColor = (effectiveCat.color || cat.color);
+    }
+    ctx.strokeStyle = isHighlighted ? '#FFD700'
+      : isInSlot ? (tile.areaTag ? lyrBorderColor + '80' : 'rgba(108,92,231,0.3)')
+      : isBlocked ? lyrBorderColor + '60'
+      : lyrBorderColor;
     ctx.lineWidth = isHighlighted ? 3 : 2.5;
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.stroke();
@@ -4249,26 +4248,48 @@ function buildSlotsForLevel(levelNum, rng) {
 
   var layerConfig;
   if (isShaped) {
-    // 金字塔：layer 0 底座填满全部坐标，层号越大牌越少（逐层收窄）
+    // P2: 异形优先级 — L0 铺满 > L2 铺满 > L4 铺满 > 其余层权重
+    function getLayerCap(l) {
+      var mc = BOARD_COLS - l, mr = BOARD_ROWS - l;
+      return boardCoords.filter(function(c) { return c.col <= mc && c.row <= mr; }).length;
+    }
     layerConfig = {};
     layerConfig[0] = boardCoordCount;
     var upperTotal = totalCards - boardCoordCount;
     if (upperTotal < 0) upperTotal = 0;
-    var upperLayers = maxLayer; // 层 1..maxLayer
-    // 权重：layer 1 权重=maxLayer, layer 2 权重=maxLayer-1, ... → 逐层递减
-    var totalWeight = 0;
-    for (var _lw = 0; _lw < upperLayers; _lw++) totalWeight += (maxLayer - _lw);
-    var upperAllocated = 0;
-    for (var _ly = 1; _ly <= upperLayers; _ly++) {
-      var w = maxLayer - _ly + 1;
-      if (_ly === upperLayers) {
-        layerConfig[_ly] = upperTotal - upperAllocated;
-      } else {
-        layerConfig[_ly] = Math.floor(upperTotal * w / totalWeight);
-        upperAllocated += layerConfig[_ly];
+    var upperLayers = maxLayer;
+    var priorityLayers = [];
+    if (upperLayers >= 2) priorityLayers.push(2);
+    if (upperLayers >= 4) priorityLayers.push(4);
+    for (var _pi = 0; _pi < priorityLayers.length && upperTotal > 0; _pi++) {
+      var ply = priorityLayers[_pi];
+      var cap = getLayerCap(ply);
+      layerConfig[ply] = Math.min(cap, upperTotal);
+      upperTotal -= layerConfig[ply];
+    }
+    if (upperTotal > 0) {
+      var otherLayers = [];
+      for (var _ly = 1; _ly <= upperLayers; _ly++) {
+        if (_ly === 2 || _ly === 4) continue;
+        otherLayers.push(_ly);
       }
-      // 安全兜底：上层牌数不超过底座坐标数
-      if (layerConfig[_ly] > boardCoordCount) layerConfig[_ly] = boardCoordCount;
+      var totalWeight = 0;
+      for (var _oi = 0; _oi < otherLayers.length; _oi++) totalWeight += (maxLayer - otherLayers[_oi] + 1);
+      var upperAllocated = 0;
+      for (var _oi2 = 0; _oi2 < otherLayers.length; _oi2++) {
+        var _ly2 = otherLayers[_oi2];
+        var w = maxLayer - _ly2 + 1;
+        if (_oi2 === otherLayers.length - 1) {
+          layerConfig[_ly2] = upperTotal - upperAllocated;
+        } else {
+          layerConfig[_ly2] = Math.floor(upperTotal * w / totalWeight);
+          upperAllocated += layerConfig[_ly2];
+        }
+        if (layerConfig[_ly2] > boardCoordCount) layerConfig[_ly2] = boardCoordCount;
+      }
+    }
+    for (var _ly3 = 1; _ly3 <= upperLayers; _ly3++) {
+      if (!(_ly3 in layerConfig)) layerConfig[_ly3] = 0;
     }
   } else {
     layerConfig = rawConfig;
@@ -4295,20 +4316,69 @@ function buildSlotsForLevel(levelNum, rng) {
   for (var layer = 0; layer <= maxLayer; layer++) {
     var count = layerConfig[layer] || 0;
     if (isShaped && layer === 0) {
-      // 底座 layer 0：填满所有坐标 → 形状轮廓完整
+      // 底座 layer 0：填满所有坐标，波斯双域标记蓝/绿 zone
+      var isPersiaBase = boardType === BOARD_TYPES.persia;
       for (var _ci2 = 0; _ci2 < boardCoordCount; _ci2++) {
         var coordFull = boardCoords[_ci2];
-        slots.push({ row: coordFull.row, col: coordFull.col, layer: layer, zone: "default" });
+        slots.push({ row: coordFull.row, col: coordFull.col, layer: layer, zone: isPersiaBase ? (coordFull.col <= 3 ? 'blue' : 'green') : 'default' });
+      }
+    } else if (boardType === BOARD_TYPES.persia) {
+      // P2: 波斯双域 — 第4列空白，左区 col≤(6-L)/2 不跨越，右区 col≥5
+      var maxColLeft = Math.floor((6 - layer) / 2);
+      var maxColP = BOARD_COLS - layer;
+      var maxRowP = BOARD_ROWS - layer;
+      if (layer === 1) {
+        var l1Cand = boardCoords.filter(function(c) {
+          return (c.col <= maxColLeft && c.row >= 2 && c.row <= 5 && c.row <= maxRowP) ||
+                 (c.col >= 5 && c.col <= maxColP && c.row <= maxRowP);
+        });
+        shuffleArr(l1Cand, rng);
+        for (var i = 0; i < count && i < l1Cand.length; i++) {
+          var c = l1Cand[i];
+          slots.push({ row: c.row, col: c.col, layer: layer, zone: c.col <= 3 ? 'blue' : 'green' });
+        }
+      } else {
+        var lnCand = boardCoords.filter(function(c) {
+          return (c.col <= maxColLeft || (c.col >= 5 && c.col <= maxColP)) && c.row <= maxRowP;
+        });
+        shuffleArr(lnCand, rng);
+        for (var i = 0; i < count && i < lnCand.length; i++) {
+          var c = lnCand[i];
+          slots.push({ row: c.row, col: c.col, layer: layer, zone: c.col <= 3 ? 'blue' : 'green' });
+        }
       }
     } else if (isShaped) {
-      // 上层 layer 1..N：从中心向外取 → 中心堆叠厚、边缘只有底座 → 金字塔
-      for (var i = 0; i < count; i++) {
+      // P2: 异形上层收缩 — 中心向外 + maxCol/maxRow + 形状校验(≥3角)
+      var maxColS = BOARD_COLS - layer;
+      var maxRowS = BOARD_ROWS - layer;
+      var placedS = 0;
+      var coordsSet2 = new Set(boardCoords.map(function(c) { return c.row + ',' + c.col; }));
+      for (var i = 0; i < centerSorted.length && placedS < count; i++) {
         var coord = centerSorted[i];
+        if (coord.col > maxColS || coord.row > maxRowS) continue;
+        // 顶点对中偏移后至少3角在形状内
+        var effCol = coord.col + layer * 0.5;
+        var effRow = coord.row + layer * 0.5;
+        var c1 = Math.floor(effCol), c2 = Math.ceil(effCol);
+        var r1 = Math.floor(effRow), r2 = Math.ceil(effRow);
+        var inShape = 0;
+        if (coordsSet2.has(r1+','+c1)) inShape++;
+        if (coordsSet2.has(r1+','+c2)) inShape++;
+        if (coordsSet2.has(r2+','+c1)) inShape++;
+        if (coordsSet2.has(r2+','+c2)) inShape++;
+        if (inShape < 3) continue;
         slots.push({ row: coord.row, col: coord.col, layer: layer, zone: "default" });
+        placedS++;
       }
     } else {
+      // P2: 标准上层收缩 — 顶点对中偏移后须在棋盘内
+      var maxColL = BOARD_COLS - layer;
+      var maxRowL = BOARD_ROWS - layer;
+      var avail = boardCoords.filter(function(c) { return c.col <= maxColL && c.row <= maxRowL; });
+      if (avail.length === 0) avail = boardCoords;
+      var shuf = shuffleArr([...avail], rng);
       for (var i = 0; i < count; i++) {
-        var coord = masterShuffle[i % boardCoordCount];
+        var coord = shuf[i % avail.length];
         slots.push({ row: coord.row, col: coord.col, layer: layer, zone: "default" });
       }
     }
@@ -4468,21 +4538,13 @@ function reverseGenerate(boardSlots, levelNum, diffCfg, maxLayer, rng) {
 
 // ─── 区域规则：蓝/绿区域独立逆向生成 ─────────────────────────
 function reverseGenerateForArea(boardSlots, levelNum, diffCfg, maxLayer, rng, areaTag) {
-  // 区域牌池：每种牌恰好3张，区域独立
-  var uniqueTypes = [...new Set(getCardPoolByLevel(levelNum))];
+  // P2: 用 buildTypePool 循环复用类型，保证铺满所有槽位
   var areaCount = Math.floor(boardSlots.length / 3) * 3;
   if (areaCount === 0) return [];
-  var typeCount = areaCount / 3;
-  var pickedTypes = shuffleArr([...uniqueTypes], rng).slice(0, typeCount);
-  var areaPool = [];
-  for (var _ti = 0; _ti < pickedTypes.length; _ti++) {
-    for (var _ri = 0; _ri < 3; _ri++) areaPool.push(pickedTypes[_ti]);
-  }
-  var shuffled = shuffleCardPool(areaPool, rng);
-
-  // 截取到 areaCount 后分组
+  var typePool = buildTypePool(levelNum, areaCount, rng);
+  var shuffled = shuffleArr([...typePool], rng);
   var groups = [];
-  for (var i = 0; i < areaCount; i += 3) groups.push(shuffled[i]);
+  for (var i = 0; i < shuffled.length; i += 3) groups.push(shuffled[i]);
 
   var buryRate = diffCfg.buryRate, pathWidth = diffCfg.pathWidth, noiseRate = diffCfg.noiseRate;
   var placed = [];
@@ -5970,7 +6032,8 @@ function CollectionSlot({
     style: {
       position: 'relative',
       width: '100%',
-      height: H
+      height: H + 8,
+      padding: '4px 0'
     }
   }, showBg && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8307,7 +8370,7 @@ function Game() {
   const {
     boardW,
     boardH
-  } = getBoardBounds(levelConfig.layers);
+  } = getBoardBounds(levelConfig.layers, levelConfig.boardType);
   const boardWidth = boardW;
   const boardHeight = boardH;
   const totalTiles = tiles.length;
@@ -8789,8 +8852,9 @@ function Game() {
             // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
             const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
             if (nonDangerRemaining.length === 0) {
-              const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
-              if (slotEmpty) {
+              var pilesEmpty = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+              var slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+              if (slotEmpty && pilesEmpty) {
                 const pers = personalityEffectsRef.current || {};
                 const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
                 setScore(s => s + bonus);
@@ -8935,15 +8999,13 @@ function Game() {
           // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
           const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
           if (nonDangerRemaining.length === 0) {
-            // 完美通关加分（棋盘清空且收集槽为空）
-            const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
-            if (slotEmpty) setScore(s => s + 200);
-            setTimeout(() => {
-              if (LEVELS[currentLevel + 1]) {
-                setGameState(GAME_LEVEL_COMPLETE);
-              } else {
-                setGameState(GAME_WIN);
-              }
+            var pilesEmpty2 = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+            var slotEmpty2 = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+            if (!slotEmpty2 || !pilesEmpty2) return prev;
+            if (slotEmpty2 && pilesEmpty2) setScore(s => s + 200);
+            if (slotEmpty2 && pilesEmpty2) setTimeout(function() {
+              if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);
+              else setGameState(GAME_WIN);
             }, 300);
           }
           return prev;
@@ -8978,13 +9040,14 @@ function Game() {
         setTiles(prev => {
           const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
           if (nonBlocking.length === 0) {
-            const slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
-            if (slotEmpty) {
+            var pilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+            var slotEmpty3 = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+            if (slotEmpty3 && pilesDone) {
               const pers = personalityEffectsRef.current || {};
               const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
               setScore(s => s + bonus);
             }
-            setTimeout(() => {
+            if (slotEmpty3 && pilesDone) setTimeout(function() {
               if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);else setGameState(GAME_WIN);
             }, 300);
           }
@@ -9320,7 +9383,8 @@ function Game() {
             // 胜利判定：排除小狗牌（不消除）
             const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
             if (nonBlockingRemaining.length === 0) {
-              setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+              var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+              if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
             }
           }, 300);
           break;
@@ -9359,7 +9423,8 @@ function Game() {
             // 胜利判定：排除小狗牌（不消除）
             const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
             if (nonBlockingRemaining.length === 0) {
-              setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+              var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+              if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
             }
           }, 300);
           break;
@@ -10444,7 +10509,7 @@ function Game() {
     ref: boardContainerRef,
     style: {
       position: 'relative',
-      height: Math.min(400, Math.ceil(boardHeight * Math.min(boardScale, 1)) + 4),
+      height: Math.ceil(boardHeight * Math.min(boardScale, 1.0)) + 4,
       overflow: 'hidden',
       opacity: gameState === GAME_PLAYING ? 1 : 0
     }
@@ -10693,7 +10758,7 @@ function Game() {
       justifyContent: 'center',
       gap: 12,
       padding: '0 10px 10px',
-      marginTop: 45
+      marginTop: 25
     }
   }, [0, 1, 2].map(i => {
     const breed = skillSlots[i];

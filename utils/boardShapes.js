@@ -81,7 +81,7 @@
       { row: 4, col: 1 }, { row: 4, col: 2 }, { row: 4, col: 7 }, { row: 4, col: 8 },
       { row: 5, col: 2 }, { row: 5, col: 3 }, { row: 5, col: 4 },
       { row: 5, col: 5 }, { row: 5, col: 6 }, { row: 5, col: 7 },
-      { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 },
+      { row: 6, col: 1 }, { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 }, { row: 6, col: 8 },
     ];
   }
 
@@ -99,7 +99,7 @@
       { row: 4, col: 6 }, { row: 4, col: 7 }, { row: 4, col: 8 },
       { row: 5, col: 2 }, { row: 5, col: 3 }, { row: 5, col: 4 },
       { row: 5, col: 5 }, { row: 5, col: 6 }, { row: 5, col: 7 },
-      { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 },
+      { row: 6, col: 1 }, { row: 6, col: 3 }, { row: 6, col: 4 }, { row: 6, col: 5 }, { row: 6, col: 6 }, { row: 6, col: 8 },
     ];
   }
 
