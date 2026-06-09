@@ -8045,6 +8045,7 @@ const ALL_SKINS = {
     breedId: '幸运猫',
     team: '阿根廷',
     flag: '🇦🇷',
+    img: 'assets/Textures/skin/wc-lucky.webp',
     colors: ['#75AADB', '#FFFFFF'],
     price: 10,
     category: 'worldcup',
@@ -8055,6 +8056,7 @@ const ALL_SKINS = {
     breedId: '星空猫',
     team: '法国',
     flag: '🇫🇷',
+    img: 'assets/Textures/skin/wc-xing.webp',
     colors: ['#002395', '#FFFFFF'],
     price: 10,
     category: 'worldcup',
@@ -8065,6 +8067,7 @@ const ALL_SKINS = {
     breedId: '橘猫',
     team: '西班牙',
     flag: '🇪🇸',
+    img: 'assets/Textures/skin/wc-ju.webp',
     colors: ['#C60B1E', '#FFC400'],
     price: 8,
     category: 'worldcup',
@@ -8075,6 +8078,7 @@ const ALL_SKINS = {
     breedId: '黑猫',
     team: '德国',
     flag: '🇩🇪',
+    img: 'assets/Textures/skin/wc-hei.webp',
     colors: ['#000000', '#FFFFFF'],
     price: 8,
     category: 'worldcup',
@@ -8085,21 +8089,11 @@ const ALL_SKINS = {
     breedId: '三花猫',
     team: '巴西',
     flag: '🇧🇷',
+    img: 'assets/Textures/skin/wc-san.webp',
     colors: ['#009C3B', '#FEDD00'],
     price: 0,
     category: 'worldcup',
     desc: '黄绿色系 · 桑巴风格',
-    freeEvent: true
-  },
-  'worldcup:JPN:white': {
-    id: 'worldcup:JPN:white',
-    breedId: '白猫',
-    team: '日本',
-    flag: '🇯🇵',
-    colors: ['#BC002D', '#FFFFFF'],
-    price: 0,
-    category: 'worldcup',
-    desc: '白蓝色系 · 技巧流',
     freeEvent: true
   },
   'classic:sakura:orange': {
@@ -8107,20 +8101,11 @@ const ALL_SKINS = {
     breedId: '橘猫',
     name: '樱花',
     emoji: '🌸',
+    img: 'assets/Textures/skin/nor-lan.webp',
     colors: ['#FFB7B2', '#E2F0CB'],
     price: 5,
     category: 'permanent',
     desc: '樱花季限定'
-  },
-  'classic:snow:black': {
-    id: 'classic:snow:black',
-    breedId: '黑猫',
-    name: '雪夜',
-    emoji: '❄️',
-    colors: ['#2C3E50', '#ECF0F1'],
-    price: 5,
-    category: 'permanent',
-    desc: '冬夜经典'
   }
 };
 function getCatSkinKey(cat) {
@@ -8411,58 +8396,81 @@ function ShopPage({
   }, skinList.map(skin => {
     const owned = ownedSkins.includes(skin.id);
     const isEquipped = Object.values(equippedSkins).includes(skin.id);
+    const canAfford = owned || skin.price === 0 || bells >= skin.price;
+    const hasImg = !!skin.img;
     return /*#__PURE__*/React.createElement("div", {
       key: skin.id,
-      onClick: () => handleSkinClick(skin),
+      onClick: canAfford ? () => handleSkinClick(skin) : undefined,
       style: {
         borderRadius: colors === CL ? 16 : 12,
-        padding: '10px 8px',
-        background: colors === CL ? 'rgba(255,252,240,0.92)' : `linear-gradient(135deg, ${skin.colors[0]}22, ${skin.colors[1]}15)`,
         border: colors === CL ? '2px solid rgba(255,200,120,0.5)' : `1px solid ${skin.colors[0]}30`,
+        opacity: canAfford ? (owned ? 1 : 0.85) : 0.4,
+        cursor: canAfford ? 'pointer' : 'not-allowed',
+        position: 'relative',
+        overflow: 'hidden',
+        aspectRatio: '1 / 1',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 4,
-        opacity: owned ? 1 : 0.85,
-        cursor: 'pointer',
-        position: 'relative'
+        justifyContent: 'flex-end',
+        background: !hasImg ? (colors === CL ? 'rgba(255,252,240,0.92)' : `linear-gradient(135deg, ${skin.colors[0]}22, ${skin.colors[1]}15)`) : undefined
       }
-    }, owned && /*#__PURE__*/React.createElement("div", {
+    }, hasImg && /*#__PURE__*/React.createElement("img", {
+      src: skin.img,
+      alt: skin.breedId,
+      style: {
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        zIndex: 0
+      }
+    }), owned && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: 4,
         right: 4,
+        zIndex: 2,
         fontSize: 10,
         fontWeight: 700,
-        color: colors.green
+        color: '#00B894',
+        textShadow: '0 1px 3px rgba(0,0,0,0.5)'
       }
     }, isEquipped ? '装备中' : '已拥有'), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 24
-      }
-    }, skin.flag || skin.emoji), /*#__PURE__*/React.createElement("div", {
-      style: {
+        position: 'relative',
+        zIndex: 1,
         fontSize: 11,
         fontWeight: 700,
-        color: colors.ink
+        color: hasImg ? '#FFFFFF' : colors.ink,
+        textShadow: hasImg ? '0 1px 4px rgba(0,0,0,0.6)' : 'none'
       }
     }, skin.breedId), /*#__PURE__*/React.createElement("div", {
       style: {
+        position: 'relative',
+        zIndex: 1,
         fontSize: 8,
-        color: colors.sub,
+        color: hasImg ? 'rgba(255,255,255,0.85)' : colors.sub,
+        textShadow: hasImg ? '0 1px 3px rgba(0,0,0,0.5)' : 'none',
         textAlign: 'center'
       }
     }, skin.desc), /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 4,
+        position: 'relative',
+        zIndex: 1,
+        marginTop: 2,
+        marginBottom: 4,
         padding: '2px 10px',
         borderRadius: 8,
         fontSize: 9,
         fontWeight: 600,
-        background: owned ? 'rgba(0,184,148,0.15)' : skin.price === 0 ? 'rgba(0,184,148,0.15)' : 'rgba(253,150,68,0.15)',
-        color: owned ? colors.green : skin.price === 0 ? colors.green : colors.orange
+        background: owned ? 'rgba(0,184,148,0.6)' : skin.price === 0 ? 'rgba(0,184,148,0.6)' : bells < skin.price ? 'rgba(255,255,255,0.15)' : 'rgba(253,150,68,0.6)',
+        color: '#FFFFFF',
+        textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(4px)'
       }
-    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : skin.price + ' 🔔'));
+    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : bells < skin.price ? '铃铛不足' : skin.price + ' 🔔'));
   })), equipTarget && /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? 'modal-sm-spec' : 'modal-dark',
     style: {

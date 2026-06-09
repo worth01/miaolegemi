@@ -2945,71 +2945,71 @@ function getColsForRow(row) {
 }
 const CAT_TYPES = [{
   id: '猫爪印',
-  img: 'assets/Textures/card/猫爪印.b64',
+  img: 'assets/Textures/card/猫爪印.webp',
   color: '#FD9644'
 }, {
   id: '猫薄荷',
-  img: 'assets/Textures/card/猫薄荷.b64',
+  img: 'assets/Textures/card/猫薄荷.webp',
   color: '#55EFC4'
 }, {
   id: '毛线球',
-  img: 'assets/Textures/card/毛线球.b64',
+  img: 'assets/Textures/card/毛线球.webp',
   color: '#FDCB6E'
 }, {
   id: '猫罐头',
-  img: 'assets/Textures/card/猫罐头.b64',
+  img: 'assets/Textures/card/猫罐头.webp',
   color: '#74B9FF'
 }, {
   id: '猫爬架',
-  img: 'assets/Textures/card/猫爬架.b64',
+  img: 'assets/Textures/card/猫爬架.webp',
   color: '#A29BFE'
 }, {
   id: '逗猫棒',
-  img: 'assets/Textures/card/逗猫棒.b64',
+  img: 'assets/Textures/card/逗猫棒.webp',
   color: '#FD79A8'
 }, {
   id: '猫铃铛',
-  img: 'assets/Textures/card/猫铃铛.b64',
+  img: 'assets/Textures/card/猫铃铛.webp',
   color: '#6C5CE7'
 }, {
   id: '猫条',
-  img: 'assets/Textures/card/猫条.b64',
+  img: 'assets/Textures/card/猫条.webp',
   color: '#E17055'
 }, {
   id: '蝴蝶结',
-  img: 'assets/Textures/card/蝴蝶结.b64',
+  img: 'assets/Textures/card/蝴蝶结.webp',
   color: '#DFE6E9'
 }, {
   id: '猫粮碗',
-  img: 'assets/Textures/card/猫粮碗.b64',
+  img: 'assets/Textures/card/猫粮碗.webp',
   color: '#F39C12'
 }, {
   id: '饮水机',
-  img: 'assets/Textures/card/饮水机.b64',
+  img: 'assets/Textures/card/饮水机.webp',
   color: '#3498DB'
 }, {
   id: '储存桶',
-  img: 'assets/Textures/card/储存桶.b64',
+  img: 'assets/Textures/card/储存桶.webp',
   color: '#27AE60'
 }, {
   id: '猫砂盆',
-  img: 'assets/Textures/card/猫砂盆.b64',
+  img: 'assets/Textures/card/猫砂盆.webp',
   color: '#D4A574'
 }, {
   id: '宠物梳子',
-  img: 'assets/Textures/card/宠物梳子.b64',
+  img: 'assets/Textures/card/宠物梳子.webp',
   color: '#E67E22'
 }, {
   id: '猫抓板',
-  img: 'assets/Textures/card/猫抓板.b64',
+  img: 'assets/Textures/card/猫抓板.webp',
   color: '#C0392B'
 }, {
   id: '玩具鼠',
-  img: 'assets/Textures/card/玩具鼠.b64',
+  img: 'assets/Textures/card/玩具鼠.webp',
   color: '#8E44AD'
 }, {
   id: '猫窝',
-  img: 'assets/Textures/card/猫窝.b64',
+  img: 'assets/Textures/card/猫窝.webp',
   color: '#1ABC9C'
 }];
 
@@ -3068,7 +3068,7 @@ const INTERFERENCE_CARDS = {
   }
 };
 
-// 图片预加载 — 直接从 .b64 文件加载
+// 图片预加载 — 直接从 .webp 文件加载
 const _tileImages = {};
 
 // 预填充所有卡牌类型的fallback数据（颜色和占位符）
@@ -3103,16 +3103,14 @@ function preloadImages() {
   if (_imagesLoaded) return;
   _imagesLoaded = true;
   CAT_TYPES.forEach(ct => {
-    const b64Path = ct.img; // 路径已经是 .b64 文件
-    fetch(b64Path).then(r => r.text()).then(b64 => {
-      const dataUrl = 'data:image/jpeg;base64,' + b64.trim();
-      ct.img = dataUrl;
-      const img = new Image();
-      img.src = dataUrl;
-      _tileImages[ct.id] = img; // 加载完成后替换为真正的Image对象
-    }).catch(() => {
-      // fetch失败时保留fallback数据
-    });
+    const img = new Image();
+    img.src = ct.img; // 直接加载 .webp 文件
+    img.onload = () => {
+      _tileImages[ct.id] = img; // 加载成功后替换为真正的Image对象
+    };
+    img.onerror = () => {
+      // 加载失败时保留fallback数据（颜色+占位符）
+    };
   });
 }
 preloadImages();
