@@ -8485,18 +8485,19 @@ if (matchingRef.current.length > 0) return;
       var fcImg = _tileImages[fcImgKey];
       if (!fcImg || fcImg.tagName !== 'IMG' || !fcImg.complete || !fcImg.naturalWidth) return;
       var el = document.createElement('div');
-      el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;background-image:url(' + fcImg.src + ');background-size:cover;background-position:center;will-change:transform;';
+      el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;background-image:url(' + fcImg.src + ');background-size:cover;background-position:center;will-change:transform,opacity;opacity:1;';
       document.body.appendChild(el);
       var dx = fcEX - fcSX;
       var dy = fcEY - fcSY;
       requestAnimationFrame(function() {
         requestAnimationFrame(function() {
-          el.style.transition = 'transform 0.28s cubic-bezier(0.25,0.8,0.25,1)';
-          el.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+          el.style.transition = 'transform 0.3s cubic-bezier(0.25,0.8,0.25,1), opacity 0.3s ease-in';
+          el.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(0.5)';
+          el.style.opacity = '0';
         });
       });
       el.addEventListener('transitionend', function() { if (el.parentNode) el.parentNode.removeChild(el); });
-      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
     })();
 
     // 三花牌变身锁定：变身动画期间不可点击
