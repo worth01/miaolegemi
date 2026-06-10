@@ -6176,8 +6176,15 @@ function SkinModule({
 
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 20px',
-      marginBottom: 12
+      padding: '0 20px 12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: colors === CL ? 'card-warm' : 'profile-card-dark',
+    style: {
+      borderRadius: colors === CL ? 20 : 16,
+      padding: '14px',
+      background: colors === CL ? undefined : undefined,
+      border: colors === CL ? undefined : undefined
     }
   },
   /* 标题行 */
@@ -6291,7 +6298,7 @@ function SkinModule({
       cursor: isEquipped ? 'default' : 'pointer',
       opacity: isEquipped ? 0.5 : 1
     }
-  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买')));
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买'))));
 }
 
 // 皮肤列表子项
