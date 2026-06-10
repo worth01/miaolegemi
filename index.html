@@ -6438,16 +6438,19 @@ function CatDetailPage({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 22,
-      fontWeight: 800,
-      color: colors.ink,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
       marginBottom: 2
     }
-  }, cat.name), cat.battleSlot != null && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 6
+      fontSize: 22,
+      fontWeight: 800,
+      color: colors.ink
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, cat.name), cat.battleSlot != null && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       fontWeight: 700,
