@@ -8469,7 +8469,7 @@ if (matchingRef.current.length > 0) return;
       var fcEY = fcRect.bottom - 10;
       // 计算目标槽位：第一个空位
       var targetIdx = slotRef.current.length;
-      var slotCell = document.querySelector('[data-slot-index="' + targetIdx + '"]');
+      var slotCell = document.querySelector('#main-slot [data-slot-index="' + targetIdx + '"]');
       if (slotCell) {
         var cellRect = slotCell.getBoundingClientRect();
         fcEX = cellRect.left;
