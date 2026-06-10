@@ -2827,7 +2827,7 @@ function formatTimeLimitDisplay(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 function countRemainingBoardTiles(tiles) {
-  return tiles.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom'))).length;
+  return tiles.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed)))).length;
 }
 function getTimerVisualState(timeLeft, timerDelay, isTimed) {
   if (!isTimed || timerDelay > 0) return 'idle';
@@ -8850,13 +8850,15 @@ function Game() {
           } : t));
           setTiles(prev => {
             // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-            const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+            const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonDangerRemaining.length === 0) {
               var pilesEmpty = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
-              var slotEmpty = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+              var slotCount = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+              var tempCount = tempStorageRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+              var slotEmpty = slotCount === 0 && tempCount === 0;
               if (slotEmpty && pilesEmpty) {
-                const pers = personalityEffectsRef.current || {};
-                const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
+                var pers = personalityEffectsRef.current || {};
+                var bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
                 setScore(s => s + bonus);
               }
               if (pilesEmpty) setTimeout(function() {
@@ -8997,10 +8999,12 @@ function Game() {
         // Check win — all tiles either removed or still in slot will be cleared
         setTiles(prev => {
           // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
           if (nonDangerRemaining.length === 0) {
             var pilesEmpty2 = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
-            var slotEmpty2 = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+            var slotCount2 = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+            var tempCount2 = tempStorageRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+            var slotEmpty2 = slotCount2 === 0 && tempCount2 === 0;
             if (slotEmpty2 && pilesEmpty2) setScore(s => s + 200);
             if (pilesEmpty2) setTimeout(function() {
               if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);
@@ -9037,10 +9041,12 @@ function Game() {
       // 舔毛牌等干扰牌入槽后不触发三消，需单独检查胜利条件
       setTimeout(() => {
         setTiles(prev => {
-          const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+          const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
           if (nonBlocking.length === 0) {
             var pilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
-            var slotEmpty3 = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
+            var slotCount3 = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+            var tempCount3 = tempStorageRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
+            var slotEmpty3 = slotCount3 === 0 && tempCount3 === 0;
             if (slotEmpty3 && pilesDone) {
               const pers = personalityEffectsRef.current || {};
               const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
@@ -9380,7 +9386,7 @@ function Game() {
           } : t));
           setTimeout(() => {
             // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -9420,7 +9426,7 @@ function Game() {
           setTempStorage([]);
           setTimeout(() => {
             // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom')));
+            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
