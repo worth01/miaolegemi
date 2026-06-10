@@ -6072,6 +6072,7 @@ function CollectionSlot({
     const isNewAnim = item && slotAnim === item.uid;
     return /*#__PURE__*/React.createElement("div", {
       key: i,
+      'data-slot-index': i,
       style: {
         width: slotW,
         height: slotH,
@@ -8466,12 +8467,13 @@ if (matchingRef.current.length > 0) return;
       var fcSY = fcRect.top + tileY(tile) * boardScale;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 如果有收集槽，终点飞到槽位中间
-      var slotEl = document.getElementById('main-slot');
-      if (slotEl) {
-        var slotRect = slotEl.getBoundingClientRect();
-        fcEX = slotRect.left + slotRect.width / 2 - TILE_W / 2;
-        fcEY = slotRect.top + slotRect.height / 2 - TILE_H / 2;
+      // 计算目标槽位：第一个空位（非冰冻）
+      var targetIdx = slotRef.current.length;
+      var slotCell = document.querySelector('[data-slot-index="' + targetIdx + '"]');
+      if (slotCell) {
+        var cellRect = slotCell.getBoundingClientRect();
+        fcEX = cellRect.left;
+        fcEY = cellRect.top;
       }
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
