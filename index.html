@@ -6274,7 +6274,7 @@ function SkinModule({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     className: 'inner',
-    style: { width: '100%', padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
+    style: { padding: '8px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
   }, "取消")), /*#__PURE__*/React.createElement("div", {
     className: 'flow-btn flow-gold',
     style: { flex: 1, opacity: isEquipped ? 0.5 : 1 }
@@ -6286,7 +6286,7 @@ function SkinModule({
     },
     disabled: isEquipped,
     className: 'inner',
-    style: { width: '100%', padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: isEquipped ? 'default' : 'pointer' }
+    style: { padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: isEquipped ? 'default' : 'pointer' }
   }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买')))));
 }
 
