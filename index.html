@@ -6287,8 +6287,7 @@ function SkinModule({
     }
   }, colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: 'btn-cancel-warm',
-    style: { flex: 1, height: 36, borderRadius: 22, cursor: 'pointer', fontSize: 13, fontWeight: 600 }
+    style: { flex: 1, padding: '8px 0', borderRadius: 10, border: '1px solid ' + colors.cardBorder, background: 'transparent', color: colors.ink, fontSize: 13, fontWeight: 600, cursor: 'pointer' }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     className: 'flow-btn flow-cancel-skin',
@@ -6300,8 +6299,7 @@ function SkinModule({
       else { onNavigate('shop'); }
     },
     disabled: isEquipped,
-    className: 'btn-action-warm',
-    style: { flex: 1, height: 36, borderRadius: 22, cursor: isEquipped ? 'default' : 'pointer', fontSize: 13, fontWeight: 700, opacity: isEquipped ? 0.5 : 1 }
+    style: { flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: colors.orange, color: '#fff', fontSize: 13, fontWeight: 700, cursor: isEquipped ? 'default' : 'pointer', opacity: isEquipped ? 0.5 : 1 }
   }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买') : /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) { if (equippedSkinId) onUnequipSkin(catKey); }
