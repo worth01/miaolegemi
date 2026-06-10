@@ -8466,6 +8466,13 @@ if (matchingRef.current.length > 0) return;
       var fcSY = fcRect.top + tileY(tile) * boardScale;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
+      // 如果有收集槽，终点飞到槽位中间
+      var slotEl = document.getElementById('main-slot');
+      if (slotEl) {
+        var slotRect = slotEl.getBoundingClientRect();
+        fcEX = slotRect.left + slotRect.width / 2 - TILE_W / 2;
+        fcEY = slotRect.top + slotRect.height / 2 - TILE_H / 2;
+      }
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
       var fcImg = _tileImages[fcImgKey];
@@ -10710,6 +10717,7 @@ if (matchingRef.current.length > 0) return;
     showBg: false,
     compact: true
   }), /*#__PURE__*/React.createElement("div", {
+    id: 'main-slot',
     style: {
       marginTop: 5
     }
