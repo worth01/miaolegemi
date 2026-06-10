@@ -8457,7 +8457,7 @@ function Game() {
     if (matchingRef.current.length > 0) return;
 if (matchingRef.current.length > 0) return;
 
-    // 飞行动画（纯 DOM，不碰 React）
+    // 飞行动画（纯 DOM，预加载图片 + transform 高性能动画）
     (function() {
       var fcCanvas = boardCanvasRef.current;
       if (!fcCanvas) return;
@@ -8468,17 +8468,20 @@ if (matchingRef.current.length > 0) return;
       var fcEY = fcRect.bottom - 10;
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
-      var fcSrc = (_tileImages[fcImgKey] && _tileImages[fcImgKey].tagName === 'IMG') ? _tileImages[fcImgKey].src : null;
-      if (!fcSrc) return;
-      var el = document.createElement('img');
-      el.src = fcSrc;
-      el.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;object-fit:cover;transition:all 0.28s cubic-bezier(0.25,0.8,0.25,1)';
+      var fcImg = _tileImages[fcImgKey];
+      if (!fcImg || fcImg.tagName !== 'IMG' || !fcImg.complete || !fcImg.naturalWidth) return;
+      var el = document.createElement('div');
+      el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;background-image:url(' + fcImg.src + ');background-size:cover;background-position:center;will-change:transform;';
       document.body.appendChild(el);
+      var dy = fcEY - fcSY;
       requestAnimationFrame(function() {
-        el.style.left = fcEX + 'px';
-        el.style.top = fcEY + 'px';
+        requestAnimationFrame(function() {
+          el.style.transition = 'transform 0.28s cubic-bezier(0.25,0.8,0.25,1)';
+          el.style.transform = 'translateY(' + dy + 'px)';
+        });
       });
-      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+      el.addEventListener('transitionend', function() { if (el.parentNode) el.parentNode.removeChild(el); });
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
     })();
 
     // 三花牌变身锁定：变身动画期间不可点击
