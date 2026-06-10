@@ -8463,8 +8463,8 @@ if (matchingRef.current.length > 0) return;
       var fcCanvas = boardCanvasRef.current;
       if (!fcCanvas) return;
       var fcRect = fcCanvas.getBoundingClientRect();
-      var fcSX = fcRect.left + tileX(tile) * boardScale;
-      var fcSY = fcRect.top + tileY(tile) * boardScale;
+      var fcSX = fcRect.left + (tileX(tile) / boardWidth) * fcRect.width;
+      var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
       // 计算目标槽位：第一个空位（非冰冻）
