@@ -739,6 +739,25 @@ async function shareContent(_a) {
 /* ═══════════════════════════════════════
    CONSTANTS
    ═══════════════════════════════════════ */
+// P2: 读取皮肤数据（index.html 写入 localStorage）
+var _skinData = null;
+try {
+  var _raw = localStorage.getItem('miaolegemi_skin_data');
+  if (_raw) _skinData = JSON.parse(_raw);
+} catch(e) { _skinData = null; }
+var EQUIPPED_SKINS = (_skinData && _skinData.equippedSkins) || {};
+var OWNED_SKINS = (_skinData && _skinData.ownedSkins) || [];
+var ALL_SKINS_DATA = (_skinData && _skinData.allSkins) || {};
+// 获取猫的显示图像：有装备皮肤则用皮肤图，否则用默认品种图
+function getCatDisplayImg(breed, serialId) {
+  var catKey = breed + '_' + serialId;
+  var skinId = EQUIPPED_SKINS[catKey];
+  if (skinId) {
+    var skin = ALL_SKINS_DATA[skinId];
+    if (skin && skin.img) return skin.img;
+  }
+  return 'assets/Textures/cat/' + breed + '.webp';
+}
 // P2: 50px 牌 + 顶点对中偏移 25px + 格子 50px
 const TILE_W = (typeof BoardConstants !== 'undefined' ? BoardConstants.TW : 50);
 const TILE_H = (typeof BoardConstants !== 'undefined' ? BoardConstants.TH : 50);
@@ -5665,7 +5684,7 @@ function SkillConfirmModal({
       boxShadow: `0 0 20px ${color}30`
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/Textures/cat/${breed}.webp`,
+    src: getCatDisplayImg(breed),
     alt: breed,
     style: {
       width: '100%',
@@ -6752,8 +6771,8 @@ function ResultOverlay({
       background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/Textures/cat/${cat.breed}.webp`,
-    alt: cat.breed,
+    src: getCatDisplayImg(cat.breedId || cat.breed, cat.serialId),
+    alt: cat.breedId || cat.breed,
     style: {
       width: '100%',
       height: '100%',
@@ -10864,7 +10883,7 @@ if (matchingRef.current.length > 0) return;
         position: 'relative'
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: `assets/Textures/cat/${breed}.webp`,
+      src: getCatDisplayImg(breed, (battleCats.find(function(c) { return (c.breedId || c.breed) === breed; }) || {}).serialId),
       alt: breed,
       style: {
         width: '100%',

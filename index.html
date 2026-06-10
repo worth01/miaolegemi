@@ -2485,6 +2485,17 @@ function registerLatestState(cats, bells, title) { _latestCats = cats; _latestBe
 window.addEventListener('beforeunload', () => {
   try { saveState(_latestCats, _latestBells, _latestTitle); } catch(e) {}
 });
+// P2: 将皮肤数据同步到共享 localStorage，供游戏页面读取
+function syncSkinDataToShared(equippedSkins, ownedSkins) {
+  try {
+    var data = {
+      equippedSkins: equippedSkins || {},
+      ownedSkins: ownedSkins || [],
+      allSkins: ALL_SKINS
+    };
+    localStorage.setItem('miaolegemi_skin_data', JSON.stringify(data));
+  } catch(e) {}
+}
 
 /* ═══════════════════════════════════════
    分享工具：Web Share API 优先，降级剪贴板 + Toast
@@ -6141,6 +6152,133 @@ function PreBattlePage({
 }
 
 /* ═══════════════════════════════════════
+   SKIN MODULE (猫咪详情页皮肤模块)
+   ═══════════════════════════════════════ */
+function SkinModule({
+  cat,
+  ownedSkins,
+  equippedSkins,
+  onEquipSkin,
+  onUnequipSkin,
+  onNavigate
+}) {
+  const catKey = getCatSkinKey(cat);
+  const equippedSkinId = equippedSkins ? equippedSkins[catKey] : null;
+  // 筛选该品种所有皮肤
+  const breedSkins = Object.values(ALL_SKINS).filter(s => s.breedId === cat.breedId);
+  if (breedSkins.length === 0) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 20px',
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: colors.ink,
+      marginBottom: 6
+    }
+  }, "👔 可装备皮肤"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      overflowX: 'auto',
+      paddingBottom: 4
+    }
+  }, breedSkins.map(skin => {
+    const owned = (ownedSkins || []).includes(skin.id);
+    const isEquipped = equippedSkinId === skin.id;
+    return /*#__PURE__*/React.createElement("div", {
+      key: skin.id,
+      style: {
+        flexShrink: 0,
+        width: 100,
+        borderRadius: 12,
+        overflow: 'hidden',
+        border: isEquipped ? '2px solid #FFD700' : '1px solid ' + colors.cardBorder,
+        background: colors.glass,
+        cursor: owned ? 'pointer' : 'pointer'
+      },
+      onClick: () => {
+        if (isEquipped) {
+          onUnequipSkin(catKey);
+        } else if (owned) {
+          onEquipSkin(catKey, skin.id);
+        } else {
+          onNavigate('shop');
+        }
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '100%',
+        height: 80,
+        background: skin.colors ? `linear-gradient(135deg, ${skin.colors[0]}40, ${skin.colors[1]}30)` : colors.glass,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative'
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: skin.img,
+      alt: skin.breedId,
+      style: {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
+      },
+      onError: e => {
+        e.target.style.display = 'none';
+      }
+    }), isEquipped && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        background: '#FFD700',
+        color: '#000',
+        fontSize: 9,
+        fontWeight: 700,
+        padding: '2px 5px',
+        borderRadius: 4
+      }
+    }, "✔"), !owned && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'rgba(0,0,0,0.6)',
+        color: '#FFD700',
+        fontSize: 9,
+        textAlign: 'center',
+        padding: '2px 0'
+      }
+    }, "🔔")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '4px 8px',
+        textAlign: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 600,
+        color: colors.ink,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }
+    }, skin.team || skin.name || skin.breedId), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: colors.sub,
+        marginTop: 1
+      }
+    }, isEquipped ? '已装备' : owned ? '点击装备' : '前往猫铺')));
+  })));
+}
+
+/* ═══════════════════════════════════════
    CAT DETAIL PAGE
    ═══════════════════════════════════════ */
 function CatDetailPage({
@@ -6154,7 +6292,12 @@ function CatDetailPage({
   onShowLineage,
   fish,
   homeCount,
-  homeMaxSlots
+  homeMaxSlots,
+  ownedSkins,
+  equippedSkins,
+  onEquipSkin,
+  onUnequipSkin,
+  onNavigate
 }) {
   const cat = cats.find(c => c.serialId === catSerialId);
   if (!cat) return null;
@@ -6240,7 +6383,14 @@ function CatDetailPage({
     onError: e => {
       e.target.style.display = 'none';
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement(SkinModule, {
+    cat: cat,
+    ownedSkins: ownedSkins,
+    equippedSkins: equippedSkins,
+    onEquipSkin: onEquipSkin,
+    onUnequipSkin: onUnequipSkin,
+    onNavigate: onNavigate
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800,
@@ -13698,6 +13848,7 @@ function App() {
       bets,
       pityCount
     });
+    syncSkinDataToShared(equippedSkins, ownedSkins);
     // 在线时同步到服务器（防抖 5 秒）
     if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
       if (_syncTimer) clearTimeout(_syncTimer);
@@ -14874,7 +15025,12 @@ function App() {
     onShowLineage: cat => setLineageCat(cat),
     fish: fish,
     homeCount: nurturing.length,
-    homeMaxSlots: homeMaxSlots
+    homeMaxSlots: homeMaxSlots,
+    ownedSkins: ownedSkins,
+    equippedSkins: equippedSkins,
+    onEquipSkin: handleEquipSkin,
+    onUnequipSkin: handleUnequipSkin,
+    onNavigate: setActiveTab
   }) : activeTab === 'cat' || activeTab === 'cathome' ? /*#__PURE__*/React.createElement(CatPage, {
     cats: cats,
     fish: fish,
