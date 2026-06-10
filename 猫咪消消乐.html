@@ -7996,7 +7996,6 @@ function Game() {
   const boardCanvasRef = useRef(null);
   const handleTileClickRef = useRef(null); // 始终指向最新的 handleTileClick，避免闭包过期
   const lastClickTimeRef = useRef(0); // 防抖：记录上次点击时间戳
-  const flyingCardRef = useRef(null); // 飞行动画
   const [hoveredTileId, setHoveredTileId] = useState(null);
   const [boardScale, setBoardScale] = useState(1);
 
@@ -8413,32 +8412,10 @@ function Game() {
       const tileCount = currentTiles.filter(t => !t.removed && !t.inSlot).length;
       const tileChanged = tileCount !== lastTileCount;
       lastTileCount = tileCount;
-      // 飞行牌动画检测
-      var flying = flyingCardRef.current;
-      var hasFlying = flying && (now - flying.startTime < flying.duration);
-      // 无粒子且画面静止时跳过绘制（飞行牌动画除外）
-      if (hasParticles || tileChanged || idleFrames < 2 || hasFlying) {
+      // 无粒子且画面静止时跳过绘制
+      if (hasParticles || tileChanged || idleFrames < 2) {
         drawTiles(ctx, currentTiles, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
-        // Canvas 飞行动画
-        if (flying) {
-          var elapsed = now - flying.startTime;
-          if (elapsed >= flying.duration) {
-            flyingCardRef.current = null;
-            if (flying.onComplete) flying.onComplete();
-          } else {
-            var rt = elapsed / flying.duration;
-            rt = 1 - Math.pow(1 - rt, 3);
-            var ffx = flying.startX + (flying.endX - flying.startX) * rt;
-            var ffy = flying.startY + (flying.endY - flying.startY) * rt;
-            ctx.save();
-            var fcImg = _tileImages[flying.imgKey];
-            if (fcImg && fcImg.tagName === 'IMG' && fcImg.complete && fcImg.naturalWidth > 0) {
-              ctx.drawImage(fcImg, ffx, ffy, TILE_W, TILE_H);
-            }
-            ctx.restore();
-          }
-        }
-        idleFrames = (hasParticles || tileChanged || hasFlying) ? 0 : idleFrames + 1;
+        idleFrames = hasParticles || tileChanged ? 0 : idleFrames + 1;
         rafId = requestAnimationFrame(loop);
       } else {
         // 静止时降帧到 10fps，大幅降低功耗
@@ -8478,22 +8455,30 @@ function Game() {
     if (isTileBlocked(tile, tilesRef.current)) return;
     // 匹配动画进行中，禁止点击防止槽位状态混乱
     if (matchingRef.current.length > 0) return;
-    // 飞行动画：记录起止坐标，槽位逻辑照常执行
+if (matchingRef.current.length > 0) return;
+
+    // 飞行动画（纯 DOM，不碰 React）
     (function() {
-      var tX = tileX(tile), tY = tileY(tile);
-      var imgKey = getTileDisplayType(tile);
-      if (tile.isInterference) {
-        var ic = INTERFERENCE_CARDS[tile.interferenceType];
-        if (ic && ic.img) imgKey = ic.id;
-      }
-      flyingCardRef.current = {
-        startX: tX, startY: tY,
-        endX: tX, endY: tY + 180,
-        startTime: performance.now(),
-        duration: 280,
-        imgKey: imgKey,
-        onComplete: null
-      };
+      var fcCanvas = boardCanvasRef.current;
+      if (!fcCanvas) return;
+      var fcRect = fcCanvas.getBoundingClientRect();
+      var fcSX = fcRect.left + tileX(tile) * boardScale;
+      var fcSY = fcRect.top + tileY(tile) * boardScale;
+      var fcEX = fcSX;
+      var fcEY = fcRect.bottom - 10;
+      var fcImgKey = getTileDisplayType(tile);
+      if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
+      var fcSrc = (_tileImages[fcImgKey] && _tileImages[fcImgKey].tagName === 'IMG') ? _tileImages[fcImgKey].src : null;
+      if (!fcSrc) return;
+      var el = document.createElement('img');
+      el.src = fcSrc;
+      el.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;object-fit:cover;transition:all 0.28s cubic-bezier(0.25,0.8,0.25,1)';
+      document.body.appendChild(el);
+      requestAnimationFrame(function() {
+        el.style.left = fcEX + 'px';
+        el.style.top = fcEY + 'px';
+      });
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     })();
 
     // 三花牌变身锁定：变身动画期间不可点击
