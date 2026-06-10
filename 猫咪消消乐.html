@@ -1,4 +1,34 @@
-<!DOCTYPE html>
+	      // 飞行牌动画检测
+	      var flying = flyingCardRef.current;
+	      var hasFlying = flying && (now - flying.startTime < flying.duration);
+	      // 无粒子且画面静止时跳过绘制（飞行牌动画除外）
+	      if (hasParticles || tileChanged || idleFrames < 2 || hasFlying) {
+	        drawTiles(ctx, currentTiles, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
+	        // 绘制飞行牌
+	        if (flying) {
+	          var elapsed = now - flying.startTime;
+	          if (elapsed >= flying.duration) {
+	            flyingCardRef.current = null;
+	            if (flying.onComplete) flying.onComplete();
+	          } else {
+	            var t = elapsed / flying.duration;
+	            t = 1 - Math.pow(1 - t, 3);
+	            var fx = flying.startX + (flying.endX - flying.startX) * t;
+	            var fy = flying.startY + (flying.endY - flying.startY) * t;
+	            ctx.save();
+	            var fcImg = _tileImages[flying.imgKey];
+	            if (fcImg && fcImg.tagName === "IMG" && fcImg.complete && fcImg.naturalWidth > 0) {
+	              ctx.drawImage(fcImg, fx, fy, TILE_W, TILE_H);
+	            }
+	            ctx.restore();
+	          }
+	        }
+	        idleFrames = (hasParticles || tileChanged || hasFlying) ? 0 : idleFrames + 1;
+	        rafId = requestAnimationFrame(loop);
+	      } else {
+	        // 静止时降帧到 10fps，大幅降低功耗
+	        setTimeout(() => { rafId = requestAnimationFrame(loop); }, 100);
+	      } html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -7996,6 +8026,7 @@ function Game() {
   const boardCanvasRef = useRef(null);
   const handleTileClickRef = useRef(null); // 始终指向最新的 handleTileClick，避免闭包过期
   const lastClickTimeRef = useRef(0); // 防抖：记录上次点击时间戳
+  const flyingCardRef = useRef(null); // { tile, startX, startY, endX, endY, startTime, duration }
   const [hoveredTileId, setHoveredTileId] = useState(null);
   const [boardScale, setBoardScale] = useState(1);
 
@@ -8455,6 +8486,29 @@ function Game() {
     if (isTileBlocked(tile, tilesRef.current)) return;
     // 匹配动画进行中，禁止点击防止槽位状态混乱
     if (matchingRef.current.length > 0) return;
+
+    // 飞行动画：设置起点（棋盘）→ 终点（收集槽下方），纯视觉
+    (function() {
+      var canvasRect = boardCanvasRef.current ? boardCanvasRef.current.getBoundingClientRect() : null;
+      var tX = tileX(tile), tY = tileY(tile);
+      var imgKey = getTileDisplayType(tile);
+      if (tile.isInterference) {
+        var ic = INTERFERENCE_CARDS[tile.interferenceType];
+        if (ic && ic.img) imgKey = ic.id;
+      }
+      var endY = tY + 200; // 默认向下飞200px
+      if (canvasRect) {
+        endY = (canvasRect.height - tY) * 1.0; // 飞到棋盘底部
+      }
+      flyingCardRef.current = {
+        startX: tX, startY: tY,
+        endX: tX, endY: tY + Math.min(200, endY),
+        startTime: performance.now(),
+        duration: 280,
+        imgKey: imgKey,
+        onComplete: null
+      };
+    })();
 
     // 三花牌变身锁定：变身动画期间不可点击
     if (transformLocked.includes(tile.id)) {
