@@ -526,12 +526,6 @@
     .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
     .flow-send { flex: 1; }
     .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
-    .flow-cancel { flex: 1; }
-    .flow-cancel::before { background: linear-gradient(90deg, #636e72, #4a5568, #718096, #636e72); }
-    .flow-cancel-skin { flex: 1; }
-    .flow-cancel-skin::before { background: linear-gradient(90deg, #636e72, #4a5568, #718096, #636e72); }
-    .flow-gold { flex: 1; }
-    .flow-gold::before { background: linear-gradient(90deg, #FD9644, #FDCB6E, #FF6B6B, #FD9644); }
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
     .flow-cancel { display: none; } /* 全局隐藏，弹窗用 .modal-dark .flow-cancel 覆盖 */
@@ -874,8 +868,16 @@
     .btn-adopt-warm,
     .btn-adopt-bag-warm,
     .btn-discard-bag-warm,
-    .btn-deploy-warm,
-    .btn-cancel-warm,
+    .btn-deploy-warm {
+      border-radius: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid;
+      transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+      text-shadow: 0 1px 1px rgba(255,255,255,0.5);
+    }
     /* 内发光椭圆高光 */
     .btn-feed-warm::before,
     .btn-full-warm::before,
@@ -883,9 +885,7 @@
     .btn-adopt-warm::before,
     .btn-adopt-bag-warm::before,
     .btn-discard-bag-warm::before,
-    .btn-deploy-warm::before,
-    .btn-cancel-warm::before,
-    .btn-action-warm::before {
+    .btn-deploy-warm::before {
       content: "";
       position: absolute;
       top: 1px; left: 6px; right: 6px; height: 50%;
@@ -901,9 +901,7 @@
     .btn-adopt-warm:hover,
     .btn-adopt-bag-warm:hover,
     .btn-discard-bag-warm:hover,
-    .btn-deploy-warm:hover,
-    .btn-cancel-warm:hover,
-    .btn-action-warm:hover {
+    .btn-deploy-warm:hover {
       transform: translateY(-2px);
       filter: brightness(1.08);
     }
@@ -925,27 +923,6 @@
       color: #AA5A2A;
       box-shadow: 0 3px 0 #E6B050, 0 1px 6px rgba(255,180,50,0.25);
       animation: glow-feed 3.2s infinite ease-in-out;
-    }
-    .btn-cancel-warm {
-      background: linear-gradient(180deg, #E8E8E8 0%, #D0D0D0 100%);
-      border-color: #AAAAAA;
-      color: #555555;
-      box-shadow: 0 3px 0 #B0B0B0, 0 1px 6px rgba(150,150,150,0.25);
-    }
-    .btn-cancel-warm:active {
-      box-shadow: 0 1px 0 #B0B0B0, 0 1px 4px rgba(150,150,150,0.15);
-      transform: translateY(2px);
-    }
-    .btn-action-warm {
-      background: linear-gradient(180deg, #FFD580 0%, #FF9F43 100%);
-      border-color: #E67E22;
-      color: #8B4513;
-      box-shadow: 0 3px 0 #D4721A, 0 1px 6px rgba(255,140,50,0.35);
-      animation: glow-feed 3.2s infinite ease-in-out;
-    }
-    .btn-action-warm:active {
-      box-shadow: 0 1px 0 #D4721A, 0 1px 4px rgba(255,140,50,0.2);
-      transform: translateY(2px);
     }
     .btn-feed-warm:active {
       box-shadow: 0 1px 0 #E6B050, 0 1px 4px rgba(255,180,50,0.15);
@@ -6285,31 +6262,43 @@ function SkinModule({
       gap: 8,
       marginTop: 8
     }
-  }, colors === CL ? /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    style: { flex: 1, padding: '8px 0', borderRadius: 10, border: '1px solid ' + colors.cardBorder, background: 'transparent', color: colors.ink, fontSize: 13, fontWeight: 600, cursor: 'pointer' }
-  }, "取消") : /*#__PURE__*/React.createElement("button", {
-    onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: 'flow-btn flow-cancel-skin',
-    style: { flex: 1, height: 36 }
-  }, /*#__PURE__*/React.createElement("span", { className: 'inner', style: { fontSize: 13 } }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      borderRadius: 10,
+      border: '1px solid ' + colors.cardBorder,
+      background: 'transparent',
+      color: colors.ink,
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
-      if (isDefaultSelected) { if (equippedSkinId) onUnequipSkin(catKey); }
-      else if (isOwned) { onEquipSkin(catKey, selectedSkinId); }
-      else { onNavigate('shop'); }
+      if (isDefaultSelected) {
+        if (equippedSkinId) onUnequipSkin(catKey);
+      } else if (isOwned) {
+        onEquipSkin(catKey, selectedSkinId);
+      } else {
+        onNavigate('shop');
+      }
     },
-    disabled: isEquipped,
-    style: { flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: colors.orange, color: '#fff', fontSize: 13, fontWeight: 700, cursor: isEquipped ? 'default' : 'pointer', opacity: isEquipped ? 0.5 : 1 }
-  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买') : /*#__PURE__*/React.createElement("button", {
-    onClick: function () {
-      if (isDefaultSelected) { if (equippedSkinId) onUnequipSkin(catKey); }
-      else if (isOwned) { onEquipSkin(catKey, selectedSkinId); }
-      else { onNavigate('shop'); }
-    },
-    disabled: isEquipped,
-    className: 'flow-btn flow-gold',
-    style: { flex: 1, height: 36, opacity: isEquipped ? 0.5 : 1 }
-  }, /*#__PURE__*/React.createElement("span", { className: 'inner', style: { fontSize: 13 } }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买')))));
+    disabled: isEquipped && isDefaultSelected ? false : isEquipped,
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      borderRadius: 10,
+      border: 'none',
+      background: isEquipped ? colors.glass : 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+      color: isEquipped ? colors.sub : '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: isEquipped ? 'default' : 'pointer',
+      opacity: isEquipped ? 0.5 : 1
+    }
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买'))));
 }
 
 // 皮肤列表子项
