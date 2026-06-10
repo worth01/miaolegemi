@@ -7676,6 +7676,7 @@ function Game() {
   const toastKeysRef = useRef([]); // 当前活跃提示的key列表
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
+  useEffect(() => { matchingRef.current = matching; }, [matching]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
@@ -7990,6 +7991,7 @@ function Game() {
   const slotRef = useRef([]);
   const tilesRef = useRef(tiles);
   const matchTimeoutRef = useRef(null);
+  const matchingRef = useRef([]);
   const boardContainerRef = useRef(null);
   const boardCanvasRef = useRef(null);
   const handleTileClickRef = useRef(null); // 始终指向最新的 handleTileClick，避免闭包过期
@@ -8451,6 +8453,8 @@ function Game() {
     if (gameState !== GAME_PLAYING) return;
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
+    // 匹配动画进行中，禁止点击防止槽位状态混乱
+    if (matchingRef.current.length > 0) return;
 
     // 三花牌变身锁定：变身动画期间不可点击
     if (transformLocked.includes(tile.id)) {
