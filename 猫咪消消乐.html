@@ -8467,15 +8467,19 @@ if (matchingRef.current.length > 0) return;
       var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 计算目标槽位：按 canvas 底部 + 索引推算（不依赖 DOM 查询）
+      // 目标槽位索引 = 当前槽内牌数
       var targetIdx = slotRef.current.length;
-      // 收集槽在 canvas 下方：临时槽(~55px) + 间距(5px) + 主槽 padding(4px)
-      fcEY = fcRect.bottom + 55 + 5 + 4;
-      // 槽格排列：7 格居中，50px/格 + 5px gap，首个空位 X = canvas左 + 目标格偏移
-      var slotGap = 5;
-      var slotTotalW = 7 * TILE_W + 6 * slotGap; // 380
-      var slotLeft = fcRect.left + (fcRect.width - slotTotalW) / 2;
-      fcEX = slotLeft + targetIdx * (TILE_W + slotGap);
+      // 尝试取目标槽格的 DOM 坐标
+      var slotCell = document.querySelector('#main-slot [data-slot-index=\"' + targetIdx + '\"]');
+      if (slotCell) {
+        var cr = slotCell.getBoundingClientRect();
+        fcEX = cr.left;
+        fcEY = cr.top;
+      } else {
+        // fallback：用 canvas 下方偏移推算
+        fcEY = fcRect.bottom + 54;
+        fcEX = fcRect.left + targetIdx * 55;
+      }
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
       var fcImg = _tileImages[fcImgKey];
