@@ -528,6 +528,8 @@
     .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
     .flow-cancel { flex: 1; }
     .flow-cancel::before { background: linear-gradient(90deg, #636e72, #4a5568, #718096, #636e72); }
+    .flow-cancel-skin { flex: 1; }
+    .flow-cancel-skin::before { background: linear-gradient(90deg, #636e72, #4a5568, #718096, #636e72); }
     .flow-gold { flex: 1; }
     .flow-gold::before { background: linear-gradient(90deg, #FD9644, #FDCB6E, #FF6B6B, #FD9644); }
     .flow-lineage { width: 100%; }
@@ -6267,7 +6269,7 @@ function SkinModule({
       marginTop: 8
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: 'flow-btn flow-cancel',
+    className: 'flow-btn flow-cancel-skin',
     style: { flex: 1 }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
