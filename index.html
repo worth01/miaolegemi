@@ -532,6 +532,21 @@
     .flow-gold::before { background: linear-gradient(90deg, #FD9644, #FDCB6E, #FF6B6B, #FD9644); }
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
+    /* ═══ 皮肤模块按钮流光 ═══ */
+    @keyframes borderFlow {
+      0%, 100% { border-color: #636e72; box-shadow: 0 0 6px rgba(99,110,114,0.4), 0 0 12px rgba(74,85,104,0.2); }
+      50% { border-color: #4a5568; box-shadow: 0 0 10px rgba(74,85,104,0.6), 0 0 18px rgba(113,128,150,0.3); }
+    }
+    @keyframes borderFlowGold {
+      0%, 100% { border-color: #FD9644; box-shadow: 0 0 6px rgba(253,150,68,0.5), 0 0 14px rgba(253,150,68,0.2); }
+      50% { border-color: #FDCB6E; box-shadow: 0 0 12px rgba(253,203,110,0.7), 0 0 22px rgba(255,107,107,0.3); }
+    }
+    .skin-btn-cancel {
+      animation: borderFlow 3s ease-in-out infinite;
+    }
+    .skin-btn-action {
+      animation: borderFlowGold 3s ease-in-out infinite;
+    }
     .flow-cancel { display: none; } /* 全局隐藏，弹窗用 .modal-dark .flow-cancel 覆盖 */
     /* 弹窗内流光按钮（暗黑模式新样式） */
     .modal-dark .flow-btn,
@@ -6266,23 +6281,21 @@ function SkinModule({
       gap: 8,
       marginTop: 8
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: 'flow-btn flow-cancel',
-    style: { flex: 1 }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: 'inner',
+    className: 'skin-btn-cancel',
     style: {
-      width: '100%',
+      flex: 1,
       padding: '8px 0',
+      borderRadius: 10,
       fontSize: 13,
       fontWeight: 600,
-      cursor: 'pointer'
+      cursor: 'pointer',
+      background: 'transparent',
+      color: colors.ink,
+      border: '1px solid ' + colors.cardBorder
     }
-  }, "取消"))), /*#__PURE__*/React.createElement("div", {
-    className: 'flow-btn flow-gold',
-    style: { flex: 1 }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
@@ -6293,14 +6306,18 @@ function SkinModule({
       }
     },
     disabled: isEquipped,
-    className: 'inner',
+    className: 'skin-btn-action',
     style: {
-      width: '100%',
+      flex: 1,
       padding: '8px 0',
+      borderRadius: 10,
       fontSize: 13,
       fontWeight: 700,
       cursor: isEquipped ? 'default' : 'pointer',
-      opacity: isEquipped ? 0.5 : 1
+      opacity: isEquipped ? 0.5 : 1,
+      background: isEquipped ? 'transparent' : colors.orange,
+      color: isEquipped ? colors.sub : '#fff',
+      border: isEquipped ? '1px solid ' + colors.cardBorder : '2px solid #FD9644'
     }
   }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买'))));
 }
