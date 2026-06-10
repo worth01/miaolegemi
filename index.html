@@ -6443,7 +6443,20 @@ function CatDetailPage({
       color: colors.ink,
       marginBottom: 2
     }
-  }, cat.name), /*#__PURE__*/React.createElement("div", {
+  }, cat.name),, , cat.battleSlot != null && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      padding: '4px 12px',
+      borderRadius: 999,
+      background: 'rgba(253,150,68,0.15)',
+      color: colors.orange
+    }
+  }, "\u51FA\u6218\u5E2D ", cat.battleSlot, "\uFF08\u4E3B\u52A8\uFF09")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -6488,20 +6501,7 @@ function CatDetailPage({
       color: colors === CL ? '#4A2800' : '#fff',
       marginTop: 2
     }
-  }, "\u6027\u683C\uFF1A", sanitizePersonality(cat.personality, cat.breedId || '橘猫'), "\xB7", PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')] || ''), cat.battleSlot != null && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 6
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      padding: '4px 12px',
-      borderRadius: 999,
-      background: 'rgba(253,150,68,0.15)',
-      color: colors.orange
-    }
-  }, "\u51FA\u6218\u5E2D ", cat.battleSlot, "\uFF08\u4E3B\u52A8\uFF09")), cat.battleSpectator != null && /*#__PURE__*/React.createElement("div", {
+  }, "\u6027\u683C\uFF1A", sanitizePersonality(cat.personality, cat.breedId || '橘猫'), "\xB7", PERSONALITY_DESCRIPTIONS[sanitizePersonality(cat.personality, cat.breedId || '橘猫')] || '') cat.battleSpectator != null && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 6
     }
