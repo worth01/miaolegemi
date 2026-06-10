@@ -874,16 +874,8 @@
     .btn-adopt-warm,
     .btn-adopt-bag-warm,
     .btn-discard-bag-warm,
-    .btn-deploy-warm {
-      border-radius: 22px;
-      font-weight: 700;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      border: 2px solid;
-      transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-      text-shadow: 0 1px 1px rgba(255,255,255,0.5);
-    }
+    .btn-deploy-warm,
+    .btn-cancel-warm,
     /* 内发光椭圆高光 */
     .btn-feed-warm::before,
     .btn-full-warm::before,
@@ -891,7 +883,9 @@
     .btn-adopt-warm::before,
     .btn-adopt-bag-warm::before,
     .btn-discard-bag-warm::before,
-    .btn-deploy-warm::before {
+    .btn-deploy-warm::before,
+    .btn-cancel-warm::before,
+    .btn-action-warm::before {
       content: "";
       position: absolute;
       top: 1px; left: 6px; right: 6px; height: 50%;
@@ -907,7 +901,9 @@
     .btn-adopt-warm:hover,
     .btn-adopt-bag-warm:hover,
     .btn-discard-bag-warm:hover,
-    .btn-deploy-warm:hover {
+    .btn-deploy-warm:hover,
+    .btn-cancel-warm:hover,
+    .btn-action-warm:hover {
       transform: translateY(-2px);
       filter: brightness(1.08);
     }
@@ -929,6 +925,27 @@
       color: #AA5A2A;
       box-shadow: 0 3px 0 #E6B050, 0 1px 6px rgba(255,180,50,0.25);
       animation: glow-feed 3.2s infinite ease-in-out;
+    }
+    .btn-cancel-warm {
+      background: linear-gradient(180deg, #E8E8E8 0%, #D0D0D0 100%);
+      border-color: #AAAAAA;
+      color: #555555;
+      box-shadow: 0 3px 0 #B0B0B0, 0 1px 6px rgba(150,150,150,0.25);
+    }
+    .btn-cancel-warm:active {
+      box-shadow: 0 1px 0 #B0B0B0, 0 1px 4px rgba(150,150,150,0.15);
+      transform: translateY(2px);
+    }
+    .btn-action-warm {
+      background: linear-gradient(180deg, #FFD580 0%, #FF9F43 100%);
+      border-color: #E67E22;
+      color: #8B4513;
+      box-shadow: 0 3px 0 #D4721A, 0 1px 6px rgba(255,140,50,0.35);
+      animation: glow-feed 3.2s infinite ease-in-out;
+    }
+    .btn-action-warm:active {
+      box-shadow: 0 1px 0 #D4721A, 0 1px 4px rgba(255,140,50,0.2);
+      transform: translateY(2px);
     }
     .btn-feed-warm:active {
       box-shadow: 0 1px 0 #E6B050, 0 1px 4px rgba(255,180,50,0.15);
@@ -6268,10 +6285,24 @@ function SkinModule({
       gap: 8,
       marginTop: 8
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, colors === CL ? /*#__PURE__*/React.createElement("button", {
+    onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
+    className: 'btn-cancel-warm',
+    style: { flex: 1, height: 36, borderRadius: 22, cursor: 'pointer', fontSize: 13, fontWeight: 600 }
+  }, "取消") : /*#__PURE__*/React.createElement("button", {
+    onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     className: 'flow-btn flow-cancel-skin',
     style: { flex: 1 }
-  }, /*#__PURE__*/React.createElement("span", { className: 'inner' }, "取消")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", { className: 'inner' }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      if (isDefaultSelected) { if (equippedSkinId) onUnequipSkin(catKey); }
+      else if (isOwned) { onEquipSkin(catKey, selectedSkinId); }
+      else { onNavigate('shop'); }
+    },
+    disabled: isEquipped,
+    className: 'btn-action-warm',
+    style: { flex: 1, height: 36, borderRadius: 22, cursor: isEquipped ? 'default' : 'pointer', fontSize: 13, fontWeight: 700, opacity: isEquipped ? 0.5 : 1 }
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买') : /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) { if (equippedSkinId) onUnequipSkin(catKey); }
       else if (isOwned) { onEquipSkin(catKey, selectedSkinId); }
