@@ -8467,13 +8467,14 @@ if (matchingRef.current.length > 0) return;
       var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 计算目标槽位：第一个空位（非冰冻）
+      // 计算目标槽位：第一个空位
       var targetIdx = slotRef.current.length;
       var slotCell = document.querySelector('[data-slot-index="' + targetIdx + '"]');
       if (slotCell) {
         var cellRect = slotCell.getBoundingClientRect();
         fcEX = cellRect.left;
         fcEY = cellRect.top;
+        console.log('[Fly] start=(' + Math.round(fcSX) + ',' + Math.round(fcSY) + ') end=(' + Math.round(fcEX) + ',' + Math.round(fcEY) + ') targetIdx=' + targetIdx + ' dx=' + Math.round(fcEX - fcSX) + ' dy=' + Math.round(fcEY - fcSY));
       }
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
