@@ -8859,7 +8859,7 @@ function Game() {
                 const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
                 setScore(s => s + bonus);
               }
-              setTimeout(() => {
+              if (pilesEmpty) setTimeout(function() {
                 if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);else setGameState(GAME_WIN);
               }, 300);
             }
@@ -9001,9 +9001,8 @@ function Game() {
           if (nonDangerRemaining.length === 0) {
             var pilesEmpty2 = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
             var slotEmpty2 = slotRef.current.length === 0 && tempStorageRef.current.length === 0;
-            if (!slotEmpty2 || !pilesEmpty2) return prev;
             if (slotEmpty2 && pilesEmpty2) setScore(s => s + 200);
-            if (slotEmpty2 && pilesEmpty2) setTimeout(function() {
+            if (pilesEmpty2) setTimeout(function() {
               if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);
               else setGameState(GAME_WIN);
             }, 300);
@@ -9047,7 +9046,7 @@ function Game() {
               const bonus = pers.scoreBonus > 0 ? Math.round(200 * (1 + pers.scoreBonus)) : 200;
               setScore(s => s + bonus);
             }
-            if (slotEmpty3 && pilesDone) setTimeout(function() {
+            if (pilesDone) setTimeout(function() {
               if (LEVELS[currentLevel + 1]) setGameState(GAME_LEVEL_COMPLETE);else setGameState(GAME_WIN);
             }, 300);
           }
