@@ -6162,120 +6162,166 @@ function SkinModule({
   onUnequipSkin,
   onNavigate
 }) {
-  const catKey = getCatSkinKey(cat);
-  const equippedSkinId = equippedSkins ? equippedSkins[catKey] : null;
-  // 筛选该品种所有皮肤
-  const breedSkins = Object.values(ALL_SKINS).filter(s => s.breedId === cat.breedId);
+  var catKey = getCatSkinKey(cat);
+  var equippedSkinId = equippedSkins ? equippedSkins[catKey] : null;
+  var breedSkins = Object.values(ALL_SKINS).filter(function (s) { return s.breedId === cat.breedId; });
   if (breedSkins.length === 0) return null;
+  var _skinModuleSelected = React.useState(equippedSkinId || 'default');
+  var selectedSkinId = _skinModuleSelected[0];
+  var setSelectedSkinId = _skinModuleSelected[1];
+  var isDefaultSelected = selectedSkinId === 'default';
+  var selectedSkin = isDefaultSelected ? null : ALL_SKINS[selectedSkinId];
+  var isOwned = isDefaultSelected || (ownedSkins || []).includes(selectedSkinId);
+  var isEquipped = selectedSkinId === equippedSkinId;
+
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 20px',
       marginBottom: 12
     }
+  },
+  /* 标题行 */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8
+    }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       fontWeight: 700,
-      color: colors.ink,
-      marginBottom: 6
+      color: colors.ink
     }
-  }, "👔 可装备皮肤"), /*#__PURE__*/React.createElement("div", {
+  }, "🎨 皮肤"), /*#__PURE__*/React.createElement("div", {
+    onClick: function () { return onNavigate('shop'); },
+    style: {
+      fontSize: 11,
+      color: '#FD9644',
+      cursor: 'pointer',
+      fontWeight: 500
+    }
+  }, "去猫铺购买 →")),
+
+  /* 皮肤列表 */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 10,
+      overflowX: 'auto',
+      paddingBottom: 6
+    }
+  },
+  /* 默认皮肤 */
+  /*#__PURE__*/React.createElement(SkinItem, {
+    skinId: 'default',
+    emoji: '🐱',
+    name: '默认',
+    isOwned: true,
+    isSelected: isDefaultSelected,
+    isEquipped: !equippedSkinId,
+    onSelect: function () { return setSelectedSkinId('default'); }
+  }),
+  breedSkins.map(function (skin) {
+    var owned = (ownedSkins || []).includes(skin.id);
+    return /*#__PURE__*/React.createElement(SkinItem, {
+      key: skin.id,
+      skinId: skin.id,
+      emoji: skin.flag || skin.emoji || '🐱',
+      name: skin.team || skin.name || skin.breedId,
+      img: skin.img,
+      isOwned: owned,
+      isSelected: selectedSkinId === skin.id,
+      isEquipped: equippedSkinId === skin.id,
+      onSelect: function () { return setSelectedSkinId(skin.id); }
+    });
+  })),
+
+  /* 预览提示 */
+  selectedSkinId !== 'default' && !isOwned ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: colors.sub,
+      textAlign: 'center',
+      marginTop: 6
+    }
+  }, "还未拥有，可前往猫铺购买") : null,
+
+  /* 操作按钮 */
+  /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8,
-      overflowX: 'auto',
-      paddingBottom: 4
+      marginTop: 8
     }
-  }, breedSkins.map(skin => {
-    const owned = (ownedSkins || []).includes(skin.id);
-    const isEquipped = equippedSkinId === skin.id;
-    return /*#__PURE__*/React.createElement("div", {
-      key: skin.id,
-      style: {
-        flexShrink: 0,
-        width: 100,
-        borderRadius: 12,
-        overflow: 'hidden',
-        border: isEquipped ? '2px solid #FFD700' : '1px solid ' + colors.cardBorder,
-        background: colors.glass,
-        cursor: owned ? 'pointer' : 'pointer'
-      },
-      onClick: () => {
-        if (isEquipped) {
-          onUnequipSkin(catKey);
-        } else if (owned) {
-          onEquipSkin(catKey, skin.id);
-        } else {
-          onNavigate('shop');
-        }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      borderRadius: 10,
+      border: '1px solid ' + colors.cardBorder,
+      background: 'transparent',
+      color: colors.ink,
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      if (isDefaultSelected) {
+        if (equippedSkinId) onUnequipSkin(catKey);
+      } else if (isOwned) {
+        onEquipSkin(catKey, selectedSkinId);
+      } else {
+        onNavigate('shop');
       }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: '100%',
-        height: 80,
-        background: skin.colors ? `linear-gradient(135deg, ${skin.colors[0]}40, ${skin.colors[1]}30)` : colors.glass,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative'
-      }
-    }, /*#__PURE__*/React.createElement("img", {
-      src: skin.img,
-      alt: skin.breedId,
-      style: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover'
-      },
-      onError: e => {
-        e.target.style.display = 'none';
-      }
-    }), isEquipped && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        background: '#FFD700',
-        color: '#000',
-        fontSize: 9,
-        fontWeight: 700,
-        padding: '2px 5px',
-        borderRadius: 4
-      }
-    }, "✔"), !owned && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'rgba(0,0,0,0.6)',
-        color: '#FFD700',
-        fontSize: 9,
-        textAlign: 'center',
-        padding: '2px 0'
-      }
-    }, "🔔")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '4px 8px',
-        textAlign: 'center'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        fontWeight: 600,
-        color: colors.ink,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
-      }
-    }, skin.team || skin.name || skin.breedId), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 9,
-        color: colors.sub,
-        marginTop: 1
-      }
-    }, isEquipped ? '已装备' : owned ? '点击装备' : '前往猫铺')));
-  })));
+    },
+    disabled: isEquipped && isDefaultSelected ? false : isEquipped,
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      borderRadius: 10,
+      border: 'none',
+      background: isEquipped ? colors.glass : 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+      color: isEquipped ? colors.sub : '#fff',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: isEquipped ? 'default' : 'pointer',
+      opacity: isEquipped ? 0.5 : 1
+    }
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买')));
+}
+
+// 皮肤列表子项
+function SkinItem(_ref) {
+  var skinId = _ref.skinId, emoji = _ref.emoji, name = _ref.name;
+  var img = _ref.img, isOwned = _ref.isOwned, isSelected = _ref.isSelected;
+  var isEquipped = _ref.isEquipped, onSelect = _ref.onSelect;
+  var isLocked = !isOwned;
+  var tagBg, tagColor, tagText;
+  if (isEquipped) { tagBg = 'rgba(253,150,68,0.2)'; tagColor = '#FD9644'; tagText = '使用中'; }
+  else if (isLocked) { tagBg = 'rgba(150,150,150,0.15)'; tagColor = colors.sub; tagText = '去购买'; }
+  else { tagBg = 'rgba(0,200,150,0.15)'; tagColor = '#00B894'; tagText = '已拥有'; }
+  var bgColor = isEquipped ? 'rgba(253,150,68,0.2)' : (isLocked ? 'rgba(150,150,150,0.15)' : 'rgba(0,200,150,0.15)');
+  var txtColor = isEquipped ? '#FD9644' : (isLocked ? colors.sub : '#00B894');
+  var txtLabel = isEquipped ? '使用中' : (isLocked ? '去购买' : '已拥有');
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onSelect,
+    style: {
+      flexShrink: 0, width: 72, padding: '8px 6px', borderRadius: 12,
+      border: isSelected ? '2px solid #FD9644' : '1px solid ' + colors.cardBorder,
+      background: isSelected ? 'rgba(253,150,68,0.08)' : colors.glass,
+      cursor: 'pointer', textAlign: 'center', position: 'relative',
+      opacity: isLocked ? 0.55 : 1
+    }
+  },
+  isSelected ? /*#__PURE__*/React.createElement("div", { style: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: '50%', background: '#FD9644' } }) : null,
+  img ? /*#__PURE__*/React.createElement("img", { src: img, alt: name, style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', margin: '0 auto 4px', display: 'block', opacity: isLocked ? 0.4 : 1 } }) : /*#__PURE__*/React.createElement("div", { style: { fontSize: 28, marginBottom: 4, opacity: isLocked ? 0.4 : 1 } }, emoji),
+  /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: colors.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
+  /*#__PURE__*/React.createElement("span", { style: { display: 'inline-block', marginTop: 3, fontSize: 9, padding: '1px 6px', borderRadius: 6, fontWeight: 600, background: bgColor, color: txtColor } }, txtLabel)
+  );
 }
 
 /* ═══════════════════════════════════════
