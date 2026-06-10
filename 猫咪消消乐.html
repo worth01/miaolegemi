@@ -8467,20 +8467,28 @@ if (matchingRef.current.length > 0) return;
       var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 计算目标槽位：第一个空位
+      // 计算目标槽位：第一个空位：优先查 DOM 格，失败则按容器+索引推算
       var targetIdx = slotRef.current.length;
-      var slotCell = document.querySelector('#main-slot [data-slot-index="' + targetIdx + '"]');
-      if (slotCell) {
-        var cellRect = slotCell.getBoundingClientRect();
-        fcEX = cellRect.left;
-        fcEY = cellRect.top;
+      var slotContainer = document.getElementById('main-slot');
+      if (slotContainer) {
+        var slotCell = slotContainer.querySelector('[data-slot-index="' + targetIdx + '"]');
+        if (slotCell) {
+          var cellRect = slotCell.getBoundingClientRect();
+          fcEX = cellRect.left;
+          fcEY = cellRect.top;
+        } else {
+          // fallback：按容器位置 + 索引 × 55px（cell 50 + gap 5）推算
+          var containerRect = slotContainer.getBoundingClientRect();
+          fcEX = containerRect.left + targetIdx * 55;
+          fcEY = containerRect.top;
+        }
       }
       var fcImgKey = getTileDisplayType(tile);
       if (tile.isInterference) { var ic = INTERFERENCE_CARDS[tile.interferenceType]; if (ic && ic.img) fcImgKey = ic.id; }
       var fcImg = _tileImages[fcImgKey];
       if (!fcImg || fcImg.tagName !== 'IMG' || !fcImg.complete || !fcImg.naturalWidth) return;
       var el = document.createElement('div');
-      el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;background-image:url(' + fcImg.src + ');background-size:cover;background-position:center;will-change:transform;border:3px solid red;box-shadow:0 0 20px rgba(255,0,0,0.8);';
+      el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;width:' + TILE_W + 'px;height:' + TILE_H + 'px;left:' + fcSX + 'px;top:' + fcSY + 'px;border-radius:10px;background-image:url(' + fcImg.src + ');background-size:cover;background-position:center;will-change:transform;';
       document.body.appendChild(el);
       var dy = fcEY - fcSY;
       requestAnimationFrame(function() {
