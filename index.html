@@ -6429,14 +6429,7 @@ function CatDetailPage({
     onError: e => {
       e.target.style.display = 'none';
     }
-  })), /*#__PURE__*/React.createElement(SkinModule, {
-    cat: cat,
-    ownedSkins: ownedSkins,
-    equippedSkins: equippedSkins,
-    onEquipSkin: onEquipSkin,
-    onUnequipSkin: onUnequipSkin,
-    onNavigate: onNavigate
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       fontWeight: 800,
@@ -6514,7 +6507,14 @@ function CatDetailPage({
       background: 'rgba(108,92,231,0.15)',
       color: colors.purpleLight
     }
-  }, "\u89C2\u6218\u533A\uFF08\u88AB\u52A8\uFF09"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u89C2\u6218\u533A\uFF08\u88AB\u52A8\uFF09"))), /*#__PURE__*/React.createElement(SkinModule, {
+    cat: cat,
+    ownedSkins: ownedSkins,
+    equippedSkins: equippedSkins,
+    onEquipSkin: onEquipSkin,
+    onUnequipSkin: onUnequipSkin,
+    onNavigate: onNavigate
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 20px 0'
     }
