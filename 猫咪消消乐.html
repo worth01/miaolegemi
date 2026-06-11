@@ -7331,7 +7331,7 @@ function BattlePrep({
         boxShadow: skill ? `0 0 12px #FD964420` : 'none'
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: s.cat.img,
+      src: getCatDisplayImg(s.cat.breedId || s.cat.breed, s.cat.serialId),
       alt: s.cat.name,
       style: {
         width: '100%',
@@ -7429,7 +7429,7 @@ function BattlePrep({
         boxShadow: eff ? `0 0 12px #6C5CE720` : 'none'
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: s.cat.img,
+      src: getCatDisplayImg(s.cat.breedId || s.cat.breed, s.cat.serialId),
       alt: s.cat.name,
       style: {
         width: '100%',

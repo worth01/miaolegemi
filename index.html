@@ -3671,7 +3671,8 @@ function NotificationBanner({
    ═══════════════════════════════════════ */
 function FeaturedCat({
   cats,
-  onNavigate
+  onNavigate,
+  equippedSkins
 }) {
   const allCats = cats.filter(c => c.location === 'home' || c.location === 'bag');
   const [idx, setIdx] = useState(0);
@@ -3764,7 +3765,7 @@ function FeaturedCat({
       border: '2px solid #FFD700'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: cat.img,
+    src: getCatDisplayImg(cat, equippedSkins),
     alt: cat.name,
     style: {
       width: '100%',
@@ -3800,7 +3801,7 @@ function FeaturedCat({
       } : {})
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: cat.img,
+    src: getCatDisplayImg(cat, equippedSkins),
     alt: cat.name,
     style: {
       width: '100%',
@@ -3895,7 +3896,8 @@ function HomePage({
   user,
   inviteRewardToday,
   onShareInvite,
-  shareToast
+  shareToast,
+  equippedSkins
 }) {
   const nurturing = cats.filter(c => c.location === 'home');
   const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3).sort((a, b) => a.battleSlot - b.battleSlot);
@@ -3906,7 +3908,8 @@ function HomePage({
     onNavigate: onNavigate
   }), /*#__PURE__*/React.createElement(FeaturedCat, {
     cats: cats,
-    onNavigate: onNavigate
+    onNavigate: onNavigate,
+    equippedSkins: equippedSkins
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '14px 20px 0'
@@ -4063,7 +4066,7 @@ function HomePage({
           marginTop: 4
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: cat.img,
+        src: getCatDisplayImg(cat, equippedSkins),
         alt: cat.name,
         style: {
           width: '100%',
@@ -4532,7 +4535,8 @@ function LineupManager({
   bubbles,
   animatingCats,
   onCatTap,
-  unlockAudio
+  unlockAudio,
+  equippedSkins
 }) {
   const [draggingCat, setDraggingCat] = useState(null);
   const [dragOffset, setDragOffset] = useState({
@@ -4712,7 +4716,7 @@ function LineupManager({
         boxShadow: `0 0 16px ${RARITY_COLORS[cat.rarity]}30`
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: cat.img,
+      src: getCatDisplayImg(cat, equippedSkins),
       style: {
         width: '100%',
         height: '100%',
@@ -4845,7 +4849,7 @@ function LineupManager({
       boxShadow: colors === CL ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: cat.img,
+    src: getCatDisplayImg(cat, equippedSkins),
     style: {
       width: '100%',
       height: '100%',
@@ -4965,7 +4969,7 @@ function LineupManager({
         boxShadow: `0 0 16px ${RARITY_COLORS[cat.rarity]}30`
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: cat.img,
+      src: getCatDisplayImg(cat, equippedSkins),
       style: {
         width: '100%',
         height: '100%',
@@ -5092,7 +5096,8 @@ function CatPage({
   onTriggerFeed,
   unlockAudio,
   homeMaxSlots,
-  onExpandHome
+  onExpandHome,
+  equippedSkins
 }) {
   // 从URL参数读取tab: ?tab=battle, ?tab=home, ?tab=bag
   const getInitialTab = () => {
@@ -5207,7 +5212,8 @@ function CatPage({
     bubbles: bubbles,
     animatingCats: animatingCats,
     onCatTap: onCatTap,
-    unlockAudio: unlockAudio
+    unlockAudio: unlockAudio,
+    equippedSkins: equippedSkins
   })), subTab === 'home' && /*#__PURE__*/React.createElement(NurturingArea, {
     cats: homeCats,
     homeMaxSlots: homeMaxSlots,
@@ -5227,7 +5233,8 @@ function CatPage({
     onCatTap: onCatTap,
     onTriggerFeed: onTriggerFeed,
     unlockAudio: unlockAudio,
-    onExpandHome: onExpandHome
+    onExpandHome: onExpandHome,
+    equippedSkins: equippedSkins
   }), subTab === 'bag' && /*#__PURE__*/React.createElement(BagArea, {
     cats: bagCats,
     homeCount: homeCats.length,
@@ -5261,7 +5268,8 @@ function NurturingArea({
   onCatTap,
   onTriggerFeed,
   unlockAudio,
-  onExpandHome
+  onExpandHome,
+  equippedSkins
 }) {
   const allSlots = Array.from({
     length: homeMaxSlots
@@ -5433,7 +5441,7 @@ function NurturingArea({
         } : {})
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: cat.img,
+      src: getCatDisplayImg(cat, equippedSkins),
       alt: cat.name,
       style: {
         width: '100%',
@@ -6276,7 +6284,8 @@ function SkinModule({
   equippedSkins,
   onEquipSkin,
   onUnequipSkin,
-  onNavigate
+  onNavigate,
+  onPreviewSkin
 }) {
   var catKey = getCatSkinKey(cat);
   var equippedSkinId = equippedSkins ? equippedSkins[catKey] : null;
@@ -6289,6 +6298,9 @@ function SkinModule({
   var selectedSkin = isDefaultSelected ? null : ALL_SKINS[selectedSkinId];
   var isOwned = isDefaultSelected || (ownedSkins || []).includes(selectedSkinId);
   var isEquipped = selectedSkinId === equippedSkinId;
+  React.useEffect(function() {
+    if (onPreviewSkin) onPreviewSkin(isDefaultSelected ? null : selectedSkinId);
+  }, [selectedSkinId]);
 
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6325,7 +6337,7 @@ function SkinModule({
       cursor: 'pointer',
       fontWeight: 500
     }
-  }, "去猫铺购买 →")),
+  }, "皮肤商店 →")),
 
   /* 皮肤列表 */
   /*#__PURE__*/React.createElement("div", {
@@ -6369,7 +6381,7 @@ function SkinModule({
       textAlign: 'center',
       marginTop: 6
     }
-  }, "还未拥有，可前往猫铺购买") : null,
+  }, "还未拥有，可前往皮肤商店购买") : null,
 
   /* 操作按钮 */
   /*#__PURE__*/React.createElement("div", {
@@ -6414,7 +6426,7 @@ function SkinModule({
       cursor: isEquipped ? 'default' : 'pointer',
       opacity: isEquipped ? 0.5 : 1
     }
-  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '前往猫铺购买'))));
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '皮肤商店购买'))));
 }
 
 // 皮肤列表子项
@@ -6430,6 +6442,7 @@ function SkinItem(_ref) {
   var bgColor = isEquipped ? 'rgba(253,150,68,0.2)' : (isLocked ? 'rgba(150,150,150,0.15)' : 'rgba(0,200,150,0.15)');
   var txtColor = isEquipped ? '#FD9644' : (isLocked ? colors.sub : '#00B894');
   var txtLabel = isEquipped ? '使用中' : (isLocked ? '去购买' : '已拥有');
+  var rarityStyle = skinId !== 'default' ? getRarityStyle((ALL_SKINS[skinId] || {}).rarity) : null;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onSelect,
     style: {
@@ -6440,6 +6453,7 @@ function SkinItem(_ref) {
       opacity: isLocked ? 0.55 : 1
     }
   },
+  rarityStyle ? /*#__PURE__*/React.createElement("div", { style: { position: 'absolute', top: 4, left: 4, fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 8, color: rarityStyle.color, background: rarityStyle.color + '18', border: '1px solid ' + rarityStyle.color + '30', backdropFilter: 'blur(4px)', textShadow: rarityStyle.glow !== 'none' ? rarityStyle.glow : 'none' } }, rarityStyle.label) : null,
   isSelected ? /*#__PURE__*/React.createElement("div", { style: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: '50%', background: '#FD9644' } }) : null,
   img ? /*#__PURE__*/React.createElement("img", { src: img, alt: name, style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', margin: '0 auto 4px', display: 'block', opacity: isLocked ? 0.4 : 1 } }) : /*#__PURE__*/React.createElement("div", { style: { fontSize: 28, marginBottom: 4, opacity: isLocked ? 0.4 : 1 } }, emoji),
   /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: colors.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
@@ -6470,6 +6484,15 @@ function CatDetailPage({
 }) {
   const cat = cats.find(c => c.serialId === catSerialId);
   if (!cat) return null;
+  // 皮肤预览状态
+  var _previewSkin = React.useState(null);
+  var previewSkinId = _previewSkin[0];
+  var setPreviewSkinId = _previewSkin[1];
+  // 计算头像显示图：预览皮肤 > 已装备皮肤 > 默认品种图
+  var catKey = getCatSkinKey(cat);
+  var equippedSkinId = equippedSkins ? equippedSkins[catKey] : null;
+  var activeSkinId = previewSkinId || equippedSkinId;
+  var displayImg = activeSkinId && ALL_SKINS[activeSkinId] ? ALL_SKINS[activeSkinId].img : (cat.img || 'assets/Textures/cat/' + (cat.breedId || '猫') + '.webp');
   // P2: 亲密度系统
   const intimacy = cat.intimacy || 0;
   const intimacyColor = getIntimacyColor(intimacy);
@@ -6521,7 +6544,7 @@ function CatDetailPage({
       border: '3px solid #FFD700'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: cat.img,
+    src: displayImg,
     alt: cat.name,
     style: {
       width: '100%',
@@ -6542,7 +6565,7 @@ function CatDetailPage({
       boxShadow: `0 0 40px ${RARITY_COLORS[cat.rarity]}30`
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: cat.img,
+    src: displayImg,
     alt: cat.name,
     style: {
       width: '100%',
@@ -6639,7 +6662,8 @@ function CatDetailPage({
     equippedSkins: equippedSkins,
     onEquipSkin: onEquipSkin,
     onUnequipSkin: onUnequipSkin,
-    onNavigate: onNavigate
+    onNavigate: onNavigate,
+    onPreviewSkin: setPreviewSkinId
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '16px 20px 0'
@@ -8367,10 +8391,11 @@ const ALL_SKINS = {
     breedId: '幸运猫',
     team: '阿根廷',
     flag: '🇦🇷',
-    img: 'assets/Textures/skin/wc-lucky.webp',
+    img: 'assets/Textures/skins/wc-lucky.webp',
     colors: ['#75AADB', '#FFFFFF'],
     price: 10,
     category: 'worldcup',
+    rarity: 'limited',
     desc: '天蓝+白条纹 · 卫冕冠军'
   },
   'worldcup:FRA:star': {
@@ -8378,10 +8403,11 @@ const ALL_SKINS = {
     breedId: '星空猫',
     team: '法国',
     flag: '🇫🇷',
-    img: 'assets/Textures/skin/wc-xing.webp',
+    img: 'assets/Textures/skins/wc-xing.webp',
     colors: ['#002395', '#FFFFFF'],
     price: 10,
     category: 'worldcup',
+    rarity: 'limited',
     desc: '深蓝色系 · 技术华丽'
   },
   'worldcup:ESP:orange': {
@@ -8389,10 +8415,11 @@ const ALL_SKINS = {
     breedId: '橘猫',
     team: '西班牙',
     flag: '🇪🇸',
-    img: 'assets/Textures/skin/wc-ju.webp',
+    img: 'assets/Textures/skins/wc-ju.webp',
     colors: ['#C60B1E', '#FFC400'],
     price: 8,
     category: 'worldcup',
+    rarity: 'limited',
     desc: '红色系 · 热情进攻'
   },
   'worldcup:GER:black': {
@@ -8400,10 +8427,11 @@ const ALL_SKINS = {
     breedId: '黑猫',
     team: '德国',
     flag: '🇩🇪',
-    img: 'assets/Textures/skin/wc-hei.webp',
+    img: 'assets/Textures/skins/wc-hei.webp',
     colors: ['#000000', '#FFFFFF'],
     price: 8,
     category: 'worldcup',
+    rarity: 'limited',
     desc: '白色经典 · 严谨稳健'
   },
   'worldcup:BRA:calico': {
@@ -8411,30 +8439,51 @@ const ALL_SKINS = {
     breedId: '三花猫',
     team: '巴西',
     flag: '🇧🇷',
-    img: 'assets/Textures/skin/wc-san.webp',
+    img: 'assets/Textures/skins/wc-san.webp',
     colors: ['#009C3B', '#FEDD00'],
     price: 0,
     category: 'worldcup',
+    rarity: 'limited',
     desc: '黄绿色系 · 桑巴风格',
     freeEvent: true
   },
   'classic:sakura:orange': {
     id: 'classic:sakura:orange',
-    breedId: '橘猫',
+    breedId: '蓝猫',
     name: '樱花',
     emoji: '🌸',
-    img: 'assets/Textures/skin/nor-lan.webp',
+    img: 'assets/Textures/skins/nor-lan.webp',
     colors: ['#FFB7B2', '#E2F0CB'],
     price: 5,
     category: 'permanent',
-    desc: '樱花季限定'
+    rarity: 'legendary',
+    desc: '雪夜极光'
   }
 };
+// 稀有度显示配置
+var RARITY_CONFIG = {
+  normal:   { label: '普通', color: '#888888', glow: 'none' },
+  limited:  { label: '限定', color: '#555555', glow: '0 0 6px rgba(192,192,192,0.6)' },
+  legendary:{ label: '传说', color: '#FFD700', glow: '0 0 8px rgba(255,215,0,0.7)' }
+};
+function getRarityStyle(rarity) {
+  return RARITY_CONFIG[rarity] || RARITY_CONFIG.normal;
+}
 function getCatSkinKey(cat) {
   return cat && cat.breedId && cat.serialId != null ? cat.breedId + '_' + cat.serialId : null;
 }
 function getSkinById(skinId) {
   return ALL_SKINS[skinId] || null;
+}
+// 获取猫的显示图像：有装备皮肤则用皮肤图，否则用默认品种图
+function getCatDisplayImg(cat, equippedSkins) {
+  var catKey = getCatSkinKey(cat);
+  var skinId = equippedSkins && equippedSkins[catKey];
+  if (skinId) {
+    var skin = ALL_SKINS[skinId];
+    if (skin && skin.img) return skin.img;
+  }
+  return cat.img || 'assets/Textures/cat/' + (cat.breedId || '猫') + '.webp';
 }
 
 /*   SHOP PAGE - cat shop (P1: functional exchange + world cup skins)
@@ -8748,7 +8797,7 @@ function ShopPage({
         objectFit: 'cover',
         zIndex: 0
       }
-    }), owned && /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: 4,
@@ -8756,10 +8805,15 @@ function ShopPage({
         zIndex: 2,
         fontSize: 10,
         fontWeight: 700,
-        color: '#00B894',
-        textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+        padding: '2px 8px',
+        borderRadius: 10,
+        color: getRarityStyle(skin.rarity).color,
+        background: getRarityStyle(skin.rarity).color + '18',
+        border: '1px solid ' + getRarityStyle(skin.rarity).color + '30',
+        backdropFilter: 'blur(4px)',
+        textShadow: getRarityStyle(skin.rarity).glow !== 'none' ? getRarityStyle(skin.rarity).glow : 'none'
       }
-    }, isEquipped ? '装备中' : '已拥有'), /*#__PURE__*/React.createElement("div", {
+    }, getRarityStyle(skin.rarity).label), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'relative',
         zIndex: 1,
@@ -15369,7 +15423,7 @@ function App() {
     equippedSkins: equippedSkins,
     onEquipSkin: handleEquipSkin,
     onUnequipSkin: handleUnequipSkin,
-    onNavigate: setActiveTab
+    onNavigate: function(tab) { setShowCatDetail(false); setSelectedCat(null); setActiveTab(tab); }
   }) : activeTab === 'cat' || activeTab === 'cathome' ? /*#__PURE__*/React.createElement(CatPage, {
     cats: cats,
     fish: fish,
@@ -15397,7 +15451,8 @@ function App() {
     onTriggerFeed: triggerFeed,
     unlockAudio: unlockAudio,
     homeMaxSlots: homeMaxSlots,
-    onExpandHome: handleExpandHome
+    onExpandHome: handleExpandHome,
+    equippedSkins: equippedSkins
   }) : activeTab === 'home' ? /*#__PURE__*/React.createElement(HomePage, {
     cats: cats,
     fish: fish,
@@ -15413,7 +15468,8 @@ function App() {
     user: user,
     inviteRewardToday: inviteRewardToday,
     onShareInvite: handleShareInvite,
-    shareToast: shareToast
+    shareToast: shareToast,
+    equippedSkins: equippedSkins
   }) : activeTab === 'market' ? /*#__PURE__*/React.createElement(MarketPage, {
     bells: bells,
     pityCount: pityCount,
