@@ -885,14 +885,14 @@ const PILE_CONFIG = {
   '11-20': {
     count: 3,
     minCards: 6,
-    maxCards: 9
+    maxCards: 6
   },
-  // 3摞×6~9=18~27张
+  // 3摞×6=18张
   '21-30': {
     count: 3,
     minCards: 6,
-    maxCards: 9
-  } // 3摞×6~9=18~27张
+    maxCards: 6
+  } // 3摞×6=18张
 };
 
 /** P2: 获取关卡对应的牌堆配置 */
@@ -2113,11 +2113,11 @@ function buildBalancedTypePool(cardCount, availableTypes, rng) {
   return shuffleCardPool(pool, rng);
 }
 
-// 三消匹配用类型（三花牌变身不改匹配类型，仅改显示）
+// 三消匹配用类型（三花牌入槽用显示类型，看到什么就是什么）
 function getTileMatchType(tile) {
   if (!tile) return '';
   if (tile.isInterference && tile.interferenceType === 'transform') {
-    return tile.originalType || tile.type;
+    return tile.displayType || tile.type;
   }
   return tile.type;
 }
@@ -2352,7 +2352,7 @@ const LEVELS = {
     breed: '三花猫',
     boardType: BOARD_TYPES.petal,
     interference: INTERFERENCE_TYPES.transform,
-    interferenceCount: 2,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [{
@@ -2573,7 +2573,7 @@ const LEVELS = {
     breed: '三花猫',
     boardType: BOARD_TYPES.petal,
     interference: INTERFERENCE_TYPES.transform,
-    interferenceCount: 2,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [{
@@ -2808,7 +2808,7 @@ const LEVELS = {
     breed: '三花猫',
     boardType: BOARD_TYPES.petal,
     interference: INTERFERENCE_TYPES.transform,
-    interferenceCount: 2,
+    interferenceCount: 3,
     disabledSkills: [],
     specialRule: null,
     layers: [{
@@ -2943,7 +2943,7 @@ function formatTimeLimitDisplay(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 function countRemainingBoardTiles(tiles) {
-  return tiles.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed)))).length;
+  return tiles.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed)))).length;
 }
 function getTimerVisualState(timeLeft, timerDelay, isTimed) {
   if (!isTimed || timerDelay > 0) return 'idle';
@@ -3535,11 +3535,14 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     return a.col - b.col;
   });
   sorted.forEach(tile => {
-    // 查找卡牌视觉定义：先找普通牌，再找干扰牌
-    let cat = CAT_TYPES.find(c => c.id === getTileDisplayType(tile));
-    if (!cat && tile.isInterference) {
+    // 查找卡牌视觉定义：干扰牌优先用自身贴图（小狗牌/冰冻牌/舔毛牌），
+    // 真身牌除外（真身牌用伪装层猫咪贴图，由后续 effectiveCat 逻辑处理）
+    let cat;
+    if (tile.isInterference && tile.interferenceType !== 'disguise') {
       const iCard = INTERFERENCE_CARDS[tile.interferenceType];
-      if (iCard) cat = iCard;
+      cat = iCard || CAT_TYPES.find(c => c.id === getTileDisplayType(tile));
+    } else {
+      cat = CAT_TYPES.find(c => c.id === getTileDisplayType(tile));
     }
     // 真身牌特殊处理：未暴露时用伪装层猫咪信息渲染
     const isDisguiseOnBoard = tile.isInterference && tile.interferenceType === 'disguise' && !tile.inSlot && !tile.revealed;
@@ -3628,8 +3631,8 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     if (isDisguiseOnBoard && tile.disguisedAs) {
       imgKey = tile.disguisedAs; // 未暴露：渲染伪装层图片
     }
-    // 干扰牌有自己的贴图，优先使用
-    if (tile.isInterference && cat && cat.img) {
+    // 干扰牌有自己的贴图，优先使用（真身牌除外，保留伪装层图片）
+    if (tile.isInterference && tile.interferenceType !== 'disguise' && cat && cat.img) {
       imgKey = cat.id;
     }
     // 揭穿后(isDisguiseShell=false, revealed=true)直接用tile.type渲染，无需特殊处理
@@ -4770,8 +4773,9 @@ function generateBoard(levelNum) {
 
   // ⑤ 逆向生成天然保证有解，不需要 isSolvable 贪心验证（会产生假阴性）
 
-  // P0: 使用 BoardGenerator 进行配额验证（排除干扰牌类型）
-  if (typeof BoardGenerator !== 'undefined' && result) {
+  // P0: 使用 BoardGenerator 进行配额验证（排除干扰牌类型，三花牌关卡跳过）
+  var hasTransform = result.some(function(c) { return c.isInterference && c.interferenceType === 'transform'; });
+  if (!hasTransform && typeof BoardGenerator !== 'undefined' && result) {
     var typeIds = result.map(function(c) { return c.type; }).filter(function(t) { return !t.startsWith('__interference_'); });
     if (typeIds.length > 0) {
       var uniqueTypes = [...new Set(typeIds)];
@@ -4986,23 +4990,8 @@ function addInterferenceCards(cards, levelConfig, rng) {
     if (interferenceType === 'sticky') {
       const allCards = cards.filter(c => !c.removed);
       const hasNeighbor = card => {
-        const dirs = [{
-          dr: -1,
-          dc: 0
-        }, {
-          dr: 1,
-          dc: 0
-        }, {
-          dr: 0,
-          dc: -1
-        }, {
-          dr: 0,
-          dc: 1
-        }];
-        return dirs.some(({
-          dr,
-          dc
-        }) => allCards.some(other => other.id !== card.id && other.layer === card.layer && other.row === card.row + dr && other.col === card.col + dc));
+        const dirs = [{dr: -1,dc: 0}, {dr: 1,dc: 0}, {dr: 0,dc: -1}, {dr: 0,dc: 1}];
+        return dirs.some(({dr,dc}) => allCards.some(other => other.id !== card.id && other.layer === card.layer && other.row === card.row + dr && other.col === card.col + dc));
       };
       const withNeighbor = shuffledTop.filter(hasNeighbor);
       const withoutNeighbor = shuffledTop.filter(c => !hasNeighbor);
@@ -5010,11 +4999,40 @@ function addInterferenceCards(cards, levelConfig, rng) {
       for (const card of sortedCandidates) {
         if (selectedCards.length >= iCount) break;
         const isAdjacent = selectedCards.some(sc => Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1);
-        if (!isAdjacent) {
-          selectedCards.push(card);
-        }
+        if (!isAdjacent) { selectedCards.push(card); }
       }
       console.log('[P2-Interference] sticky: withNeighbor=' + withNeighbor.length + ', withoutNeighbor=' + withoutNeighbor.length + ', selected=' + selectedCards.length + '/iCount=' + iCount + ', top=' + topLayerCards.length);
+    } else if (interferenceType === 'transform') {
+      // 三花牌：棋盘和牌堆生成好后，额外新增独立牌
+      var maxId = cards.reduce(function(m, c) { return Math.max(m, c.id || 0); }, 0);
+      var newLayer = maxLayer;
+      // 固定2个位置：花瓣棋盘 (1,3) (1,5) 最上层
+      var fixedSpots = [
+        { row: 1, col: 3 },
+        { row: 1, col: 5 }
+      ];
+      var displayTypes = [...new Set(cards.filter(function(c) { return !c.removed && !c.isInterference; }).map(function(c) { return c.visualType || c.type; }))];
+      if (displayTypes.length === 0) displayTypes = ['未知'];
+      console.log('[三花牌] 固定位置: (1,3)(1,5), 层=' + newLayer + ', 显示类型池=' + displayTypes.length + '种');
+      for (var j = 0; j < fixedSpots.length; j++) {
+        var pos = fixedSpots[j];
+        selectedCards.push({
+          id: maxId + j + 1,
+          type: '__interference_transform__',
+          row: pos.row,
+          col: pos.col,
+          layer: newLayer,
+          zone: 'default',
+          removed: false,
+          inSlot: false,
+          isInterference: true,
+          interferenceType: 'transform',
+          displayType: displayTypes[Math.floor(rng() * displayTypes.length)],
+          revealed: true
+        });
+      }
+      console.log('[三花牌] 最终新增: ' + selectedCards.length + '张, 位置: ' + fixedSpots.map(function(cp) { return '(' + cp.row + ',' + cp.col + ')'; }).join(' '));
+      return cards.concat(selectedCards);
     } else {
       for (const card of shuffledTop) {
         if (selectedCards.length >= iCount) break;
@@ -5073,7 +5091,8 @@ function addInterferenceCards(cards, levelConfig, rng) {
 // 将干扰牌属性应用到选中的卡牌
 function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
   // 获取当前关卡棋盘上实际使用的猫咪类型（用于真身牌伪装贴图随机）
-  const availableTypes = [...new Set(cards.map(c => c.type).filter(t => !t.startsWith('__interference_')))];
+  // 优先使用 visualType（区域关卡不含后缀的纯净名），否则使用 type
+  const availableTypes = [...new Set(cards.map(c => c.visualType || c.type).filter(t => !t.startsWith('__interference_')))];
 
   // 真身牌特殊处理：在2张现有牌上盖上伪装壳
   // 真身牌不替换原始牌，仅加上伪装壳属性，点击后去掉壳以原始type正常入槽三消
@@ -5102,15 +5121,13 @@ function applyInterferenceToCards(cards, selectedCards, interferenceType, rng) {
     if (selectedCards.some(sc => sc.id === card.id)) {
       return {
         ...card,
-        // 粘连/三花/小狗/舔毛保留原始type（小狗点击即失败、舔毛入槽即占位，均不参与三消匹配）；
-        // 只有真身牌/冰冻牌等改为__interference_xxx__以便专属渲染
-        ...(interferenceType !== 'sticky' && interferenceType !== 'transform' && interferenceType !== 'danger' && interferenceType !== 'groom' ? {
+        // 粘连/小狗/舔毛保留原始type；真身牌/冰冻牌改为__interference_xxx__
+        ...(interferenceType !== 'sticky' && interferenceType !== 'danger' && interferenceType !== 'groom' ? {
           type: `__interference_${interferenceType}__`
         } : {}),
         isInterference: true,
         interferenceType: interferenceType,
-        originalType: interferenceType === 'transform' || interferenceType === 'danger' ? card.type : undefined,
-        displayType: interferenceType === 'transform' ? card.type : undefined,
+        originalType: interferenceType === 'danger' ? card.type : undefined,
         revealed: true
       };
     }
@@ -5731,9 +5748,11 @@ function SkillConfirmModal({
   breed,
   skill,
   onConfirm,
-  onCancel
+  onCancel,
+  conflict
 }) {
   if (!breed || !skill) return null;
+  const confirmDisabled = !!conflict;
   const rarityColors = {
     N: '#B2BEC3',
     R: '#45B7D1',
@@ -5831,18 +5850,18 @@ function SkillConfirmModal({
       color: 'rgba(240,237,255,0.6)'
     }
   }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
-    onClick: onConfirm,
+    onClick: confirmDisabled ? function() { onConfirm(); } : onConfirm,
     style: {
       flex: 1,
       height: 44,
       borderRadius: 14,
-      background: `linear-gradient(135deg, ${color}, ${color}CC)`,
-      border: 'none',
+      background: confirmDisabled ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg, ${color}, ${color}CC)`,
+      border: confirmDisabled ? '1px solid rgba(255,255,255,0.1)' : 'none',
       cursor: 'pointer',
       fontSize: 14,
       fontWeight: 700,
-      color: '#fff',
-      boxShadow: `0 6px 16px ${color}40`
+      color: confirmDisabled ? 'rgba(255,255,255,0.3)' : '#fff',
+      boxShadow: confirmDisabled ? 'none' : `0 6px 16px ${color}40`
     }
   }, "\u4F7F\u7528\u6280\u80FD"))));
 }
@@ -8044,7 +8063,7 @@ function Game() {
     return () => {
       clearTransformTimers();
     };
-  }, [gameState, tiles, battleCats, timerPaused]);
+  }, [gameState, currentLevel, timerPaused]);
 
   // P1: fish & combo tracking
   // P7: 鱼干系统重做 - 使用三消次数追踪（每6次三消=1基础鱼干）
@@ -8201,6 +8220,7 @@ function Game() {
     active2: false
   }); // UI显示(已用完置灰)
   const [confirmSkill, setConfirmSkill] = useState(null); // { index, breed, skill }
+  const [skillConflictMsg, setSkillConflictMsg] = useState(null); // 技能冲突提示
   const [skillAnimVisible, setSkillAnimVisible] = useState(false); // 技能动效弹窗可见
   const [skillAnimData, setSkillAnimData] = useState(null); // { breed, skill, rarity }
   const [fishMultiplier, setFishMultiplier] = useState(1);
@@ -8326,6 +8346,11 @@ function Game() {
         clearInterval(interval);
         const remaining = countRemainingBoardTiles(tilesRef.current);
         if (remaining > 0) {
+          // 失败时把收集槽的牌放回棋盘，保证剩余卡牌统计准确
+          setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
+          setSlot([]);
+          setGroomSlots([]);
+          setTempStorage([]);
           setGameState(GAME_LOSE);
         } else {
           setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -8511,6 +8536,21 @@ function Game() {
     return () => ro.disconnect();
   }, [boardWidth, boardHeight]);
 
+  // 关卡切换后强制重绘棋盘，避免显示旧关卡残影
+  useEffect(() => {
+    if (gameState !== GAME_PLAYING) return;
+    var canvas = boardCanvasRef.current;
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== boardWidth * dpr || canvas.height !== boardHeight * dpr) {
+      canvas.width = boardWidth * dpr;
+      canvas.height = boardHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    drawTiles(ctx, tilesRef.current, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
+  }, [gameState, boardWidth, boardHeight]);
+
   // Board canvas rAF loop（性能优化：静止时自动降帧到 10fps）
   useEffect(() => {
     const canvas = boardCanvasRef.current;
@@ -8576,6 +8616,10 @@ function Game() {
     // 匹配动画进行中，禁止点击防止槽位状态混乱
     if (matchingRef.current.length > 0) return;
 if (matchingRef.current.length > 0) return;
+
+    // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
+    const frozenOffset = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
+    const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
 
     // 飞行动画（纯 DOM，预加载图片 + transform 高性能动画）
     (function() {
@@ -8824,10 +8868,6 @@ if (matchingRef.current.length > 0) return;
       }
     }
 
-    // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
-    const frozenOffset = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
-    let effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
-
     // 粘连牌容量校验：需同时放入粘连牌+被连带的卡牌，剩余容量不足则直接失败
     const stickyBatchSize = stickyAdjacentTile ? 2 : 1; // 连带1张=2，无连带=1
     if (isStickyCard && !stickyBlockOverride) {
@@ -8867,6 +8907,34 @@ if (matchingRef.current.length > 0) return;
       areaTag: tile.areaTag,
       visualType: getTileDisplayType(tile)
     };
+
+    // 三花牌牌堆补偿：入槽后在牌堆0号位和2号位最顶端（可见牌下方）各加1张同类型牌
+    // 若0号或2号位已空，则在1号位最顶端补2张
+    // 收集槽1张 + 牌堆补偿2张 = 完整三消组
+    if (tile.isInterference && tile.interferenceType === 'transform') {
+      const compType = slotItemType;
+      setPiles(prev => {
+        const pile0empty = !prev[0] || prev[0].isEmpty;
+        const pile2empty = !prev[2] || prev[2].isEmpty;
+        if (pile0empty || pile2empty) {
+          // 0号或2号空了 → 1号位顶端补2张
+          return prev.map((p, i) => {
+            if (i === 1) {
+              var insertAt = p.topIndex + 1;
+              return { ...p, cards: [...p.cards.slice(0, insertAt), compType, compType, ...p.cards.slice(insertAt)] };
+            }
+            return p;
+          });
+        }
+        return prev.map((p, i) => {
+          if (i === 0 || i === 2) {
+            var insertAt = p.topIndex + 1;
+            return { ...p, cards: [...p.cards.slice(0, insertAt), compType, ...p.cards.slice(insertAt)] };
+          }
+          return p;
+        });
+      });
+    }
 
     // 粘连牌首次点击提示
     if (isStickyCard && !stickyBlockOverride && !stickyAdjacentTile && groomSlots.length === 0 && !window._stickyToastShown) {
@@ -9017,7 +9085,7 @@ if (matchingRef.current.length > 0) return;
           } : t));
           setTiles(prev => {
             // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-            const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
+            var nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonDangerRemaining.length === 0) {
               var pilesEmpty = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               var slotCount = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
@@ -9166,7 +9234,7 @@ if (matchingRef.current.length > 0) return;
         // Check win — all tiles either removed or still in slot will be cleared
         setTiles(prev => {
           // 小狗牌不参与胜利判定（它留在棋盘上不影响通关，只有点击才触发失败）
-          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
+          const nonDangerRemaining = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
           if (nonDangerRemaining.length === 0) {
             var pilesEmpty2 = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
             var slotCount2 = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
@@ -9208,7 +9276,7 @@ if (matchingRef.current.length > 0) return;
       // 舔毛牌等干扰牌入槽后不触发三消，需单独检查胜利条件
       setTimeout(() => {
         setTiles(prev => {
-          const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
+          const nonBlocking = prev.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
           if (nonBlocking.length === 0) {
             var pilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
             var slotCount3 = slotRef.current.filter(function(s) { return !s.isGroom && !s.isFreeze && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger' && !(s.interferenceType === 'disguise' && !s.revealed); }).length;
@@ -9248,15 +9316,24 @@ if (matchingRef.current.length > 0) return;
     if (!breedId) return;
     const skill = CAT_SKILLS[breedId];
     if (!skill) return;
+    // 技能冲突：布偶猫同时参战时，橘猫技能确认按钮置灰
+    const conflict = breedId === '橘猫' && skillSlots.slice(0, 3).some(function(b) { return b === '布偶猫'; });
     setConfirmSkill({
       index: skillIndex,
       breed: breedId,
-      skill
+      skill,
+      conflict: conflict
     });
   };
   const executeSkill = () => {
     if (!confirmSkill) return;
-    if (skillAnimVisible) return; // 动效播放中防止重复触发
+    if (skillAnimVisible) return;
+    // 技能冲突检查
+    if (confirmSkill.conflict) {
+      setConfirmSkill(null);
+      setSkillConflictMsg('布偶猫参战，橘猫技能无法施展');
+      return;
+    }
     const skillIndex = confirmSkill.index;
     const breedId = confirmSkill.breed;
     const skill = confirmSkill.skill;
@@ -9307,7 +9384,8 @@ if (matchingRef.current.length > 0) return;
           toMove.forEach(item => {
             setTiles(prev => prev.map(t => t.id === item.tileId ? {
               ...t,
-              inSlot: false
+              inSlot: false,
+              removed: true
             } : t));
           });
           break;
@@ -9391,7 +9469,8 @@ if (matchingRef.current.length > 0) return;
           toMove3.forEach(item => {
             setTiles(prev => prev.map(t => t.id === item.tileId ? {
               ...t,
-              inSlot: false
+              inSlot: false,
+              removed: true
             } : t));
           });
           break;
@@ -9553,7 +9632,7 @@ if (matchingRef.current.length > 0) return;
           } : t));
           setTimeout(() => {
             // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
+            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -9593,7 +9672,7 @@ if (matchingRef.current.length > 0) return;
           setTempStorage([]);
           setTimeout(() => {
             // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || (t.interferenceType === 'disguise' && !t.revealed))));
+            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -9616,6 +9695,18 @@ if (matchingRef.current.length > 0) return;
   // P1: write fish earnings to localStorage when game ends
   // P7: 更新为新的鱼干计算系统
   const gameEndedRef = useRef(false);
+
+  // 兜底：GAME_LOSE 后如果棋盘+牌堆+槽全空，自动转为通关
+  useEffect(() => {
+    if (gameState !== GAME_LOSE) return;
+    var boardEmpty = tiles.filter(function(t) { return !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); }).length === 0;
+    var pilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+    var slotDone = slot.filter(function(s) { return !s.isGroom && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger'; }).length === 0;
+    if (boardEmpty && pilesDone && slotDone) {
+      setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+    }
+  }, [gameState, tiles, piles, slot]);
+
   useEffect(() => {
     if (gameState !== GAME_PLAYING && !gameEndedRef.current) {
       gameEndedRef.current = true;
@@ -9824,7 +9915,9 @@ if (matchingRef.current.length > 0) return;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     setPhase('playing');
-    setTiles(generateBoard(currentLevel));
+    var restartTiles = generateBoard(currentLevel);
+    tilesRef.current = restartTiles; // 立即同步 ref，避免旧棋盘残影
+    setTiles(restartTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
     setTempStorage([]);
@@ -9932,7 +10025,9 @@ if (matchingRef.current.length > 0) return;
     gameEndedRef.current = false;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
-    setTiles(generateBoard(currentLevel));
+    var retryTiles = generateBoard(currentLevel);
+    tilesRef.current = retryTiles; // 立即同步 ref，避免旧棋盘残影
+    setTiles(retryTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
     setTempStorage([]);
@@ -9996,6 +10091,7 @@ if (matchingRef.current.length > 0) return;
       setCurrentLevel(1);
       console.time('[handleNextLevel] generateBoard(cycle)');
       const cycleTiles = generateBoard(1);
+      tilesRef.current = cycleTiles; // 立即同步 ref
       console.timeEnd('[handleNextLevel] generateBoard(cycle)');
       setTiles(cycleTiles);
       setPiles(generatePileData(1)); // P2: 重置牌堆
@@ -10071,6 +10167,7 @@ if (matchingRef.current.length > 0) return;
     console.time('[handleNextLevel] generateBoard');
     try {
       const newTiles = generateBoard(nextLv);
+      tilesRef.current = newTiles; // 立即同步 ref，避免 effect 时序导致旧棋盘残影
       console.timeEnd('[handleNextLevel] generateBoard');
       console.log('[handleNextLevel] generateBoard 返回', newTiles.length, '张卡牌');
       setTiles(newTiles);
@@ -10153,7 +10250,19 @@ if (matchingRef.current.length > 0) return;
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
   };
-  const remaining = tiles.filter(t => !t.removed && !t.inSlot).length;
+  const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && t.interferenceType === 'transform'); }).length;
+
+  // 所有牌消除后自动通关
+  useEffect(() => {
+    if (gameState !== GAME_PLAYING) return;
+    if (remaining > 0) return;
+    var pilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
+    var slotDone = slot.filter(function(s) { return !s.isGroom && s.interferenceType !== 'groom' && s.interferenceType !== 'freeze' && s.interferenceType !== 'danger'; }).length === 0;
+    var tempDone = tempStorage.length === 0;
+    if (pilesDone && slotDone && tempDone) {
+      setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+    }
+  }, [remaining, gameState, piles, slot, tempStorage]);
   const progress = Math.round((totalTiles - remaining) / totalTiles * 100);
 
   // ═══════════════════════════════════════
@@ -11080,9 +11189,23 @@ if (matchingRef.current.length > 0) return;
   })), /*#__PURE__*/React.createElement(SkillConfirmModal, {
     breed: confirmSkill?.breed,
     skill: confirmSkill?.skill,
+    conflict: confirmSkill?.conflict,
     onConfirm: executeSkill,
     onCancel: () => setConfirmSkill(null)
-  }), /*#__PURE__*/React.createElement(SkillAnimationOverlay, {
+  }), skillConflictMsg && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' },
+    onClick: () => setSkillConflictMsg(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { background: 'linear-gradient(135deg, #2d1b4e 0%, #1a1a2e 100%)', borderRadius: 16, padding: '28px 24px 20px', maxWidth: 300, textAlign: 'center', border: '1px solid rgba(255,107,107,0.3)', boxShadow: '0 0 40px rgba(255,107,107,0.2)' },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12 } }, "⚠️"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 16, fontWeight: 700, color: '#FF6B6B', marginBottom: 6 }
+  }, "技能释放失败"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 18, lineHeight: 1.5 }
+  }, skillConflictMsg), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSkillConflictMsg(null),
+    style: { width: '100%', height: 38, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
+  }, "确认"))), /*#__PURE__*/React.createElement(SkillAnimationOverlay, {
     breed: skillAnimData?.breed,
     skill: skillAnimData?.skill,
     rarity: skillAnimData?.rarity,
