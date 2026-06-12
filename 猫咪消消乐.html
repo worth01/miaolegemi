@@ -132,6 +132,29 @@
       gameBGM.volume = 0.3;
       gameBGM.preload = 'auto';
 
+      // ═══ 音效 ═══
+      var matchSfx = new Audio('assets/audio/match.mp3');
+      matchSfx.volume = 0.6;
+      matchSfx.preload = 'auto';
+      var coinSfx = new Audio('assets/audio/coin.mp3');
+      coinSfx.volume = 0.5;
+      coinSfx.preload = 'auto';
+
+      window.__gameSfx = {
+        playMatch: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          matchSfx.currentTime = 0;
+          matchSfx.play().catch(function(){});
+        },
+        playCoin: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          coinSfx.currentTime = 0;
+          coinSfx.play().catch(function(){});
+        }
+      };
+
       var unlocked = false;
       var muted = !savedSettings.bgmOn;
       function unlock() {
@@ -5497,7 +5520,7 @@ function countTilesAbove(tile, allTiles) {
     const oBottom = oTop + TILE_H;
     const overlap = Math.max(0, Math.min(right, oRight) - Math.max(left, oLeft)) *
                     Math.max(0, Math.min(bottom, oBottom) - Math.max(top, oTop));
-    if (overlap / area > 0.1) {
+    if (overlap / area > 0) {
       count++;
     }
   }
@@ -7773,7 +7796,7 @@ function Game() {
   const toastKeysRef = useRef([]); // 当前活跃提示的key列表
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
-  useEffect(() => { matchingRef.current = matching; }, [matching]);
+  useEffect(() => { matchingRef.current = matching; if (matching.length > 0 && window.__gameSfx) window.__gameSfx.playMatch(); }, [matching]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
@@ -9625,6 +9648,9 @@ if (matchingRef.current.length > 0) return;
         finalFish = Math.floor(finalFish * (1 - lossRatio));
         fishCalc.totalFish = finalFish;
       }
+
+      // 播放鱼干获得音效
+      if (finalFish > 0 && window.__gameSfx) window.__gameSfx.playCoin();
 
       // P0: 检查是否打破个人最高分
       const currentScore = score || 0;

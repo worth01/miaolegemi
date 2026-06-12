@@ -1441,6 +1441,22 @@
 
       return { play, stop, setMasterVolume, toggleMute, isMuted, setMuted, getCurrent: () => currentKey };
     })();
+
+    // ═══ 音效 SFX ═══
+    (function() {
+      var bellSfx = new Audio('assets/audio/lling.mp3');
+      bellSfx.volume = 0.6;
+      bellSfx.preload = 'auto';
+
+      window.__lobbySfx = {
+        playBell: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          bellSfx.currentTime = 0;
+          bellSfx.play().catch(function(){});
+        }
+      };
+    })();
   </script>
 </head>
 <body>
@@ -9041,6 +9057,9 @@ function GachaPage({
   const pityInfo = getPityProgress(pityCount);
   const handleGacha = () => {
     if (bells < 1 || animPhase !== 'idle') return;
+
+    // 播放摇铃铛音效
+    if (window.__lobbySfx) window.__lobbySfx.playBell();
 
     // 使用新保底系统
     const result = doGacha(pityCount);
