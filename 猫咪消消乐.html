@@ -3506,6 +3506,10 @@ function runParticleFrame(ctx, dt) {
   return _activeCount + _comboTexts.length;
 }
 
+// 缓动函数（白猫重整飞散动画）
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
 // ═══ Canvas 2D 棋盘绘制 ═══
 function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
   ctx.clearRect(0, 0, boardW, boardH);
@@ -3554,21 +3558,27 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     }
     // 真身牌揭穿后（revealed=true, isDisguiseShell=false）直接用原始cat渲染，无需特殊处理
     if (!cat) return;
-    const layerOff = getLayerOffset(tile.layer);
-    const x = tileX(tile) + layerOff.shadowX;
-    const y = tileY(tile) + layerOff.shadowY;
-    const blockedCount = countTilesAbove(tile, tiles);
-    const isBlocked = blockedCount > 0;
+    const isAnimating = tile._animX !== undefined;
+    const layerOff = isAnimating ? { shadowX: 0, shadowY: 0 } : getLayerOffset(tile.layer);
+    const x = isAnimating ? tile._animX : tileX(tile) + layerOff.shadowX;
+    const y = isAnimating ? tile._animY : tileY(tile) + layerOff.shadowY;
+    const blockedCount = isAnimating ? 0 : countTilesAbove(tile, tiles);
+    const isBlocked = isAnimating ? false : blockedCount > 0;
     // 逐层递进不透明度：0层=0%, 1层=20%, 2层=30%, 3层=40% ...
-    const overlayAlpha = isBlocked ? Math.min(0.50 + blockedCount * 0.10, 0.90) : 0;
+    const overlayAlpha = isAnimating ? 0 : (isBlocked ? Math.min(0.50 + blockedCount * 0.10, 0.90) : 0);
     const isInSlot = tile.inSlot;
     const isHighlighted = highlightedIds.includes(tile.id);
     const isHover = tile.id === hoverId;
     ctx.save();
+    // 飞行动画：旋转
+    if (isAnimating && tile._animRotation) {
+      ctx.translate(x + TILE_W / 2, y + TILE_H / 2);
+      ctx.rotate(tile._animRotation * Math.PI / 180);
+      ctx.translate(-(x + TILE_W / 2), -(y + TILE_H / 2));
+    }
 
-    // 3D 砖块厚度效果：在卡片本体背后绘制多层偏移的圆角矩形，
-    // 每层向右下偏移并逐渐加深，模拟砖块/厚卡牌的侧边厚度感
-    if (!isInSlot) {
+    // 3D 砖块厚度效果 — 飞行动画中跳过
+    if (!isInSlot && !isAnimating) {
       const layers = 6;
       const baseA = blockedCount === 0 ? 0.10 : blockedCount === 1 ? 0.06 : 0.04;
       const stepA = blockedCount === 0 ? 0.08 : blockedCount === 1 ? 0.05 : 0.03;
@@ -3610,8 +3620,8 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.fill();
 
-    // 顶部边缘高光：模拟砖块受光面的微倒角效果
-    if (!isInSlot && blockedCount === 0) {
+    // 顶部边缘高光：模拟砖块受光面的微倒角效果（飞行动画中跳过）
+    if (!isInSlot && !isAnimating && blockedCount === 0) {
       ctx.save();
       ctx.beginPath();
       roundRect(ctx, x + 2, y + 1, TILE_W - 4, 10, 6);
@@ -3934,7 +3944,7 @@ const CAT_SKILLS = {
   '三花猫': {
     active: '蹦跶',
     icon: '🐱',
-    activeDesc: '随机跳走2张干扰卡',
+    activeDesc: '有几率随机跳走场上任意1张干扰卡',
     color: '#FD79A8'
   },
   '暹罗猫': {
@@ -8129,6 +8139,8 @@ function Game() {
   const uidRef = useRef(0);
   const slotRef = useRef([]);
   const tilesRef = useRef(tiles);
+  const tilesVersionRef = useRef(0); // 重绘版本号：tiles 任何结构变化均递增
+  const shuffleAnimRef = useRef(null); // 白猫「重整」飞散动画状态
   const matchTimeoutRef = useRef(null);
   const matchingRef = useRef([]);
   const boardContainerRef = useRef(null);
@@ -8323,6 +8335,7 @@ function Game() {
   }, [tempStorage]);
   useEffect(() => {
     tilesRef.current = tiles;
+    tilesVersionRef.current++;
   }, [tiles]);
   useEffect(() => {
     pilesRef.current = piles;
@@ -8563,19 +8576,68 @@ function Game() {
     let rafId;
     let last = performance.now();
     let lastTileCount = 0;
+    let lastTileVersion = 0;
     let idleFrames = 0;
     function loop(now) {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       const currentTiles = tilesRef.current || [];
       const hasParticles = runParticleFrame(ctx, dt) > 0;
+
+      // ═══ 重整飞散动画（白猫技能） ═══
+      const shuffleAnim = shuffleAnimRef.current;
+      let tilesForDraw = currentTiles;
+      if (shuffleAnim) {
+        const elapsed = now - shuffleAnim.startTime;
+        if (elapsed >= shuffleAnim.totalDuration) {
+          // 动画结束：应用目标状态
+          setTiles(shuffleAnim.targetTiles);
+          shuffleAnimRef.current = null;
+        } else {
+          // 插值计算每张牌的动画位置
+          const animTileIds = new Set(shuffleAnim.items.map(it => it.tileId));
+          tilesForDraw = currentTiles.map(t => {
+            if (!animTileIds.has(t.id)) return t;
+            const item = shuffleAnim.items.find(it => it.tileId === t.id);
+            if (!item) return t;
+            let progress, fromX, fromY, toX, toY, rotProgress;
+            if (elapsed < shuffleAnim.scatterDuration) {
+              progress = easeOutCubic(elapsed / shuffleAnim.scatterDuration);
+              fromX = item.startX; fromY = item.startY;
+              toX = item.midX; toY = item.midY;
+              rotProgress = progress;
+            } else if (elapsed < shuffleAnim.scatterDuration + shuffleAnim.pauseDuration) {
+              progress = 1;
+              fromX = item.startX; fromY = item.startY;
+              toX = item.midX; toY = item.midY;
+              rotProgress = 1;
+            } else {
+              const retElapsed = elapsed - shuffleAnim.scatterDuration - shuffleAnim.pauseDuration;
+              progress = easeInOutCubic(Math.min(1, retElapsed / shuffleAnim.returnDuration));
+              fromX = item.midX; fromY = item.midY;
+              toX = item.endX; toY = item.endY;
+              rotProgress = 1 - progress;
+            }
+            return {
+              ...t,
+              _animX: fromX + (toX - fromX) * progress,
+              _animY: fromY + (toY - fromY) * progress,
+              _animRotation: item.rotation * rotProgress,
+            };
+          });
+        }
+      }
+
       const tileCount = currentTiles.filter(t => !t.removed && !t.inSlot).length;
-      const tileChanged = tileCount !== lastTileCount;
+      const tileVersion = tilesVersionRef.current;
+      const tileChanged = tileCount !== lastTileCount || tileVersion !== lastTileVersion;
       lastTileCount = tileCount;
-      // 无粒子且画面静止时跳过绘制
-      if (hasParticles || tileChanged || idleFrames < 2) {
-        drawTiles(ctx, currentTiles, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
-        idleFrames = hasParticles || tileChanged ? 0 : idleFrames + 1;
+      lastTileVersion = tileVersion;
+      // 动画期间始终重绘
+      const hasShuffleAnim = !!shuffleAnimRef.current;
+      if (hasParticles || tileChanged || hasShuffleAnim || idleFrames < 2) {
+        drawTiles(ctx, tilesForDraw, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
+        idleFrames = (hasParticles || tileChanged || hasShuffleAnim) ? 0 : idleFrames + 1;
         rafId = requestAnimationFrame(loop);
       } else {
         // 静止时降帧到 10fps，大幅降低功耗
@@ -8613,9 +8675,9 @@ function Game() {
     if (gameState !== GAME_PLAYING) return;
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
-    // 匹配动画进行中，禁止点击防止槽位状态混乱
+    // 匹配动画/重整飞散动画进行中，禁止点击
     if (matchingRef.current.length > 0) return;
-if (matchingRef.current.length > 0) return;
+    if (shuffleAnimRef.current) return;
 
     // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
     const frozenOffset = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
@@ -9393,7 +9455,10 @@ if (matchingRef.current.length > 0) return;
       case '黑猫':
         {
           // P3: 撤回 - 撤销上一步操作（跳过舔毛牌，舔毛牌无法撤回）
-          if (slotRef.current.length === 0) break;
+          if (slotRef.current.length === 0) {
+            setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
+            break;
+          }
           if (matchTimeoutRef.current) {
             clearTimeout(matchTimeoutRef.current);
             matchTimeoutRef.current = null;
@@ -9416,30 +9481,59 @@ if (matchingRef.current.length > 0) return;
             } : t));
             setSlot(prev => prev.filter(s => s.uid !== lastNonGroom.uid));
             setMoveHistory(h => h.slice(0, -1));
+          } else {
+            setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
           }
           break;
         }
       case '白猫':
         {
-          // P3: 重整 - 重新打乱当前所有可点击卡牌
-          setTiles(prev => {
-            const remaining = prev.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, prev));
-            if (remaining.length === 0) return prev;
-            const positions = remaining.map(t => ({
-              col: t.col,
-              row: t.row,
-              layer: t.layer
-            }));
-            const shuffledPositions = shuffleArr(positions);
-            return prev.map(t => {
-              if (t.removed || t.inSlot || isTileBlocked(t, prev)) return t;
-              const idx = remaining.findIndex(r => r.id === t.id);
-              return {
-                ...t,
-                ...shuffledPositions[idx]
-              };
-            });
+          // P3: 重整 - 飞散动画：牌从原位弹起飞散，再弧线归位到新位置
+          const remaining = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
+          if (remaining.length === 0) break;
+          const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
+          const shuffledPositions = shuffleArr(positions);
+          // 预计算目标tiles（动画结束后一次性应用）
+          const targetTiles = tilesRef.current.map(t => {
+            if (t.removed || t.inSlot || isTileBlocked(t, tilesRef.current)) return t;
+            const idx = remaining.findIndex(r => r.id === t.id);
+            if (idx === -1) return t;
+            return { ...t, col: shuffledPositions[idx].col, row: shuffledPositions[idx].row, layer: shuffledPositions[idx].layer };
           });
+          // 为每张牌构建飞散动画数据（从棋盘中心向外爆炸方向）
+          const boardCX = boardWidth / 2;
+          const boardCY = boardHeight / 2;
+          const animItems = remaining.map((t, idx) => {
+            const endPos = shuffledPositions[idx];
+            const startX = tileX(t);
+            const startY = tileY(t);
+            const endX = tileX({ ...t, col: endPos.col, row: endPos.row, layer: endPos.layer });
+            const endY = tileY({ ...t, col: endPos.col, row: endPos.row, layer: endPos.layer });
+            const midBaseX = (startX + endX) / 2;
+            const midBaseY = (startY + endY) / 2;
+            const dx = midBaseX - boardCX;
+            const dy = midBaseY - boardCY;
+            const baseAngle = Math.atan2(dy, dx);
+            const scatterDist = 50 + Math.random() * 100;
+            const jitterAngle = baseAngle + (Math.random() - 0.5) * 1.2;
+            return {
+              tileId: t.id,
+              startX, startY,
+              midX: midBaseX + Math.cos(jitterAngle) * scatterDist,
+              midY: midBaseY + Math.sin(jitterAngle) * scatterDist - 30,
+              endX, endY,
+              rotation: (Math.random() - 0.5) * 40,
+            };
+          });
+          shuffleAnimRef.current = {
+            startTime: performance.now(),
+            scatterDuration: 280,
+            pauseDuration: 60,
+            returnDuration: 280,
+            totalDuration: 620,
+            items: animItems,
+            targetTiles,
+          };
           break;
         }
       case '蓝猫':
@@ -9477,22 +9571,42 @@ if (matchingRef.current.length > 0) return;
         }
       case '三花猫':
         {
-          // P3: 蹦跶 - 移除收集槽的冰冻牌（仅胆小减免生效时才可移除，否则无法移出）
+          // 胆小减免生效时，蹦跶必定跳走冰冻牌（胆小性格先手优势）
+          let freezeClearedByCowardly = false;
           if (frozenSlot && freezeBlockOverride) {
             emitExplosion(100, 600, '#74B9FF');
             setFrozenSlot(null);
+            freezeClearedByCowardly = true;
           }
-          // 优先跳走棋盘上的干扰卡（含舔毛牌），其次随机移除2张
+          // 蹦跶：随机跳走场上任意1张干扰卡（6种均可）
+          // 舔毛牌/冰冻牌/三花牌/小狗牌 → 50%几率；真身牌/粘连牌 → 0%
           const interferenceCandidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current) && t.isInterference);
-          const normalCandidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
+          // 冰冻牌不出现在棋盘上，直接冻结收集槽，故作为虚拟候选加入
+          if (frozenSlot && !freezeClearedByCowardly) {
+            interferenceCandidates.push({ __isFrozenSlot: true, interferenceType: 'freeze', id: '__frozen_slot__' });
+          }
+          console.log('[蹦跶] interferenceCandidates:', interferenceCandidates.length, interferenceCandidates.map(t => ({ type: t.type, interferenceType: t.interferenceType, row: t.row, col: t.col, layer: t.layer, __isFrozenSlot: t.__isFrozenSlot })));
           let removed = [];
-          // 优先移除干扰卡
-          const shuffledInterference = shuffleArr(interferenceCandidates);
-          removed.push(...shuffledInterference.slice(0, 2));
-          // 不够2张时，从普通牌补充
-          if (removed.length < 2) {
-            const shuffledNormal = shuffleArr(normalCandidates.filter(c => !removed.some(r => r.id === c.id)));
-            removed.push(...shuffledNormal.slice(0, 2 - removed.length));
+          if (interferenceCandidates.length === 0) {
+            // 场上无干扰卡
+            setSkillConflictMsg('蹦跶技能已使用，很遗憾场上没有任何干扰卡。');
+          } else {
+            // 随机选1张干扰卡
+            const target = shuffleArr(interferenceCandidates)[0];
+            // 真身牌/粘连牌：0%几率（看不穿伪装/扯不开粘连）
+            // 其他干扰牌：50%几率
+            const successRate = (target.interferenceType === 'disguise' || target.interferenceType === 'sticky') ? 0 : 0.5;
+            if (Math.random() < successRate) {
+              if (target.__isFrozenSlot) {
+                // 跳走冰冻牌：解冻收集槽
+                emitExplosion(100, 600, '#74B9FF');
+                setFrozenSlot(null);
+              } else {
+                removed.push(target);
+              }
+            } else {
+              setSkillConflictMsg('蹦跶技能已使用，很可惜没有任何事发生。');
+            }
           }
           removed.forEach(t => {
             // 干扰牌用专用颜色，普通牌用猫咪颜色
