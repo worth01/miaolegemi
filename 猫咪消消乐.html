@@ -5647,6 +5647,8 @@ function SkillAnimationOverlay({
   if (!visible && phase === 'entering') return null;
   const glowColor = rarity === 'SSR' ? '#FFD700' : rarity === 'SR' ? '#CC88FF' : rarity === 'R' ? '#64A0FF' : '#B0B0C0';
   const isSSR = rarity === 'SSR';
+  const cardSize = isSSR ? 290 : 120; // 非SSR 120×120
+  const cardBg = isSSR ? '#000000' : 'transparent';
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
@@ -5656,8 +5658,10 @@ function SkillAnimationOverlay({
       bottom: 0,
       zIndex: 998,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: isSSR ? 'center' : 'flex-start',
+      justifyContent: isSSR ? 'center' : 'flex-end',
+      paddingTop: isSSR ? 0 : 505,
+      paddingRight: isSSR ? 0 : 8,
       opacity: phase === 'exiting' ? 0 : 1,
       transition: 'opacity 0.2s ease-out',
       pointerEvents: phase === 'exiting' ? 'none' : 'all'
@@ -5670,20 +5674,20 @@ function SkillAnimationOverlay({
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.65)',
+      background: isSSR ? 'rgba(0,0,0,0.65)' : 'transparent',
       animation: phase === 'entering' ? 'skillMaskIn 0.25s ease-out' : 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation(),
     style: {
       position: 'relative',
-      width: 290,
-      height: 290,
+      width: cardSize,
+      height: cardSize,
       borderRadius: 16,
       overflow: 'hidden',
-      background: '#000000',
-      border: `2px solid ${glowColor}${isSSR ? '99' : '66'}`,
-      boxShadow: isSSR ? `0 0 8px ${glowColor}33, 0 24px 80px rgba(255,215,0,0.3)` : `0 24px 80px rgba(0,0,0,0.8), 0 0 40px ${glowColor}22`,
+      background: cardBg,
+      border: isSSR ? `2px solid ${glowColor}99` : 'none',
+      boxShadow: isSSR ? `0 0 8px ${glowColor}33, 0 24px 80px rgba(255,215,0,0.3)` : 'none',
       animation: phase === 'entering' ? 'skillCardPop 0.35s cubic-bezier(0.34,1.56,0.64,1)' : 'none'
     }
   }, isSSR && /*#__PURE__*/React.createElement("div", {
@@ -5701,8 +5705,8 @@ function SkillAnimationOverlay({
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       width: '100%',
-      height: 290,
-      background: '#000000',
+      height: cardSize,
+      background: cardBg,
       position: 'relative',
       overflow: 'hidden'
     }
@@ -5740,7 +5744,7 @@ function SkillAnimationOverlay({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 15,
+      fontSize: 11,
       fontWeight: 900,
       color: '#ffffff',
       background: 'rgba(0,0,0,0.55)',
@@ -8141,6 +8145,7 @@ function Game() {
   const tilesRef = useRef(tiles);
   const tilesVersionRef = useRef(0); // 重绘版本号：tiles 任何结构变化均递增
   const shuffleAnimRef = useRef(null); // 白猫「重整」飞散动画状态
+  const pendingSkillCallbackRef = useRef(null); // 非SSR技能延迟执行回调
   const matchTimeoutRef = useRef(null);
   const matchingRef = useRef([]);
   const boardContainerRef = useRef(null);
@@ -8195,6 +8200,15 @@ function Game() {
           breed,
           text: eff.desc
         });
+      });
+    }
+    // 羁绊【压制】：橘猫+布偶猫同时参战 → 橘猫被压制
+    if (skillSlots.slice(0, 3).some(function(b) { return b === '橘猫'; }) && skillSlots.slice(0, 3).some(function(b) { return b === '布偶猫'; })) {
+      list.push({
+        type: 'bond',
+        icon: '🔗',
+        text: '羁绊【压制】：布偶猫压制橘猫，橘猫技能无法使用',
+        color: '#FD9644'
       });
     }
     return list;
@@ -9378,7 +9392,7 @@ function Game() {
     if (!breedId) return;
     const skill = CAT_SKILLS[breedId];
     if (!skill) return;
-    // 技能冲突：布偶猫同时参战时，橘猫技能确认按钮置灰
+    // 羁绊【压制】：橘猫+布偶猫同时参战 → 橘猫被压制，无法使用技能
     const conflict = breedId === '橘猫' && skillSlots.slice(0, 3).some(function(b) { return b === '布偶猫'; });
     setConfirmSkill({
       index: skillIndex,
@@ -9393,7 +9407,7 @@ function Game() {
     // 技能冲突检查
     if (confirmSkill.conflict) {
       setConfirmSkill(null);
-      setSkillConflictMsg('布偶猫参战，橘猫技能无法施展');
+      setSkillConflictMsg('羁绊【压制】：布偶猫在场时橘猫被压制，无法使用技能');
       return;
     }
     const skillIndex = confirmSkill.index;
@@ -9404,14 +9418,104 @@ function Game() {
     if (skillUseCount[key] >= skillUseMax[key]) return;
     if (gameState !== GAME_PLAYING) return;
 
-    // 技能动效弹窗：T+0ms 同时触发动画 + 技能逻辑
+    // 技能动效弹窗
     const rarity = BREED_RARITY[breedId] || 'N';
+    const isSSR = rarity === 'SSR';
     setSkillAnimData({
       breed: breedId,
       skill,
       rarity
     });
-    setSkillAnimVisible(true);
+    if (isSSR) {
+      // SSR：立即显示动画卡片 + 立即生效
+      setSkillAnimVisible(true);
+      applySkillEffect();
+    } else {
+      // 非SSR 方案A：克隆分身飞向动画卡片，到达后再生效
+      (function() {
+        var srcBtn = document.querySelector('[data-skill-index="' + skillIndex + '"]');
+        if (!srcBtn) { setSkillAnimVisible(true); return; }
+        var srcImg = srcBtn.querySelector('img');
+        var srcRect = (srcImg || srcBtn).getBoundingClientRect();
+        // 目标位置：动画卡片右下角
+        var phoneEl = document.querySelector('.phone-screen');
+        var phoneRect = phoneEl ? phoneEl.getBoundingClientRect() : { left: 0, top: 0, right: 390, bottom: 844 };
+        var dstCX = phoneRect.right - 8 - 60;  // 卡片中心X
+        var dstCY = phoneRect.top + 505 + 60;   // 卡片中心Y
+        // 创建克隆分身
+        var clone = document.createElement('div');
+        clone.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
+          + 'width:' + srcRect.width + 'px;height:' + srcRect.height + 'px;'
+          + 'left:' + srcRect.left + 'px;top:' + srcRect.top + 'px;'
+          + 'border-radius:14px;overflow:hidden;'
+          + 'background:transparent;'
+          + 'will-change:transform,opacity;'
+          + 'box-shadow:0 8px 28px rgba(0,0,0,0.3);';
+        // 克隆内部图片
+        var inner = srcImg ? srcImg.cloneNode(true) : document.createElement('div');
+        inner.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;';
+        clone.appendChild(inner);
+        document.body.appendChild(clone);
+        // 动画参数
+        var startTime = performance.now();
+        var duration = 500;
+        var scx = srcRect.left + srcRect.width / 2;
+        var scy = srcRect.top + srcRect.height / 2;
+        var dx = dstCX - scx;
+        var dy = dstCY - scy;
+        var scaleFrom = 1;
+        var scaleTo = 120 / Math.max(srcRect.width, 1); // 缩放至120px
+        var cardShown = false;
+        (function fly() {
+          function loop(now) {
+            var t = Math.min((now - startTime) / duration, 1);
+            // 分段缓动：蓄力→弹射→滑翔→弹跳着陆（效果减半）
+            var et;
+            if (t < 0.12) {
+              var pt = t / 0.12;
+              et = -0.04 * (1 - Math.pow(1 - pt, 2));
+            } else if (t < 0.55) {
+              var pt2 = (t - 0.12) / 0.43;
+              et = -0.04 + 1.04 * (1 - Math.pow(1 - pt2, 3));
+            } else if (t < 0.80) {
+              var pt3 = (t - 0.55) / 0.25;
+              et = 1 + 0.06 * pt3 * pt3;
+            } else {
+              var pt4 = (t - 0.80) / 0.20;
+              var bounce = Math.exp(-5 * pt4) * Math.cos(8 * Math.PI * pt4);
+              et = 1.06 + bounce * 0.03 - 0.06 * pt4;
+            }
+            et = Math.max(-0.04, Math.min(1.06, et));
+            var xOff = dx * et;
+            var arcH = 60 * Math.sin(Math.PI * Math.min(et / 0.7, 1));
+            var yOff = dy * et - arcH;
+            var peakScale = 0.9;
+            var scEt = Math.max(0, et);
+            var sc = peakScale + (scaleTo - peakScale) * scEt;
+            var rot;
+            if (t < 0.12) rot = 3 * (t / 0.12);
+            else if (t < 0.55) rot = 3 - 13 * ((t - 0.12) / 0.43);
+            else rot = -10 + 10 * ((t - 0.55) / 0.45);
+            clone.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + sc + ') rotate(' + rot + 'deg)';
+            // 过渡：克隆淡出同时卡片淡入
+            if (t > 0.75 && !cardShown) {
+              cardShown = true;
+              setSkillAnimVisible(true);
+              applySkillEffect();
+            }
+            clone.style.opacity = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+            if (t < 1) {
+              requestAnimationFrame(loop);
+            } else {
+              if (clone.parentNode) clone.parentNode.removeChild(clone);
+            }
+          }
+          requestAnimationFrame(loop);
+        })();
+      })();
+    }
+    // 提取技能生效逻辑，SSR立即调用，非SSR由动画到达时触发
+    function applySkillEffect() {
     setSkillUseCount(prev => ({
       ...prev,
       [key]: prev[key] + 1
@@ -9437,8 +9541,73 @@ function Game() {
           const available = Math.max(0, tempCapacity - tempStorageRef.current.length);
           const toMove = nonGroomItems.slice(0, Math.min(2, available));
           if (toMove.length === 0) break;
-          // 从slot中移除非舔毛牌
-          let movedCount = 0;
+
+          // ═══ 挑出来夸张飞行动画：牌从收集槽弹起 → 弧线飞入临时存放层 ═══
+          var mainSlotEl2 = document.querySelector('#main-slot');
+          var tempWrapper2 = mainSlotEl2 ? mainSlotEl2.previousElementSibling : null;
+          toMove.forEach(function(item, moveIdx) {
+            var slotIdx = -1;
+            for (var si = 0; si < slotRef.current.length; si++) {
+              if (slotRef.current[si].uid === item.uid) { slotIdx = si; break; }
+            }
+            if (slotIdx < 0) return;
+            var srcCell = mainSlotEl2 ? mainSlotEl2.querySelector('[data-slot-index="' + slotIdx + '"]') : null;
+            if (!srcCell) return;
+            var srcRect = srcCell.getBoundingClientRect();
+            var dstIdx = moveIdx;
+            var dstCell = tempWrapper2 ? tempWrapper2.querySelector('[data-slot-index="' + dstIdx + '"]') : null;
+            var dstRect = dstCell ? dstCell.getBoundingClientRect()
+              : { left: srcRect.left, top: srcRect.top - 70, right: srcRect.right, bottom: srcRect.top - 70 + TILE_H };
+            var flyImgKey = item.type;
+            if (item.isInterference) {
+              var flyIc = INTERFERENCE_CARDS[item.interferenceType];
+              if (flyIc && flyIc.img) flyImgKey = flyIc.id;
+            }
+            var flyImg = _tileImages[flyImgKey];
+            if (!flyImg || flyImg.tagName !== 'IMG' || !flyImg.complete || !flyImg.naturalWidth) return;
+            var el = document.createElement('div');
+            el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
+              + 'width:' + TILE_W + 'px;height:' + TILE_H + 'px;'
+              + 'left:' + srcRect.left + 'px;top:' + srcRect.top + 'px;'
+              + 'border-radius:10px;'
+              + 'background-image:url(' + flyImg.src + ');'
+              + 'background-size:cover;background-position:center;'
+              + 'will-change:transform,opacity;opacity:1;'
+              + 'box-shadow:0 8px 32px rgba(0,0,0,0.35);';
+            document.body.appendChild(el);
+            var startTime = performance.now() + moveIdx * 90;
+            var duration = 520;
+            var sx = srcRect.left + srcRect.width / 2;
+            var sy = srcRect.top + srcRect.height / 2;
+            var dx = (dstRect.left + dstRect.right) / 2 - sx;
+            var dy = (dstRect.top + dstRect.bottom) / 2 - sy;
+            (function() {
+              var elRef = el;
+              function flyLoop(now) {
+                var elapsed = now - startTime;
+                if (elapsed < 0) { requestAnimationFrame(flyLoop); return; }
+                var t = Math.min(elapsed / duration, 1);
+                var et = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                var xOff = dx * et;
+                var yOff = dy * et - 80 * Math.sin(Math.PI * et);
+                var scale;
+                if (t < 0.15) scale = 1 + t * 1.33;
+                else if (t < 0.4) scale = 1.2 - (t - 0.15) * 0.8;
+                else if (t < 0.85) scale = 1.0 - (t - 0.4) * 0.33;
+                else scale = 0.85 + (t - 0.85) * 1.0;
+                var rot = (moveIdx - 1) * 18 * Math.sin(Math.PI * et);
+                elRef.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + scale + ') rotate(' + rot + 'deg)';
+                elRef.style.opacity = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+                if (t < 1) {
+                  requestAnimationFrame(flyLoop);
+                } else {
+                  if (elRef.parentNode) elRef.parentNode.removeChild(elRef);
+                }
+              }
+              requestAnimationFrame(flyLoop);
+            })();
+          });
+
           const movedUids = new Set(toMove.map(s => s.uid));
           setSlot(prev => prev.filter(s => !movedUids.has(s.uid)));
           setTempStorage(prev => [...toMove, ...prev]);
@@ -9556,6 +9725,83 @@ function Game() {
           const available3 = Math.max(0, tempCapacity3 - tempStorageRef.current.length);
           const toMove3 = nonGroomItems3.slice(0, Math.min(3, available3));
           if (toMove3.length === 0) break;
+
+          // ═══ 叼走夸张飞行动画：牌从收集槽弹起 → 弧线飞入临时存放层 ═══
+          var mainSlotEl = document.querySelector('#main-slot');
+          var tempWrapper = mainSlotEl ? mainSlotEl.previousElementSibling : null;
+          toMove3.forEach(function(item, moveIdx) {
+            // 找到该牌在收集槽中的原始索引
+            var slotIdx = -1;
+            for (var si = 0; si < slotRef.current.length; si++) {
+              if (slotRef.current[si].uid === item.uid) { slotIdx = si; break; }
+            }
+            if (slotIdx < 0) return;
+            var srcCell = mainSlotEl ? mainSlotEl.querySelector('[data-slot-index="' + slotIdx + '"]') : null;
+            if (!srcCell) return;
+            var srcRect = srcCell.getBoundingClientRect();
+            // 目标位置：临时存放层（新牌 prepend 到最前面）
+            var dstIdx = moveIdx;
+            var dstCell = tempWrapper ? tempWrapper.querySelector('[data-slot-index="' + dstIdx + '"]') : null;
+            var dstRect = dstCell ? dstCell.getBoundingClientRect()
+              : { left: srcRect.left, top: srcRect.top - 70, right: srcRect.right, bottom: srcRect.top - 70 + TILE_H };
+            // 获取卡牌图片
+            var flyImgKey = item.type;
+            if (item.isInterference) {
+              var flyIc = INTERFERENCE_CARDS[item.interferenceType];
+              if (flyIc && flyIc.img) flyImgKey = flyIc.id;
+            }
+            var flyImg = _tileImages[flyImgKey];
+            if (!flyImg || flyImg.tagName !== 'IMG' || !flyImg.complete || !flyImg.naturalWidth) return;
+            // 创建飞行DOM元素
+            var el = document.createElement('div');
+            el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
+              + 'width:' + TILE_W + 'px;height:' + TILE_H + 'px;'
+              + 'left:' + srcRect.left + 'px;top:' + srcRect.top + 'px;'
+              + 'border-radius:10px;'
+              + 'background-image:url(' + flyImg.src + ');'
+              + 'background-size:cover;background-position:center;'
+              + 'will-change:transform,opacity;opacity:1;'
+              + 'box-shadow:0 8px 32px rgba(0,0,0,0.35);';
+            document.body.appendChild(el);
+            // 错开启动 + 弧线路径
+            var startTime = performance.now() + moveIdx * 90;
+            var duration = 520;
+            var sx = srcRect.left + srcRect.width / 2;
+            var sy = srcRect.top + srcRect.height / 2;
+            var dx = (dstRect.left + dstRect.right) / 2 - sx;
+            var dy = (dstRect.top + dstRect.bottom) / 2 - sy;
+            (function() {
+              var elRef = el;
+              function flyLoop(now) {
+                var elapsed = now - startTime;
+                if (elapsed < 0) { requestAnimationFrame(flyLoop); return; }
+                var t = Math.min(elapsed / duration, 1);
+                // easeInOutCubic 缓动
+                var et = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                // 夸张弧线：先下蹲蓄力 → 猛弹飞起 → 弧线滑翔 → 落入目标
+                var arcOffset = (1 - et) * (-20) + et * 0; // 简单插值
+                var xOff = dx * et;
+                var yOff = dy * et - 80 * Math.sin(Math.PI * et); // 抛物线弧
+                // 缩放：弹起时放大 → 滑翔时缩小 → 落入时轻微弹跳
+                var scale;
+                if (t < 0.15) scale = 1 + t * 1.33;          // 0→1.2 蓄力放大
+                else if (t < 0.4) scale = 1.2 - (t - 0.15) * 0.8; // 1.2→1.0 缩小
+                else if (t < 0.85) scale = 1.0 - (t - 0.4) * 0.33; // 1.0→0.85 持续缩小
+                else scale = 0.85 + (t - 0.85) * 1.0;          // 0.85→1.0 弹回
+                // 旋转：叼走时先反向扭转再归正
+                var rot = (moveIdx - 1) * 18 * Math.sin(Math.PI * et);
+                elRef.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + scale + ') rotate(' + rot + 'deg)';
+                elRef.style.opacity = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+                if (t < 1) {
+                  requestAnimationFrame(flyLoop);
+                } else {
+                  if (elRef.parentNode) elRef.parentNode.removeChild(elRef);
+                }
+              }
+              requestAnimationFrame(flyLoop);
+            })();
+          });
+
           const movedUids3 = new Set(toMove3.map(s => s.uid));
           setSlot(prev => prev.filter(s => !movedUids3.has(s.uid)));
           setTempStorage(prev => [...toMove3, ...prev]);
@@ -9804,6 +10050,7 @@ function Game() {
           break;
         }
     }
+    } // end applySkillEffect
   };
 
   // P1: write fish earnings to localStorage when game ends
@@ -11174,6 +11421,7 @@ function Game() {
     const borderColor = disabled ? 'rgba(255,255,255,0.08)' : skill?.color || rarityColors[rarity] || '#6C5CE7';
     return /*#__PURE__*/React.createElement("div", {
       key: i,
+      'data-skill-index': i,
       onClick: () => !disabled && handleSkillClick(i),
       style: {
         display: 'flex',
