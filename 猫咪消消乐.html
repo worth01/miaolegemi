@@ -46,6 +46,8 @@
     @keyframes skillMaskIn { from{opacity:0} to{opacity:1} }
     @keyframes skillSsrSweep { 0%{left:-100%;opacity:0} 20%{left:-100%;opacity:1} 50%{left:100%;opacity:1} 51%{left:100%;opacity:0} 100%{left:100%;opacity:0} }
     @keyframes skillDescSlide { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes frostSlideDown { from{height:0;opacity:0} to{height:122px;opacity:1} }
+    @keyframes frostSlideUp { from{height:122px;opacity:1} to{height:0;opacity:0} }
 
     /* Loading 动画 */
     @keyframes loadingSpin { to { transform: rotate(360deg); } }
@@ -5605,9 +5607,12 @@ function SkillAnimationOverlay({
   skill,
   rarity,
   visible,
-  onClose
+  onClose,
+  onProgress
 }) {
   const [phase, setPhase] = useState('entering');
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
   const videoRef = useRef(null);
   const timerRef = useRef(null);
   const closedRef = useRef(false);
@@ -5644,10 +5649,24 @@ function SkillAnimationOverlay({
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(triggerClose, 1500);
   }, [triggerClose]);
+  // 视频播放进度上报
+  useEffect(() => {
+    if (!visible) { if (onProgressRef.current) onProgressRef.current(0); return; }
+    var video = videoRef.current;
+    if (!video) return;
+    var onTime = function() {
+      if (video.duration > 0 && onProgressRef.current) {
+        onProgressRef.current(Math.min(100, (video.currentTime / video.duration) * 100));
+      }
+    };
+    video.addEventListener('timeupdate', onTime);
+    return function() { video.removeEventListener('timeupdate', onTime); };
+  }, [visible, phase]);
+
   if (!visible && phase === 'entering') return null;
   const glowColor = rarity === 'SSR' ? '#FFD700' : rarity === 'SR' ? '#CC88FF' : rarity === 'R' ? '#64A0FF' : '#B0B0C0';
   const isSSR = rarity === 'SSR';
-  const cardSize = isSSR ? 290 : 120; // 非SSR 120×120
+  const cardSize = isSSR ? 290 : 92; // 非SSR 92×92
   const cardBg = isSSR ? '#000000' : 'transparent';
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5659,9 +5678,9 @@ function SkillAnimationOverlay({
       zIndex: 998,
       display: 'flex',
       alignItems: isSSR ? 'center' : 'flex-start',
-      justifyContent: isSSR ? 'center' : 'flex-end',
-      paddingTop: isSSR ? 0 : 505,
-      paddingRight: isSSR ? 0 : 8,
+      justifyContent: isSSR ? 'center' : 'flex-start',
+      paddingTop: isSSR ? 0 : 624,
+      paddingLeft: isSSR ? 0 : 32,
       opacity: phase === 'exiting' ? 0 : 1,
       transition: 'opacity 0.2s ease-out',
       pointerEvents: phase === 'exiting' ? 'none' : 'all'
@@ -5734,25 +5753,7 @@ function SkillAnimationOverlay({
       color: 'rgba(255,255,255,0.3)',
       fontSize: 14
     }
-  }, "\u6280\u80FD\u52A8\u753B\u52A0\u8F7D\u4E2D..."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      top: 10,
-      left: 12,
-      zIndex: 5,
-      pointerEvents: 'none'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 900,
-      color: '#ffffff',
-      background: 'rgba(0,0,0,0.55)',
-      padding: '5px 12px',
-      borderRadius: 8,
-      textShadow: '0 0 6px rgba(255,255,255,0.2)'
-    }
-  }, skill?.active || '')))));
+  }, "\u6280\u80FD\u52A8\u753B\u52A0\u8F7D\u4E2D..."))));
 }
 
 /* ═══════════════════════════════════════
@@ -8146,6 +8147,7 @@ function Game() {
   const tilesVersionRef = useRef(0); // 重绘版本号：tiles 任何结构变化均递增
   const shuffleAnimRef = useRef(null); // 白猫「重整」飞散动画状态
   const pendingSkillCallbackRef = useRef(null); // 非SSR技能延迟执行回调
+  const lastSkillIndexRef = useRef(-1); // 记录最后使用的技能按钮索引
   const matchTimeoutRef = useRef(null);
   const matchingRef = useRef([]);
   const boardContainerRef = useRef(null);
@@ -8249,6 +8251,7 @@ function Game() {
   const [skillConflictMsg, setSkillConflictMsg] = useState(null); // 技能冲突提示
   const [skillAnimVisible, setSkillAnimVisible] = useState(false); // 技能动效弹窗可见
   const [skillAnimData, setSkillAnimData] = useState(null); // { breed, skill, rarity }
+  const [skillAnimProgress, setSkillAnimProgress] = useState(0); // 动画播放进度 0-100
   const [fishMultiplier, setFishMultiplier] = useState(1);
   const [extraRestarts, setExtraRestarts] = useState(0);
   const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
@@ -9432,6 +9435,7 @@ function Game() {
       applySkillEffect();
     } else {
       // 非SSR 方案A：克隆分身飞向动画卡片，到达后再生效
+      lastSkillIndexRef.current = skillIndex;
       (function() {
         var srcBtn = document.querySelector('[data-skill-index="' + skillIndex + '"]');
         if (!srcBtn) { setSkillAnimVisible(true); return; }
@@ -9440,8 +9444,8 @@ function Game() {
         // 目标位置：动画卡片右下角
         var phoneEl = document.querySelector('.phone-screen');
         var phoneRect = phoneEl ? phoneEl.getBoundingClientRect() : { left: 0, top: 0, right: 390, bottom: 844 };
-        var dstCX = phoneRect.right - 8 - 60;  // 卡片中心X
-        var dstCY = phoneRect.top + 505 + 60;   // 卡片中心Y
+        var dstCX = phoneRect.left + 32 + 46;  // 毛玻璃左框中心X（32+92/2）
+        var dstCY = phoneRect.top + 624 + 46;  // 毛玻璃左框中心Y（624+92/2）
         // 创建克隆分身
         var clone = document.createElement('div');
         clone.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
@@ -9456,54 +9460,64 @@ function Game() {
         inner.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;';
         clone.appendChild(inner);
         document.body.appendChild(clone);
-        // 动画参数
+        // 动画参数：两段跳跃 → 先跳高越过收集槽下缘 → 再弹跳落入卡片位置
         var startTime = performance.now();
-        var duration = 500;
+        var duration = 600;
         var scx = srcRect.left + srcRect.width / 2;
         var scy = srcRect.top + srcRect.height / 2;
         var dx = dstCX - scx;
         var dy = dstCY - scy;
         var scaleFrom = 1;
-        var scaleTo = 120 / Math.max(srcRect.width, 1); // 缩放至120px
+        var scaleTo = 92 / Math.max(srcRect.width, 1);
         var cardShown = false;
+        // 跳跃最高点：收集槽下缘上方约80px
+        var slotBottomY = phoneRect.top + 723; // 收集槽下缘屏幕坐标
+        var jumpPeakY = slotBottomY - 200;     // 越过收集槽下缘
         (function fly() {
           function loop(now) {
             var t = Math.min((now - startTime) / duration, 1);
-            // 分段缓动：蓄力→弹射→滑翔→弹跳着陆（效果减半）
-            var et;
-            if (t < 0.12) {
-              var pt = t / 0.12;
-              et = -0.04 * (1 - Math.pow(1 - pt, 2));
+            var xOff, yOff, sc, rot;
+            if (t < 0.30) {
+              // 阶段1 蓄力+起跳：原地微缩后猛冲向上
+              var pt = t / 0.30;
+              var et = Math.pow(pt, 2); // easeIn
+              xOff = dx * 0.15 * et;
+              yOff = (jumpPeakY - scy) * et;
+              sc = 1 - pt * 0.1; // 1→0.9 蓄力缩小
+              rot = -5 * pt;
             } else if (t < 0.55) {
-              var pt2 = (t - 0.12) / 0.43;
-              et = -0.04 + 1.04 * (1 - Math.pow(1 - pt2, 3));
+              // 阶段2 空中滑翔：越过后向右漂移
+              var pt2 = (t - 0.30) / 0.25;
+              var et2 = pt2;
+              xOff = dx * (0.15 + 0.55 * et2);
+              yOff = (jumpPeakY - scy) + (dstCY - jumpPeakY) * 0.3 * et2; // 缓慢下降
+              sc = 0.9 + pt2 * 0.2; // 0.9→1.1 空中舒展
+              rot = -5 + 10 * pt2;   // -5→5° 翻转
             } else if (t < 0.80) {
+              // 阶段3 俯冲下落：快速冲向目标
               var pt3 = (t - 0.55) / 0.25;
-              et = 1 + 0.06 * pt3 * pt3;
+              var et3 = 1 - Math.pow(1 - pt3, 2); // easeOut
+              xOff = dx * (0.70 + 0.30 * et3);
+              var fromY = jumpPeakY + (dstCY - jumpPeakY) * 0.3;
+              yOff = fromY + (dstCY - fromY) * et3 - scy;
+              sc = 1.1 - pt3 * 0.2; // 1.1→0.9 俯冲缩小
+              rot = 5 - 10 * pt3;   // 5→-5° 回旋
             } else {
+              // 阶段4 弹跳着陆
               var pt4 = (t - 0.80) / 0.20;
-              var bounce = Math.exp(-5 * pt4) * Math.cos(8 * Math.PI * pt4);
-              et = 1.06 + bounce * 0.03 - 0.06 * pt4;
+              var bounce = Math.exp(-6 * pt4) * Math.sin(6 * Math.PI * pt4);
+              xOff = dx;
+              yOff = dy + bounce * 8;
+              sc = scaleTo + bounce * 0.1;
+              rot = bounce * 3;
             }
-            et = Math.max(-0.04, Math.min(1.06, et));
-            var xOff = dx * et;
-            var arcH = 60 * Math.sin(Math.PI * Math.min(et / 0.7, 1));
-            var yOff = dy * et - arcH;
-            var peakScale = 0.9;
-            var scEt = Math.max(0, et);
-            var sc = peakScale + (scaleTo - peakScale) * scEt;
-            var rot;
-            if (t < 0.12) rot = 3 * (t / 0.12);
-            else if (t < 0.55) rot = 3 - 13 * ((t - 0.12) / 0.43);
-            else rot = -10 + 10 * ((t - 0.55) / 0.45);
             clone.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + sc + ') rotate(' + rot + 'deg)';
-            // 过渡：克隆淡出同时卡片淡入
-            if (t > 0.75 && !cardShown) {
+            if (t > 0.78 && !cardShown) {
               cardShown = true;
               setSkillAnimVisible(true);
               applySkillEffect();
             }
-            clone.style.opacity = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+            clone.style.opacity = t > 0.88 ? 1 - (t - 0.88) / 0.12 : 1;
             if (t < 1) {
               requestAnimationFrame(loop);
             } else {
@@ -11387,7 +11401,116 @@ function Game() {
         pointerEvents: 'none'
       }
     }, t.text);
-  })()), phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && /*#__PURE__*/React.createElement("div", {
+  })()), (function() {
+    var showPanel = skillAnimVisible && skillAnimData?.rarity !== 'SSR';
+    var panelBreed = skillAnimData?.breed || '';
+    var panelRarity = skillAnimData?.rarity || 'N';
+    var panelSkill = skillAnimData?.skill;
+    var rarityColorMap = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
+    var panelRarityColor = rarityColorMap[panelRarity] || '#B2BEC3';
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        top: 616,
+        width: 350,
+        height: showPanel ? 106 : 0,
+        overflow: 'hidden',
+        transition: 'height 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        zIndex: 110,
+        pointerEvents: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 350,
+        height: 106,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '10px 12px',
+        background: 'linear-gradient(0deg, rgba(108,92,231,0.18) 0%, rgba(162,155,254,0.14) 100%)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '0 0 16px 16px',
+        border: '1px solid rgba(108,92,231,0.25)',
+        borderTop: 'none',
+        boxShadow: 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 92,
+        height: 92,
+        borderRadius: 20,
+        overflow: 'hidden',
+        flexShrink: 0,
+        background: 'transparent',
+        border: '1px solid transparent'
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: '#F0EDFF'
+      }
+    }, panelBreed), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9,
+        fontWeight: 700,
+        color: '#fff',
+        background: panelRarityColor,
+        padding: '1px 6px',
+        borderRadius: 4
+      }
+    }, panelRarity)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15,
+        fontWeight: 800,
+        color: '#fff',
+        textShadow: '0 0 8px rgba(162,155,254,0.5)'
+      }
+    }, panelSkill?.active || ''), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.5)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }
+    }, panelSkill?.activeDesc || ''), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 5,
+        background: 'rgba(255,255,255,0.1)',
+        borderRadius: 3,
+        marginTop: 4,
+        overflow: 'hidden',
+        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: skillAnimProgress + '%',
+        height: '100%',
+        background: 'linear-gradient(90deg, rgba(162,155,254,0.7), rgba(130,200,255,0.8))',
+        borderRadius: 3,
+        transition: 'width 0.3s linear',
+        boxShadow: '0 0 6px rgba(162,155,254,0.4)'
+      }
+    }))))); /* 右：效果可视化（暂时注释） */
+  })(), phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'center',
@@ -11572,9 +11695,84 @@ function Game() {
     skill: skillAnimData?.skill,
     rarity: skillAnimData?.rarity,
     visible: skillAnimVisible,
+    onProgress: setSkillAnimProgress,
     onClose: () => {
+      // 非SSR：动画卡片炫酷回缩 → 弹跳翻转飞回技能按钮
+      if (skillAnimData?.rarity !== 'SSR') {
+        var phoneEl2 = document.querySelector('.phone-screen');
+        var phoneRect2 = phoneEl2 ? phoneEl2.getBoundingClientRect() : { left: 0, top: 0 };
+        var cardX = phoneRect2.left + 32;
+        var cardY = phoneRect2.top + 624;
+        var skillIdx = lastSkillIndexRef.current;
+        var skillBtn = skillIdx >= 0 ? document.querySelector('[data-skill-index="' + skillIdx + '"]') : null;
+        if (skillBtn) {
+          var skillImg = skillBtn.querySelector('img');
+          var dstRect2 = (skillImg || skillBtn).getBoundingClientRect();
+          // 创建回缩克隆
+          var revClone = document.createElement('div');
+          revClone.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
+            + 'width:92px;height:92px;'
+            + 'left:' + cardX + 'px;top:' + cardY + 'px;'
+            + 'border-radius:20px;overflow:hidden;'
+            + 'background:transparent;'
+            + 'will-change:transform,opacity;'
+            + 'box-shadow:0 0 16px rgba(162,155,254,0.4), 0 0 40px rgba(108,92,231,0.2);';
+          var revImg = skillImg ? skillImg.cloneNode(true) : document.createElement('div');
+          revImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:18px;display:block;';
+          revClone.appendChild(revImg);
+          document.body.appendChild(revClone);
+          var revStart = performance.now();
+          var revDur = 380;
+          var revSX = cardX + 46, revSY = cardY + 46;
+          var revDX = (dstRect2.left + dstRect2.right) / 2 - revSX;
+          var revDY = (dstRect2.top + dstRect2.bottom) / 2 - revSY;
+          var revScaleTo = Math.max(dstRect2.width, dstRect2.height) / 92;
+          (function() {
+            var elR = revClone;
+            function revLoop(now) {
+              var rt = Math.min((now - revStart) / revDur, 1);
+              var ret, xOff, yOff, sc, rot;
+              if (rt < 0.12) {
+                var pt = rt / 0.12;
+                ret = pt;
+                xOff = revDX * 0.05 * ret;
+                yOff = -10 * ret;
+                sc = 1 + pt * 0.12;
+                elR.style.boxShadow = '0 0 ' + (16 + pt * 20) + 'px rgba(162,155,254,' + (0.4 + pt * 0.3) + '), 0 0 ' + (40 + pt * 40) + 'px rgba(108,92,231,' + (0.2 + pt * 0.2) + ')';
+              } else if (rt < 0.55) {
+                var pt2 = (rt - 0.12) / 0.43;
+                ret = pt2 < 0.5 ? 2 * pt2 * pt2 : -1 + (4 - 2 * pt2) * pt2;
+                xOff = revDX * (0.05 + 0.95 * ret);
+                yOff = -10 + revDY * ret - 25 * Math.sin(Math.PI * ret);
+                sc = 1.12 - ret * (1.12 - revScaleTo);
+                elR.style.boxShadow = '0 0 ' + (36 - ret * 20) + 'px rgba(162,155,254,' + (0.7 - ret * 0.4) + '), 0 0 ' + (80 - ret * 40) + 'px rgba(108,92,231,' + (0.4 - ret * 0.2) + ')';
+              } else if (rt < 0.85) {
+                var pt3 = (rt - 0.55) / 0.30;
+                ret = 1 - Math.pow(1 - pt3, 3);
+                xOff = revDX;
+                yOff = revDY - 25 * Math.sin(Math.PI * (1 - ret));
+                sc = revScaleTo;
+                elR.style.boxShadow = '0 0 ' + (16 - ret * 12) + 'px rgba(162,155,254,' + (0.3 - ret * 0.2) + '), 0 0 ' + (40 - ret * 30) + 'px rgba(108,92,231,' + (0.2 - ret * 0.15) + ')';
+              } else {
+                var pt4 = (rt - 0.85) / 0.15;
+                var bounce = Math.exp(-6 * pt4) * Math.cos(6 * Math.PI * pt4);
+                xOff = revDX;
+                yOff = revDY + bounce * 3;
+                sc = revScaleTo + bounce * 0.06;
+                elR.style.boxShadow = '0 0 ' + (4 + pt4 * 0) + 'px rgba(162,155,254,' + (0.1 - pt4 * 0.1) + '), 0 0 ' + (10 + pt4 * 0) + 'px rgba(108,92,231,' + (0.05 - pt4 * 0.05) + ')';
+              }
+              elR.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + sc + ')';
+              elR.style.opacity = rt > 0.85 ? 1 - (rt - 0.85) / 0.15 : 1;
+              if (rt < 1) { requestAnimationFrame(revLoop); }
+              else { if (elR.parentNode) elR.parentNode.removeChild(elR); }
+            }
+            requestAnimationFrame(revLoop);
+          })();
+        }
+      }
       setSkillAnimVisible(false);
       setSkillAnimData(null);
+      setSkillAnimProgress(0);
     }
   }), showSettings && /*#__PURE__*/React.createElement("div", {
     style: {
