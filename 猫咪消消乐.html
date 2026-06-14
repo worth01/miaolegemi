@@ -273,6 +273,75 @@
     font-size: 13px;
     letter-spacing: 2px;
   }
+
+  /* ═══════════════════════════════════════════
+     胆小克制链 CSS 动画
+     ═══════════════════════════════════════════ */
+
+  /* 舔毛牌消失动画 */
+  @keyframes groomDisappear {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.6; filter: brightness(1.5); }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  .tile-groom-disappearing {
+    animation: groomDisappear 0.4s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* 小狗牌→舔毛牌转化惊恐动画 */
+  @keyframes startledCat {
+    0% { transform: scale(1); box-shadow: 0 0 20px rgba(255,80,80,0.8); border-color: #FF5050; }
+    30% { transform: scale(1.1) rotate(-5deg); }
+    60% { transform: scale(0.95) rotate(3deg); box-shadow: 0 0 10px rgba(253,203,110,0.5); border-color: #FDCB6E; }
+    100% { transform: scale(1); box-shadow: 0 0 12px rgba(253,203,110,0.3); border-color: #FDCB6E; }
+  }
+  .tile-startled {
+    animation: startledCat 1.2s ease-out forwards;
+  }
+
+  /* ═══════════════════════════════════════════
+     猫咪智能提醒系统 — CSS 动画
+     ═══════════════════════════════════════════ */
+
+  /* 顶部横幅滑入 */
+  @keyframes reminderSlideIn {
+    0% { transform: translateX(-50%) translateY(-120%); opacity: 0; }
+    60% { transform: translateX(-50%) translateY(4px); opacity: 1; }
+    80% { transform: translateX(-50%) translateY(-2px); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+  @keyframes reminderSlideOut {
+    0% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-120%); opacity: 0; }
+  }
+  /* 猫耳抖动 */
+  @keyframes catEarWiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(5deg); }
+    50% { transform: rotate(-4deg); }
+    75% { transform: rotate(3deg); }
+  }
+
+  /* 方案C：按钮边框流光 */
+  @keyframes borderFlowGentle {
+    0% { box-shadow: 0 0 6px rgba(253,203,110,0.4), 0 0 14px rgba(253,203,110,0.15), inset 0 0 6px rgba(253,203,110,0.1); border-color: rgba(253,203,110,0.5); }
+    33% { box-shadow: 0 0 10px rgba(255,180,80,0.6), 0 0 20px rgba(255,180,80,0.25), inset 0 0 10px rgba(255,180,80,0.15); border-color: rgba(255,180,80,0.7); }
+    66% { box-shadow: 0 0 8px rgba(253,220,130,0.5), 0 0 16px rgba(253,220,130,0.2), inset 0 0 8px rgba(253,220,130,0.12); border-color: rgba(253,220,130,0.6); }
+    100% { box-shadow: 0 0 6px rgba(253,203,110,0.4), 0 0 14px rgba(253,203,110,0.15), inset 0 0 6px rgba(253,203,110,0.1); border-color: rgba(253,203,110,0.5); }
+  }
+  @keyframes borderFlowPulse {
+    0% { box-shadow: 0 0 8px rgba(108,92,231,0.5), 0 0 18px rgba(108,92,231,0.2), inset 0 0 8px rgba(108,92,231,0.1); border-color: rgba(108,92,231,0.6); transform: scale(1); }
+    33% { box-shadow: 0 0 16px rgba(130,100,255,0.7), 0 0 28px rgba(130,100,255,0.3), inset 0 0 14px rgba(130,100,255,0.18); border-color: rgba(130,100,255,0.8); transform: scale(1.02); }
+    66% { box-shadow: 0 0 10px rgba(162,155,254,0.6), 0 0 22px rgba(162,155,254,0.25), inset 0 0 10px rgba(162,155,254,0.14); border-color: rgba(162,155,254,0.7); transform: scale(1.01); }
+    100% { box-shadow: 0 0 8px rgba(108,92,231,0.5), 0 0 18px rgba(108,92,231,0.2), inset 0 0 8px rgba(108,92,231,0.1); border-color: rgba(108,92,231,0.6); transform: scale(1); }
+  }
+  @keyframes borderFlowDanger {
+    0% { box-shadow: 0 0 10px rgba(255,80,80,0.6), 0 0 22px rgba(255,80,80,0.3), inset 0 0 10px rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.7); transform: scale(1); }
+    33% { box-shadow: 0 0 20px rgba(255,60,60,0.8), 0 0 35px rgba(255,60,60,0.4), inset 0 0 16px rgba(255,60,60,0.2); border-color: rgba(255,60,60,0.9); transform: scale(1.04); }
+    66% { box-shadow: 0 0 14px rgba(255,120,80,0.7), 0 0 26px rgba(255,120,80,0.35), inset 0 0 12px rgba(255,120,80,0.16); border-color: rgba(255,120,80,0.8); transform: scale(1.02); }
+    100% { box-shadow: 0 0 10px rgba(255,80,80,0.6), 0 0 22px rgba(255,80,80,0.3), inset 0 0 10px rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.7); transform: scale(1); }
+  }
 </style>
 <div id="loading-overlay">
   <div id="loading-ios-outer">
@@ -553,7 +622,7 @@ function calculateFishReward(comboCount, totalBonusRatio, hasCleverCat = false, 
   const safeBonusRatio = Math.max(0, totalBonusRatio);
 
   // 步骤3: 计算额外鱼干数量
-  const extraFishBeforeCap = Math.floor(cappedBaseFish * safeBonusRatio);
+  const extraFishBeforeCap = Math.floor(baseFish * safeBonusRatio);
 
   // 步骤4: 计算额外鱼干上限
   let extraFishLimit = FISH_ECONOMY.extraFish.defaultMax;
@@ -607,7 +676,9 @@ function computePersonalityEffects(allCats) {
     timerExtension: 0,
     interferenceProbability: 1.0,
     fishLossRatio: 0.50,
-    skillScore: 0
+    skillScore: 0,
+    interferenceProbArray: [],   // 胆小方案B：每只猫的干扰触发概率数组
+    clingyRetryProbArray: []     // 黏人方案B：每只猫的再来一次概率数组
   };
 
   // 分离出战席和观战席
@@ -639,54 +710,90 @@ function computePersonalityEffects(allCats) {
     }
   });
 
-  // 计算每种性格的最高好感度等级（同性格取最高）
-  const persMaxLevel = {};
+  // 按性格分组收集所有条目（支持同性格多只猫叠加）
+  const persEntries = {};
   allEntries.forEach(e => {
     const p = e.personalityClean;
     if (!PERSONALITY_CONFIG[p]) return;
-    persMaxLevel[p] = Math.max(persMaxLevel[p] || 0, e.intimacyLevel);
+    if (!persEntries[p]) persEntries[p] = [];
+    persEntries[p].push(e);
   });
+
+  // 方案A属性绝对上限
+  const SCHEME_A_CAPS = { fishBonus: 0.35, scoreBonus: 0.50 };
 
   // 按性格计算效果
   for (const [pers, config] of Object.entries(PERSONALITY_CONFIG)) {
-    const level = persMaxLevel[pers] || 0;
-    if (level === 0) continue;
+    const entries = persEntries[pers] || [];
+    if (entries.length === 0) continue;
+    // 按好感度等级降序排列
+    entries.sort((a, b) => b.intimacyLevel - a.intimacyLevel);
+
     switch (config.type) {
       case 'skillCount':
         // 傲娇：技能次数已在 skillUsesMap 中按猫独立计算，此处跳过
         break;
       case 'retry':
-        // 黏人：取最高好感度的再来一次概率
-        result.clingyRetryChance = Math.max(result.clingyRetryChance, config.getEffect(level));
+        // 黏人：方案B — 独立事件概率数组（避免直接相加破100%）
+        result.clingyRetryProbArray = entries.map(e => ({ prob: config.getEffect(e.intimacyLevel), catId: e.breedId }));
+        // 组合概率用于显示：P_total = 1 - ∏(1-Pi)
+        {
+          var combinedRetry = 1;
+          for (var ri = 0; ri < result.clingyRetryProbArray.length; ri++) {
+            combinedRetry *= (1 - result.clingyRetryProbArray[ri].prob);
+          }
+          result.clingyRetryChance = 1 - combinedRetry;
+        }
         break;
       case 'extraFishLimit':
-        result.extraFishLimit = Math.max(result.extraFishLimit, config.getEffect(level));
+        result.extraFishLimit = Math.max(result.extraFishLimit, config.getEffect(entries[0].intimacyLevel));
         break;
       case 'fishBonus':
-        // 吃货：不同性格的加成加法叠加
-        result.fishBonus += config.getEffect(level);
+        // 吃货：方案A — 阶梯衰减叠加（最高阶100% + 其余50%）
+        {
+          let totalBonus = config.getEffect(entries[0].intimacyLevel);
+          for (let i = 1; i < entries.length; i++) {
+            totalBonus += config.getEffect(entries[i].intimacyLevel) * 0.5;
+          }
+          result.fishBonus += Math.min(totalBonus, SCHEME_A_CAPS.fishBonus);
+        }
         break;
       case 'soloBonus':
         // 独行：取最高好感度效果（不同猫的独行不叠加），仅单猫上阵时生效
-        result.soloBonus = Math.max(result.soloBonus, config.getEffect(level));
+        result.soloBonus = Math.max(result.soloBonus, config.getEffect(entries[0].intimacyLevel));
         break;
       case 'scoreBonus':
-        // 高冷：不同性格的加成加法叠加
-        result.scoreBonus += config.getEffect(level);
+        // 高冷：方案A — 阶梯衰减叠加（最高阶100% + 其余50%）
+        {
+          let totalBonus = config.getEffect(entries[0].intimacyLevel);
+          for (let i = 1; i < entries.length; i++) {
+            totalBonus += config.getEffect(entries[i].intimacyLevel) * 0.5;
+          }
+          result.scoreBonus += Math.min(totalBonus, SCHEME_A_CAPS.scoreBonus);
+        }
         break;
       case 'timerExtension':
-        result.timerExtension = Math.max(result.timerExtension, config.getEffect(level));
+        result.timerExtension = Math.max(result.timerExtension, config.getEffect(entries[0].intimacyLevel));
         break;
       case 'interferenceProbability':
-        // 胆小：取最低触发概率（好感度越高，干扰概率越低）
-        result.interferenceProbability = Math.min(result.interferenceProbability, config.getEffect(level));
+        // 胆小：方案B — 独立事件概率数组（避免直接相加破100%）
+        // 存储每只猫的干扰触发概率，对局判定时逐一摇点
+        result.interferenceProbArray = entries.map(e => ({ prob: config.getEffect(e.intimacyLevel), catId: e.breedId }));
+        // 组合概率用于显示：P_block = 1 - ∏(Pi)（Pi=干扰触发概率，1-Pi=阻挡概率）
+        {
+          var combinedBlockFail = 1;
+          for (var ti = 0; ti < result.interferenceProbArray.length; ti++) {
+            combinedBlockFail *= result.interferenceProbArray[ti].prob;
+          }
+          result.interferenceProbability = combinedBlockFail;
+        }
         break;
       case 'fishLossRatio':
         // 胆大：取最低损失比例（好感度越高，损失越少）
-        result.fishLossRatio = Math.min(result.fishLossRatio, config.getEffect(level));
+        result.fishLossRatio = Math.min(result.fishLossRatio, config.getEffect(entries[0].intimacyLevel));
         break;
       case 'skillScore':
-        result.skillScore = Math.max(result.skillScore, config.getEffect(level));
+        result.skillScore = Math.max(result.skillScore, config.getEffect(entries[0].intimacyLevel));
         break;
     }
   }
@@ -3907,6 +4014,19 @@ const BREED_RARITY = {
   '星空猫': 'SSR'
 };
 
+// ═══════════════════════════════════════
+// 猫咪智能提醒系统 — 台词表
+// ═══════════════════════════════════════
+var CAT_REMINDER_DIALOGUES = {
+  '橘猫':   { general: '让我收起来！', urgent: '这里太挤啦！喵～' },
+  '黑猫':   { general: '刚才那步不太妙哦～', urgent: '要不要倒回去看看？' },
+  '白猫':   { general: '有点乱了呢～', urgent: '重新整理一下吧～' },
+  '蓝猫':   { general: '时间不够啦！', urgent: '我帮你冷静一下～' },
+  '布偶猫': { general: '这些我帮你叼走～', urgent: '交给我处理吧！' },
+  '三花猫': { general: '讨厌的干扰牌！', urgent: '看我赶跑它！喵呜～' },
+  '幸运猫': { general: '试试手气？', urgent: '也许洗一洗更好喵～' },
+};
+
 /* ═══════════════════════════════════════
    P3: 猫咪技能系统（设计文档 v3.1）
    ═══════════════════════════════════════ */
@@ -4735,8 +4855,56 @@ function reverseGenerateForArea(boardSlots, levelNum, diffCfg, maxLayer, rng, ar
 }
 
 // ═══════════════════════════════════════════════════════════
+// 胆小性格方案B独立事件摇点：对局开始时调用，决定各干扰牌克制效果
+// ═══════════════════════════════════════════════════════════
+function rollTimidEffects(levelConfig, personalityEffects) {
+  var probArray = (personalityEffects && personalityEffects.interferenceProbArray) || [];
+  var effects = {
+    groomImmune: false,
+    freezeThawCounter: 0,
+    stickyReduceCount: 0,
+    transformReduceCount: 0,
+    dangerToGroomCount: 0,
+    disguiseHighlight: false,
+    transformSlowdown: false,
+    anyActive: false,
+  };
 
-function generateBoard(levelNum) {
+  // 方案B独立事件：每只胆小猫逐一摇点，任一只成功即触发克制
+  var anyBlocked = false;
+  for (var i = 0; i < probArray.length; i++) {
+    if (Math.random() >= probArray[i].prob) {
+      anyBlocked = true;
+      break;
+    }
+  }
+  if (!anyBlocked) return effects;
+
+  effects.anyActive = true;
+
+  // 根据关卡干扰牌类型激活对应克制效果
+  var iType = levelConfig && levelConfig.interference ? levelConfig.interference.id : '';
+  if (iType === 'groom') {
+    effects.groomImmune = true;           // 舔毛牌入槽瞬间消失
+  } else if (iType === 'freeze') {
+    effects.freezeThawCounter = 6;        // 6次三消除后解冻
+  } else if (iType === 'sticky') {
+    effects.stickyReduceCount = 1;        // 开局粘连牌数量-1
+  } else if (iType === 'transform') {
+    effects.transformReduceCount = 1;     // 开局三花牌数量-1
+    effects.transformSlowdown = true;     // 变换间隔3s→6s
+  } else if (iType === 'danger') {
+    effects.dangerToGroomCount = 1;       // 开局小狗牌→舔毛牌
+  }
+  // 真身牌：胆小激活时始终高亮
+  effects.disguiseHighlight = true;
+
+  return effects;
+}
+
+// ═══════════════════════════════════════════════════════════
+
+function generateBoard(levelNum, timidEffects) {
   const lv = getLevelConfig(levelNum);
   if (!lv) return [];
   const rng = Math.random;
@@ -4765,7 +4933,7 @@ function generateBoard(levelNum) {
   }
 
   // ③ 添加干扰牌
-  result = addInterferenceCards(result, lv, rng);
+  result = addInterferenceCards(result, lv, rng, timidEffects);
 
   // ④ 构建层样式映射（动态生成，适配任意层数）
   {
@@ -4944,7 +5112,7 @@ function assignTypesFromPool(slots, levelNum, rng) {
 }
 
 // P0: 添加干扰牌
-function addInterferenceCards(cards, levelConfig, rng) {
+function addInterferenceCards(cards, levelConfig, rng, timidEffects) {
   if (!levelConfig.interference || levelConfig.interferenceCount === 0) {
     return cards;
   }
@@ -4983,6 +5151,23 @@ function addInterferenceCards(cards, levelConfig, rng) {
       targetCard = topCards.length > 0 ? topCards[Math.floor(rng() * topCards.length)] : null;
     }
     if (!targetCard) return cards;
+    // 胆小克制链：小狗牌→舔毛牌转化（开局时触发，播放惊恐动画）
+    if (timidEffects && timidEffects.dangerToGroomCount > 0) {
+      console.log('[P2-Interference] 胆小克制：小狗牌 → 舔毛牌（附带惊恐动画）');
+      return cards.map(function(card) {
+        if (card.id === targetCard.id) {
+          return {
+            ...card,
+            isInterference: true,
+            interferenceType: 'groom',
+            originalInterferenceType: 'danger', // 保留原始类型记录
+            startledAnimation: true,            // 触发惊恐动画
+            revealed: true
+          };
+        }
+        return card;
+      });
+    }
     return applyInterferenceToCards(cards, [targetCard], interferenceType, rng);
   }
 
@@ -4995,6 +5180,16 @@ function addInterferenceCards(cards, levelConfig, rng) {
     // 真身牌配置开关：real_card_enable === 0 时强制关闭
     if (interferenceType === 'disguise' && levelConfig.real_card_enable === 0) return cards;
     const iCount = interferenceType === 'sticky' ? levelConfig.stick_card_count || count || 2 : interferenceType === 'transform' ? levelConfig.transform_card_count || count || 2 : levelConfig.real_card_count || count || 2;
+    // 胆小克制链：开局减少干扰牌数量
+    var adjustedCount = iCount;
+    if (timidEffects && timidEffects.stickyReduceCount > 0 && interferenceType === 'sticky') {
+      adjustedCount = Math.max(0, iCount - timidEffects.stickyReduceCount);
+      console.log('[P2-Interference] 胆小克制：粘连牌数量 ' + iCount + ' → ' + adjustedCount);
+    }
+    if (timidEffects && timidEffects.transformReduceCount > 0 && interferenceType === 'transform') {
+      adjustedCount = Math.max(0, iCount - timidEffects.transformReduceCount);
+      console.log('[P2-Interference] 胆小克制：三花牌数量 ' + iCount + ' → ' + adjustedCount);
+    }
     const selectedCards = [];
     const shuffledTop = shuffleArr([...topLayerCards], rng);
 
@@ -5009,7 +5204,7 @@ function addInterferenceCards(cards, levelConfig, rng) {
       const withoutNeighbor = shuffledTop.filter(c => !hasNeighbor);
       const sortedCandidates = [...withNeighbor, ...withoutNeighbor];
       for (const card of sortedCandidates) {
-        if (selectedCards.length >= iCount) break;
+        if (selectedCards.length >= adjustedCount) break;
         const isAdjacent = selectedCards.some(sc => Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1);
         if (!isAdjacent) { selectedCards.push(card); }
       }
@@ -5047,7 +5242,7 @@ function addInterferenceCards(cards, levelConfig, rng) {
       return cards.concat(selectedCards);
     } else {
       for (const card of shuffledTop) {
-        if (selectedCards.length >= iCount) break;
+        if (selectedCards.length >= adjustedCount) break;
         // 检查与已选中的牌是否相邻（上下左右，曼哈顿距离=1）
         const isAdjacent = selectedCards.some(sc => Math.abs(sc.row - card.row) + Math.abs(sc.col - card.col) <= 1);
         if (!isAdjacent) {
@@ -7835,9 +8030,28 @@ function Game() {
   const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
   const [moveHistory, setMoveHistory] = useState([]);
-  // 冰冻牌减免：胆小性格减免率达到80%(亲密)以上时，冰冻牌冻结效果失效
-  const cowardlyInterferenceBlockedRef = useRef(false); // 胆小：本局干扰牌是否被阻挡
-  const freezeBlockOverride = frozenSlot && cowardlyInterferenceBlockedRef.current;
+  // 胆小：每局开始时一次性判定干扰牌是否被阻挡（方案B独立事件）
+  const cowardlyInterferenceBlockedRef = useRef(false); // 兼容旧代码：任一胆小效果激活即为true
+  const timidEffectRef = useRef({
+    groomImmune: false,       // 舔毛牌入槽瞬间消失
+    freezeThawCounter: 0,     // 冰冻解冻倒计时（>0则占槽但显示倒计时）
+    stickyReduceCount: 0,     // 开局粘连牌数量-1
+    transformReduceCount: 0,  // 开局三花牌数量-1
+    dangerToGroomCount: 0,    // 开局小狗牌→舔毛牌转化
+    disguiseHighlight: false, // 高亮真身牌
+    transformSlowdown: false, // 三花牌变换间隔3s→6s
+    anyActive: false,         // 任一效果激活
+  });
+  const [freezeThawCounter, setFreezeThawCounter] = useState(0); // 冰冻解冻倒计时显示（>0时显示）
+  // 胆小新机制：冰冻格不再完全免疫，改为解冻倒计时（freezeThawCounter > 0 时冻结仍激活但显示倒计时）
+  // ═══ 猫咪智能提醒系统 ═══
+  var reminderLastTimeRef = useRef({});        // { breedId: timestamp } 每只猫上次提醒时间
+  var reminderCountRef = useRef(0);            // 本局已提醒总次数（上限3次）
+  var skillReadySinceRef = useRef({});          // { breedId: timestamp } 技能就绪起始时间
+  var [reminderBubble, setReminderBubble] = useState(null); // { breedId, message, tier, catIndex, key }
+  var [reminderGlow, setReminderGlow] = useState({});       // { active0: 'gentle'|'pulse'|'danger', ... }
+  // ═══════════════════════════════
+  const freezeBlockOverride = false;
   const freezeGridCount = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
   // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
   useEffect(() => {
@@ -7897,7 +8111,7 @@ function Game() {
       }, 1500);
 
       // 胆小性格：干扰牌阻挡时，真身牌高亮标记
-      if (cowardlyInterferenceBlockedRef.current) {
+      if (timidEffectRef.current.disguiseHighlight) {
         setTiles(prev => prev.map(t => t.isInterference && t.interferenceType === 'disguise' && !t.revealed ? {
           ...t,
           cowardlyHighlight: true
@@ -7994,8 +8208,8 @@ function Game() {
       return;
     }
 
-    // 计算变身间隔（胆小减免：3秒→6秒）
-    const cowardlySlowdown = cowardlyInterferenceBlockedRef.current;
+    // 计算变身间隔（胆小克制：仅三花关卡且胆小激活时 3秒→6秒）
+    const cowardlySlowdown = timidEffectRef.current.transformSlowdown;
     const intervalMs = (cowardlySlowdown ? 6 : 3) * 1000;
 
     // 首次进入三花关卡提示（1.5秒）
@@ -8132,11 +8346,23 @@ function Game() {
   useEffect(() => {
     retryAttemptsUsedRef.current = retryAttemptsUsed;
   }, [retryAttemptsUsed]);
-  // 胆小：每局开始时一次性判定干扰牌是否被阻挡
+  // 胆小摇点已移至 rollTimidEffects() 在各入口点同步执行（handleRestart/handleRetry/handleNextLevel/handleLevelSelect）
+  // 冰冻解冻倒计时：每次成功三消除后递减，归零时移除冰冻格
+  const prevComboRef = useRef(0);
   useEffect(() => {
-    const prob = personalityEffects.interferenceProbability;
-    cowardlyInterferenceBlockedRef.current = Math.random() >= prob;
-  }, [personalityEffects]);
+    if (freezeThawCounter > 0 && frozenSlot && gameState === GAME_PLAYING && comboCount > prevComboRef.current) {
+      var next = freezeThawCounter - 1;
+      if (next <= 0) {
+        setFrozenSlot(null);
+        setFreezeThawCounter(0);
+        setFreezeToast('❄️ 胆小猫咪解除了冰冻效果！收集槽已恢复！');
+        setTimeout(function() { setFreezeToast(''); }, 1500);
+      } else {
+        setFreezeThawCounter(next);
+      }
+    }
+    prevComboRef.current = comboCount;
+  }, [comboCount, freezeThawCounter, frozenSlot, gameState]);
   const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
   const nourishingCats = useRef(initialCats); // 保持 ref 同步
   const fixedBattleCats = useRef(initialCats.length > 0 ? initialCats : null); // 标记已加载
@@ -8247,6 +8473,164 @@ function Game() {
     active1: false,
     active2: false
   }); // UI显示(已用完置灰)
+
+  // ═══════════════════════════════════════
+  // 猫咪智能提醒系统 — 技能状态同步 + 核心逻辑
+  // ═══════════════════════════════════════
+  var skillCooldownsRef = useRef({ active0: 0, active1: 0, active2: 0 });
+  var skillUseCountRef = useRef({ active0: 0, active1: 0, active2: 0 });
+  var usedSkillsRef = useRef({ active0: false, active1: false, active2: false });
+  var skillSlotsRef = useRef([]);
+  var moveHistoryRef = useRef([]);
+  useEffect(() => { skillCooldownsRef.current = skillCooldowns; }, [skillCooldowns]);
+  useEffect(() => { skillUseCountRef.current = skillUseCount; }, [skillUseCount]);
+  useEffect(() => { usedSkillsRef.current = usedSkills; }, [usedSkills]);
+  useEffect(() => { skillSlotsRef.current = skillSlots; }, [skillSlots]);
+  useEffect(() => { moveHistoryRef.current = moveHistory; }, [moveHistory]);
+
+  function triggerReminder(breedId, catIndex, skillKey, message, tier) {
+    reminderLastTimeRef.current[breedId] = Date.now();
+    reminderCountRef.current += 1;
+
+    if (tier === 'S') {
+      setReminderGlow(function(prev) { var n = {}; n[skillKey] = 'danger'; return Object.assign({}, prev, n); });
+    } else if (tier === 'A') {
+      setReminderGlow(function(prev) { var n = {}; n[skillKey] = 'pulse'; return Object.assign({}, prev, n); });
+    } else {
+      setReminderGlow(function(prev) { var n = {}; n[skillKey] = 'gentle'; return Object.assign({}, prev, n); });
+    }
+
+    setReminderBubble({ breedId: breedId, catIndex: catIndex, message: message, tier: tier, key: skillKey, leaving: false });
+
+    var duration = tier === 'S' ? 4000 : 3000;
+    // 提前 350ms 触发滑出动画
+    var slideOutDelay = Math.max(0, duration - 350);
+    setTimeout(function() {
+      setReminderBubble(function(prev) {
+        if (!prev) return null;
+        return Object.assign({}, prev, { leaving: true });
+      });
+    }, slideOutDelay);
+    // 动画结束后清除
+    setTimeout(function() {
+      setReminderBubble(null);
+      setReminderGlow(function(prev) {
+        var next = Object.assign({}, prev);
+        delete next[skillKey];
+        return next;
+      });
+    }, duration);
+  }
+
+  function evaluateReminders() {
+    if (reminderCountRef.current >= 3) return;
+
+    var now = Date.now();
+    var slotFill = slotRef.current.length;
+    var frozenOffset = frozenSlot && !freezeBlockOverride ? (levelConfig.freeze_grid_count || 1) : 0;
+    var effCap = SLOT_CAPACITY + slotBonus - frozenOffset;
+    var boardInterference = tilesRef.current.filter(function(t) {
+      return t.isInterference && !t.removed && !t.inSlot;
+    });
+    var interferenceCount = boardInterference.length;
+
+    // 白猫触发条件：统计棋盘上可凑成 3 消的类型数
+    var typeCounts = {};
+    var topTiles = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && !t.isInterference; });
+    for (var ti = 0; ti < topTiles.length; ti++) {
+      var tt = topTiles[ti].type;
+      typeCounts[tt] = (typeCounts[tt] || 0) + 1;
+    }
+    var matchableGroups = 0;
+    for (var tk in typeCounts) {
+      if (typeCounts[tk] >= 3) matchableGroups++;
+    }
+
+    // 蓝猫触发条件：限时模式 + 剩余时间 ≤ 30 秒
+    var timerUrgent = isTimed && timeLeftRef.current <= 30 && timeLeftRef.current > 0;
+
+    // 黑猫触发条件：有上一步操作 + 收集槽较满
+    var hasRecentMove = moveHistoryRef.current.length > 0;
+
+    var slots = skillSlotsRef.current || [];
+    var cooldowns = skillCooldownsRef.current || {};
+    var useCounts = skillUseCountRef.current || {};
+    var used = usedSkillsRef.current || {};
+
+    for (var i = 0; i < 3; i++) {
+      var key = 'active' + i;
+      var breedId = slots[i];
+      if (!breedId) continue;
+
+      if (cooldowns[key] > 0) continue;
+      if (useCounts[key] >= (skillUseMax[key] || 1)) continue;
+      if (used[key]) continue;
+
+      var lastTime = reminderLastTimeRef.current[breedId] || 0;
+      if (now - lastTime < 20000) continue;
+
+      if (!skillReadySinceRef.current[breedId]) {
+        skillReadySinceRef.current[breedId] = now;
+      }
+      var idleTime = now - (skillReadySinceRef.current[breedId] || now);
+
+      var tier = null;
+      var message = '';
+
+      // ═══ S级：收集槽接近满 → 橘猫/布偶猫 救场 ═══
+      if (slotFill >= effCap - 1) {
+        if (breedId === '橘猫') {
+          tier = 'S';
+          message = CAT_REMINDER_DIALOGUES['橘猫'].urgent;
+        } else if (breedId === '布偶猫') {
+          tier = 'S';
+          message = CAT_REMINDER_DIALOGUES['布偶猫'].urgent;
+        }
+      }
+
+      // ═══ A级：场景专属触发 ═══
+      if (!tier && interferenceCount >= 2 && breedId === '三花猫') {
+        tier = 'A';
+        message = CAT_REMINDER_DIALOGUES['三花猫'].urgent;
+      }
+      if (!tier && timerUrgent && breedId === '蓝猫') {
+        tier = 'A';
+        message = CAT_REMINDER_DIALOGUES['蓝猫'].urgent;
+      }
+      if (!tier && hasRecentMove && slotFill >= 5 && breedId === '黑猫') {
+        tier = 'A';
+        message = CAT_REMINDER_DIALOGUES['黑猫'].urgent;
+      }
+      if (!tier && matchableGroups < 3 && breedId === '白猫') {
+        tier = 'A';
+        message = CAT_REMINDER_DIALOGUES['白猫'].urgent;
+      }
+      if (!tier && idleTime > 25000 && breedId === '幸运猫') {
+        tier = 'A';
+        message = CAT_REMINDER_DIALOGUES['幸运猫'].urgent;
+      }
+
+      // ═══ B级：技能闲置 > 15 秒 ═══
+      if (!tier && idleTime > 15000) {
+        tier = 'B';
+        var dlg = CAT_REMINDER_DIALOGUES[breedId];
+        message = dlg ? dlg.general : '';
+      }
+
+      if (tier && message) {
+        triggerReminder(breedId, i, key, message, tier);
+        break;
+      }
+    }
+  }
+
+  // 定时评估：每3秒一次
+  useEffect(function() {
+    if (gameState !== GAME_PLAYING || phase !== 'playing') return;
+    var interval = setInterval(function() { evaluateReminders(); }, 3000);
+    return function() { clearInterval(interval); };
+  }, [gameState, phase]);
+
   const [confirmSkill, setConfirmSkill] = useState(null); // { index, breed, skill }
   const [skillConflictMsg, setSkillConflictMsg] = useState(null); // 技能冲突提示
   const [skillAnimVisible, setSkillAnimVisible] = useState(false); // 技能动效弹窗可见
@@ -8269,7 +8653,20 @@ function Game() {
   const handleLevelSelect = level => {
     setCurrentLevel(level);
     setPhase('prep');
-    setTiles(generateBoard(level));
+    // 胆小方案B：独立事件摇点（须在 generateBoard 之前，供开局克制生效）
+    var selConfig = getLevelConfig(level);
+    var selTimidFx = rollTimidEffects(selConfig, personalityEffects);
+    timidEffectRef.current = selTimidFx;
+    cowardlyInterferenceBlockedRef.current = selTimidFx.anyActive;
+    setFreezeThawCounter(selTimidFx.freezeThawCounter);
+    prevComboRef.current = 0;
+    // 重置提醒系统
+    reminderLastTimeRef.current = {};
+    reminderCountRef.current = 0;
+    skillReadySinceRef.current = {};
+    setReminderBubble(null);
+    setReminderGlow({});
+    setTiles(generateBoard(level, selTimidFx));
     setPiles(generatePileData(level)); // P2: 初始化牌堆
     setGroomSlots([]);
     setGroomToast(false);
@@ -8288,9 +8685,9 @@ function Game() {
     window._disguiseToastShown = false;
     window._areaToastShown = false;
     // 冰冻牌：根据触发规则判断是否生成（名称匹配+配置开关优先）
-    const selectedConfig = getLevelConfig(level);
-    if (shouldTriggerFreeze(selectedConfig)) {
-      const frozenCard = {
+    if (shouldTriggerFreeze(selConfig)) {
+      // 胆小克制激活时仍创建冰冻牌，但显示解冻倒计时
+      var frozenCard = {
         uid: 'frozen_' + uidRef.current++,
         type: '__interference_freeze__',
         tileId: null,
@@ -8760,6 +9157,19 @@ function Game() {
     // 胆小性格：干扰牌阻挡 + 胆大性格：危险牌减免
     const persEff = personalityEffectsRef.current || {};
     const cowardlyActive = cowardlyInterferenceBlockedRef.current;
+    // 胆小克制链：舔毛牌入槽瞬间消失（须在槽位判定之前，避免死锁）
+    const timidFx = timidEffectRef.current || {};
+    const groomImmune = isGroomCard && timidFx.groomImmune;
+    if (groomImmune) {
+      // 播放消失动画：先标记，400ms后移除
+      setTiles(function(prev) { return prev.map(function(t) { return t.id === tile.id ? { ...t, groomDisappearing: true } : t; }); });
+      setTimeout(function() {
+        setTiles(function(prev) { return prev.map(function(t) { return t.id === tile.id ? { ...t, removed: true } : t; }); });
+        setGroomToast('🧴 胆小猫咪帮你赶走了舔毛牌！');
+        setTimeout(function() { setGroomToast(false); }, 1200);
+      }, 400);
+      return; // 不入槽，避免满槽临界点死锁
+    }
     const groomBlockOverride = isGroomCard && cowardlyActive;
     const stickyBlockOverride = isStickyCard && cowardlyActive; // 胆小减免：粘连牌仅自身入槽
     const braveAutoRemove = isDangerCard && persEff.fishLossRatio <= 0.30; // 胆大挚爱：自动移除狗牌
@@ -9421,6 +9831,17 @@ function Game() {
     if (skillUseCount[key] >= skillUseMax[key]) return;
     if (gameState !== GAME_PLAYING) return;
 
+    // 猫咪智能提醒：使用技能时清除该猫的提醒状态
+    setReminderGlow(function(prev) {
+      var next = Object.assign({}, prev);
+      delete next[key];
+      return next;
+    });
+    if (reminderBubble && reminderBubble.breedId === breedId) {
+      setReminderBubble(null);
+    }
+    skillReadySinceRef.current[breedId] = 0;
+
     // 技能动效弹窗
     const rarity = BREED_RARITY[breedId] || 'N';
     const isSSR = rarity === 'SSR';
@@ -9831,9 +10252,9 @@ function Game() {
         }
       case '三花猫':
         {
-          // 胆小减免生效时，蹦跶必定跳走冰冻牌（胆小性格先手优势）
+          // 胆小克制激活时，蹦跶必定跳走冰冻牌（胆小性格先手优势，提前结束解冻倒计时）
           let freezeClearedByCowardly = false;
-          if (frozenSlot && freezeBlockOverride) {
+          if (frozenSlot && freezeThawCounter > 0) {
             emitExplosion(100, 600, '#74B9FF');
             setFrozenSlot(null);
             freezeClearedByCowardly = true;
@@ -10270,11 +10691,19 @@ function Game() {
         } catch (e) {}
       } catch (e) {}
 
-      // 黏人性格：关卡失败时概率触发再来一次（最多3次）
+      // 黏人性格：关卡失败时独立事件摇点触发再来一次（最多3次）
       if (gameState === GAME_LOSE) {
-        const retryChance = pers.clingyRetryChance || 0;
-        if (retryChance > 0 && retryAttemptsUsedRef.current < 3) {
-          if (Math.random() < retryChance) {
+        const retryProbArray = pers.clingyRetryProbArray || [];
+        if (retryProbArray.length > 0 && retryAttemptsUsedRef.current < 3) {
+          // 方案B独立事件：每只黏人猫逐一摇点，任一只成功即获得重来机会
+          var anyCatSucceeds = false;
+          for (var ri = 0; ri < retryProbArray.length; ri++) {
+            if (Math.random() < retryProbArray[ri].prob) {
+              anyCatSucceeds = true;
+              break;
+            }
+          }
+          if (anyCatSucceeds) {
             setCanRetry(true);
           }
         }
@@ -10290,7 +10719,19 @@ function Game() {
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     setPhase('playing');
-    var restartTiles = generateBoard(currentLevel);
+    // 胆小方案B：独立事件摇点（须在 generateBoard 之前）
+    var restartTimidFx = rollTimidEffects(levelConfig, personalityEffects);
+    timidEffectRef.current = restartTimidFx;
+    cowardlyInterferenceBlockedRef.current = restartTimidFx.anyActive;
+    setFreezeThawCounter(restartTimidFx.freezeThawCounter);
+    prevComboRef.current = 0;
+    // 重置提醒系统
+    reminderLastTimeRef.current = {};
+    reminderCountRef.current = 0;
+    skillReadySinceRef.current = {};
+    setReminderBubble(null);
+    setReminderGlow({});
+    var restartTiles = generateBoard(currentLevel, restartTimidFx);
     tilesRef.current = restartTiles; // 立即同步 ref，避免旧棋盘残影
     setTiles(restartTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
@@ -10321,7 +10762,7 @@ function Game() {
     uidRef.current = 0;
     setRetryAttemptsUsed(0);
     setCanRetry(false);
-    cowardlyInterferenceBlockedRef.current = false;
+    // cowardlyInterferenceBlockedRef 已在上面通过 rollTimidEffects 设置
     // P2: reset timer and skills
     const tl = levelConfig.timedMode ? (levelConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
@@ -10400,7 +10841,19 @@ function Game() {
     gameEndedRef.current = false;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
-    var retryTiles = generateBoard(currentLevel);
+    // 胆小方案B：独立事件摇点（须在 generateBoard 之前）
+    var retryTimidFx = rollTimidEffects(levelConfig, personalityEffects);
+    timidEffectRef.current = retryTimidFx;
+    cowardlyInterferenceBlockedRef.current = retryTimidFx.anyActive;
+    setFreezeThawCounter(retryTimidFx.freezeThawCounter);
+    prevComboRef.current = 0;
+    // 重置提醒系统
+    reminderLastTimeRef.current = {};
+    reminderCountRef.current = 0;
+    skillReadySinceRef.current = {};
+    setReminderBubble(null);
+    setReminderGlow({});
+    var retryTiles = generateBoard(currentLevel, retryTimidFx);
     tilesRef.current = retryTiles; // 立即同步 ref，避免旧棋盘残影
     setTiles(retryTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
@@ -10420,7 +10873,7 @@ function Game() {
     uidRef.current = 0;
     setRetryAttemptsUsed(0);
     setCanRetry(false);
-    cowardlyInterferenceBlockedRef.current = false;
+    // cowardlyInterferenceBlockedRef 已在上面通过 rollTimidEffects 设置
     const tl = levelConfig.timedMode ? (levelConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
     timeLeftRef.current = tl;
@@ -10465,7 +10918,20 @@ function Game() {
       console.log('[handleNextLevel] 没有下一关，回到第1关');
       setCurrentLevel(1);
       console.time('[handleNextLevel] generateBoard(cycle)');
-      const cycleTiles = generateBoard(1);
+      // 胆小方案B：独立事件摇点
+      var cycleConfig = getLevelConfig(1);
+      var cycleTimidFx = rollTimidEffects(cycleConfig, personalityEffects);
+      timidEffectRef.current = cycleTimidFx;
+      cowardlyInterferenceBlockedRef.current = cycleTimidFx.anyActive;
+      setFreezeThawCounter(cycleTimidFx.freezeThawCounter);
+      prevComboRef.current = 0;
+      // 重置提醒系统
+      reminderLastTimeRef.current = {};
+      reminderCountRef.current = 0;
+      skillReadySinceRef.current = {};
+      setReminderBubble(null);
+      setReminderGlow({});
+      const cycleTiles = generateBoard(1, cycleTimidFx);
       tilesRef.current = cycleTiles; // 立即同步 ref
       console.timeEnd('[handleNextLevel] generateBoard(cycle)');
       setTiles(cycleTiles);
@@ -10541,7 +11007,19 @@ function Game() {
     setCurrentLevel(nextLv);
     console.time('[handleNextLevel] generateBoard');
     try {
-      const newTiles = generateBoard(nextLv);
+      // 胆小方案B：独立事件摇点
+      var nextTimidFx = rollTimidEffects(nextConfig, personalityEffects);
+      timidEffectRef.current = nextTimidFx;
+      cowardlyInterferenceBlockedRef.current = nextTimidFx.anyActive;
+      setFreezeThawCounter(nextTimidFx.freezeThawCounter);
+      prevComboRef.current = 0;
+      // 重置提醒系统
+      reminderLastTimeRef.current = {};
+      reminderCountRef.current = 0;
+      skillReadySinceRef.current = {};
+      setReminderBubble(null);
+      setReminderGlow({});
+      const newTiles = generateBoard(nextLv, nextTimidFx);
       tilesRef.current = newTiles; // 立即同步 ref，避免 effect 时序导致旧棋盘残影
       console.timeEnd('[handleNextLevel] generateBoard');
       console.log('[handleNextLevel] generateBoard 返回', newTiles.length, '张卡牌');
@@ -10549,7 +11027,19 @@ function Game() {
       setPiles(generatePileData(nextLv)); // P2: 重置牌堆
     } catch (e) {
       console.error('[handleNextLevel] generateBoard 异常:', e);
-      setTiles(generateBoard(1)); // 兜底：回到第1关
+      var fbConfig = getLevelConfig(1);
+      var fbTimidFx = rollTimidEffects(fbConfig, personalityEffects);
+      timidEffectRef.current = fbTimidFx;
+      cowardlyInterferenceBlockedRef.current = fbTimidFx.anyActive;
+      setFreezeThawCounter(fbTimidFx.freezeThawCounter);
+      prevComboRef.current = 0;
+      // 重置提醒系统
+      reminderLastTimeRef.current = {};
+      reminderCountRef.current = 0;
+      skillReadySinceRef.current = {};
+      setReminderBubble(null);
+      setReminderGlow({});
+      setTiles(generateBoard(1, fbTimidFx)); // 兜底：回到第1关
       setPiles(generatePileData(1)); // P2: 重置牌堆
     }
     setSlot([]);
@@ -10579,7 +11069,7 @@ function Game() {
     uidRef.current = 0;
     setRetryAttemptsUsed(0);
     setCanRetry(false);
-    cowardlyInterferenceBlockedRef.current = false;
+    // cowardlyInterferenceBlockedRef 已在上面通过 rollTimidEffects 设置
     // P2: reset timer and skills — use nextConfig to avoid stale state
     const tl = nextConfig.timedMode ? (nextConfig.timeLimit || 120) + (personalityEffects.timerExtension || 0) : 0;
     setTimeLeft(tl);
@@ -10649,7 +11139,7 @@ function Game() {
     const pile = currentPiles[pileId];
     if (!pile || pile.isEmpty) return;
     if (pile.topIndex >= pile.cards.length) return;
-    const isFrozen = frozenSlot && !(frozenSlot && cowardlyInterferenceBlockedRef.current);
+    const isFrozen = !!frozenSlot; // 胆小新机制：冰冻格始终激活，解冻倒计时由 freezeThawCounter 管理
     const frozenOffset = isFrozen ? levelConfig.freeze_grid_count || 1 : 0;
     const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
     if (slotRef.current.length >= effectiveCapacity) return;
@@ -11510,7 +12000,76 @@ function Game() {
         boxShadow: '0 0 6px rgba(162,155,254,0.4)'
       }
     }))))); /* 右：效果可视化（暂时注释） */
-  })(), phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && /*#__PURE__*/React.createElement("div", {
+  })(), /* ═══ 猫咪智能提醒气泡 — 暂时注释 ═══ */
+  false && reminderBubble && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      bottom: 100,
+      zIndex: 350,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      background: reminderBubble.tier === 'S' ?
+        'linear-gradient(135deg, rgba(30,5,5,0.95), rgba(60,10,10,0.92))' :
+        'linear-gradient(135deg, rgba(15,10,35,0.95), rgba(30,15,50,0.92))',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: reminderBubble.tier === 'S' ?
+        '1px solid rgba(255,80,80,0.4)' :
+        '1px solid rgba(162,155,254,0.4)',
+      borderRadius: 24,
+      padding: '10px 18px 10px 14px',
+      boxShadow: reminderBubble.tier === 'S' ?
+        '0 4px 24px rgba(255,60,60,0.3), 0 0 40px rgba(255,80,80,0.12)' :
+        '0 4px 24px rgba(108,92,231,0.3), 0 0 40px rgba(162,155,254,0.12)',
+      animation: reminderBubble.leaving ?
+        'reminderSlideOut 0.35s ease-in forwards' :
+        'reminderSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+      pointerEvents: 'none'
+    }
+  },
+    /* 🐱 emoji + 猫耳抖动 */
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 28,
+        lineHeight: 1,
+        animation: 'catEarWiggle 0.4s ease-in-out 2',
+        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+      }
+    }, '🐱'),
+    /* 台词气泡 */
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative',
+        background: reminderBubble.tier === 'S' ?
+          'linear-gradient(135deg, #FF6B6B, #EE5A24)' :
+          'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+        color: '#fff',
+        padding: '7px 14px',
+        borderRadius: 16,
+        fontSize: 13,
+        fontWeight: 700,
+        whiteSpace: 'nowrap',
+        boxShadow: reminderBubble.tier === 'S' ?
+          '0 2px 12px rgba(255,80,80,0.4)' :
+          '0 2px 12px rgba(108,92,231,0.4)'
+      }
+    },
+      reminderBubble.message,
+      /* 气泡左侧小三角指向emoji */
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'absolute', left: -5, top: '50%',
+          transform: 'translateY(-50%) rotate(45deg)',
+          width: 10, height: 10,
+          background: reminderBubble.tier === 'S' ? '#FF6B6B' : '#6C5CE7',
+        }
+      })
+    )
+  ),
+  phase === 'playing' && gameState === GAME_PLAYING && skillSlots.some((s, i) => i < 3 && s) && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'center',
@@ -11542,6 +12101,10 @@ function Game() {
     };
     const rarity = BREED_RARITY[breed] || 'N';
     const borderColor = disabled ? 'rgba(255,255,255,0.08)' : skill?.color || rarityColors[rarity] || '#6C5CE7';
+    const glowTier = reminderGlow[key];
+    const flowAnim = glowTier === 'danger' ? 'borderFlowDanger 2s ease-in-out infinite' :
+                     glowTier === 'pulse' ? 'borderFlowPulse 2s ease-in-out infinite' :
+                     glowTier === 'gentle' ? 'borderFlowGentle 2.5s ease-in-out infinite' : 'none';
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       'data-skill-index': i,
@@ -11566,7 +12129,8 @@ function Game() {
         border: `2px solid ${borderColor}`,
         background: disabled ? 'rgba(255,255,255,0.02)' : `${borderColor}15`,
         boxShadow: disabled ? 'none' : `0 4px 12px ${borderColor}30`,
-        position: 'relative'
+        position: 'relative',
+        animation: flowAnim !== 'none' ? flowAnim : 'none'
       }
     }, /*#__PURE__*/React.createElement("img", {
       src: getCatDisplayImg(breed, (battleCats.find(function(c) { return (c.breedId || c.breed) === breed; }) || {}).serialId),
