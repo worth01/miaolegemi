@@ -8770,6 +8770,8 @@ function Game() {
   const [skillAnimProgress, setSkillAnimProgress] = useState(0); // 动画播放进度 0-100
   // 关卡守护猫动画
   var [guardianAnimVisible, setGuardianAnimVisible] = useState(false); // 守护猫出场动画可见
+  var guardianAnimVisibleRef = useRef(false);
+  useEffect(function() { guardianAnimVisibleRef.current = guardianAnimVisible; }, [guardianAnimVisible]);
   var [guardianAnimPhase, setGuardianAnimPhase] = useState('idle'); // idle|prepare|fire|done
   var [guardianAnimCat, setGuardianAnimCat] = useState(null); // 当前守护猫品种
   var guardianBurnCardsRef = useRef([]); // 被灼烧的棋盘格位置 [{row,col},...]
@@ -9355,6 +9357,7 @@ function Game() {
   }, [boardWidth, boardHeight]);
   const handleTileClick = useCallback(tile => {
     if (gameState !== GAME_PLAYING) return;
+    if (guardianAnimVisibleRef.current) return; // 守护猫动画播放中
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
     // 匹配动画/重整飞散动画进行中，禁止点击
@@ -10061,6 +10064,7 @@ function Game() {
 
   /* ── ACTIVE SKILLS ── */
   const handleSkillClick = skillIndex => {
+    if (guardianAnimVisibleRef.current) return; // 守护猫动画播放中
     const key = `active${skillIndex}`;
     // 检查动效弹窗正在播放
     if (skillAnimVisible) return;
@@ -11730,11 +11734,23 @@ function Game() {
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      color: '#FD9644'
-    }
+    style: (function() {
+      var base = { fontSize: 10, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
+      if (!guardianAnimVisible || !guardianAnimCat) return base;
+      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF' }[guardianAnimCat] || '#FD9644';
+      var isIdle = guardianAnimPhase === 'idle';
+      var isRetreat = guardianAnimPhase === 'retreat';
+      var isActive = !isIdle && !isRetreat;
+      if (isActive) {
+        base.fontSize = 12;
+        base.color = '#fff';
+        base.textShadow = '0 0 10px ' + themeColor + ', 0 0 20px ' + themeColor;
+      } else if (isIdle) {
+        base.color = themeColor;
+        base.textShadow = '0 0 6px ' + themeColor;
+      }
+      return base;
+    })()
   }, "\u7B2C", currentLevel, "\u5173 ", levelConfig.name || '')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -11971,12 +11987,18 @@ function Game() {
       var anim1 = isRetreat1 ? 'guardianSlideOut 0.45s ease forwards' :
                   isIdle1 ? 'guardianSlideIn 0.45s ease forwards' : 'none';
       var showFire = guardianAnimPhase === 'fire';
+      var catTop1 = cfg.catTop || 71;
+      var catW1 = cfg.catWidth || 143;
       return /*#__PURE__*/React.createElement("div", {
         style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden' }
       },
+        /* 全屏暗色遮罩（fixed 定位，覆盖整个视口） */
+        /*#__PURE__*/React.createElement("div", {
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 50% 60% at 15% 40%, transparent 25%, rgba(0,0,0,0.45) 100%)', zIndex: 10 }
+        }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc1,
-          style: { position: 'absolute', left: isRetreat1 ? (cfg.catLeft || -143) : -30, top: cfg.catTop || 71, width: cfg.catWidth || 143, zIndex: 20, animation: anim1 }
+          style: { position: 'absolute', left: isRetreat1 ? (cfg.catLeft || -143) : -30, top: catTop1, width: catW1, zIndex: 20, animation: anim1, filter: 'drop-shadow(0 0 30px rgba(255,200,100,0.35))' }
         }),
         showFire && /*#__PURE__*/React.createElement("img", {
           src: cfg.images.effect,
@@ -11997,12 +12019,18 @@ function Game() {
       var anim2 = isRetreat2 ? 'guardianSlideOut 0.45s ease forwards' :
                   isIdle2 ? 'guardianSlideIn 0.45s ease forwards' : 'none';
       var showButterfly = guardianAnimPhase === 'prepare' || guardianAnimPhase === 'pu' || guardianAnimPhase === 'idlePose';
+      var catTop2 = cfg.catTop || 75;
+      var catW2 = cfg.catWidth || 172;
       return /*#__PURE__*/React.createElement("div", {
         style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden' }
       },
+        /* 全屏暗色遮罩（fixed 定位，覆盖整个视口） */
+        /*#__PURE__*/React.createElement("div", {
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 50% 60% at 15% 40%, transparent 25%, rgba(0,0,0,0.45) 100%)', zIndex: 10 }
+        }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc2,
-          style: { position: 'absolute', left: isRetreat2 ? (cfg.catLeft || -172) : -30, top: cfg.catTop || 75, width: cfg.catWidth || 172, zIndex: 20, animation: anim2 }
+          style: { position: 'absolute', left: isRetreat2 ? (cfg.catLeft || -172) : -30, top: catTop2, width: catW2, zIndex: 20, animation: anim2, filter: 'drop-shadow(0 0 30px rgba(255,200,100,0.35))' }
         }),
         showButterfly && /*#__PURE__*/React.createElement("img", {
           src: cfg.images.effect,
@@ -12015,14 +12043,20 @@ function Game() {
     if (mode === 'centerFade') {
       var phases3 = cfg.phases || [];
       var isLast3 = guardianAnimPhase === phases3[phases3.length - 1];
+      var catTop3 = cfg.catTop || 415;
+      var catW3 = cfg.catWidth || 140;
       // 动画 WebP：单张图自动播放，无需逐帧切换
       if (cfg.animWebp) {
         return /*#__PURE__*/React.createElement("div", {
           style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden', opacity: isLast3 ? 0 : 1, transition: isLast3 ? 'opacity 0.5s' : 'none' }
         },
+          /* 暗色遮罩 + 径向光晕 */
+          /*#__PURE__*/React.createElement("div", {
+            style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 50% at 50% ' + (catTop3 + catW3/2) + 'px, transparent 30%, rgba(0,0,0,0.45) 100%)', zIndex: 10 }
+          }),
           /*#__PURE__*/React.createElement("img", {
             src: cfg.animWebp,
-            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: cfg.catTop || 415, width: cfg.catWidth || 140, zIndex: 20 }
+            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, filter: 'drop-shadow(0 0 30px rgba(255,200,100,0.35))' }
           })
         );
       }
@@ -12030,11 +12064,14 @@ function Game() {
       return /*#__PURE__*/React.createElement("div", {
         style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden', opacity: isLast3 ? 0 : 1, transition: isLast3 ? 'opacity 0.5s' : 'none' }
       },
+        /*#__PURE__*/React.createElement("div", {
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 50% at 50% ' + (catTop3 + catW3/2) + 'px, transparent 30%, rgba(0,0,0,0.45) 100%)', zIndex: 10 }
+        }),
         phases3.map(function(ph, idx) {
           return /*#__PURE__*/React.createElement("img", {
             key: ph + '-' + idx,
             src: cfg.images[ph],
-            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: cfg.catTop || 415, width: cfg.catWidth || 140, zIndex: 20, display: guardianAnimPhase === ph ? 'block' : 'none' }
+            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, display: guardianAnimPhase === ph ? 'block' : 'none', filter: 'drop-shadow(0 0 30px rgba(255,200,100,0.35))' }
           });
         })
       );
@@ -12269,7 +12306,7 @@ function Game() {
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%)',
-        top: 616,
+        top: 498,
         width: 350,
         height: showPanel ? 106 : 0,
         overflow: 'hidden',
