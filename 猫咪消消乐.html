@@ -342,6 +342,39 @@
     66% { box-shadow: 0 0 14px rgba(255,120,80,0.7), 0 0 26px rgba(255,120,80,0.35), inset 0 0 12px rgba(255,120,80,0.16); border-color: rgba(255,120,80,0.8); transform: scale(1.02); }
     100% { box-shadow: 0 0 10px rgba(255,80,80,0.6), 0 0 22px rgba(255,80,80,0.3), inset 0 0 10px rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.7); transform: scale(1); }
   }
+
+  /* ═══════════════════════════════════════════
+     关卡守护猫系统 — CSS 动画（共用框架）
+     ═══════════════════════════════════════════ */
+
+  .guardian-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 500; pointer-events: none; overflow: hidden;
+  }
+  /* 猫入场：左侧滑入 */
+  @keyframes guardianSlideIn {
+    0% { transform: translateX(-100%); opacity: 0.3; }
+    60% { transform: translateX(6px); opacity: 1; }
+    80% { transform: translateX(-3px); opacity: 1; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  /* 猫离场：左侧滑出 */
+  @keyframes guardianSlideOut {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(-120%); opacity: 0; }
+  }
+  /* 火焰喷射：从左侧向右扩展 */
+  @keyframes guardianFireExpand {
+    0% { transform: scaleX(0); opacity: 0; }
+    25% { transform: scaleX(0.3); opacity: 0.8; }
+    100% { transform: scaleX(1); opacity: 1; }
+  }
+  /* 卡牌灼烧：缩小 + 旋转 + 消失 */
+  @keyframes guardianCardBurn {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; background: rgba(255,255,255,.12); }
+    30% { transform: scale(1.15) rotate(5deg); opacity: 0.9; background: rgba(255,120,30,.35); }
+    100% { transform: scale(0.15) rotate(180deg); opacity: 0; background: rgba(255,60,10,.6); }
+  }
 </style>
 <div id="loading-overlay">
   <div id="loading-ios-outer">
@@ -4025,6 +4058,46 @@ var CAT_REMINDER_DIALOGUES = {
   '布偶猫': { general: '这些我帮你叼走～', urgent: '交给我处理吧！' },
   '三花猫': { general: '讨厌的干扰牌！', urgent: '看我赶跑它！喵呜～' },
   '幸运猫': { general: '试试手气？', urgent: '也许洗一洗更好喵～' },
+};
+
+// ═══════════════════════════════════════
+// 关卡守护猫系统 — 关卡→守护猫映射（共用框架，换图即可）
+// ═══════════════════════════════════════
+var GUARDIAN_CAT_CONFIG = {
+  // 无毛猫喷火 — 无毛暖居关卡
+  '无毛猫': {
+    breed: '无毛猫',
+    folder: 'assets/cats/wu/',
+    phases: ['idle', 'prepare', 'fire'],
+    images: {
+      idle: 'assets/cats/wu/cat_idle.png',
+      prepare: 'assets/cats/wu/cat_prepare.png',
+      fire: 'assets/cats/wu/cat_fire.png',
+      effect: 'assets/cats/wu/fire.png'
+    },
+    // 猫在棋盘左侧的位置
+    catTop: 71,
+    catLeft: -143,
+    catWidth: 143,
+    // 火焰相对猫的位置
+    fireLeft: 34,
+    fireTop: 35,
+    fireWidth: 210,
+    // 灼烧棋盘格数
+    burnCount: 0,
+  },
+  // TODO: 后续扩展只需添加新条目 + 对应图片文件夹
+  // '三花猫': { breed:'三花猫', folder:'assets/cats/san/', ... },
+  // '幸运猫': { breed:'幸运猫', folder:'assets/cats/lucky/', ... },
+  // '星空猫': { breed:'星空猫', folder:'assets/cats/xing/', ... },
+  // '布偶猫': { breed:'布偶猫', folder:'assets/cats/buou/', ... },
+};
+
+// 关卡 → 守护猫品种 映射表（30关完整配置，null=无守护猫）
+var LEVEL_GUARDIAN_MAP = {
+  9: '无毛猫',   // 第9关 — 无毛暖居
+  19: '无毛猫',  // 第19关 — 无毛暖居
+  29: '无毛猫',  // 第29关 — 无毛暖居
 };
 
 /* ═══════════════════════════════════════
@@ -8636,6 +8709,11 @@ function Game() {
   const [skillAnimVisible, setSkillAnimVisible] = useState(false); // 技能动效弹窗可见
   const [skillAnimData, setSkillAnimData] = useState(null); // { breed, skill, rarity }
   const [skillAnimProgress, setSkillAnimProgress] = useState(0); // 动画播放进度 0-100
+  // 关卡守护猫动画
+  var [guardianAnimVisible, setGuardianAnimVisible] = useState(false); // 守护猫出场动画可见
+  var [guardianAnimPhase, setGuardianAnimPhase] = useState('idle'); // idle|prepare|fire|done
+  var [guardianAnimCat, setGuardianAnimCat] = useState(null); // 当前守护猫品种
+  var guardianBurnCardsRef = useRef([]); // 被灼烧的棋盘格位置 [{row,col},...]
   const [fishMultiplier, setFishMultiplier] = useState(1);
   const [extraRestarts, setExtraRestarts] = useState(0);
   const [highlightedTiles, setHighlightedTiles] = useState([]); // tile ids highlighted by skills
@@ -8648,6 +8726,53 @@ function Game() {
   useEffect(() => {
     highlightedTilesRef.current = highlightedTiles;
   }, [highlightedTiles]);
+
+  // ═══════════════════════════════════════
+  // 关卡守护猫系统 — 出场动画播放（共用框架）
+  // ═══════════════════════════════════════
+
+  var guardianTimerRef = useRef(null); // 动画定时器
+
+  function playGuardianCatIntro(breedId) {
+    var cfg = GUARDIAN_CAT_CONFIG[breedId];
+    if (!cfg) return;
+    // 清除上一次的定时器
+    if (guardianTimerRef.current) { clearTimeout(guardianTimerRef.current); guardianTimerRef.current = null; }
+
+    setGuardianAnimCat(breedId);
+    setGuardianAnimPhase('idle');
+    setGuardianAnimVisible(true);
+
+    // 随机选 N 个棋盘格作为灼烧目标
+    var burnCells = [];
+    var rows = 5, cols = 8;
+    while (burnCells.length < (cfg.burnCount || 3)) {
+      var r = Math.floor(Math.random() * rows);
+      var c = Math.floor(Math.random() * cols);
+      var key = r + ',' + c;
+      if (burnCells.indexOf(key) < 0) burnCells.push(key);
+    }
+    guardianBurnCardsRef.current = burnCells;
+
+    // Phase 1 (500ms): idle → prepare
+    guardianTimerRef.current = setTimeout(function() {
+      setGuardianAnimPhase('prepare');
+      // Phase 2 (850ms): prepare → fire + 火焰展开
+      guardianTimerRef.current = setTimeout(function() {
+        setGuardianAnimPhase('fire');
+        // Phase 3 (850+1800ms): 火焰消失，猫撤退
+        guardianTimerRef.current = setTimeout(function() {
+          setGuardianAnimPhase('retreat');
+          // Phase 4 (撤退动画500ms后): 全部清除
+          guardianTimerRef.current = setTimeout(function() {
+            setGuardianAnimVisible(false);
+            setGuardianAnimPhase('idle');
+            guardianBurnCardsRef.current = [];
+          }, 500);
+        }, 1800);
+      }, 350);
+    }, 500);
+  }
 
   // 关卡选择回调
   const handleLevelSelect = level => {
@@ -8696,6 +8821,12 @@ function Game() {
       setFrozenSlot(frozenCard);
     } else {
       setFrozenSlot(null);
+    }
+    // 关卡守护猫：关卡选择时播放出场动画
+    var cycleLv = ((level - 1) % 30) + 1;
+    var guardianBreed = LEVEL_GUARDIAN_MAP[cycleLv];
+    if (guardianBreed) {
+      setTimeout(function() { playGuardianCatIntro(guardianBreed); }, 300);
     }
   };
 
@@ -11112,6 +11243,12 @@ function Game() {
     } else {
       setFrozenSlot(null);
     }
+    // 关卡守护猫：进入下一关时播放出场动画
+    var nextCycleLv = ((nextLv - 1) % 30) + 1;
+    var nextGuardian = LEVEL_GUARDIAN_MAP[nextCycleLv];
+    if (nextGuardian) {
+      setTimeout(function() { playGuardianCatIntro(nextGuardian); }, 300);
+    }
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
   };
@@ -11676,7 +11813,52 @@ function Game() {
     onClick: onBoardClick,
     onMouseMove: onBoardHover,
     onMouseLeave: () => setHoveredTileId(null)
-  })))), /*#__PURE__*/React.createElement("div", {
+  }))), /* ═══ 关卡守护猫动画覆盖层 ═══ */
+  guardianAnimVisible && guardianAnimCat && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 500,
+      pointerEvents: 'none',
+      overflow: 'hidden'
+    }
+  },
+    /* 灼烧光斑 — 暂时取消 */
+    /* 猫本体 */
+    /*#__PURE__*/React.createElement("img", {
+      src: guardianAnimPhase === 'idle' ?
+        GUARDIAN_CAT_CONFIG[guardianAnimCat].images.idle :
+        guardianAnimPhase === 'prepare' ?
+        GUARDIAN_CAT_CONFIG[guardianAnimCat].images.prepare :
+        GUARDIAN_CAT_CONFIG[guardianAnimCat].images.fire,
+      style: {
+        position: 'absolute',
+        left: guardianAnimPhase === 'retreat' ? (GUARDIAN_CAT_CONFIG[guardianAnimCat].catLeft || -143) : -30,
+        top: GUARDIAN_CAT_CONFIG[guardianAnimCat].catTop || 75,
+        width: GUARDIAN_CAT_CONFIG[guardianAnimCat].catWidth || 143,
+        zIndex: 20,
+        animation: guardianAnimPhase === 'retreat' ?
+          'guardianSlideOut 0.45s ease forwards' :
+          guardianAnimPhase === 'idle' ?
+          'guardianSlideIn 0.45s ease forwards' : 'none'
+      }
+    }),
+    /* 火焰（左边缘固定，向右扩展） */
+    guardianAnimPhase === 'fire' && /*#__PURE__*/React.createElement("img", {
+      src: GUARDIAN_CAT_CONFIG[guardianAnimCat].images.effect,
+      style: {
+        position: 'absolute',
+        left: (GUARDIAN_CAT_CONFIG[guardianAnimCat].fireLeft || 35),
+        top: (GUARDIAN_CAT_CONFIG[guardianAnimCat].fireTop || 35),
+        width: (GUARDIAN_CAT_CONFIG[guardianAnimCat].fireWidth || 420),
+        zIndex: 15,
+        transformOrigin: 'left center',
+        animation: 'guardianFireExpand 0.65s ease forwards'
+      }
+    }),
+    null
+  ),
+  /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-evenly',
@@ -12374,7 +12556,7 @@ function Game() {
   }, "返回大厅"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowSettings(false),
     style: { flex: 1, height: 38, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 16px rgba(108,92,231,0.5)' }
-  }, "确认")))));
+  }, "确认"))))));
 }
 
 /* ═══════════════════════════════════════
