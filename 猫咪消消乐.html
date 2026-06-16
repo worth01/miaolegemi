@@ -6898,7 +6898,7 @@ function ResultOverlay({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingTop: 120,
+      paddingTop: 80,
       zIndex: 500,
       animation: 'fadeIn 0.4s ease-out'
     }
@@ -6983,7 +6983,7 @@ function ResultOverlay({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: 800,
       color: '#FFD700',
       textShadow: '0 0 20px rgba(255,215,0,0.5)',
@@ -6997,6 +6997,55 @@ function ResultOverlay({
       marginTop: 2
     }
   }, "\u8D85\u8D8A\u5386\u53F2\u6700\u9AD8 ", personalBest.toLocaleString(), " \u5206"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 16,
+      padding: '12px 18px',
+      background: 'linear-gradient(135deg, rgba(108,92,231,0.12) 0%, rgba(253,150,68,0.08) 100%)',
+      border: '1px solid rgba(108,92,231,0.2)',
+      marginBottom: 9,
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 14, color: '#DDD', marginBottom: 8, fontWeight: 700 }
+  }, "\uD83D\uDC1F \u65B0\u9C7C\u5E72"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 28,
+      fontWeight: 900,
+      color: '#FD9644',
+      letterSpacing: '-1px',
+      textShadow: '0 0 20px rgba(253,150,68,0.4)'
+    }
+  }, "+", finalFish, nightBonus && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      fontWeight: 600,
+      color: '#FFD700',
+      marginLeft: 4
+    }
+  }, "\uD83C\uDF19\xD71.5"), actualBonusRatio > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 500
+    }
+  }, " (\u542B+", Math.round(fishCalc.extraFish), "\u52A0\u6210)"), hasGaoLeng && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#A29BFE',
+      marginTop: 1
+    }
+  }, "\u2728 \u9AD8\u51B7\u6027\u683C\u5F97\u5206\u52A0\u6210\u751F\u6548"), hasHuaLao && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#FD79A8',
+      marginTop: 1
+    }
+  }, "\uD83D\uDCAC \u8BDD\u75E8\u6280\u80FD\u989D\u5916\u5F97\u5206\u751F\u6548"), isLose && persEffects.fishLossRatio < 0.50 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: '#55EFC4',
+      marginTop: 1
+    }
+  }, "\uD83D\uDEE1\uFE0F \u80C6\u5927\u732B\u54AA\u5B88\u62A4\u4E86 ", Math.round((0.50 - persEffects.fishLossRatio) * 100), "% \u9C7C\u5E72"))), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 20,
       padding: '9px 18px',
@@ -7093,69 +7142,59 @@ function ResultOverlay({
       gridTemplateColumns: '1fr 1fr',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, catCount > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       padding: '7px 12px',
       textAlign: 'center',
       background: 'rgba(15,10,30,0.6)',
-      border: '1px solid rgba(253,150,68,0.2)',
+      border: '1px solid rgba(247,220,111,0.2)',
       position: 'relative',
       overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'absolute',
-      top: 4,
-      right: 4,
-      fontSize: 16,
-      opacity: 0.3
-    }
-  }, "\uD83D\uDC1F"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'rgba(240,237,255,0.5)',
-      marginBottom: 3
-    }
-  }, "\u83B7\u5F97\u9C7C\u5E72"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 24,
-      fontWeight: 900,
-      color: '#FD9644',
-      letterSpacing: '-1px',
-      textShadow: '0 0 20px rgba(253,150,68,0.3)'
-    }
-  }, "+", finalFish, nightBonus && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 600,
-      color: '#FFD700',
-      marginLeft: 4
-    }
-  }, "\uD83C\uDF19\xD71.5"), actualBonusRatio > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
       fontSize: 12,
-      fontWeight: 500
+      fontWeight: 700,
+      color: '#FD9644',
+      textAlign: 'center',
+      marginBottom: 6,
+      position: 'relative'
     }
-  }, " (\u542B+", Math.round(fishCalc.extraFish), "\u52A0\u6210)"), hasGaoLeng && /*#__PURE__*/React.createElement("div", {
+  }, "参战猫咪"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10,
-      color: '#A29BFE',
-      marginTop: 1
+      display: 'flex',
+      justifyContent: 'center',
+      gap: 6
     }
-  }, "\u2728 \u9AD8\u51B7\u6027\u683C\u5F97\u5206\u52A0\u6210\u751F\u6548"), hasHuaLao && /*#__PURE__*/React.createElement("div", {
+  }, cats.map((cat, idx) => /*#__PURE__*/React.createElement("div", {
+    key: cat.serialId,
     style: {
-      fontSize: 10,
-      color: '#FD79A8',
-      marginTop: 1
+      textAlign: 'center'
     }
-  }, "\uD83D\uDCAC \u8BDD\u75E8\u6280\u80FD\u989D\u5916\u5F97\u5206\u751F\u6548"), isLose && persEffects.fishLossRatio < 0.50 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10,
-      color: '#55EFC4',
-      marginTop: 1
+      width: 28,
+      height: 28,
+      borderRadius: '50%',
+      overflow: 'hidden',
+      border: '1.5px solid rgba(253,150,68,0.5)',
+      margin: '0 auto 3px',
+      boxShadow: '0 3px 8px rgba(253,150,68,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+      background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)'
     }
-  }, "\uD83D\uDEE1\uFE0F \u80C6\u5927\u732B\u54AA\u5B88\u62A4\u4E86 ", Math.round((0.50 - persEffects.fishLossRatio) * 100), "% \u9C7C\u5E72"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: getCatDisplayImg(cat.breedId || cat.breed, cat.serialId),
+    alt: cat.breedId || cat.breed,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => {
+      e.target.style.display = 'none';
+    }
+  })))))), /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 14,
       padding: '7px 12px',
@@ -7187,65 +7226,8 @@ function ResultOverlay({
       letterSpacing: '-1px',
       textShadow: `0 0 20px ${isLose ? 'rgba(255,107,107,0.3)' : 'rgba(162,155,254,0.3)'}`
     }
-  }, isLose ? `${remaining}张` : `${String(Math.floor(elapsedTime / 60)).padStart(2, '0')}:${String(elapsedTime % 60).padStart(2, '0')}`)))), catCount > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 9,
-      padding: '8px 16px',
-      background: 'linear-gradient(135deg, rgba(253,150,68,0.1) 0%, rgba(108,92,231,0.1) 100%)',
-      borderRadius: 16,
-      border: '1px solid rgba(253,150,68,0.2)',
-      position: 'relative',
-      overflow: 'hidden'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: '#FD9644',
-      textAlign: 'center',
-      marginBottom: 6,
-      position: 'relative'
-    }
-  }, "\uD83D\uDC31 \u8FD9\u573A\u6E38\u620F\u6709 ", catCount, " \u53EA\u732B\u53C2\u6218\u4E86"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'center',
-      gap: 6
-    }
-  }, cats.map((cat, idx) => /*#__PURE__*/React.createElement("div", {
-    key: cat.serialId,
-    style: {
-      textAlign: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 44,
-      height: 44,
-      borderRadius: '50%',
-      overflow: 'hidden',
-      border: '2px solid rgba(253,150,68,0.5)',
-      margin: '0 auto 3px',
-      boxShadow: '0 4px 12px rgba(253,150,68,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-      background: 'linear-gradient(145deg, rgba(253,150,68,0.2), transparent)'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: getCatDisplayImg(cat.breedId || cat.breed, cat.serialId),
-    alt: cat.breedId || cat.breed,
-    style: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover'
-    },
-    onError: e => {
-      e.target.style.display = 'none';
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      fontWeight: 600,
-      color: 'rgba(240,237,255,0.8)'
-    }
-  }, cat.breed))))), !isLose && /*#__PURE__*/React.createElement("div", {
+  }, isLose ? `${remaining}张` : `${String(Math.floor(elapsedTime / 60)).padStart(2, '0')}:${String(elapsedTime % 60).padStart(2, '0')}`))))
+  , !isLose && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 7,
