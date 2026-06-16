@@ -384,6 +384,37 @@
     75% { transform: translate(-20px, -15px) rotate(4deg) scale(1.05); }
     100% { transform: translate(0, 0) rotate(-3deg) scale(1); }
   }
+  /* 猫跳跃：上下弹跳 */
+  @keyframes guardianCatJump {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(-22px); }
+    70% { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
+  }
+  /* 流星雨：从右侧洒落，闪烁浮动 */
+  @keyframes guardianStarShower {
+    0% { opacity: 0; transform: translate(0, -20px) scale(0.85); }
+    12% { opacity: 0.9; transform: translate(-8px, 0) scale(1.02); }
+    35% { transform: translate(-12px, 10px) scale(1); opacity: 1; }
+    60% { transform: translate(-4px, 18px) scale(1.03); opacity: 1; }
+    80% { transform: translate(-10px, 8px) scale(0.98); opacity: 0.88; }
+    100% { opacity: 0.92; transform: translate(-6px, 15px) scale(0.95); }
+  }
+  /* 流星雨消失（随猫一起退场） */
+  @keyframes guardianStarRetreat {
+    0% { opacity: 1; transform: translate(0, 0); }
+    100% { opacity: 0; transform: translate(40px, 30px); }
+  }
+  /* 居中淡入 */
+  @keyframes guardianCenterFadeIn {
+    0% { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  /* 居中淡出 */
+  @keyframes guardianCenterFadeOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.9); }
+  }
 </style>
 <div id="loading-overlay">
   <div id="loading-ios-outer">
@@ -4141,7 +4172,47 @@ var GUARDIAN_CAT_CONFIG = {
     catTop: 415,
     catWidth: 140,
     animWebp: 'assets/cats/ju/cat_anim.webp',
-    phaseTiming: [800, 800, 800, 800, 800, 800],
+    phaseTiming: [800, 800, 800, 800, 800, 800],  },
+  // 暹罗猫+流星雨 — 第8/18/28关
+  '暹罗猫': {
+    breed: '暹罗猫',
+    renderMode: 'slideStar',
+    folder: 'assets/cats/xian/',
+    hasIdlePause: false,
+    phases: ['idle', 'jump', 'prepare', 'retreat'],
+    images: {
+      idle: 'assets/cats/xian/cat_idle.png',
+      jump: 'assets/cats/xian/cat_jump.png',
+      prepare: 'assets/cats/xian/cat_prepare.png',
+      effect: 'assets/cats/xian/star.png'
+    },
+    catTop: 175,
+    catLeft: -185,
+    catWidth: 185,
+    starLeft: 240,
+    starTop: 8,
+    starWidth: 160,
+    phaseTiming: [600, 400, 2500, 500],
+    animWebp: 'assets/cats/xian/cat_anim.webp',
+  },
+  // 白猫洗浴 — 第2/12/22关
+  '白猫': {
+    breed: '白猫',
+    renderMode: 'slidePhased',
+    folder: 'assets/cats/bai/',
+    phases: ['prepare', 'idle', 'dou', 'dou2', 'retreat'],
+    images: {
+      prepare: 'assets/cats/bai/cat_prepare.png',
+      idle: 'assets/cats/bai/cat_idle.png',
+      dou: 'assets/cats/bai/cat_dou.png',
+      dou2: 'assets/cats/bai/cat_dou2.png',
+    },
+    catTop: 70,
+    catLeft: -185,
+    catWidth: 185,
+    centered: true,
+    phaseTiming: [600, 1500, 500, 1500, 500],
+    animWebp: 'assets/cats/bai/cat_anim.webp',
   },
   // TODO: 后续扩展只需添加新条目 + 对应图片文件夹
 };
@@ -4149,13 +4220,19 @@ var GUARDIAN_CAT_CONFIG = {
 // 关卡 → 守护猫品种 映射表（30关完整配置，null=无守护猫）
 var LEVEL_GUARDIAN_MAP = {
   1: '橘猫',     // 第1关 — 橘猫闲居
+  2: '白猫',     // 第2关 — 白猫洗浴
   6: '三花猫',   // 第6关
+  8: '暹罗猫',   // 第8关 — 暹罗流星
   9: '无毛猫',   // 第9关 — 无毛暖居
   11: '橘猫',    // 第11关 — 橘猫闲居
+  12: '白猫',    // 第12关 — 白猫洗浴
   16: '三花猫',  // 第16关
+  18: '暹罗猫',  // 第18关 — 暹罗流星
   19: '无毛猫',  // 第19关 — 无毛暖居
   21: '橘猫',    // 第21关 — 橘猫闲居
+  22: '白猫',    // 第22关 — 白猫洗浴
   26: '三花猫',  // 第26关
+  28: '暹罗猫',  // 第28关 — 暹罗流星
   29: '无毛猫',  // 第29关 — 无毛暖居
 };
 
@@ -11719,7 +11796,7 @@ function Game() {
     style: (function() {
       var base = { fontSize: 10, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
       if (!guardianAnimVisible || !guardianAnimCat) return base;
-      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF' }[guardianAnimCat] || '#FD9644';
+      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3' }[guardianAnimCat] || '#FD9644';
       var isIdle = guardianAnimPhase === 'idle';
       var isRetreat = guardianAnimPhase === 'retreat';
       var isActive = !isIdle && !isRetreat;
@@ -12055,6 +12132,80 @@ function Game() {
             src: cfg.images[ph],
             style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, display: guardianAnimPhase === ph ? 'block' : 'none', filter: 'drop-shadow(0 0 30px rgba(255,200,100,0.35))' }
           });
+        })
+      );
+    }
+
+    // ── 模式4: slideStar（暹罗猫+流星雨）──
+    if (mode === 'slideStar') {
+      var isIdle4 = guardianAnimPhase === 'idle';
+      var isJump4 = guardianAnimPhase === 'jump';
+      var isPrepare4 = guardianAnimPhase === 'prepare';
+      var isRetreat4 = guardianAnimPhase === 'retreat';
+      var catSrc4 = cfg.animWebp ? cfg.animWebp : (isJump4 ? cfg.images.jump : (isPrepare4 || isRetreat4) ? cfg.images.prepare : cfg.images.idle);
+      var catAnim4 = isRetreat4 ? 'guardianSlideOut 0.5s ease forwards' :
+                     isIdle4 ? 'guardianSlideIn 0.5s ease forwards' :
+                     isJump4 ? 'guardianCatJump 0.4s ease' : 'none';
+      var starAnim4 = isRetreat4 ? 'guardianStarRetreat 0.5s ease forwards' :
+                      isPrepare4 ? 'guardianStarShower 2.5s ease-in-out infinite' : 'none';
+      var showStar4 = isPrepare4 || isRetreat4;
+      var catTop4 = cfg.catTop || 175;
+      var catW4 = cfg.catWidth || 185;
+      var starLeft4 = cfg.starLeft || 240;
+      var starTop4 = cfg.starTop || 8;
+      var starW4 = cfg.starWidth || 160;
+      return /*#__PURE__*/React.createElement("div", {
+        style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden' }
+      },
+        /* 全屏暗色遮罩（fixed 定位，覆盖整个视口，光晕偏左照猫） */
+        /*#__PURE__*/React.createElement("div", {
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 55% 60% at 18% 42%, transparent 22%, rgba(10,5,30,0.5) 100%)', zIndex: 10 }
+        }),
+        /* 猫 */
+        /*#__PURE__*/React.createElement("img", {
+          src: catSrc4,
+          style: { position: 'absolute', left: isRetreat4 ? (cfg.catLeft || -185) : -30, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 35px rgba(203,166,247,0.45))' }
+        }),
+        /* 流星雨（从右侧出现） */
+        showStar4 && /*#__PURE__*/React.createElement("img", {
+          src: cfg.images.effect,
+          style: { position: 'absolute', left: starLeft4, top: starTop4, width: starW4, zIndex: 15, animation: starAnim4, opacity: isRetreat4 ? undefined : 0 }
+        })
+      );
+    }
+
+    // ── 模式5: slidePhased（白猫洗浴等纯猫无特效动画）──
+    if (mode === 'slidePhased') {
+      var ph5 = guardianAnimPhase;
+      var phases5 = cfg.phases || [];
+      var isFirst5 = ph5 === phases5[0];
+      var isRetreat5 = ph5 === 'retreat';
+      var isCentered5 = cfg.centered === true;
+      var catSrc5 = cfg.animWebp || cfg.images[ph5] || cfg.images[phases5[0]];
+      var catTop5 = cfg.catTop || 70;
+      var catW5 = cfg.catWidth || 185;
+      // 居中模式：淡入淡出 + marginLeft居中；侧滑模式：左右滑入滑出
+      var catAnim5, catStyle5, darkGradient5;
+      if (isCentered5) {
+        catAnim5 = isRetreat5 ? 'guardianCenterFadeOut 0.5s ease forwards' :
+                   isFirst5 ? 'guardianCenterFadeIn 0.5s ease forwards' : 'none';
+        catStyle5 = { position: 'absolute', left: '50%', marginLeft: -(catW5/2), top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 35px rgba(126,200,227,0.45))' };
+        darkGradient5 = 'radial-gradient(ellipse 60% 60% at 50% 45%, transparent 20%, rgba(0,0,0,0.5) 100%)';
+      } else {
+        catAnim5 = isRetreat5 ? 'guardianSlideOut 0.5s ease forwards' :
+                   isFirst5 ? 'guardianSlideIn 0.5s ease forwards' : 'none';
+        catStyle5 = { position: 'absolute', left: isRetreat5 ? (cfg.catLeft || -185) : -30, top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 30px rgba(126,200,227,0.4))' };
+        darkGradient5 = 'radial-gradient(ellipse 50% 60% at 18% 42%, transparent 22%, rgba(0,0,0,0.45) 100%)';
+      }
+      return /*#__PURE__*/React.createElement("div", {
+        style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden' }
+      },
+        /*#__PURE__*/React.createElement("div", {
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: darkGradient5, zIndex: 10 }
+        }),
+        /*#__PURE__*/React.createElement("img", {
+          src: catSrc5,
+          style: catStyle5
         })
       );
     }
