@@ -155,6 +155,14 @@
           if (!s.sfxOn) return;
           coinSfx.currentTime = 0;
           coinSfx.play().catch(function(){});
+        },
+        playGuardian: function(audioSrc) {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          if (!audioSrc) return;
+          var a = new Audio(audioSrc);
+          a.volume = 0.7;
+          a.play().catch(function(){});
         }
       };
 
@@ -414,6 +422,50 @@
   @keyframes guardianCenterFadeOut {
     0% { opacity: 1; transform: scale(1); }
     100% { opacity: 0; transform: scale(0.9); }
+  }
+  /* 极光波动（绿色极光带） */
+  @keyframes auroraWave1 {
+    0%, 100% { transform: translateX(0) scaleY(1); opacity: 0.35; }
+    33% { transform: translateX(18px) scaleY(1.4); opacity: 0.6; }
+    66% { transform: translateX(-8px) scaleY(0.9); opacity: 0.45; }
+  }
+  @keyframes auroraWave2 {
+    0%, 100% { transform: translateX(0) scaleY(1); opacity: 0.25; }
+    50% { transform: translateX(-20px) scaleY(1.5); opacity: 0.55; }
+  }
+  @keyframes auroraWave3 {
+    0%, 100% { transform: translateX(0) scaleY(1); opacity: 0.2; }
+    25% { transform: translateX(12px) scaleY(1.3); opacity: 0.45; }
+    75% { transform: translateX(-14px) scaleY(0.8); opacity: 0.3; }
+  }
+  /* 极光区域淡入 */
+  @keyframes auroraFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  /* 极光区域淡出 */
+  @keyframes auroraFadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  /* 雪花飘落 */
+  @keyframes snowDrift1 {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    15% { opacity: 0.8; }
+    85% { opacity: 0.7; }
+    100% { transform: translateY(100px) translateX(20px); opacity: 0; }
+  }
+  @keyframes snowDrift2 {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(90px) translateX(-15px); opacity: 0; }
+  }
+  @keyframes snowDrift3 {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    20% { opacity: 0.9; }
+    80% { opacity: 0.6; }
+    100% { transform: translateY(110px) translateX(8px); opacity: 0; }
   }
 </style>
 <div id="loading-overlay">
@@ -4160,14 +4212,14 @@ var GUARDIAN_CAT_CONFIG = {
   '橘猫': {
     breed: '橘猫',
     renderMode: 'centerFade',
-    phases: ['prepare', 'mo0', 'mo1', 'mo2', 'mo3', 'mo1b'],
+    phases: ['prepare', 'mo0', 'mo1', 'mo2', 'mo3', 'mo4'],
     images: {
       prepare: 'assets/cats/ju/cat_prepare.png',
       mo0: 'assets/cats/ju/cat_mo0.png',
       mo1: 'assets/cats/ju/cat_mo1.png',
       mo2: 'assets/cats/ju/cat_mo2.png',
       mo3: 'assets/cats/ju/cat_mo3.png',
-      mo1b: 'assets/cats/ju/cat_mo1.png',
+      mo4: 'assets/cats/ju/cat_mo4.png',
     },
     catTop: 415,
     catWidth: 140,
@@ -4195,6 +4247,69 @@ var GUARDIAN_CAT_CONFIG = {
     phaseTiming: [600, 400, 2500, 500],
     animWebp: 'assets/cats/xian/cat_anim.webp',
   },
+  // 蓝猫极光 — 第3/13/23关
+  '蓝猫': {
+    breed: '蓝猫',
+    renderMode: 'slideStar',
+    folder: 'assets/cats/lan/',
+    phases: ['idle', 'jump', 'prepare', 'retreat'],
+    images: {
+      idle: 'assets/cats/lan/cat_prepare.png',
+      jump: 'assets/cats/lan/cat_snow.png',
+      prepare: 'assets/cats/lan/cat_snow2.png',
+      // effect: 'assets/cats/lan/jiguang.png', // 已替换为前端极光特效
+    },
+    effectType: 'aurora',
+    catTop: 142,
+    catLeft: -185,
+    catWidth: 185,
+    starLeft: 200,
+    starTop: 0,
+    starWidth: 155,
+    phaseTiming: [600, 500, 3000, 500],
+    animWebp: 'assets/cats/lan/cat_anim.webp',
+  },
+  // 黑猫披风 — 第4/14/24关
+  '黑猫': {
+    breed: '黑猫',
+    renderMode: 'slidePhased',
+    folder: 'assets/cats/hei/',
+    phases: ['prepare', 'fei', 'fei2', 'fei3', 'fei4', 'retreat'],
+    images: {
+      prepare: 'assets/cats/hei/cat_prepare.png',
+      fei: 'assets/cats/hei/cat_fei.png',
+      fei2: 'assets/cats/hei/cat_fei2.png',
+      fei3: 'assets/cats/hei/cat_fei3.png',
+      fei4: 'assets/cats/hei/cat_fei4.png',
+    },
+    catTop: 255,
+    catLeft: -185,
+    catWidth: 185,
+    centered: true,
+    phaseTiming: [600, 800, 600, 800, 1200, 500],
+    animWebp: 'assets/cats/hei/cat_anim.webp',
+  },
+  // 布偶猫观竹 — 第5/15/25关
+  '布偶猫': {
+    breed: '布偶猫',
+    renderMode: 'slideStar',
+    reverseLayout: true,
+    folder: 'assets/cats/bu/',
+    phases: ['idle', 'jump', 'prepare', 'retreat'],
+    images: {
+      idle: 'assets/cats/bu/cat_prepare.png',
+      jump: 'assets/cats/bu/cat_look.png',
+      prepare: 'assets/cats/bu/cat_look2.png',
+      effect: 'assets/cats/bu/zhu.png'
+    },
+    catTop: 300,
+    catWidth: 185,
+    effectLeft: -5,
+    effectTop: -10,
+    effectWidth: 182,
+    phaseTiming: [800, 800, 2600, 500],
+    animWebp: 'assets/cats/bu/cat_anim.webp',
+  },
   // 白猫洗浴 — 第2/12/22关
   '白猫': {
     breed: '白猫',
@@ -4213,6 +4328,7 @@ var GUARDIAN_CAT_CONFIG = {
     centered: true,
     phaseTiming: [600, 1500, 500, 1500, 500],
     animWebp: 'assets/cats/bai/cat_anim.webp',
+    // audio: 'assets/audio/guardian/bai.mp3', // TODO: 等音效做好后启用
   },
   // TODO: 后续扩展只需添加新条目 + 对应图片文件夹
 };
@@ -4221,16 +4337,25 @@ var GUARDIAN_CAT_CONFIG = {
 var LEVEL_GUARDIAN_MAP = {
   1: '橘猫',     // 第1关 — 橘猫闲居
   2: '白猫',     // 第2关 — 白猫洗浴
+  3: '蓝猫',     // 第3关 — 蓝猫极光
+  4: '黑猫',     // 第4关 — 黑猫披风
+  5: '布偶猫',   // 第5关 — 布偶观竹
   6: '三花猫',   // 第6关
   8: '暹罗猫',   // 第8关 — 暹罗流星
   9: '无毛猫',   // 第9关 — 无毛暖居
   11: '橘猫',    // 第11关 — 橘猫闲居
   12: '白猫',    // 第12关 — 白猫洗浴
+  13: '蓝猫',    // 第13关 — 蓝猫极光
+  14: '黑猫',    // 第14关 — 黑猫披风
+  15: '布偶猫',  // 第15关 — 布偶观竹
   16: '三花猫',  // 第16关
   18: '暹罗猫',  // 第18关 — 暹罗流星
   19: '无毛猫',  // 第19关 — 无毛暖居
   21: '橘猫',    // 第21关 — 橘猫闲居
   22: '白猫',    // 第22关 — 白猫洗浴
+  23: '蓝猫',    // 第23关 — 蓝猫极光
+  24: '黑猫',    // 第24关 — 黑猫披风
+  25: '布偶猫',  // 第25关 — 布偶观竹
   26: '三花猫',  // 第26关
   28: '暹罗猫',  // 第28关 — 暹罗流星
   29: '无毛猫',  // 第29关 — 无毛暖居
@@ -8886,6 +9011,11 @@ function Game() {
     // 暂停计时，动画结束后恢复
     timerPauseRef.current = true;
 
+    // 播放守护猫音效（受设置中音效开关控制）
+    if (cfg.audio) {
+      window.__gameSfx.playGuardian(cfg.audio);
+    }
+
     setGuardianAnimCat(breedId);
     setGuardianAnimVisible(true);
 
@@ -11796,7 +11926,7 @@ function Game() {
     style: (function() {
       var base = { fontSize: 10, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
       if (!guardianAnimVisible || !guardianAnimCat) return base;
-      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3' }[guardianAnimCat] || '#FD9644';
+      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3', '\u84DD\u732B': '#6CECE8', '\u9ED1\u732B': '#A29BFE', '\u5E03\u5076\u732B': '#F0C8A0' }[guardianAnimCat] || '#FD9644';
       var isIdle = guardianAnimPhase === 'idle';
       var isRetreat = guardianAnimPhase === 'retreat';
       var isActive = !isIdle && !isRetreat;
@@ -12136,41 +12266,113 @@ function Game() {
       );
     }
 
-    // ── 模式4: slideStar（暹罗猫+流星雨）──
+    // ── 模式4: slideStar（暹罗猫+流星雨 / 布偶猫观竹反向布局）──
     if (mode === 'slideStar') {
       var isIdle4 = guardianAnimPhase === 'idle';
       var isJump4 = guardianAnimPhase === 'jump';
       var isPrepare4 = guardianAnimPhase === 'prepare';
       var isRetreat4 = guardianAnimPhase === 'retreat';
+      var isReversed4 = cfg.reverseLayout === true;
       var catSrc4 = cfg.animWebp ? cfg.animWebp : (isJump4 ? cfg.images.jump : (isPrepare4 || isRetreat4) ? cfg.images.prepare : cfg.images.idle);
-      var catAnim4 = isRetreat4 ? 'guardianSlideOut 0.5s ease forwards' :
-                     isIdle4 ? 'guardianSlideIn 0.5s ease forwards' :
-                     isJump4 ? 'guardianCatJump 0.4s ease' : 'none';
-      var starAnim4 = isRetreat4 ? 'guardianStarRetreat 0.5s ease forwards' :
-                      isPrepare4 ? 'guardianStarShower 2.5s ease-in-out infinite' : 'none';
-      var showStar4 = isPrepare4 || isRetreat4;
       var catTop4 = cfg.catTop || 175;
       var catW4 = cfg.catWidth || 185;
       var starLeft4 = cfg.starLeft || 240;
       var starTop4 = cfg.starTop || 8;
       var starW4 = cfg.starWidth || 160;
+      var effectLeft4 = cfg.effectLeft || 15;
+      var effectTop4 = cfg.effectTop || 65;
+      var effectW4 = cfg.effectWidth || 130;
+      // 反向布局（布偶猫）：猫在右侧，竹子在左侧
+      var catAnim4, catStyle4, effectAnim4, effectStyle4, darkGrad4;
+      if (isReversed4) {
+        catAnim4 = isRetreat4 ? 'guardianCenterFadeOut 0.5s ease forwards' :
+                   isIdle4 ? 'guardianCenterFadeIn 0.5s ease forwards' : 'none';
+        catStyle4 = isRetreat4 ? { position: 'absolute', right: -(catW4), top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 30px rgba(240,200,160,0.4))' } :
+                    { position: 'absolute', right: 15, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 30px rgba(240,200,160,0.4))' };
+        effectAnim4 = isRetreat4 ? 'auroraFadeOut 0.5s ease forwards' :
+                      (isPrepare4 || isJump4 || isIdle4) ? 'auroraFadeIn 0.6s ease forwards' : 'none';
+        effectStyle4 = { position: 'absolute', left: effectLeft4, top: effectTop4, width: effectW4, zIndex: 15, animation: effectAnim4, filter: 'drop-shadow(0 0 15px rgba(180,220,160,0.35))' };
+        darkGrad4 = 'radial-gradient(ellipse 60% 60% at 75% 45%, transparent 22%, rgba(0,0,0,0.45) 100%)';
+      } else {
+        catAnim4 = isRetreat4 ? 'guardianSlideOut 0.5s ease forwards' :
+                   isIdle4 ? 'guardianSlideIn 0.5s ease forwards' :
+                   isJump4 ? 'guardianCatJump 0.4s ease' : 'none';
+        catStyle4 = { position: 'absolute', left: isRetreat4 ? (cfg.catLeft || -185) : -30, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 35px rgba(203,166,247,0.45))' };
+        effectAnim4 = isRetreat4 ? 'guardianStarRetreat 0.5s ease forwards' :
+                      isPrepare4 ? 'guardianStarShower 2.5s ease-in-out infinite' : 'none';
+        effectStyle4 = { position: 'absolute', left: starLeft4, top: starTop4, width: starW4, zIndex: 15, animation: effectAnim4, opacity: isRetreat4 ? undefined : 0 };
+        darkGrad4 = 'radial-gradient(ellipse 55% 60% at 18% 42%, transparent 22%, rgba(10,5,30,0.5) 100%)';
+      }
+      var showEffect4 = isReversed4 ? (isPrepare4 || isJump4 || isIdle4 || isRetreat4) : (isPrepare4 || isRetreat4);
       return /*#__PURE__*/React.createElement("div", {
         style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden' }
       },
-        /* 全屏暗色遮罩（fixed 定位，覆盖整个视口，光晕偏左照猫） */
+        /* 全屏暗色遮罩 */
         /*#__PURE__*/React.createElement("div", {
-          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 55% 60% at 18% 42%, transparent 22%, rgba(10,5,30,0.5) 100%)', zIndex: 10 }
+          style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: darkGrad4, zIndex: 10 }
         }),
         /* 猫 */
         /*#__PURE__*/React.createElement("img", {
           src: catSrc4,
-          style: { position: 'absolute', left: isRetreat4 ? (cfg.catLeft || -185) : -30, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 35px rgba(203,166,247,0.45))' }
+          style: catStyle4
         }),
-        /* 流星雨（从右侧出现） */
-        showStar4 && /*#__PURE__*/React.createElement("img", {
-          src: cfg.images.effect,
-          style: { position: 'absolute', left: starLeft4, top: starTop4, width: starW4, zIndex: 15, animation: starAnim4, opacity: isRetreat4 ? undefined : 0 }
-        })
+        /* 特效：极光飘雪 / 反向图片 / 正向图片 */
+        (cfg.effectType === 'aurora' ? (
+          (isPrepare4 || isRetreat4) && /*#__PURE__*/React.createElement("div", {
+            style: { position: 'absolute', top: 0, left: 0, right: 0, height: '55%', zIndex: 15, pointerEvents: 'none', animation: isRetreat4 ? 'auroraFadeOut 0.5s ease forwards' : 'auroraFadeIn 0.8s ease forwards', overflow: 'hidden' }
+          },
+            /* 极光带1 — 顶部翠绿 */ /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '5%', left: '10%', width: '80%', height: '30%', background: 'linear-gradient(180deg, rgba(0,255,190,0.55) 0%, rgba(0,220,170,0.15) 60%, transparent 100%)', borderRadius: '40% 60% 50% 50%', filter: 'blur(5px)', animation: 'auroraWave1 4s ease-in-out infinite' }
+            }),
+            /* 极光带2 — 中段青绿 */ /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '18%', left: '5%', width: '90%', height: '35%', background: 'linear-gradient(180deg, rgba(80,255,210,0.5) 0%, rgba(60,230,190,0.12) 70%, transparent 100%)', borderRadius: '50% 40% 45% 55%', filter: 'blur(6px)', animation: 'auroraWave2 5s ease-in-out infinite' }
+            }),
+            /* 极光带3 — 底部浅绿 */ /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '35%', left: '15%', width: '70%', height: '25%', background: 'linear-gradient(180deg, rgba(130,255,215,0.45) 0%, rgba(100,240,200,0.1) 80%, transparent 100%)', borderRadius: '45% 50% 40% 60%', filter: 'blur(7px)', animation: 'auroraWave3 4.5s ease-in-out infinite' }
+            }),
+            /* 雪花点 × 12 */ /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '8%', left: '15%', width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', boxShadow: '0 0 8px rgba(150,255,220,0.8), 0 0 2px rgba(255,255,255,0.9)', animation: 'snowDrift1 3.5s ease-in-out infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '5%', left: '30%', width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 0 6px rgba(150,255,220,0.7), 0 0 2px rgba(255,255,255,0.85)', animation: 'snowDrift2 4s ease-in-out 0.3s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '10%', left: '45%', width: 9, height: 9, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', boxShadow: '0 0 9px rgba(150,255,220,0.8), 0 0 3px rgba(255,255,255,0.9)', animation: 'snowDrift3 3.8s ease-in-out 0.7s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '3%', left: '55%', width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 0 6px rgba(150,255,220,0.7), 0 0 2px rgba(255,255,255,0.85)', animation: 'snowDrift1 4.2s ease-in-out 1s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '7%', left: '70%', width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', boxShadow: '0 0 8px rgba(150,255,220,0.8), 0 0 2px rgba(255,255,255,0.9)', animation: 'snowDrift2 3.3s ease-in-out 0.5s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '12%', left: '82%', width: 9, height: 9, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', boxShadow: '0 0 9px rgba(150,255,220,0.8), 0 0 3px rgba(255,255,255,0.9)', animation: 'snowDrift3 3.6s ease-in-out 1.2s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '15%', left: '20%', width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', boxShadow: '0 0 6px rgba(150,255,220,0.65), 0 0 2px rgba(255,255,255,0.8)', animation: 'snowDrift1 4.5s ease-in-out 0.2s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '18%', left: '38%', width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', boxShadow: '0 0 4px rgba(200,255,240,0.5)', animation: 'snowDrift2 3.9s ease-in-out 0.9s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '8%', left: '60%', width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', boxShadow: '0 0 5px rgba(200,255,240,0.6)', animation: 'snowDrift3 3.4s ease-in-out 0.4s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '20%', left: '50%', width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', boxShadow: '0 0 6px rgba(150,255,220,0.65), 0 0 2px rgba(255,255,255,0.8)', animation: 'snowDrift1 4.1s ease-in-out 1.5s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '14%', left: '75%', width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', boxShadow: '0 0 4px rgba(200,255,240,0.5)', animation: 'snowDrift2 3.7s ease-in-out 0.6s infinite' }
+            }),
+            /*#__PURE__*/React.createElement("div", {
+              style: { position: 'absolute', top: '5%', left: '90%', width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', boxShadow: '0 0 6px rgba(150,255,220,0.7), 0 0 2px rgba(255,255,255,0.85)', animation: 'snowDrift3 4.3s ease-in-out 1.1s infinite' }
+            })
+          )
+        ) : (
+          showEffect4 && /*#__PURE__*/React.createElement("img", {
+            src: cfg.images.effect,
+            style: isReversed4 ? effectStyle4 : { position: 'absolute', left: starLeft4, top: starTop4, width: starW4, zIndex: 15, animation: effectAnim4, opacity: isRetreat4 ? undefined : 0 }
+          })
+        ))
       );
     }
 
