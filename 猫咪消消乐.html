@@ -4329,6 +4329,26 @@ var GUARDIAN_CAT_CONFIG = {
     phaseTiming: [600, 800, 800, 800, 1200, 500],
     animWebp: 'assets/cats/zhe/cat_anim.webp',
   },
+  // 波斯猫茶壶 — 第10/20/30关
+  '波斯猫': {
+    breed: '波斯猫',
+    renderMode: 'slidePhased',
+    folder: 'assets/cats/bo/',
+    phases: ['prepare', 'cup', 'cup1', 'cup2', 'cup3', 'cup4', 'retreat'],
+    images: {
+      prepare: 'assets/cats/bo/cat_prepare.png',
+      cup: 'assets/cats/bo/cat_cup.png',
+      cup1: 'assets/cats/bo/cat_cup1.png',
+      cup2: 'assets/cats/bo/cat_cup2.png',
+      cup3: 'assets/cats/bo/cat_cup3.png',
+      cup4: 'assets/cats/bo/cat_cup4.png',
+    },
+    catTop: 290,
+    catWidth: 144,
+    centered: true,
+    phaseTiming: [600, 800, 600, 800, 800, 800, 500],
+    animWebp: 'assets/cats/bo/cat_anim.webp',
+  },
   // 白猫洗浴 — 第2/12/22关
   '白猫': {
     breed: '白猫',
@@ -4363,6 +4383,7 @@ var LEVEL_GUARDIAN_MAP = {
   7: '折耳猫',   // 第7关 — 折耳戏椰
   8: '暹罗猫',   // 第8关 — 暹罗流星
   9: '无毛猫',   // 第9关 — 无毛暖居
+  10: '波斯猫',  // 第10关 — 波斯茶壶
   11: '橘猫',    // 第11关 — 橘猫闲居
   12: '白猫',    // 第12关 — 白猫洗浴
   13: '蓝猫',    // 第13关 — 蓝猫极光
@@ -4372,6 +4393,7 @@ var LEVEL_GUARDIAN_MAP = {
   17: '折耳猫',  // 第17关 — 折耳戏椰
   18: '暹罗猫',  // 第18关 — 暹罗流星
   19: '无毛猫',  // 第19关 — 无毛暖居
+  20: '波斯猫',  // 第20关 — 波斯茶壶
   21: '橘猫',    // 第21关 — 橘猫闲居
   22: '白猫',    // 第22关 — 白猫洗浴
   23: '蓝猫',    // 第23关 — 蓝猫极光
@@ -4381,6 +4403,7 @@ var LEVEL_GUARDIAN_MAP = {
   27: '折耳猫',  // 第27关 — 折耳戏椰
   28: '暹罗猫',  // 第28关 — 暹罗流星
   29: '无毛猫',  // 第29关 — 无毛暖居
+  30: '波斯猫',  // 第30关 — 波斯茶壶
 };
 
 /* ═══════════════════════════════════════
@@ -9124,6 +9147,17 @@ function Game() {
     }
   }, []);
 
+  // 通关时预加载下一关守护猫（玩家看结算弹窗的几秒内后台加载）
+  useEffect(function() {
+    if (gameState !== GAME_LEVEL_COMPLETE && gameState !== GAME_WIN) return;
+    var nextLv = currentLevel + 1;
+    var cycleLv = ((nextLv - 1) % 30) + 1;
+    var nextGuardian = LEVEL_GUARDIAN_MAP[cycleLv];
+    if (nextGuardian) {
+      preloadGuardianImages(nextGuardian);
+    }
+  }, [gameState, currentLevel]);
+
   // 关卡选择回调
   const handleLevelSelect = level => {
     setCurrentLevel(level);
@@ -11948,7 +11982,7 @@ function Game() {
     style: (function() {
       var base = { fontSize: 10, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
       if (!guardianAnimVisible || !guardianAnimCat) return base;
-      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3', '\u84DD\u732B': '#6CECE8', '\u9ED1\u732B': '#A29BFE', '\u5E03\u5076\u732B': '#F0C8A0', '\u6298\u8033\u732B': '#F8C471' }[guardianAnimCat] || '#FD9644';
+      var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3', '\u84DD\u732B': '#6CECE8', '\u9ED1\u732B': '#A29BFE', '\u5E03\u5076\u732B': '#F0C8A0', '\u6298\u8033\u732B': '#F8C471', '\u6CE2\u65AF\u732B': '#E8C8F0' }[guardianAnimCat] || '#FD9644';
       var isIdle = guardianAnimPhase === 'idle';
       var isRetreat = guardianAnimPhase === 'retreat';
       var isActive = !isIdle && !isRetreat;
@@ -12209,7 +12243,7 @@ function Game() {
         }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc1,
-          style: { position: 'absolute', left: isRetreat1 ? (cfg.catLeft || -143) : -30, top: catTop1, width: catW1, zIndex: 20, animation: anim1, filter: 'drop-shadow(0 0 25px rgba(255,220,140,0.8)) drop-shadow(0 0 60px rgba(255,200,100,0.55)) drop-shadow(0 0 100px rgba(255,160,60,0.35))' }
+          style: { position: 'absolute', left: isRetreat1 ? (cfg.catLeft || -143) : -30, top: catTop1, width: catW1, zIndex: 20, animation: anim1, filter: 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
         }),
         showFire && /*#__PURE__*/React.createElement("img", {
           src: cfg.images.effect,
@@ -12241,7 +12275,7 @@ function Game() {
         }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc2,
-          style: { position: 'absolute', left: isRetreat2 ? (cfg.catLeft || -172) : -30, top: catTop2, width: catW2, zIndex: 20, animation: anim2, filter: 'drop-shadow(0 0 25px rgba(255,220,140,0.8)) drop-shadow(0 0 60px rgba(255,200,100,0.55)) drop-shadow(0 0 100px rgba(255,160,60,0.35))' }
+          style: { position: 'absolute', left: isRetreat2 ? (cfg.catLeft || -172) : -30, top: catTop2, width: catW2, zIndex: 20, animation: anim2, filter: cfg.glowFilter || 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
         }),
         showButterfly && /*#__PURE__*/React.createElement("img", {
           src: cfg.images.effect,
@@ -12267,7 +12301,7 @@ function Game() {
           }),
           /*#__PURE__*/React.createElement("img", {
             src: cfg.animWebp,
-            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, filter: 'drop-shadow(0 0 25px rgba(255,220,140,0.8)) drop-shadow(0 0 60px rgba(255,200,100,0.55)) drop-shadow(0 0 100px rgba(255,160,60,0.35))' }
+            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, filter: 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
           })
         );
       }
@@ -12282,7 +12316,7 @@ function Game() {
           return /*#__PURE__*/React.createElement("img", {
             key: ph + '-' + idx,
             src: cfg.images[ph],
-            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, display: guardianAnimPhase === ph ? 'block' : 'none', filter: 'drop-shadow(0 0 25px rgba(255,220,140,0.8)) drop-shadow(0 0 60px rgba(255,200,100,0.55)) drop-shadow(0 0 100px rgba(255,160,60,0.35))' }
+            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, display: guardianAnimPhase === ph ? 'block' : 'none', filter: 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
           });
         })
       );
@@ -12309,17 +12343,17 @@ function Game() {
       if (isReversed4) {
         catAnim4 = isRetreat4 ? 'guardianCenterFadeOut 0.5s ease forwards' :
                    isIdle4 ? 'guardianCenterFadeIn 0.5s ease forwards' : 'none';
-        catStyle4 = isRetreat4 ? { position: 'absolute', right: -(catW4), top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 25px rgba(255,220,180,0.8)) drop-shadow(0 0 60px rgba(240,200,160,0.55)) drop-shadow(0 0 100px rgba(220,180,140,0.35))' } :
-                    { position: 'absolute', right: 15, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 25px rgba(255,220,180,0.8)) drop-shadow(0 0 60px rgba(240,200,160,0.55)) drop-shadow(0 0 100px rgba(220,180,140,0.35))' };
+        catStyle4 = isRetreat4 ? { position: 'absolute', right: -(catW4), top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 14px rgba(255,220,180,0.3)) drop-shadow(0 0 30px rgba(240,200,160,0.12)) drop-shadow(0 0 50px rgba(220,180,140,0.04))' } :
+                    { position: 'absolute', right: 15, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 14px rgba(255,220,180,0.3)) drop-shadow(0 0 30px rgba(240,200,160,0.12)) drop-shadow(0 0 50px rgba(220,180,140,0.04))' };
         effectAnim4 = isRetreat4 ? 'auroraFadeOut 0.5s ease forwards' :
                       (isPrepare4 || isJump4 || isIdle4) ? 'auroraFadeIn 0.6s ease forwards' : 'none';
-        effectStyle4 = { position: 'absolute', left: effectLeft4, top: effectTop4, width: effectW4, zIndex: 15, animation: effectAnim4, filter: 'drop-shadow(0 0 25px rgba(200,240,180,0.7)) drop-shadow(0 0 45px rgba(180,220,160,0.5))' };
+        effectStyle4 = { position: 'absolute', left: effectLeft4, top: effectTop4, width: effectW4, zIndex: 15, animation: effectAnim4, filter: 'drop-shadow(0 0 14px rgba(200,240,180,0.4)) drop-shadow(0 0 30px rgba(180,220,160,0.25))' };
         darkGrad4 = 'radial-gradient(ellipse 60% 60% at 75% 45%, transparent 22%, rgba(0,0,0,0.45) 100%)';
       } else {
         catAnim4 = isRetreat4 ? 'guardianSlideOut 0.5s ease forwards' :
                    isIdle4 ? 'guardianSlideIn 0.5s ease forwards' :
                    isJump4 ? 'guardianCatJump 0.4s ease' : 'none';
-        catStyle4 = { position: 'absolute', left: isRetreat4 ? (cfg.catLeft || -185) : -30, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 25px rgba(220,190,255,0.8)) drop-shadow(0 0 60px rgba(203,166,247,0.55)) drop-shadow(0 0 100px rgba(180,140,220,0.35))' };
+        catStyle4 = { position: 'absolute', left: isRetreat4 ? (cfg.catLeft || -185) : -30, top: catTop4, width: catW4, zIndex: 20, animation: catAnim4, filter: 'drop-shadow(0 0 14px rgba(220,190,255,0.45)) drop-shadow(0 0 35px rgba(203,166,247,0.3)) drop-shadow(0 0 60px rgba(180,140,220,0.15))' };
         effectAnim4 = isRetreat4 ? 'guardianStarRetreat 0.5s ease forwards' :
                       isPrepare4 ? 'guardianStarShower 2.5s ease-in-out infinite' : 'none';
         effectStyle4 = { position: 'absolute', left: starLeft4, top: starTop4, width: starW4, zIndex: 15, animation: effectAnim4, opacity: isRetreat4 ? undefined : 0 };
@@ -12335,7 +12369,7 @@ function Game() {
         }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc4,
-          style: Object.assign({}, catStyle4, { filter: isReversed4 ? 'drop-shadow(0 0 25px rgba(255,220,180,0.8)) drop-shadow(0 0 60px rgba(240,200,160,0.55)) drop-shadow(0 0 100px rgba(220,180,140,0.35))' : 'drop-shadow(0 0 25px rgba(220,190,255,0.8)) drop-shadow(0 0 60px rgba(203,166,247,0.55)) drop-shadow(0 0 100px rgba(180,140,220,0.35))' })
+          style: Object.assign({}, catStyle4, { filter: isReversed4 ? 'drop-shadow(0 0 14px rgba(255,220,180,0.3)) drop-shadow(0 0 30px rgba(240,200,160,0.12)) drop-shadow(0 0 50px rgba(220,180,140,0.04))' : 'drop-shadow(0 0 14px rgba(220,190,255,0.45)) drop-shadow(0 0 35px rgba(203,166,247,0.3)) drop-shadow(0 0 60px rgba(180,140,220,0.15))' })
         }),
         /* 特效：极光飘雪 / 反向图片 / 正向图片 */
         (cfg.effectType === 'aurora' ? (
@@ -12412,12 +12446,12 @@ function Game() {
       if (isCentered5) {
         catAnim5 = isRetreat5 ? 'guardianCenterFadeOut 0.5s ease forwards' :
                    isFirst5 ? 'guardianCenterFadeIn 0.5s ease forwards' : 'none';
-        catStyle5 = { position: 'absolute', left: '50%', marginLeft: -(catW5/2), top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 25px rgba(160,225,245,0.8)) drop-shadow(0 0 60px rgba(126,200,227,0.55)) drop-shadow(0 0 100px rgba(100,170,200,0.35))' };
+        catStyle5 = { position: 'absolute', left: '50%', marginLeft: -(catW5/2), top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 14px rgba(160,225,245,0.45)) drop-shadow(0 0 35px rgba(126,200,227,0.3)) drop-shadow(0 0 60px rgba(100,170,200,0.15))' };
         darkGradient5 = 'radial-gradient(ellipse 60% 60% at 50% 45%, transparent 20%, rgba(0,0,0,0.5) 100%)';
       } else {
         catAnim5 = isRetreat5 ? 'guardianSlideOut 0.5s ease forwards' :
                    isFirst5 ? 'guardianSlideIn 0.5s ease forwards' : 'none';
-        catStyle5 = { position: 'absolute', left: isRetreat5 ? (cfg.catLeft || -185) : -30, top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 25px rgba(160,225,245,0.75)) drop-shadow(0 0 55px rgba(126,200,227,0.5)) drop-shadow(0 0 90px rgba(100,170,200,0.3))' };
+        catStyle5 = { position: 'absolute', left: isRetreat5 ? (cfg.catLeft || -185) : -30, top: catTop5, width: catW5, zIndex: 20, animation: catAnim5, filter: 'drop-shadow(0 0 14px rgba(160,225,245,0.3)) drop-shadow(0 0 30px rgba(126,200,227,0.12)) drop-shadow(0 0 50px rgba(100,170,200,0.04))' };
         darkGradient5 = 'radial-gradient(ellipse 50% 60% at 18% 42%, transparent 22%, rgba(0,0,0,0.45) 100%)';
       }
       return /*#__PURE__*/React.createElement("div", {
@@ -12428,7 +12462,7 @@ function Game() {
         }),
         /*#__PURE__*/React.createElement("img", {
           src: catSrc5,
-          style: Object.assign({}, catStyle5, { filter: isCentered5 ? 'drop-shadow(0 0 25px rgba(160,225,245,0.8)) drop-shadow(0 0 60px rgba(126,200,227,0.55)) drop-shadow(0 0 100px rgba(100,170,200,0.35))' : 'drop-shadow(0 0 25px rgba(160,225,245,0.75)) drop-shadow(0 0 55px rgba(126,200,227,0.5)) drop-shadow(0 0 90px rgba(100,170,200,0.3))' })
+          style: Object.assign({}, catStyle5, { filter: isCentered5 ? 'drop-shadow(0 0 14px rgba(160,225,245,0.45)) drop-shadow(0 0 35px rgba(126,200,227,0.3)) drop-shadow(0 0 60px rgba(100,170,200,0.15))' : 'drop-shadow(0 0 14px rgba(160,225,245,0.3)) drop-shadow(0 0 30px rgba(126,200,227,0.12)) drop-shadow(0 0 50px rgba(100,170,200,0.04))' })
         })
       );
     }
