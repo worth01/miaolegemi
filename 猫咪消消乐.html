@@ -4229,7 +4229,7 @@ var GUARDIAN_CAT_CONFIG = {
       mo3: 'assets/cats/ju/cat_mo3.png',
       mo4: 'assets/cats/ju/cat_mo4.png',
     },
-    catTop: 415,
+    catTop: 386,
     catWidth: 140,
     animWebp: 'assets/cats/ju/cat_anim.webp',
     phaseTiming: [800, 800, 800, 800, 800, 800],  },
@@ -4246,7 +4246,7 @@ var GUARDIAN_CAT_CONFIG = {
       prepare: 'assets/cats/xian/cat_prepare.png',
       effect: 'assets/cats/xian/star.png'
     },
-    catTop: 175,
+    catTop: 172,
     catLeft: -185,
     catWidth: 185,
     starLeft: 240,
@@ -4331,7 +4331,7 @@ var GUARDIAN_CAT_CONFIG = {
       ball2: 'assets/cats/zhe/cat_ball2.png',
       ball3: 'assets/cats/zhe/cat_ball3.png',
     },
-    catTop: 275,
+    catTop: 265,
     catLeft: -185,
     catWidth: 185,
     phaseTiming: [600, 800, 800, 800, 1200, 500],
@@ -11784,7 +11784,7 @@ function Game() {
       position: 'absolute',
       inset: 0,
       background: `url('${getLevelBg(currentLevel)}') center/cover no-repeat`,
-      filter: 'brightness(0.5) blur(2px)',
+      filter: 'brightness(0.65) blur(1px)',
       zIndex: 0
     }
   }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false) && /*#__PURE__*/React.createElement(BattlePrep, {
@@ -12114,10 +12114,25 @@ function Game() {
       position: 'relative',
       paddingBottom: 4
     }
+  }, /* ═══ 骨瓷光晕 ═══ */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: '0 8px 4px 8px', borderRadius: 16,
+      background: 'rgba(255,255,255,0.12)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      boxShadow: '0 0 80px rgba(255,255,255,0.2), 0 0 160px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.15), inset 0 0 50px rgba(255,255,255,0.08), inset 0 2px 0 rgba(255,255,255,0.25)',
+      padding: '0px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: 12,
+      background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.15) 0%, transparent 70%)',
+      padding: '0px'
+    }
   }, /*#__PURE__*/React.createElement("div", {
     ref: boardContainerRef,
     style: {
-      position: 'relative',
+      position: 'relative', margin: '-2px',
       height: Math.ceil(boardHeight * Math.min(boardScale, 1.0)) + 4,
       overflow: 'hidden',
       opacity: gameState === GAME_PLAYING ? 1 : 0
@@ -12523,9 +12538,10 @@ function Game() {
         opacity: 0
       }
     }));
-  })), /*#__PURE__*/React.createElement("div", {
+  })) /* ═══ 光晕结束 ═══ */
+  )), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 2px',
+      padding: '0 8px',
       position: 'relative',
       marginTop: 5
     }
