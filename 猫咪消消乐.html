@@ -3276,7 +3276,7 @@ function getColsForRow(row) {
   return 8;
 }
 // 卡片统一背景色 — 图片为透明底，修改此处即可全局换色
-var TILE_BG_COLOR = '#F9F2DD'; // 暖白，可替换为任意颜色
+var TILE_BG_COLOR = '#FFFCF7'; // 骨瓷白，可替换为任意颜色
 const CAT_TYPES = [{
   id: '猫爪印',
   img: 'assets/Textures/card/猫爪印.webp',
@@ -3870,22 +3870,20 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.restore();
     }
 
-    // 边框 — 干扰牌保持自身颜色，波斯双域用区域色，普通牌用 blockedCount 渐变色
+    // 边框 — 骨瓷风格：牌是视觉主体，边框极淡
     var lyrBorderColor;
     if (tile.areaTag) {
-      lyrBorderColor = tile.areaTag === 'blue' ? '#1677FF' : '#00B42A';
+      lyrBorderColor = tile.areaTag === 'blue' ? '#5588CC' : '#55AA70';
     } else if (tile.isInterference) {
       lyrBorderColor = (effectiveCat.color || cat.color);
-    } else if (typeof BoardConstants !== 'undefined') {
-      lyrBorderColor = BoardConstants.getLayerBorderColor(blockedCount);
     } else {
-      lyrBorderColor = (effectiveCat.color || cat.color);
+      lyrBorderColor = '#C8C0B5';
     }
     ctx.strokeStyle = isHighlighted ? '#FFD700'
-      : isInSlot ? (tile.areaTag ? lyrBorderColor + '80' : 'rgba(108,92,231,0.3)')
-      : isBlocked ? lyrBorderColor + '60'
-      : lyrBorderColor + 'B0';
-    ctx.lineWidth = isHighlighted ? 3 : 2.5;
+      : isInSlot ? (tile.areaTag ? lyrBorderColor + '60' : 'rgba(180,175,165,0.25)')
+      : isBlocked ? lyrBorderColor + '35'
+      : lyrBorderColor + '55';
+    ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.stroke();
 
@@ -6766,7 +6764,7 @@ function CollectionSlot({
     style: {
       position: 'relative',
       width: '100%',
-      height: H + 8,
+      height: H + 12,
       padding: '4px 0'
     }
   }, showBg && /*#__PURE__*/React.createElement("div", {
@@ -6776,8 +6774,10 @@ function CollectionSlot({
       left: 0,
       width: '100%',
       height: '100%',
-      backgroundImage: 'url(assets/Textures/shou_bg.webp)',
-      backgroundSize: '100% 100%',
+      background: 'rgba(255,255,255,0.12)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderRadius: 10,
       pointerEvents: 'none',
       zIndex: 0
     }
@@ -6789,8 +6789,8 @@ function CollectionSlot({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: compact ? 3 : 5,
-      padding: 0,
+      gap: compact ? 3 : 2,
+      padding: '0 4px',
       zIndex: 1
     }
   }, Array.from({
@@ -6909,15 +6909,10 @@ function CollectionSlot({
       }
     })) : /*#__PURE__*/React.createElement(React.Fragment, null, !item && /*#__PURE__*/React.createElement("div", {
       style: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        background: 'rgba(162,155,254,0.3)',
-        animation: 'sparkle 2s ease-in-out infinite'
+        position: 'absolute', top: 0, left: 0,
+        width: '100%', height: '100%',
+        borderRadius: 12, pointerEvents: 'none',
+        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.08), inset 0 -1px 2px rgba(255,255,255,0.5)'
       }
     }), item ? (() => {
       let cat = CAT_TYPES.find(c => c.id === (item.visualType || item.type));
@@ -6991,9 +6986,9 @@ function CollectionSlot({
           height: '100%',
           borderRadius: 10,
           overflow: 'hidden',
-          border: `2px solid ${cat.color}90`,
+          border: `1.5px solid ${cat.color}50`,
           animation: isMatching ? 'matchPop 0.4s ease-out forwards' : isNewAnim ? 'toSlot 0.3s ease-out' : 'none',
-          boxShadow: isMatching ? `0 0 30px ${cat.color}, 0 0 60px ${cat.color || '#FFD700'}50` : `0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)`,
+          boxShadow: isMatching ? `0 0 24px ${cat.color}, 0 0 48px ${cat.color || '#C8C0B5'}40` : `0 3px 10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)`,
           background: TILE_BG_COLOR,
           transition: 'box-shadow 0.2s ease'
         }
@@ -11789,7 +11784,7 @@ function Game() {
       position: 'absolute',
       inset: 0,
       background: `url('${getLevelBg(currentLevel)}') center/cover no-repeat`,
-      filter: 'brightness(0.6) blur(2px)',
+      filter: 'brightness(0.5) blur(2px)',
       zIndex: 0
     }
   }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false) && /*#__PURE__*/React.createElement(BattlePrep, {
@@ -12487,8 +12482,8 @@ function Game() {
           height: CARD_SZ,
           background: TILE_BG_COLOR,
           borderRadius: 10,
-          border: '2px solid rgba(255,255,255,0.3)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+          border: '1.5px solid rgba(200,195,185,0.3)',
+          boxShadow: '0 3px 10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -12534,13 +12529,15 @@ function Game() {
       position: 'relative',
       marginTop: 5
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { visibility: tempStorage.length > 0 ? 'visible' : 'hidden' }
   }, /*#__PURE__*/React.createElement(CollectionSlot, {
     slot: tempStorage,
     matching: matching,
     maxSlots: 3 + slotBonus,
     showBg: false,
     compact: true
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     id: 'main-slot',
     style: {
       marginTop: 5
