@@ -2389,7 +2389,7 @@ const INTERFERENCE_TYPES = {
     color: '#FDCB6E',
     effect: 'slot_block',
     // 进入收集槽后占据槽位但不参与消除
-    desc: '进入收集槽后无法被消除',
+    desc: '舔毛牌进入收集槽后无法消除',
     card_id: 'interfere_groom_001',
     img: 'assets/Textures/GroomCard.webp'
   },
@@ -6264,7 +6264,7 @@ function SkillAnimationOverlay({
       display: 'flex',
       alignItems: isSSR ? 'center' : 'flex-start',
       justifyContent: isSSR ? 'center' : 'flex-start',
-      paddingTop: isSSR ? 0 : 624,
+      paddingTop: isSSR ? 0 : 595,
       paddingLeft: isSSR ? 0 : 32,
       opacity: phase === 'exiting' ? 0 : 1,
       transition: 'opacity 0.2s ease-out',
@@ -8807,10 +8807,8 @@ function Game() {
 
   // 通知轮播
   React.useEffect(() => {
+    if (notifications.length <= 1) { setNotifIndex(0); return; }
     setNotifIndex(0);
-  }, [notifications]);
-  React.useEffect(() => {
-    if (notifications.length <= 1) return;
     const timer = setInterval(() => {
       setNotifIndex(prev => (prev + 1) % notifications.length);
     }, 10000);
@@ -12649,7 +12647,7 @@ function Game() {
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%)',
-        top: 498,
+        top: 496,
         width: 350,
         height: showPanel ? 106 : 0,
         overflow: 'hidden',
@@ -12665,11 +12663,11 @@ function Game() {
         alignItems: 'center',
         gap: 8,
         padding: '10px 12px',
-        background: 'linear-gradient(0deg, rgba(108,92,231,0.18) 0%, rgba(162,155,254,0.14) 100%)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'rgba(255,255,255,0.12)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         borderRadius: '0 0 16px 16px',
-        border: '1px solid rgba(108,92,231,0.25)',
+        border: '1px solid rgba(255,255,255,0.12)',
         borderTop: 'none',
         boxShadow: 'none'
       }
