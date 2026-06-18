@@ -34,7 +34,10 @@
     @keyframes glassShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
     @keyframes disguiseReveal { 0%{opacity:0.3;transform:scale(0.92)} 100%{opacity:1;transform:scale(1)} }
     @keyframes timerBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
-    @keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
+    @keyframes floatUp { 0%{opacity:0;transform:translate(-50%,-35%)} 15%{opacity:1} 100%{opacity:0;transform:translate(-50%,-75%)} }
+@keyframes glowPulse { 0%,100%{text-shadow:0 0 6px rgba(120,200,255,0.45),0 0 14px rgba(90,170,255,0.25)} 50%{text-shadow:0 0 10px rgba(160,230,255,0.7),0 0 22px rgba(120,200,255,0.45)} }
+@keyframes beamFlicker { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
+@keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
     @keyframes smoothFlow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
     .flow-btn { position: relative; background: transparent; border: none; cursor: pointer; padding: 0; overflow: hidden; }
     .flow-btn .inner { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; background: #111; color: #fff; font-weight: 700; text-align: center; border-radius: 6px; margin: 2px; z-index: 2; text-shadow: 0 0 5px rgba(255,255,255,0.2); padding: 10px 8px; font-size: 13px; }
@@ -8424,7 +8427,7 @@ function Game() {
       const gridCount = levelConfig.freeze_grid_count || 1;
       const gridText = gridCount > 1 ? `前${gridCount}格` : '第一格';
       const startText = gridCount > 1 ? `第${gridCount + 1}格` : '第二格';
-      setFreezeToast(`❄️ 冰冻牌已冻结收集槽${gridText}，卡牌只能从${startText}开始放入！`);
+      setFreezeToast(`收集槽｜${gridText}冻结`);
       const t = setTimeout(() => setFreezeToast(''), 1500);
       return () => clearTimeout(t);
     }
@@ -8436,7 +8439,7 @@ function Game() {
       const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
       if (effectiveCapacity <= 0) {
         // 收集槽已被冰冻牌完全冻结，无法继续游戏
-        setFreezeToast('❄️ 收集槽已被冰冻牌完全冻结，无法继续游戏！');
+        setFreezeToast('收集槽｜完全冻结');
         setTimeout(() => {
           setFreezeToast('');
           setTiles(prev => prev.map(t => t.inSlot ? {
@@ -8456,7 +8459,7 @@ function Game() {
   useEffect(() => {
     const hasDangerCard = tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'danger');
     if (hasDangerCard && gameState === GAME_PLAYING && !window._dangerToastShown) {
-      setDangerToast('⚠️ 小狗牌出现！千万别点，否则直接失败！');
+      setDangerToast('小狗牌｜极致危险');
       window._dangerToastShown = true;
       const t = setTimeout(() => {
         setDangerToast('');
@@ -8469,7 +8472,7 @@ function Game() {
   useEffect(() => {
     const hasDisguiseCard = tiles.some(t => !t.removed && !t.inSlot && !t.revealed && t.isInterference && t.interferenceType === 'disguise');
     if (hasDisguiseCard && gameState === GAME_PLAYING && !window._disguiseToastShown) {
-      setDisguiseToast('🫧 棋盘上有伪装牌！小心辨别，点击后露出真身');
+      setDisguiseToast('伪装牌｜待识别');
       window._disguiseToastShown = true;
       const t = setTimeout(() => {
         setDisguiseToast('');
@@ -8489,7 +8492,7 @@ function Game() {
   // ═══ 波斯双域开局提示（2秒轻量提示） ═══
   useEffect(() => {
     if (levelConfig.areaRuleEnable && gameState === GAME_PLAYING && !window._areaToastShown) {
-      setAreaToast('双域玩法：蓝色和绿色区域的卡牌，跨区域无法消除哦～');
+      setAreaToast('双域限制｜不可跨区');
       window._areaToastShown = true;
       const t = setTimeout(() => {
         setAreaToast('');
@@ -8579,7 +8582,7 @@ function Game() {
 
     // 首次进入三花关卡提示（1.5秒）
     if (!window._transformToastShown) {
-      setTransformToast('🔮 三花牌已出现，每' + (cowardlySlowdown ? '6' : '3') + '秒会变换一次图案，打乱你的匹配节奏！');
+      setTransformToast('三花牌｜持续变换');
       window._transformToastShown = true;
       setTimeout(() => {
         setTransformToast('');
@@ -8720,7 +8723,7 @@ function Game() {
       if (next <= 0) {
         setFrozenSlot(null);
         setFreezeThawCounter(0);
-        setFreezeToast('❄️ 胆小猫咪解除了冰冻效果！收集槽已恢复！');
+        setFreezeToast('冰冻已解除');
         setTimeout(function() { setFreezeToast(''); }, 1500);
       } else {
         setFreezeThawCounter(next);
@@ -8768,16 +8771,13 @@ function Game() {
     if (levelConfig.interference && levelConfig.interference.id !== 'none') {
       list.push({
         type: 'warn',
-        icon: '⚠️',
         text: levelConfig.interference.desc,
-        emoji: levelConfig.interference.emoji,
         color: levelConfig.interference.color
       });
     }
     if (levelConfig.disabledSkills && levelConfig.disabledSkills.length > 0) {
       list.push({
         type: 'disable',
-        icon: '🚫',
         text: `本关禁用：${levelConfig.disabledSkills.join('、')}的「蹦跶」`,
         color: '#FF6B6B'
       });
@@ -8789,7 +8789,6 @@ function Game() {
         if (!eff) return;
         list.push({
           type: 'passive',
-          icon: '🛡️',
           breed,
           text: eff.desc
         });
@@ -8799,7 +8798,6 @@ function Game() {
     if (skillSlots.slice(0, 3).some(function(b) { return b === '橘猫'; }) && skillSlots.slice(0, 3).some(function(b) { return b === '布偶猫'; })) {
       list.push({
         type: 'bond',
-        icon: '🔗',
         text: '羁绊【压制】：布偶猫压制橘猫，橘猫技能无法使用',
         color: '#FD9644'
       });
@@ -8815,7 +8813,7 @@ function Game() {
     if (notifications.length <= 1) return;
     const timer = setInterval(() => {
       setNotifIndex(prev => (prev + 1) % notifications.length);
-    }, 3000);
+    }, 10000);
     return () => clearInterval(timer);
   }, [notifications.length]);
   const [skillUseCount, setSkillUseCount] = useState({
@@ -9659,7 +9657,7 @@ function Game() {
 
     // 三花牌变身锁定：变身动画期间不可点击
     if (transformLocked.includes(tile.id)) {
-      setTransformToast('🔮 卡牌正在变换，暂时无法操作！');
+      setTransformToast('卡牌｜变换中');
       setTimeout(() => setTransformToast(''), 1000);
       return;
     }
@@ -9683,7 +9681,7 @@ function Game() {
       setTiles(function(prev) { return prev.map(function(t) { return t.id === tile.id ? { ...t, groomDisappearing: true } : t; }); });
       setTimeout(function() {
         setTiles(function(prev) { return prev.map(function(t) { return t.id === tile.id ? { ...t, removed: true } : t; }); });
-        setGroomToast('🧴 胆小猫咪帮你赶走了舔毛牌！');
+        setGroomToast('胆小｜干扰已清除');
         setTimeout(function() { setGroomToast(false); }, 1200);
       }, 400);
       return; // 不入槽，避免满槽临界点死锁
@@ -9701,7 +9699,7 @@ function Game() {
         ...t,
         removed: true
       } : t));
-      setDangerToast('🛡️ 胆大猫咪帮你抵挡了小狗牌！');
+      setDangerToast('攻击已抵挡');
       setTimeout(() => setDangerToast(''), 1000);
       return;
     }
@@ -9713,7 +9711,7 @@ function Game() {
         inSlot: true
       } : t));
       // 立即触发闯关失败
-      setDangerToast('❌ 你选中了小狗牌，本局闯关失败！');
+      setDangerToast('小狗牌入槽｜游戏失败');
       setTimeout(() => {
         setDangerToast('');
         setTiles(prev => prev.map(t => t.inSlot ? {
@@ -9739,7 +9737,7 @@ function Game() {
         inSlot: true,
         isDisguiseShell: false
       } : t));
-      setDisguiseToast('🫧 你发现了真身牌！伪装已揭穿，自动进入收集槽');
+      setDisguiseToast('伪装已解除');
       window._disguiseToastShown = true;
       setTimeout(() => setDisguiseToast(''), 1000);
 
@@ -9880,7 +9878,7 @@ function Game() {
     if (isStickyCard && !stickyBlockOverride) {
       if (slotRef.current.length + stickyBatchSize > effectiveCapacity) {
         // 容量不足，触发失败
-        setStickyToast('🩹 收集槽容量不足，无法放入卡牌！');
+        setStickyToast('收集槽｜已满');
         setTimeout(() => {
           setTiles(prev => prev.map(t => t.inSlot ? {
             ...t,
@@ -9948,7 +9946,7 @@ function Game() {
       // 粘连牌无相邻牌，仅自身入槽，不显示连带提示
     }
     if (isStickyCard && !stickyBlockOverride && stickyAdjacentTile) {
-      setStickyToast('🩹 粘连牌已连带1张卡牌进入收集槽，额外消耗1个槽位！');
+      setStickyToast('粘连牌｜+1占用');
       window._stickyToastShown = true;
       setTimeout(() => {
         setStickyToast('');
@@ -9958,7 +9956,7 @@ function Game() {
 
     // 舔毛牌首次进入收集槽提示
     if (isGroomCard && !groomBlockOverride && groomSlots.length === 0) {
-      setGroomToast(true);
+      setGroomToast('舔毛牌｜已锁定');
       setTimeout(() => setGroomToast(false), 1000);
     }
 
@@ -11928,7 +11926,7 @@ function Game() {
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '35px 8px 2px',
+      padding: '35px 8px 4px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -11947,8 +11945,6 @@ function Game() {
       fontSize: 16,
       cursor: 'pointer',
       borderRadius: 6,
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
       flexShrink: 0,
       color: 'rgba(240,237,255,0.7)'
     }
@@ -11969,13 +11965,11 @@ function Game() {
       padding: '3px 6px',
       borderRadius: 6,
       lineHeight: 1.2,
-      background: 'rgba(253,150,68,0.15)',
-      border: '1px solid rgba(253,150,68,0.25)',
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: (function() {
-      var base = { fontSize: 10, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
+      var base = { fontSize: 12, fontWeight: 700, color: '#FD9644', transition: 'all 0.5s ease' };
       if (!guardianAnimVisible || !guardianAnimCat) return base;
       var themeColor = { '\u6A58\u732B': '#FD9644', '\u4E09\u82B1\u732B': '#FD79A8', '\u65E0\u6BDB\u732B': '#74B9FF', '\u66B9\u7F57\u732B': '#CBA6F7', '\u767D\u732B': '#7EC8E3', '\u84DD\u732B': '#6CECE8', '\u9ED1\u732B': '#A29BFE', '\u5E03\u5076\u732B': '#F0C8A0', '\u6298\u8033\u732B': '#F8C471', '\u6CE2\u65AF\u732B': '#E8C8F0' }[guardianAnimCat] || '#FD9644';
       var isIdle = guardianAnimPhase === 'idle';
@@ -11999,17 +11993,15 @@ function Game() {
       padding: '3px 8px',
       borderRadius: 6,
       lineHeight: 1.2,
-      background: 'rgba(253,150,68,0.1)',
-      border: '1px solid rgba(253,150,68,0.2)',
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 10
+      fontSize: 12
     }
   }, "\uD83D\uDC1F"), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 10,
+      fontSize: 12,
       fontWeight: 700,
       color: '#FD9644'
     }
@@ -12065,7 +12057,7 @@ function Game() {
     }
   }, "\u2192"))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '0 16px 2px',
+      padding: '0 8px 4px',
       position: 'relative',
       zIndex: 3,
       minHeight: 23
@@ -12073,39 +12065,41 @@ function Game() {
   }, phase === 'playing' && notifications.length > 0 && /*#__PURE__*/React.createElement("div", {
     key: notifIndex,
     style: {
+      position: 'relative',
+      height: 21,
+      width: '100%',
+      padding: '0 16px',
       display: 'flex',
       alignItems: 'center',
-      gap: 6,
-      padding: '4px 10px',
-      borderRadius: 8,
-      background: 'rgba(108,92,231,0.12)',
-      border: '1px solid rgba(108,92,231,0.2)',
-      animation: 'fadeIn 0.35s ease-out'
+      justifyContent: 'center',
+      background: 'rgba(255,255,255,0.12)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      borderRadius: 10,
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(255,255,255,0.08), 0 4px 12px rgba(0,0,0,0.05)',
+      animation: notifications.length > 1 ? 'fadeIn 0.35s ease-out' : 'none'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, notifications[notifIndex].icon), notifications[notifIndex].emoji && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12
-    }
-  }, notifications[notifIndex].emoji), notifications[notifIndex].breed && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: '#A29BFE',
-      flexShrink: 0
-    }
-  }, notifications[notifIndex].breed, "\uFF1A"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: 'rgba(240,237,255,0.7)',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
-    }
-  }, notifications[notifIndex].text))), /*#__PURE__*/React.createElement("div", {
+  },
+    /* 冰晶高光 */
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        left: 10, top: 3,
+        width: 24, height: 6,
+        borderRadius: 999,
+        background: 'rgba(255,255,255,0.18)',
+        filter: 'blur(4px)'
+      }
+    }),
+    /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: 500,
+        letterSpacing: '.3px',
+        textShadow: '0 1px 2px rgba(0,0,0,0.08)'
+      }
+    }, notifications[notifIndex].breed ? notifications[notifIndex].breed + '：' + notifications[notifIndex].text : notifications[notifIndex].text))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -12568,45 +12562,31 @@ function Game() {
   })), (() => {
     const toasts = [];
     if (groomToast) toasts.push({
-      text: '舔毛牌进入收集槽，无法被消除！',
-      bg: 'linear-gradient(135deg, rgba(253,203,110,0.95), rgba(243,156,18,0.9))',
-      bs: '0 4px 16px rgba(253,203,110,0.5)',
+      text: '舔毛牌｜已锁定',
       key: 'groom'
     });
     if (freezeToast && frozenSlot) toasts.push({
       text: freezeToast,
-      bg: 'linear-gradient(135deg, rgba(116,185,255,0.95), rgba(9,132,227,0.9))',
-      bs: '0 4px 16px rgba(116,185,255,0.5)',
       key: 'freeze'
     });
     if (stickyToast) toasts.push({
       text: stickyToast,
-      bg: 'linear-gradient(135deg, rgba(253,121,168,0.95), rgba(232,67,147,0.9))',
-      bs: '0 4px 16px rgba(253,121,168,0.5)',
       key: 'sticky'
     });
     if (transformToast) toasts.push({
       text: transformToast,
-      bg: 'linear-gradient(135deg, rgba(162,155,254,0.95), rgba(108,92,231,0.9))',
-      bs: '0 4px 16px rgba(162,155,254,0.5)',
       key: 'transform'
     });
     if (dangerToast && tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'danger')) toasts.push({
       text: dangerToast,
-      bg: 'linear-gradient(135deg, rgba(255,107,107,0.95), rgba(214,48,49,0.9))',
-      bs: '0 4px 16px rgba(255,107,107,0.5)',
       key: 'danger'
     });
     if (disguiseToast) toasts.push({
       text: disguiseToast,
-      bg: 'linear-gradient(135deg, rgba(0,206,201,0.95), rgba(0,150,136,0.9))',
-      bs: '0 4px 16px rgba(0,206,201,0.5)',
       key: 'disguise'
     });
     if (areaToast) toasts.push({
       text: areaToast,
-      bg: 'linear-gradient(135deg, rgba(22,119,255,0.95), rgba(0,180,42,0.9))',
-      bs: '0 4px 16px rgba(22,119,255,0.5)',
       key: 'area'
     });
     // 更新活跃keys供effect使用
@@ -12618,22 +12598,45 @@ function Game() {
       key: t.key + '-' + toastCycIdx,
       style: {
         position: 'absolute',
+        top: '40%',
         left: '50%',
-        transform: 'translateX(-50%)',
-        bottom: 100,
+        transform: 'translate(-50%, -50%)',
         zIndex: 300,
-        background: t.bg,
-        color: '#fff',
-        padding: '8px 18px',
-        borderRadius: 20,
-        fontSize: 13,
-        fontWeight: 700,
+        fontSize: 18,
+        letterSpacing: 2,
+        color: 'rgba(210,240,255,0.95)',
         whiteSpace: 'nowrap',
-        boxShadow: t.bs,
-        animation: 'fadeIn 0.2s ease-out',
+        textShadow: '0 0 8px rgba(120,200,255,0.6), 0 0 18px rgba(80,160,255,0.35)',
+        animation: 'floatUp 3s ease-out forwards, glowPulse 1.8s ease-in-out infinite',
         pointerEvents: 'none'
       }
-    }, t.text);
+    },
+      /* 左侧冰光束 */
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'absolute', top: '50%',
+          right: '100%', marginRight: 14,
+          width: 80, height: 2,
+          background: 'linear-gradient(90deg, transparent, rgba(140,220,255,0.8), transparent)',
+          filter: 'blur(1px)',
+          transform: 'translateY(-50%)',
+          animation: 'beamFlicker 1.6s infinite ease-in-out'
+        }
+      }),
+      /* 右侧冰光束 */
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: 'absolute', top: '50%',
+          left: '100%', marginLeft: 14,
+          width: 80, height: 2,
+          background: 'linear-gradient(90deg, transparent, rgba(140,220,255,0.8), transparent)',
+          filter: 'blur(1px)',
+          transform: 'translateY(-50%)',
+          animation: 'beamFlicker 1.6s infinite ease-in-out'
+        }
+      }),
+      t.text
+    );
   })()), (function() {
     var showPanel = skillAnimVisible && skillAnimData?.rarity !== 'SSR';
     var panelBreed = skillAnimData?.breed || '';
@@ -12818,7 +12821,7 @@ function Game() {
       justifyContent: 'center',
       gap: 12,
       padding: '0 10px 10px',
-      marginTop: 25
+      marginTop: 21
     }
   }, [0, 1, 2].map(i => {
     const breed = skillSlots[i];
