@@ -3873,20 +3873,23 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.restore();
     }
 
-    // 边框 — 骨瓷风格：牌是视觉主体，边框极淡
-    var lyrBorderColor;
-    if (tile.areaTag) {
-      lyrBorderColor = tile.areaTag === 'blue' ? '#5588CC' : '#55AA70';
-    } else if (tile.isInterference) {
-      lyrBorderColor = (effectiveCat.color || cat.color);
-    } else {
-      lyrBorderColor = '#C8C0B5';
-    }
-    ctx.strokeStyle = isHighlighted ? '#FFD700'
-      : isInSlot ? (tile.areaTag ? lyrBorderColor + '60' : 'rgba(180,175,165,0.25)')
-      : isBlocked ? lyrBorderColor + '35'
-      : lyrBorderColor + '55';
+    // 边框 — 分层可点击性颜色指示
+    // 青色=可点击 橙色=暂不可点击(挡1层) 红色=倒数第二层(挡2层) 紫色=最下层(挡3+层)
     ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
+    if (isHighlighted) {
+      ctx.strokeStyle = '#FFD700';  // 匹配提示：金色
+    } else if (isInSlot) {
+      ctx.strokeStyle = 'rgba(180,175,165,0.25)';
+    } else if (!isBlocked) {
+      ctx.strokeStyle = '#00CEC9';  // 可点击：青色
+      ctx.lineWidth = 2;
+    } else if (blockedCount === 1) {
+      ctx.strokeStyle = '#FD9644';  // 暂时不可点击：橙色
+    } else if (blockedCount === 2) {
+      ctx.strokeStyle = '#FF6B6B';  // 倒数第二层：红色
+    } else {
+      ctx.strokeStyle = '#A29BFE';  // 最下层：紫色
+    }
     roundRect(ctx, x, y, TILE_W, TILE_H, 10);
     ctx.stroke();
 
@@ -4072,18 +4075,6 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.textAlign = 'right';
       ctx.textBaseline = 'top';
       ctx.fillText('🫧', x + TILE_W - 2, y + 1);
-      // 胆小减免：额外高亮边框标记
-      if (tile.cowardlyHighlight) {
-        ctx.strokeStyle = 'rgba(0,206,201,0.8)';
-        ctx.lineWidth = 2;
-        roundRect(ctx, x - 2, y - 2, TILE_W + 4, TILE_H + 4, 12);
-        ctx.stroke();
-        ctx.shadowColor = 'rgba(0,206,201,0.4)';
-        ctx.shadowBlur = 8;
-        roundRect(ctx, x - 2, y - 2, TILE_W + 4, TILE_H + 4, 12);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
       ctx.restore();
     }
 
@@ -4102,6 +4093,17 @@ function drawTiles(ctx, tiles, highlightedIds, hoverId, boardW, boardH) {
       ctx.lineWidth = 1;
       roundRect(ctx, x - 1, y - 3, TILE_W + 2, TILE_H + 2, 11);
       ctx.stroke();
+    }
+    // 胆小减免：可点击干扰牌青色高亮边框
+    if (tile.cowardlyHighlight && !isBlocked && !isInSlot) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,206,201,0.8)';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(0,206,201,0.4)';
+      ctx.shadowBlur = 8;
+      roundRect(ctx, x - 2, y - 2, TILE_W + 4, TILE_H + 4, 12);
+      ctx.stroke();
+      ctx.restore();
     }
     ctx.restore();
   });
@@ -8480,7 +8482,7 @@ function Game() {
 
       // 胆小性格：干扰牌阻挡时，真身牌高亮标记
       if (timidEffectRef.current.disguiseHighlight) {
-        setTiles(prev => prev.map(t => t.isInterference && t.interferenceType === 'disguise' && !t.revealed ? {
+        setTiles(prev => prev.map(t => t.isInterference && !t.revealed ? {
           ...t,
           cowardlyHighlight: true
         } : t));
@@ -12097,7 +12099,7 @@ function Game() {
         letterSpacing: '.3px',
         textShadow: '0 1px 2px rgba(0,0,0,0.08)'
       }
-    }, notifications[notifIndex].breed ? notifications[notifIndex].breed + '：' + notifications[notifIndex].text : notifications[notifIndex].text))), /*#__PURE__*/React.createElement("div", {
+    }, notifications[notifIndex] && notifications[notifIndex].breed ? notifications[notifIndex].breed + '：' + notifications[notifIndex].text : notifications[notifIndex] ? notifications[notifIndex].text : ''))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
