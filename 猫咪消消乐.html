@@ -11782,11 +11782,17 @@ function Game() {
       height: '100%',
       position: 'relative',
       display: 'flex',
-      flexDirection: 'column',
-      background: `url('${getLevelBg(currentLevel)}') center/cover no-repeat`,
-      backgroundBlendMode: 'overlay'
+      flexDirection: 'column'
     }
-  }, (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false) && /*#__PURE__*/React.createElement(BattlePrep, {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      inset: 0,
+      background: `url('${getLevelBg(currentLevel)}') center/cover no-repeat`,
+      filter: 'brightness(0.6) blur(2px)',
+      zIndex: 0
+    }
+  }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false) && /*#__PURE__*/React.createElement(BattlePrep, {
     cats: battleCats,
     skillSlots: skillSlots,
     onStart: () => {
@@ -11796,17 +11802,6 @@ function Game() {
     levelConfig: levelConfig,
     currentLevel: currentLevel,
     onChangeLevel: () => setPhase('levelSelect')
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(15,10,30,0.35)',
-      zIndex: 0,
-      display: phase === 'levelSelect' ? 'none' : 'block'
-    }
   }), phase === 'playing' && timerVisual === 'critical' && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
