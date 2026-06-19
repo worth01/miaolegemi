@@ -38,6 +38,9 @@
 @keyframes glowPulse { 0%,100%{text-shadow:0 0 6px rgba(120,200,255,0.45),0 0 14px rgba(90,170,255,0.25)} 50%{text-shadow:0 0 10px rgba(160,230,255,0.7),0 0 22px rgba(120,200,255,0.45)} }
 @keyframes beamFlicker { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
 @keyframes screenBorderFlash { 0%,100%{opacity:1;box-shadow:inset 0 0 50px rgba(255,50,50,0.4)} 50%{opacity:0.25;box-shadow:inset 0 0 16px rgba(255,50,50,0.12)} }
+@keyframes catFloatDanger { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+@keyframes catFloatPulse { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+@keyframes catFloatGentle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
     @keyframes smoothFlow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
     .flow-btn { position: relative; background: transparent; border: none; cursor: pointer; padding: 0; overflow: hidden; }
     .flow-btn .inner { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; background: #111; color: #fff; font-weight: 700; text-align: center; border-radius: 6px; margin: 2px; z-index: 2; text-shadow: 0 0 5px rgba(255,255,255,0.2); padding: 10px 8px; font-size: 13px; }
@@ -6289,8 +6292,8 @@ function SkillAnimationOverlay({
       position: 'relative',
       width: cardSize,
       height: cardSize,
-      borderRadius: 16,
-      overflow: 'hidden',
+      borderRadius: isSSR ? 16 : 8,
+      overflow: isSSR ? 'hidden' : 'hidden',
       background: cardBg,
       border: isSSR ? `2px solid ${glowColor}99` : 'none',
       boxShadow: isSSR ? `0 0 8px ${glowColor}33, 0 24px 80px rgba(255,215,0,0.3)` : 'none',
@@ -6308,15 +6311,7 @@ function SkillAnimationOverlay({
       pointerEvents: 'none',
       zIndex: 10
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: '100%',
-      height: cardSize,
-      background: cardBg,
-      position: 'relative',
-      overflow: 'hidden'
-    }
-  }, videoSrc ? /*#__PURE__*/React.createElement("video", {
+  }), videoSrc ? /*#__PURE__*/React.createElement("video", {
     ref: videoRef,
     src: videoSrc,
     autoPlay: true,
@@ -6327,20 +6322,24 @@ function SkillAnimationOverlay({
     style: {
       width: '100%',
       height: '100%',
-      objectFit: 'cover',
-      display: 'block'
+      objectFit: isSSR ? 'cover' : 'contain',
+      display: 'block',
+      filter: isSSR ? 'none' : 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
     }
-  }) : /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("img", {
+    src: getCatDisplayImg(breed),
+    alt: breed,
     style: {
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'rgba(255,255,255,0.3)',
-      fontSize: 14
+      width: cardSize,
+      height: cardSize,
+      objectFit: 'contain',
+      display: 'block',
+      filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
+    },
+    onError: e => {
+      e.target.style.display = 'none';
     }
-  }, "\u6280\u80FD\u52A8\u753B\u52A0\u8F7D\u4E2D..."))));
+  })));
 }
 
 /* ═══════════════════════════════════════
@@ -6391,28 +6390,21 @@ function SkillConfirmModal({
       boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${color}15`,
       animation: 'slideUp 0.3s ease-out'
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 64,
-      height: 64,
-      borderRadius: 16,
-      margin: '0 auto 14px',
-      overflow: 'hidden',
-      border: `2px solid ${color}60`,
-      boxShadow: `0 0 20px ${color}30`
-    }
   }, /*#__PURE__*/React.createElement("img", {
     src: getCatDisplayImg(breed),
     alt: breed,
     style: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover'
+      width: 80,
+      height: 80,
+      objectFit: 'contain',
+      margin: '0 auto 10px',
+      display: 'block',
+      filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
     },
     onError: e => {
       e.target.style.display = 'none';
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 600,
@@ -10382,20 +10374,20 @@ function Game() {
         // 目标位置：动画卡片右下角
         var phoneEl = document.querySelector('.phone-screen');
         var phoneRect = phoneEl ? phoneEl.getBoundingClientRect() : { left: 0, top: 0, right: 390, bottom: 844 };
-        var dstCX = phoneRect.left + 32 + 46;  // 毛玻璃左框中心X（32+92/2）
-        var dstCY = phoneRect.top + 624 + 46;  // 毛玻璃左框中心Y（624+92/2）
-        // 创建克隆分身
+        var dstCX = phoneRect.left + 32 + 46;  // 动画左框中心X（32+92/2）
+        var dstCY = phoneRect.top + 595 + 46;  // 动画左框中心Y（595+92/2）
+        // 创建克隆分身 — 无边框猫咪本体
         var clone = document.createElement('div');
         clone.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
           + 'width:' + srcRect.width + 'px;height:' + srcRect.height + 'px;'
           + 'left:' + srcRect.left + 'px;top:' + srcRect.top + 'px;'
-          + 'border-radius:14px;overflow:hidden;'
           + 'background:transparent;'
           + 'will-change:transform,opacity;'
-          + 'box-shadow:0 8px 28px rgba(0,0,0,0.3);';
-        // 克隆内部图片
+          + 'display:flex;align-items:center;justify-content:center;';
+        // 克隆内部图片 — 无边框，圆角8px + 悬浮投影
         var inner = srcImg ? srcImg.cloneNode(true) : document.createElement('div');
-        inner.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;';
+        inner.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:8px;display:block;'
+          + 'filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));';
         clone.appendChild(inner);
         document.body.appendChild(clone);
         // 动画参数：两段跳跃 → 先跳高越过收集槽下缘 → 再弹跳落入卡片位置
@@ -12649,7 +12641,7 @@ function Game() {
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%)',
-        top: 496,
+        top: 495,
         width: 350,
         height: showPanel ? 106 : 0,
         overflow: 'hidden',
@@ -12677,11 +12669,7 @@ function Game() {
       style: {
         width: 92,
         height: 92,
-        borderRadius: 20,
-        overflow: 'hidden',
-        flexShrink: 0,
-        background: 'transparent',
-        border: '1px solid transparent'
+        flexShrink: 0
       }
     }), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -12820,15 +12808,15 @@ function Game() {
       display: 'flex',
       justifyContent: 'center',
       gap: 12,
-      padding: '0 10px 10px',
-      marginTop: 21
+      padding: '0 10px 4px',
+      marginTop: 11
     }
   }, [0, 1, 2].map(i => {
     const breed = skillSlots[i];
     if (!breed) return /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
-        width: 70
+        width: 77
       }
     });
     const skill = CAT_SKILLS[breed];
@@ -12846,11 +12834,8 @@ function Game() {
       SSR: '#FD9644'
     };
     const rarity = BREED_RARITY[breed] || 'N';
-    const borderColor = disabled ? 'rgba(255,255,255,0.08)' : skill?.color || rarityColors[rarity] || '#6C5CE7';
     const glowTier = reminderGlow[key];
-    const flowAnim = glowTier === 'danger' ? 'borderFlowDanger 2s ease-in-out infinite' :
-                     glowTier === 'pulse' ? 'borderFlowPulse 2s ease-in-out infinite' :
-                     glowTier === 'gentle' ? 'borderFlowGentle 2.5s ease-in-out infinite' : 'none';
+    const dimmed = cooling || noUsesLeft;
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       'data-skill-index': i,
@@ -12859,69 +12844,35 @@ function Game() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 3,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.3 : 1,
-        filter: disabled ? 'grayscale(1)' : 'none',
+        opacity: disabled ? 0.35 : 1,
         transition: 'all 0.2s',
-        maxWidth: 80
+        width: 77
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 70,
-        height: 70,
-        borderRadius: 14,
-        overflow: 'hidden',
-        border: `2px solid ${borderColor}`,
-        background: disabled ? 'rgba(255,255,255,0.02)' : `${borderColor}15`,
-        boxShadow: disabled ? 'none' : `0 4px 12px ${borderColor}30`,
+        width: 77,
+        height: 77,
         position: 'relative',
-        animation: flowAnim !== 'none' ? flowAnim : 'none'
+        filter: dimmed ? 'brightness(0.25) grayscale(0.6)' : glowTier ? (glowTier === 'danger' ? 'drop-shadow(0 0 8px rgba(255,80,80,0.8)) drop-shadow(0 0 16px rgba(255,80,80,0.4))' : glowTier === 'pulse' ? 'drop-shadow(0 0 8px rgba(108,92,231,0.7)) drop-shadow(0 0 14px rgba(108,92,231,0.35))' : 'drop-shadow(0 0 6px rgba(253,203,110,0.5)) drop-shadow(0 0 10px rgba(253,203,110,0.25))') : 'drop-shadow(0 4px 8px rgba(0,0,0,0.25))',
+        transition: 'filter 0.3s, transform 0.2s',
+        animation: glowTier === 'danger' ? 'catFloatDanger 1.5s ease-in-out infinite' : glowTier === 'pulse' ? 'catFloatPulse 1.5s ease-in-out infinite' : glowTier === 'gentle' ? 'catFloatGentle 2s ease-in-out infinite' : 'none'
       }
     }, /*#__PURE__*/React.createElement("img", {
       src: getCatDisplayImg(breed, (battleCats.find(function(c) { return (c.breedId || c.breed) === breed; }) || {}).serialId),
       alt: breed,
       style: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        borderRadius: 10
+        width: 77,
+        height: 77,
+        objectFit: 'contain',
+        display: 'block',
+        filter: dimmed ? 'brightness(0.7)' : 'none'
       },
       onError: e => {
         e.target.style.display = 'none';
       }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '25%',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent)',
-        borderRadius: '0 0 10px 10px',
-        pointerEvents: 'none'
-      }
-    }), remUses >= 2 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'absolute',
-        top: -6,
-        right: -6,
-        width: 22,
-        height: 22,
-        borderRadius: '50%',
-        background: '#E05555',
-        border: '2px solid #fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 11,
-        fontWeight: 800,
-        color: '#fff',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-        zIndex: 10,
-        pointerEvents: 'none'
-      }
-    }, remUses), cooling && /*#__PURE__*/React.createElement("div", {
+    }), cooling && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: 0,
@@ -12930,15 +12881,14 @@ function Game() {
         bottom: 0,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.6)',
-        borderRadius: 10
+        justifyContent: 'center'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 700,
-        color: '#74B9FF'
+        color: '#74B9FF',
+        textShadow: '0 0 8px rgba(116,185,255,0.6)'
       }
     }, skillCooldowns[key], "s")), noUsesLeft && !cooling && /*#__PURE__*/React.createElement("div", {
       style: {
@@ -12949,34 +12899,46 @@ function Game() {
         bottom: 0,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)',
-        borderRadius: 10
+        justifyContent: 'center'
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 18,
-        color: '#fff'
+        fontSize: 24,
+        color: '#fff',
+        textShadow: '0 0 6px rgba(255,255,255,0.5)'
       }
-    }, "\u2713")), /*#__PURE__*/React.createElement("span", {
+    }, "\u2713")), remUses >= 2 && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
-        bottom: 1,
-        left: 2,
-        right: 2,
+        top: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 10,
+        fontWeight: 700,
+        color: '#55EFC4',
+        zIndex: 5,
+        pointerEvents: 'none'
+      }
+    }, remUses)), /*#__PURE__*/React.createElement("span", {
+      style: {
         fontSize: 13,
         fontWeight: 700,
-        color: disabled ? 'rgba(240,237,255,0.2)' : rarity === 'N' ? '#F0EDFF' : rarity === 'R' ? '#45B7D1' : rarity === 'SR' ? '#6C5CE7' : '#FD9644',
+        color: disabled ? 'rgba(240,237,255,0.15)' : rarity === 'N' ? 'rgba(240,237,255,0.85)' : rarityColors[rarity],
+        letterSpacing: '1px',
         textAlign: 'center',
-        lineHeight: 1.2,
-        textShadow: '0 1px 3px rgba(0,0,0,0.85)'
+        lineHeight: 1.1,
+        maxWidth: 77,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
       }
-    }, skill ? skill.active : '???', maxUses >= 2 && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 8,
-        color: '#55EFC4'
-      }
-    }, " \xD7", remUses))));
+    }, skill ? skill.active : '???'));
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
