@@ -8421,6 +8421,16 @@ function Game() {
   const [transformLocked, setTransformLocked] = useState([]); // 正在变身的三花牌tileId列表（锁定不可点击/匹配）
   const [matching, setMatching] = useState([]);
   useEffect(() => { matchingRef.current = matching; if (matching.length > 0 && window.__gameSfx) window.__gameSfx.playMatch(); }, [matching]);
+  // 输入队列：消除动画结束后，自动处理队列中的待排点击
+  useEffect(() => {
+    if (matching.length > 0 || !pendingClickRef.current) return;
+    var pending = pendingClickRef.current;
+    pendingClickRef.current = null;
+    // 延迟一帧，确保 slot 状态已更新
+    requestAnimationFrame(() => {
+      if (handleTileClickRef.current) handleTileClickRef.current(pending);
+    });
+  }, [matching]);
   const [gameState, setGameState] = useState(GAME_PLAYING);
   const [showCompletion, setShowCompletion] = useState(false); // 30关通关完成画面
   const [moveCount, setMoveCount] = useState(0);
@@ -8772,6 +8782,7 @@ function Game() {
   const lastSkillIndexRef = useRef(-1); // 记录最后使用的技能按钮索引
   const matchTimeoutRef = useRef(null);
   const matchingRef = useRef([]);
+  const pendingClickRef = useRef(null); // 输入队列：消除动画中的待处理点击
   const boardContainerRef = useRef(null);
   const boardCanvasRef = useRef(null);
   const handleTileClickRef = useRef(null); // 始终指向最新的 handleTileClick，避免闭包过期
@@ -9190,6 +9201,7 @@ function Game() {
   const handleLevelSelect = level => {
     setCurrentLevel(level);
     setPhase('prep');
+    pendingClickRef.current = null;
     // 胆小方案B：独立事件摇点（须在 generateBoard 之前，供开局克制生效）
     var selConfig = getLevelConfig(level);
     var selTimidFx = rollTimidEffects(selConfig, personalityEffects);
@@ -9634,13 +9646,20 @@ function Game() {
     if (guardianAnimVisibleRef.current) return; // 守护猫动画播放中
     if (tile.removed || tile.inSlot) return;
     if (isTileBlocked(tile, tilesRef.current)) return;
-    // 匹配动画/重整飞散动画进行中，禁止点击
-    if (matchingRef.current.length > 0) return;
+    // 重整飞散动画进行中，禁止点击
     if (shuffleAnimRef.current) return;
 
     // 冰冻牌占据前N格（胆小减免生效时不扣减） + 舔毛牌占据槽位
     const frozenOffset = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
     const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
+
+    // ═══ 预判槽位：逻辑容量排除正在消除的牌（视觉播动画，逻辑已清空） ═══
+    const matchingUids = matchingRef.current;
+    const logicalSlotCount = slotRef.current.filter(s => !matchingUids.includes(s.uid)).length;
+    if (logicalSlotCount >= effectiveCapacity) {
+      if (matchingUids.length > 0) pendingClickRef.current = tile; // 输入队列
+      return;
+    }
 
     // 飞行动画（纯 DOM，预加载图片 + transform 高性能动画）
     (function() {
@@ -9651,8 +9670,8 @@ function Game() {
       var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 目标槽位索引 = 当前槽内牌数
-      var targetIdx = slotRef.current.length;
+      // 目标槽位索引 = 逻辑槽内牌数（排除正在消除的牌）
+      var targetIdx = slotRef.current.filter(function(s) { return !matchingRef.current.includes(s.uid); }).length;
       // 尝试取目标槽格的 DOM 坐标
       var slotCell = document.querySelector('#main-slot [data-slot-index=\"' + targetIdx + '\"]');
       if (slotCell) {
@@ -9768,7 +9787,7 @@ function Game() {
     // ═══ 真身牌核心规则：点击未暴露的真身牌时，立即揭穿并直接入收集槽 ═══
     // 揭穿后去掉伪装壳，以原始type正常入槽、正常三消
     if (isDisguiseCard && !tile.revealed) {
-      if (slotRef.current.length >= effectiveCapacity) return;
+      if (logicalSlotCount >= effectiveCapacity) return;
       // 揭穿：去掉伪装壳，露出原始牌面
       setTiles(prev => prev.map(t => t.id === tile.id ? {
         ...t,
@@ -9781,10 +9800,7 @@ function Game() {
       setTimeout(() => setDisguiseToast(''), 1000);
 
       // 直接入收集槽，用原始type参与三消匹配
-      if (matchTimeoutRef.current) {
-        clearTimeout(matchTimeoutRef.current);
-        matchTimeoutRef.current = null;
-      }
+      // 预判槽位：不取消旧的matchTimeout，让新旧消除各自独立完成
       const uid = ++uidRef.current;
       // 真身牌入槽用原始type，可以和同类型普通牌凑成三消
       const slotItemType = tile.type; // 原始猫咪type
@@ -9847,27 +9863,8 @@ function Game() {
             removed: true,
             matched: false
           } : t));
-          setTempStorage(prev => {
-            let removed = 0;
-            return prev.filter(s => {
-              if (s.type === slotItemType && !s.isGroom && removed < tempRemoveCount) {
-                removed++;
-                return false;
-              }
-              return true;
-            });
-          });
-          setSlot(prev => {
-            const remaining = [...prev];
-            let removed2 = 0;
-            for (let i = remaining.length - 1; i >= 0 && removed2 < slotRemoveCount; i--) {
-              if (remaining[i].type === slotItemType && !remaining[i].isGroom) {
-                remaining.splice(i, 1);
-                removed2++;
-              }
-            }
-            return remaining;
-          });
+          setTempStorage(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
+          setSlot(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
           setMatching([]);
         }, 350);
       } else {
@@ -9915,7 +9912,7 @@ function Game() {
     // 粘连牌容量校验：需同时放入粘连牌+被连带的卡牌，剩余容量不足则直接失败
     const stickyBatchSize = stickyAdjacentTile ? 2 : 1; // 连带1张=2，无连带=1
     if (isStickyCard && !stickyBlockOverride) {
-      if (slotRef.current.length + stickyBatchSize > effectiveCapacity) {
+      if (logicalSlotCount + stickyBatchSize > effectiveCapacity) {
         // 容量不足，触发失败
         setStickyToast('收集槽｜已满');
         setTimeout(() => {
@@ -9931,14 +9928,10 @@ function Game() {
         return;
       }
     } else {
-      if (slotRef.current.length >= effectiveCapacity) return;
+      if (logicalSlotCount >= effectiveCapacity) return;
     }
 
-    // Cancel any pending match cleanup from a previous match
-    if (matchTimeoutRef.current) {
-      clearTimeout(matchTimeoutRef.current);
-      matchTimeoutRef.current = null;
-    }
+    // 预判槽位：不取消旧的matchTimeout，让新旧消除各自独立完成
     const uid = ++uidRef.current;
     // 胆小减免下小狗牌用originalType参与三消匹配；真身牌揭穿后直接入槽（不走此分支）；其他情况直接用tile.type
     const slotItemType = isDangerCard && dangerBlockOverride && tile.originalType ? tile.originalType : getTileMatchType(tile);
@@ -10092,26 +10085,8 @@ function Game() {
         const matchType = matchResult.type;
         const matchedTileIds = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
         matchTimeoutRef.current = setTimeout(() => {
-          setTempStorage(prev => {
-            let removed = 0;
-            return prev.filter(s => {
-              if (s.type === matchType && !s.isGroom && removed < tempRemoveCount) {
-                removed++;
-                return false;
-              }
-              return true;
-            });
-          });
-          setSlot(prev => {
-            let toRemove = slotRemoveCount;
-            return prev.filter(s => {
-              if (s.type === matchType && !s.isGroom && toRemove > 0) {
-                toRemove--;
-                return false;
-              }
-              return true;
-            });
-          });
+          setTempStorage(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
+          setSlot(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
           setMoveHistory(prev => {
             let rem = slotRemoveCount;
             return prev.filter(m => {
@@ -10236,28 +10211,9 @@ function Game() {
       const matchRemoveType = matchType;
       const matchedTileIds = sameType.slice(0, MATCH_COUNT).map(s => s.tileId);
       matchTimeoutRef.current = setTimeout(() => {
-        // Remove matched tiles from tempStorage（跳过舔毛牌）
-        setTempStorage(prev => {
-          let removed = 0;
-          return prev.filter(s => {
-            if (s.type === matchRemoveType && !s.isGroom && removed < tempRemoveCount) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
-        });
-        // Remove matched tiles from slot（跳过舔毛牌）
-        setSlot(prev => {
-          let toRemove = slotRemoveCount;
-          return prev.filter(s => {
-            if (s.type === matchRemoveType && !s.isGroom && toRemove > 0) {
-              toRemove--;
-              return false;
-            }
-            return true;
-          });
-        });
+        // 按UID精确移除，支持预判槽位（新牌可能在消除动画中入槽）
+        setTempStorage(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
+        setSlot(prev => prev.filter(s => !allMatchUids.includes(s.uid)));
         // Clean moveHistory
         setMoveHistory(prev => {
           let rem = slotRemoveCount;
@@ -11271,6 +11227,7 @@ function Game() {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
+    pendingClickRef.current = null;
     gameEndedRef.current = false;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
@@ -11394,6 +11351,7 @@ function Game() {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
+    pendingClickRef.current = null;
     gameEndedRef.current = false;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
@@ -11563,6 +11521,7 @@ function Game() {
       clearTimeout(matchTimeoutRef.current);
       matchTimeoutRef.current = null;
     }
+    pendingClickRef.current = null;
     gameEndedRef.current = false;
     // P4: 保持 phase 不变，直接进入下一关（不再显示备战弹窗）
     setCurrentLevel(nextLv);
@@ -11707,7 +11666,9 @@ function Game() {
     const isFrozen = !!frozenSlot; // 胆小新机制：冰冻格始终激活，解冻倒计时由 freezeThawCounter 管理
     const frozenOffset = isFrozen ? levelConfig.freeze_grid_count || 1 : 0;
     const effectiveCapacity = SLOT_CAPACITY + slotBonus - frozenOffset;
-    if (slotRef.current.length >= effectiveCapacity) return;
+    // 预判槽位：逻辑容量排除正在消除的牌
+    var _mUids = matchingRef.current;
+    if (slotRef.current.filter(function(s) { return !_mUids.includes(s.uid); }).length >= effectiveCapacity) return;
     const cardType = pile.cards[pile.topIndex];
 
     // 更新牌堆状态
