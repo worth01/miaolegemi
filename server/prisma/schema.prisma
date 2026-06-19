@@ -62,6 +62,16 @@ model cat_personalities {
   createdAt       DateTime @default(now())
 }
 
+model checkin {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @db.Date
+  streak    Int      @default(1)
+  users     users    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+}
+
 model daily_boards {
   date DateTime @id @db.Date
   seed BigInt
@@ -133,6 +143,7 @@ model users {
   activeTitle                                                   String                @default("新手铲屎官")
   gameData                                                      Json?
   lastNicknameChange                                            DateTime?
+  hasClaimedFirstGacha                                          Boolean               @default(false)
   createdAt                                                     DateTime              @default(now())
   updatedAt                                                     DateTime              @default(now()) @updatedAt
   cat_lineage                                                   cat_lineage[]
@@ -141,4 +152,5 @@ model users {
   fish_ledger                                                   fish_ledger[]
   game_sessions                                                 game_sessions[]
   player_cats                                                   player_cats[]
+  checkin                                                       checkin[]
 }

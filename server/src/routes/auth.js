@@ -21,7 +21,7 @@ router.post('/register', async (req, res) => {
     const nickname = catNames[Math.floor(Math.random() * catNames.length)] + Math.floor(Math.random() * 1000);
 
     const user = await prisma.user.create({
-      data: { username, passwordHash, nickname, bells: 3 },
+      data: { username, password: passwordHash, nickname, bells: 3 },
     });
 
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -40,7 +40,7 @@ router.post('/login', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) return res.status(401).json({ error: '用户名或密码错误' });
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: '用户名或密码错误' });
 
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '30d' });
