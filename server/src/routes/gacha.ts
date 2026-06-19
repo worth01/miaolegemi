@@ -47,172 +47,90 @@ function getDefaultPersonality(catName: string): string {
   return BREED_DEFAULT_PERSONALITIES[catName] || '傲娇';
 }
 
-// 抽卡（单抽）
+// 抽卡（单抽）- 使用猫铃铛
 router.post('/pull', authMiddleware, async (req, res) => {
   try {
-    const { type = 'single' } = req.body; // single or ten
-    const pullCount = type === 'ten' ? 10 : 1;
+    const user = await prisma.users.findUnique({ where: { id: req.user!.userId } });
+    if (!user) return res.status(404).json({ error: '用户不存在' });
 
-    // 扣除鱼干
-    const cost = pullCount * 10; // 单抽10鱼干，十连90鱼干
-    const actualCost = type === 'ten' ? 90 : 10;
+    // 检查猫铃铛
+    if ((user as any).bells < 1) return res.status(400).json({ error: '猫铃铛不足' });
 
-    const fishBalance = await prisma.fish_ledger.aggregate({
-      where: { userId: req.user!.userId },
-      _sum: { amount: true }
+    // 检查包裹区容量
+    const bagCount = await prisma.player_cats.count({
+      where: { ownerId: req.user!.userId, location: 'bag' },
     });
+    if (bagCount >= 20) return res.status(400).json({ error: '包裹区已满 (20/20)' });
 
-    if ((fishBalance._sum.amount || 0) < actualCost) {
-      return res.status(400).json({ error: `鱼干不足，需要${actualCost}鱼干` });
+    // 抽卡权重
+    const species = await prisma.cat_species.findMany();
+    const totalWeight = species.reduce((sum: number, s: any) => sum + s.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let selected: any = species[0];
+    for (const s of species) {
+      roll -= s.weight;
+      if (roll <= 0) { selected = s; break; }
     }
 
-    // 获取保底计数
-    const user = await prisma.users.findUnique({
-      where: { id: req.user!.userId }
+    // 保底
+    let newPity = (user as any).pityCount + 1;
+    if (newPity >= 80) {
+      selected = species.find((s: any) => s.rarity === 'SR') || selected;
+      newPity = 0;
+    }
+    if (selected.rarity === 'SR') newPity = 0;
+
+    // 分配序列号
+    const serials = await prisma.catSerialRegistry.findMany({
+      where: { speciesId: selected.id, status: 'available' },
+      orderBy: { serialNumber: 'asc' },
+      take: 1,
     });
 
-    let pityCount = user?.pityCount || 0;
-
-    // 抽卡结果
-    const results = [];
-
-    for (let i = 0; i < pullCount; i++) {
-      let rarity: string;
-      let catName: string;
-
-      // 保底逻辑：100抽必出SSR
-      pityCount++;
-      const isPity = pityCount >= 100;
-
-      if (isPity) {
-        // 保底：必出SSR
-        rarity = 'SSR';
-        pityCount = 0;
-      } else {
-        // 普通抽卡
-        const roll = Math.random() * 100;
-        if (roll < 1) {
-          rarity = 'SSR';
-        } else if (roll < 5) {
-          rarity = 'SR';
-        } else if (roll < 20) {
-          rarity = 'R';
-        } else {
-          rarity = 'N';
-        }
-      }
-
-      // 根据稀有度筛选可抽取的猫
-      const availableCats = CAT_WEIGHTS.filter(c => c.rarity === rarity);
-      const selectedCat = availableCats[Math.floor(Math.random() * availableCats.length)];
-      catName = selectedCat.name;
-
-      // 获取品种信息
-      let species = await prisma.cat_species.findUnique({
-        where: { name: catName }
+    let serial;
+    if (serials.length > 0) {
+      serial = await prisma.catSerialRegistry.update({
+        where: { id: serials[0].id },
+        data: { status: 'adopted', currentOwnerId: req.user!.userId, firstOwnerId: serials[0].firstOwnerId || req.user!.userId },
       });
-
-      // 如果品种不存在，创建它
-      if (!species) {
-        species = await prisma.cat_species.create({
-          data: {
-            name: catName,
-            rarity: rarity,
-            weight: selectedCat.weight,
-            activeSkill: { name: getActiveSkillName(catName), desc: getActiveSkillDesc(catName) },
-            passiveSkill: { name: getPassiveSkillName(catName), desc: getPassiveSkillDesc(catName) },
-            description: `${catName}是一只可爱的猫咪`
-          }
-        });
-      }
-
-      // 分配序列号（使用行锁保证并发安全）
-      const serial = await prisma.$transaction(async (tx) => {
-        // 查找该品种可用的最小编号
-        const existingSerials = await prisma.catSerialRegistry.findMany({
-          where: {
-            speciesId: species!.id,
-            status: { in: ['available'] }
-          },
-          orderBy: { serialNumber: 'asc' },
-          take: 1
-        });
-
-        let newSerialNumber = 1;
-        if (existingSerials.length > 0) {
-          newSerialNumber = existingSerials[0].serialNumber;
-        } else {
-          // 获取当前最大编号
-          const maxSerial = await prisma.catSerialRegistry.findFirst({
-            where: { speciesId: species!.id },
-            orderBy: { serialNumber: 'desc' }
-          });
-          newSerialNumber = (maxSerial?.serialNumber || 0) + 1;
-        }
-
-        // 创建序列号
-        const newSerial = await prisma.catSerialRegistry.create({
-          data: {
-            speciesId: species!.id,
-            serialNumber: newSerialNumber,
-            status: 'adopted',
-            currentOwnerId: req.user!.userId
-          }
-        });
-
-        return newSerial;
+    } else {
+      const maxSerial = await prisma.catSerialRegistry.aggregate({
+        where: { speciesId: selected.id },
+        _max: { serialNumber: true },
       });
-
-      // 随机性格（单一性格）
-      const selectedPersonality = getDefaultPersonality(catName);
-
-      // 创建猫咪实例
-      const cat = await prisma.player_cats.create({
+      const nextNum = ((maxSerial as any)._max.serialNumber || 0) + 1;
+      serial = await prisma.catSerialRegistry.create({
         data: {
-          ownerId: req.user!.userId,
-          serialId: serial.id,
-          location: 'bag',
-          personality: selectedPersonality,
-          bagExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30天有效期
+          speciesId: selected.id,
+          serialNumber: nextNum,
+          status: 'adopted',
+          currentOwnerId: req.user!.userId,
+          firstOwnerId: req.user!.userId,
         },
-        include: {
-          cat_serial_registry: {
-            include: { cat_species: true }
-          }
-        }
       });
-
-      results.push(cat);
     }
 
-    // 扣除鱼干
-    await prisma.fish_ledger.create({
+    const personality = getDefaultPersonality(selected.name);
+
+    // 创建玩家猫咪
+    const cat = await prisma.player_cats.create({
       data: {
-        userId: req.user!.userId,
-        amount: -actualCost,
-        reason: 'gacha',
-        relatedId: results[0]?.id
-      }
+        ownerId: req.user!.userId,
+        serialId: serial.id,
+        location: 'bag',
+        personality,
+        bagExpiresAt: new Date(Date.now() + 30 * 86400000),
+      },
+      include: { cat_serial_registry: { include: { cat_species: true } } },
     });
 
-    // 更新保底计数
+    // 扣猫铃铛 + 更新保底
     await prisma.users.update({
       where: { id: req.user!.userId },
-      data: { pityCount }
+      data: { bells: { decrement: 1 }, pityCount: newPity },
     });
 
-    // 获取剩余鱼干
-    const newBalance = await prisma.fish_ledger.aggregate({
-      where: { userId: req.user!.userId },
-      _sum: { amount: true }
-    });
-
-    res.json({
-      message: type === 'ten' ? '十连抽卡完成' : '单抽完成',
-      cats: results,
-      fishBalance: newBalance._sum.amount || 0,
-      pityCount
-    });
+    res.json({ cat, bellsRemaining: (user as any).bells - 1, pityCount: newPity });
   } catch (error: any) {
     console.error('Gacha pull error:', error);
     res.status(500).json({ error: '抽卡失败' });

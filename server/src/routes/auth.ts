@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: '用户名已存在' });
+      return res.status(400).json({ error: '该账号已经注册，请注册其他账号' });
     }
 
     // 加密密码
@@ -41,7 +41,8 @@ router.post('/register', async (req, res) => {
       data: {
         username,
         password: hashedPassword,
-        nickname: generateCatNickname()
+        nickname: generateCatNickname(),
+        bells: 3
       }
     });
 
@@ -104,7 +105,8 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        nickname: user.nickname
+        nickname: user.nickname,
+        bells: user.bells
       }
     });
   } catch (error: any) {
@@ -155,7 +157,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        nickname: user.nickname
+        nickname: user.nickname,
+        bells: user.bells
       },
       fishBalance: fishBalance._sum.amount || 0
     });
