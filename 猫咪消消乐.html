@@ -1087,6 +1087,7 @@ var OWNED_SKINS = (_skinData && _skinData.ownedSkins) || [];
 var ALL_SKINS_DATA = (_skinData && _skinData.allSkins) || {};
 // 获取猫的显示图像：有装备皮肤则用皮肤图，否则用默认品种图
 function getCatDisplayImg(breed, serialId) {
+  if (!breed) return '';
   var catKey = breed + '_' + serialId;
   var skinId = EQUIPPED_SKINS[catKey];
   if (skinId) {
@@ -2631,6 +2632,26 @@ const LEVELS = {
     name: '暹罗跃动',
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    layers: [{
+      layer: 0
+    }, {
+      layer: 1
+    }, {
+      layer: 2
+    }, {
+      layer: 3
+    }],
+    timedMode: false,
+    desc: '真身牌外观随机伪装成普通牌，点击后露出真身'
+  },
+  9: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.hourglass,
     interference: INTERFERENCE_TYPES.danger,
     interferenceCount: 3,
     dog_card_enable: 1,
@@ -2647,26 +2668,6 @@ const LEVELS = {
     }],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
-  },
-  9: {
-    name: '无毛暖居',
-    breed: '无毛猫',
-    boardType: BOARD_TYPES.hourglass,
-    interference: INTERFERENCE_TYPES.disguise,
-    interferenceCount: 2,
-    disabledSkills: [],
-    specialRule: null,
-    layers: [{
-      layer: 0
-    }, {
-      layer: 1
-    }, {
-      layer: 2
-    }, {
-      layer: 3
-    }],
-    timedMode: false,
-    desc: '沙漏形状特殊造型棋盘，真身牌点击后露出真身'
   },
   10: {
     name: '波斯双域',
@@ -2858,6 +2859,28 @@ const LEVELS = {
     name: '暹罗跃动',
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    layers: [{
+      layer: 0
+    }, {
+      layer: 1
+    }, {
+      layer: 2
+    }, {
+      layer: 3
+    }, {
+      layer: 4
+    }],
+    timedMode: false,
+    desc: '真身牌外观随机伪装成普通牌，点击后露出真身'
+  },
+  19: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.hourglass,
     interference: INTERFERENCE_TYPES.danger,
     interferenceCount: 3,
     dog_card_enable: 1,
@@ -2876,28 +2899,6 @@ const LEVELS = {
     }],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
-  },
-  19: {
-    name: '无毛暖居',
-    breed: '无毛猫',
-    boardType: BOARD_TYPES.hourglass,
-    interference: INTERFERENCE_TYPES.groom,
-    interferenceCount: 3,
-    disabledSkills: [],
-    specialRule: null,
-    layers: [{
-      layer: 0
-    }, {
-      layer: 1
-    }, {
-      layer: 2
-    }, {
-      layer: 3
-    }, {
-      layer: 4
-    }],
-    timedMode: false,
-    desc: '沙漏形状特殊造型棋盘，舔毛牌进入收集槽后无法被消除'
   },
   20: {
     name: '波斯双域',
@@ -3093,6 +3094,28 @@ const LEVELS = {
     name: '暹罗跃动',
     breed: '暹罗猫',
     boardType: BOARD_TYPES.standard,
+    interference: INTERFERENCE_TYPES.disguise,
+    interferenceCount: 2,
+    disabledSkills: [],
+    specialRule: null,
+    layers: [{
+      layer: 0
+    }, {
+      layer: 1
+    }, {
+      layer: 2
+    }, {
+      layer: 3
+    }, {
+      layer: 4
+    }],
+    timedMode: false,
+    desc: '真身牌外观随机伪装成普通牌，点击后露出真身'
+  },
+  29: {
+    name: '无毛暖居',
+    breed: '无毛猫',
+    boardType: BOARD_TYPES.hourglass,
     interference: INTERFERENCE_TYPES.danger,
     interferenceCount: 3,
     dog_card_enable: 1,
@@ -3111,28 +3134,6 @@ const LEVELS = {
     }],
     timedMode: false,
     desc: '小狗牌一旦被选入收集槽，立即判定闯关失败'
-  },
-  29: {
-    name: '无毛暖居',
-    breed: '无毛猫',
-    boardType: BOARD_TYPES.hourglass,
-    interference: INTERFERENCE_TYPES.transform,
-    interferenceCount: 2,
-    disabledSkills: [],
-    specialRule: null,
-    layers: [{
-      layer: 0
-    }, {
-      layer: 1
-    }, {
-      layer: 2
-    }, {
-      layer: 3
-    }, {
-      layer: 4
-    }],
-    timedMode: false,
-    desc: '沙漏形状特殊造型棋盘，三花牌每3秒变换'
   },
   30: {
     name: '波斯双域',
@@ -3439,17 +3440,24 @@ function preloadInterferenceImages() {
 }
 preloadInterferenceImages();
 let _imagesLoaded = false;
+let _imagesVersion = 0; // 图片加载版本号，加载完成触发canvas重绘
 function preloadImages() {
   if (_imagesLoaded) return;
   _imagesLoaded = true;
+  var total = CAT_TYPES.length;
+  var loaded = 0;
   CAT_TYPES.forEach(ct => {
     const img = new Image();
     img.src = ct.img; // 直接加载 .webp 文件
     img.onload = () => {
       _tileImages[ct.id] = img; // 加载成功后替换为真正的Image对象
+      loaded++;
+      if (loaded >= total) { _imagesVersion++; window.__allTileImagesReady = true; }
     };
     img.onerror = () => {
       // 加载失败时保留fallback数据（颜色+占位符）
+      loaded++;
+      if (loaded >= total) { _imagesVersion++; window.__allTileImagesReady = true; }
     };
   });
 }
@@ -5373,7 +5381,7 @@ function generateBoard(levelNum, timidEffects) {
     var shapeKey = BoardShapes.getShapeKeyForLevel(levelNum);
     var validCells = BoardShapes.getBoardShape(shapeKey);
     var validSet = new Set(validCells.map(function(c) { return c.row + ',' + c.col; }));
-    var outOfBounds = result.filter(function(card) { return !validSet.has(card.row + ',' + card.col); });
+    var outOfBounds = result.filter(function(card) { return !card.isInterference && !validSet.has(card.row + ',' + card.col); });
     if (outOfBounds.length > 0) {
       console.warn('[BoardGen] P1形状验证: ' + outOfBounds.length + ' 张牌超出' + shapeKey + '棋盘边界');
     }
@@ -5520,50 +5528,71 @@ function addInterferenceCards(cards, levelConfig, rng, timidEffects) {
     return cards;
   }
 
-  // 小狗牌：固定位置生成（右上角第一行最后一列），避免随机位置导致开局翻车
-  // 优先使用关卡配置的dog_card_fixed_pos，否则使用全局默认位置
+  // 小狗牌：额外新增独立牌，不计入三消牌数量
+  // 逆向生成完成后，找到棋盘空位放置小狗牌，下方无任何牌，最顶层
   if (interferenceType === 'danger') {
     // 配置开关检查：dog_card_enable === 0 时强制关闭
     if (levelConfig.dog_card_enable === 0) return cards;
 
-    // 固定位置：优先使用关卡配置，否则默认右上角(row=1, col=8)
-    const fixedPos = levelConfig.dog_card_fixed_pos || {
-      row: 1,
-      col: 8
-    };
-    const targetRow = fixedPos.row || fixedPos[0];
-    const targetCol = fixedPos.col || fixedPos[1];
-
-    // 在棋盘中查找目标位置的卡牌（优先顶层，确保可点击）
-    let targetCard = null;
-    const sortedByLayer = [...cards].filter(c => !c.removed && c.row === targetRow && c.col === targetCol).sort((a, b) => (b.layer || 0) - (a.layer || 0));
-    if (sortedByLayer.length > 0) {
-      targetCard = sortedByLayer[0]; // 取最高层
-    } else {
-      // 目标位置无卡牌（异形棋盘），降级到随机顶层位置
-      const maxL = Math.max(...cards.filter(c => !c.removed).map(c => c.layer || 0));
-      const topCards = cards.filter(c => !c.removed && (c.layer || 0) === maxL);
-      targetCard = topCards.length > 0 ? topCards[Math.floor(rng() * topCards.length)] : null;
+    // 小狗牌仅出现在异形棋盘（沙漏等），标准棋盘跳过
+    var boardType = levelConfig.boardType;
+    if (boardType === BOARD_TYPES.standard) {
+      console.log('[P2-Interference] 小狗牌：标准棋盘不支持，跳过');
+      return cards;
     }
-    if (!targetCard) return cards;
+
+    // 计算新卡牌的ID和层级
+    var maxId = cards.reduce(function(m, c) { return Math.max(m, c.id || 0); }, 0);
+    const maxLayer = Math.max(...cards.filter(c => !c.removed).map(c => c.layer || 0));
+
+    // 小狗牌随机出现在固定候选位置（沙漏棋盘中间偏左/偏右空位）
+    var candidateSpots = [
+      { row: 3, col: 1 },
+      { row: 3, col: 2 },
+      { row: 3, col: 7 },
+      { row: 3, col: 8 }
+    ];
+    var pick = candidateSpots[Math.floor(rng() * candidateSpots.length)];
+    var placeRow = pick.row;
+    var placeCol = pick.col;
+
     // 胆小克制链：小狗牌→舔毛牌转化（开局时触发，播放惊恐动画）
     if (timidEffects && timidEffects.dangerToGroomCount > 0) {
-      console.log('[P2-Interference] 胆小克制：小狗牌 → 舔毛牌（附带惊恐动画）');
-      return cards.map(function(card) {
-        if (card.id === targetCard.id) {
-          return {
-            ...card,
-            isInterference: true,
-            interferenceType: 'groom',
-            originalInterferenceType: 'danger', // 保留原始类型记录
-            startledAnimation: true,            // 触发惊恐动画
-            revealed: true
-          };
-        }
-        return card;
-      });
+      console.log('[P2-Interference] 胆小克制：小狗牌 → 舔毛牌（空位=' + placeRow + ',' + placeCol + '）');
+      var groomCard = {
+        id: maxId + 1,
+        type: '__interference_groom__',
+        row: placeRow,
+        col: placeCol,
+        layer: 0,
+        zone: 'default',
+        removed: false,
+        inSlot: false,
+        isInterference: true,
+        interferenceType: 'groom',
+        originalInterferenceType: 'danger',
+        startledAnimation: true,
+        revealed: true
+      };
+      return cards.concat([groomCard]);
     }
-    return applyInterferenceToCards(cards, [targetCard], interferenceType, rng);
+
+    // 正常小狗牌：额外新增，棋盘空位，layer=0 无偏移不重叠
+    var dogCard = {
+      id: maxId + 1,
+      type: '__interference_danger__',
+      row: placeRow,
+      col: placeCol,
+      layer: 0,
+      zone: 'default',
+      removed: false,
+      inSlot: false,
+      isInterference: true,
+      interferenceType: 'danger',
+      revealed: true
+    };
+    console.log('[P2-Interference] 小狗牌：额外新增, 位置=(' + placeRow + ',' + placeCol + '), 层=' + maxLayer);
+    return cards.concat([dogCard]);
   }
 
   // 获取可放置干扰牌的位置（顶层可点击的位置）
@@ -6977,15 +7006,19 @@ function CollectionSlot({
       // 干扰牌（小狗等，type以__interference_开头）用emoji渲染
       // 三花牌保留原始type，走普通卡牌路径（入槽后无特殊标记，可正常三消）
       const isOldInterferenceSlot = !isDisguiseSlot && item.type && item.type.startsWith('__interference_') && cat;
+      // 蓝区/绿区收集槽边框颜色
+      var areaBorderColor = item.areaTag === 'blue' ? '#1677FF' : item.areaTag === 'green' ? '#00B42A' : null;
+      var slotBorder = areaBorderColor ? `2px solid ${areaBorderColor}` : `1.5px solid ${cat.color}50`;
+      var slotGlow = areaBorderColor ? `0 0 10px ${areaBorderColor}40, 0 3px 10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)` : `0 3px 10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)`;
       return /*#__PURE__*/React.createElement("div", {
         style: {
           width: '100%',
           height: '100%',
           borderRadius: 10,
           overflow: 'hidden',
-          border: `1.5px solid ${cat.color}50`,
+          border: slotBorder,
           animation: isMatching ? 'matchPop 0.4s ease-out forwards' : isNewAnim ? 'toSlot 0.3s ease-out' : 'none',
-          boxShadow: isMatching ? `0 0 24px ${cat.color}, 0 0 48px ${cat.color || '#C8C0B5'}40` : `0 3px 10px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.7)`,
+          boxShadow: isMatching ? `0 0 24px ${cat.color}, 0 0 48px ${cat.color || '#C8C0B5'}40` : slotGlow,
           background: TILE_BG_COLOR,
           transition: 'box-shadow 0.2s ease'
         }
@@ -8415,15 +8448,16 @@ function Game() {
   // ═══════════════════════════════
   const freezeBlockOverride = false;
   const freezeGridCount = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
-  // 冰冻牌首次出现提示（1.5秒）：冰冻牌生成且胆小减免未生效时触发
+  // 冰冻牌首次出现提示（游戏开始4秒后触发，避免与守护动画重叠）
   useEffect(() => {
     if (frozenSlot && !freezeBlockOverride) {
-      const gridCount = levelConfig.freeze_grid_count || 1;
-      const gridText = gridCount > 1 ? `前${gridCount}格` : '第一格';
-      const startText = gridCount > 1 ? `第${gridCount + 1}格` : '第二格';
-      setFreezeToast(`收集槽｜${gridText}冻结`);
-      const t = setTimeout(() => setFreezeToast(''), 1500);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => {
+        const gridCount = levelConfig.freeze_grid_count || 1;
+        const gridText = gridCount > 1 ? `前${gridCount}格` : '第一格';
+        setFreezeToast(`收集槽｜${gridText}冻结`);
+        setTimeout(() => setFreezeToast(''), 4000);
+      }, 5000);
+      return () => clearTimeout(t1);
     }
   }, [frozenSlot]);
   // 异常处理：冰冻牌冻结后，如果收集槽有效容量为0，直接判定失败
@@ -8449,49 +8483,48 @@ function Game() {
     }
   }, [frozenSlot, freezeBlockOverride, gameState]);
 
-  // ═══ 小狗牌开局提示（2秒强提示） ═══
+  // ═══ 小狗牌开局提示（游戏开始4秒后触发，避免与守护动画重叠） ═══
   useEffect(() => {
     const hasDangerCard = tiles.some(t => !t.removed && !t.inSlot && t.isInterference && t.interferenceType === 'danger');
     if (hasDangerCard && gameState === GAME_PLAYING && !window._dangerToastShown) {
-      setDangerToast('小狗牌｜极致危险');
       window._dangerToastShown = true;
-      const t = setTimeout(() => {
-        setDangerToast('');
-      }, 2000);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => {
+        setDangerToast('小狗牌｜极致危险');
+        setTimeout(() => setDangerToast(''), 4000);
+      }, 5000);
+      return () => clearTimeout(t1);
     }
   }, [gameState, tiles]);
 
-  // ═══ 真身牌开局提示（1.5秒轻量提示）+ 胆小减免标记 ═══
+  // ═══ 真身牌开局提示（游戏开始4秒后触发，避免与守护动画重叠）+ 胆小减免标记 ═══
   useEffect(() => {
     const hasDisguiseCard = tiles.some(t => !t.removed && !t.inSlot && !t.revealed && t.isInterference && t.interferenceType === 'disguise');
     if (hasDisguiseCard && gameState === GAME_PLAYING && !window._disguiseToastShown) {
-      setDisguiseToast('伪装牌｜待识别');
       window._disguiseToastShown = true;
-      const t = setTimeout(() => {
-        setDisguiseToast('');
-      }, 1500);
-
-      // 胆小性格：干扰牌阻挡时，真身牌高亮标记
+      // 胆小性格：干扰牌阻挡时，真身牌高亮标记（立即生效，不延迟）
       if (timidEffectRef.current.disguiseHighlight) {
         setTiles(prev => prev.map(t => t.isInterference && !t.revealed ? {
           ...t,
           cowardlyHighlight: true
         } : t));
       }
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => {
+        setDisguiseToast('伪装牌｜待识别');
+        const t2 = setTimeout(() => setDisguiseToast(''), 4000);
+      }, 5000);
+      return () => clearTimeout(t1);
     }
   }, [gameState, tiles]);
 
-  // ═══ 波斯双域开局提示（2秒轻量提示） ═══
+  // ═══ 波斯双域开局提示（游戏开始4秒后触发，避免与守护动画重叠） ═══
   useEffect(() => {
     if (levelConfig.areaRuleEnable && gameState === GAME_PLAYING && !window._areaToastShown) {
-      setAreaToast('双域限制｜不可跨区');
       window._areaToastShown = true;
-      const t = setTimeout(() => {
-        setAreaToast('');
-      }, 2000);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => {
+        setAreaToast('双域限制｜不可跨区');
+        const t2 = setTimeout(() => setAreaToast(''), 4000);
+      }, 5000);
+      return () => clearTimeout(t1);
     }
     // 离开双域关时清除提示
     if (!levelConfig.areaRuleEnable && areaToast) {
@@ -8574,13 +8607,13 @@ function Game() {
     const cowardlySlowdown = timidEffectRef.current.transformSlowdown;
     const intervalMs = (cowardlySlowdown ? 6 : 3) * 1000;
 
-    // 首次进入三花关卡提示（1.5秒）
+    // 首次进入三花关卡提示（游戏开始4秒后触发）
     if (!window._transformToastShown) {
-      setTransformToast('三花牌｜持续变换');
       window._transformToastShown = true;
-      setTimeout(() => {
-        setTransformToast('');
-      }, 1500);
+      var transToastT1 = setTimeout(() => {
+        setTransformToast('三花牌｜持续变换');
+        setTimeout(() => setTransformToast(''), 4000);
+      }, 5000);
     }
 
     // 全局变身逻辑
@@ -8653,6 +8686,7 @@ function Game() {
     }, remainingMs);
     return () => {
       clearTransformTimers();
+      clearTimeout(transToastT1);
     };
   }, [gameState, currentLevel, timerPaused]);
 
@@ -9498,6 +9532,7 @@ function Game() {
     let last = performance.now();
     let lastTileCount = 0;
     let lastTileVersion = 0;
+    let lastImageVersion = 0;
     let idleFrames = 0;
     function loop(now) {
       const dt = Math.min((now - last) / 1000, 0.05);
@@ -9552,13 +9587,15 @@ function Game() {
       const tileCount = currentTiles.filter(t => !t.removed && !t.inSlot).length;
       const tileVersion = tilesVersionRef.current;
       const tileChanged = tileCount !== lastTileCount || tileVersion !== lastTileVersion;
+      const imageVersionChanged = _imagesVersion !== lastImageVersion;
       lastTileCount = tileCount;
       lastTileVersion = tileVersion;
+      lastImageVersion = _imagesVersion;
       // 动画期间始终重绘
       const hasShuffleAnim = !!shuffleAnimRef.current;
-      if (hasParticles || tileChanged || hasShuffleAnim || idleFrames < 2) {
+      if (hasParticles || tileChanged || hasShuffleAnim || imageVersionChanged || idleFrames < 2) {
         drawTiles(ctx, tilesForDraw, highlightedTilesRef.current || [], hoveredTileId, boardWidth, boardHeight);
-        idleFrames = (hasParticles || tileChanged || hasShuffleAnim) ? 0 : idleFrames + 1;
+        idleFrames = (hasParticles || tileChanged || hasShuffleAnim || imageVersionChanged) ? 0 : idleFrames + 1;
         rafId = requestAnimationFrame(loop);
       } else {
         // 静止时降帧到 10fps，大幅降低功耗
@@ -9693,6 +9730,16 @@ function Game() {
       } : t));
       setDangerToast('攻击已抵挡');
       setTimeout(() => setDangerToast(''), 1000);
+      return;
+    }
+    // 胆小克制：自动驱散小狗牌（小狗牌为额外新增独立牌，无originalType可匹配三消，直接移除）
+    if (isDangerCard && cowardlyActive) {
+      setTiles(prev => prev.map(t => t.id === tile.id ? {
+        ...t,
+        removed: true
+      } : t));
+      setDangerToast('胆小｜危险已驱散');
+      setTimeout(() => setDangerToast(''), 1200);
       return;
     }
     // 胆小或胆大减免(>=80%): 小狗牌仅占槽位不失败
@@ -11635,7 +11682,7 @@ function Game() {
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
   };
-  const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && t.interferenceType === 'transform'); }).length;
+  const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); }).length;
 
   // 所有牌消除后自动通关
   useEffect(() => {
