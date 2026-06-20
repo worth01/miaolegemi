@@ -1,5 +1,5 @@
 // 喵了个咪 Service Worker — 静态资源缓存
-const CACHE_NAME = 'miaolegemi-v2';
+const CACHE_NAME = 'miaolegemi-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
