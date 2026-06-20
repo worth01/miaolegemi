@@ -4797,10 +4797,23 @@ function LineupManager({
   }, "\u2193 \u5411\u4E0B\u62D6 \u89C2\u6218\u52A0\u6210"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      alignItems: 'center',
+      gap: 4,
+      padding: '4px 8px 12px'
+    }
+  }, availableCats.length > 3 && /*#__PURE__*/React.createElement("button", {
+    onClick: function() { var el = document.querySelector('.cat-scroll-area'); if (el) el.scrollBy({ left: -180, behavior: 'smooth' }); },
+    style: { flexShrink: 0, width: 20, height: 40, borderRadius: 6, border: 'none', background: colors === CL ? 'rgba(253,150,68,0.12)' : 'rgba(116,185,255,0.1)', color: colors === CL ? '#FD9644' : '#74B9FF', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }
+  }, "◀"), /*#__PURE__*/React.createElement("div", {
+    className: 'cat-scroll-area',
+    style: {
+      display: 'flex',
       gap: 12,
-      padding: '4px 20px 12px',
+      flex: 1,
       overflowX: 'auto',
-      scrollbarWidth: 'none'
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none',
+      scrollBehavior: 'smooth'
     }
   }, availableCats.map(cat => /*#__PURE__*/React.createElement("div", {
     key: cat.serialId,
@@ -4863,7 +4876,10 @@ function LineupManager({
       fontSize: 12,
       color: colors.muted
     }
-  }, "\u6682\u65E0\u7A7A\u95F2\u732B\u54AA")), /*#__PURE__*/React.createElement("div", {
+  }, "\u6682\u65E0\u7A7A\u95F2\u732B\u54AA")), availableCats.length > 3 && /*#__PURE__*/React.createElement("button", {
+    onClick: function() { var el = document.querySelector('.cat-scroll-area'); if (el) el.scrollBy({ left: 180, behavior: 'smooth' }); },
+    style: { flexShrink: 0, width: 20, height: 40, borderRadius: 6, border: 'none', background: colors === CL ? 'rgba(253,150,68,0.12)' : 'rgba(116,185,255,0.1)', color: colors === CL ? '#FD9644' : '#74B9FF', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }
+  }, "\u25B6")), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       fontSize: 9,
@@ -9176,19 +9192,19 @@ function GachaPage({
       marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: colors === CL ? `bell-box-warm${animPhase === 'shake' ? ' jump' : ''}` : 'card-flow-border',
+    className: colors === CL ? (animPhase === 'idle' ? 'bell-box-warm' : '') : (animPhase === 'idle' ? 'card-flow-border' : ''),
     style: {
       width: '70%',
       aspectRatio: '1',
       borderRadius: colors === CL ? 26 : 18,
       overflow: 'hidden',
       background: colors === CL ? undefined : 'transparent',
-      border: colors === CL ? undefined : 'none',
+      border: animPhase !== 'idle' ? 'none' : (colors === CL ? undefined : 'none'),
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      boxShadow: colors === CL ? undefined : '0 0 15px rgba(0,229,255,0.4), 0 0 30px rgba(0,153,255,0.2)'
+      boxShadow: animPhase !== 'idle' ? 'none' : (colors === CL ? undefined : '0 0 15px rgba(0,229,255,0.4), 0 0 30px rgba(0,153,255,0.2)')
     }
   }, animPhase === 'idle' && /*#__PURE__*/React.createElement("img", {
     src: "assets/ling.webp",
