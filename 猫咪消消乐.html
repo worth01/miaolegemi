@@ -140,6 +140,8 @@
       gameBGM.loop = true;
       gameBGM.volume = 0.3;
       gameBGM.preload = 'auto';
+      var bgmReady = false;
+      gameBGM.addEventListener('canplaythrough', function() { bgmReady = true; }, { once: true });
 
       // ═══ 音效 ═══
       var matchSfx = new Audio('assets/audio/match.mp3');
@@ -148,6 +150,9 @@
       var coinSfx = new Audio('assets/audio/coin.mp3');
       coinSfx.volume = 0.5;
       coinSfx.preload = 'auto';
+      // 音效就绪标记
+      var sfxReady = false;
+      matchSfx.addEventListener('canplaythrough', function() { sfxReady = true; }, { once: true });
 
       window.__gameSfx = {
         playMatch: function() {
@@ -186,17 +191,20 @@
         document.addEventListener(e, unlock, { once: true });
       });
 
-      // 页面就绪后尝试播放
+      // 页面就绪后尝试播放（等待音频缓冲完成）
       function startBGM() {
         if (!unlocked) unlock();
         if (muted) return;
         gameBGM.volume = 0.3;
-        gameBGM.play().catch(function() {
-          // 如果仍然被拦截，等待用户交互
-          document.addEventListener('click', function retry() {
-            if (!muted) gameBGM.play().catch(function(){});
-          }, { once: true });
-        });
+        function doPlay() {
+          gameBGM.play().catch(function() {
+            document.addEventListener('click', function retry() {
+              if (!muted) gameBGM.play().catch(function(){});
+            }, { once: true });
+          });
+        }
+        if (bgmReady) { doPlay(); }
+        else { gameBGM.addEventListener('canplaythrough', doPlay, { once: true }); }
       }
 
       function toggleMute() {
