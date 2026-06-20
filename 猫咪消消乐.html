@@ -9336,11 +9336,12 @@ function Game() {
     }, t1);
   }
 
-  // 初始加载：第1关守护猫动画（延迟1.5秒，确保棋盘先渲染完）
+  // 初始加载：预加载第1关守护猫 + 延迟播放动画（避免图片未就绪）
   useEffect(function() {
     var cycleLv = ((currentLevel - 1) % 30) + 1;
     var guardianBreed = LEVEL_GUARDIAN_MAP[cycleLv];
     if (guardianBreed) {
+      preloadGuardianImages(guardianBreed);
       var timer = setTimeout(function() { playGuardianCatIntro(guardianBreed); }, 1500);
       return function() { clearTimeout(timer); };
     }
