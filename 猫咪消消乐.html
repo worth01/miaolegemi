@@ -10787,6 +10787,7 @@ function Game() {
           // 撤回 Lv1→Lv2→Lv3
           if (slotRef.current.length === 0) {
             setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
+            setSkillAnimVisible(false);
             break;
           }
           if (matchTimeoutRef.current) {
@@ -10811,7 +10812,7 @@ function Game() {
               setSlot(function(prev) { return prev.filter(function(s) { return s.uid !== lastNonGroom.uid; }); });
               setMoveHistory(function(h) { return h.slice(0, -1); });
             } else {
-              if (step === 0) setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
+              if (step === 0) { setSkillConflictMsg('上一步没有进行任何操作，撤销失败'); setSkillAnimVisible(false); }
               break;
             }
           }
@@ -11028,6 +11029,7 @@ function Game() {
           var removed = [];
           if (interferenceCandidates.length === 0) {
             setSkillConflictMsg('蹦跶技能已使用，很遗憾场上没有任何干扰卡。');
+            setSkillAnimVisible(false);
           } else {
             // 每张干扰卡独立判定
             for (var ic = 0; ic < interferenceCandidates.length; ic++) {
@@ -11043,6 +11045,7 @@ function Game() {
             }
             if (removed.length === 0 && !freezeClearedByCowardly) {
               setSkillConflictMsg('蹦跶技能已使用，很可惜没有任何事发生。');
+              setSkillAnimVisible(false);
             }
           }
           removed.forEach(function(t) {
