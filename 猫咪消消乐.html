@@ -4689,10 +4689,19 @@ const PERSONALITY_CLEAN_MAP = {
 const STANDARD_PERSONALITIES = new Set(['傲娇', '吃货', '胆小', '黏人', '高冷', '话痨', '懒散', '胆大', '独行', '狡黠']);
 function sanitizePersonality(raw, breedId) {
   if (!raw) return getDefaultPersonality(breedId);
-  const val = Array.isArray(raw) ? raw[0] : raw;
+  // 兼容多种格式: 字符串、数组、对象 { primary, secondary }
+  var val = raw;
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    val = raw.primary || raw.name || '';
+  } else if (Array.isArray(raw)) {
+    val = raw[0];
+  }
+  if (!val) return getDefaultPersonality(breedId);
+  if (typeof val !== 'string') return getDefaultPersonality(breedId);
   if (STANDARD_PERSONALITIES.has(val)) return val;
   if (PERSONALITY_CLEAN_MAP[val]) return PERSONALITY_CLEAN_MAP[val];
-  for (const std of STANDARD_PERSONALITIES) {
+  for (var i = 0; i < ['傲娇','吃货','胆小','黏人','高冷','话痨','懒散','胆大','独行','狡黠'].length; i++) {
+    var std = ['傲娇','吃货','胆小','黏人','高冷','话痨','懒散','胆大','独行','狡黠'][i];
     if (val.includes(std)) return std;
   }
   return getDefaultPersonality(breedId);
