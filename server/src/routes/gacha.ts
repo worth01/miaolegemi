@@ -118,7 +118,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
         ownerId: req.user!.userId,
         serialId: serial.id,
         location: 'bag',
-        personality,
+        personality: { primary: personality, secondary: null },
         bagExpiresAt: new Date(Date.now() + 30 * 86400000),
       },
       include: { cat_serial_registry: { include: { cat_species: true } } },
@@ -132,8 +132,8 @@ router.post('/pull', authMiddleware, async (req, res) => {
 
     res.json({ cat, bellsRemaining: (user as any).bells - 1, pityCount: newPity });
   } catch (error: any) {
-    console.error('Gacha pull error:', error);
-    res.status(500).json({ error: '抽卡失败' });
+    console.error('Gacha pull error:', error?.message || error, error?.stack);
+    res.status(500).json({ error: '抽卡失败: ' + (error?.message || '未知错误') });
   }
 });
 
