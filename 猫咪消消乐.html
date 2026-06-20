@@ -4439,76 +4439,124 @@ const CAT_SKILLS = {
     active: '挑出来',
     icon: '📤',
     activeDesc: '将收集槽中最底层2张牌移动到临时存放槽中',
-    color: '#FF9F43'
+    color: '#FF9F43',
+    lv2Name: '双橘协作',
+    lv2Desc: '将收集槽中最底层3张牌移动到临时存放槽中',
+    lv3Name: '三橘同行',
+    lv3Desc: '临时区扩至6格，收集槽清空移入',
   },
   '黑猫': {
     active: '撤回',
     icon: '↩️',
     activeDesc: '撤销上一步操作',
-    color: '#6C5CE7'
+    color: '#6C5CE7',
+    lv2Name: '后悔药',
+    lv2Desc: '撤销前2步操作',
+    lv3Name: '时光倒流',
+    lv3Desc: '撤销前2步操作，同时恢复撤销期间消耗的技能次数',
   },
   '白猫': {
     active: '重整',
     icon: '🔀',
     activeDesc: '重新打乱当前所有可点击卡牌',
-    color: '#DFE6E9'
+    color: '#DFE6E9',
+    lv2Name: '深度清洁',
+    lv2Desc: '重新打乱所有可点击卡牌，自动消除重整后出现的第1组三消',
+    lv3Name: '圣洁之浴',
+    lv3Desc: '重新打乱棋盘全部卡牌(含被遮挡层)，并消除1张干扰牌',
   },
   '蓝猫': {
     active: '冻结',
     icon: '❄️',
     activeDesc: '5秒内计时暂停',
-    color: '#74B9FF'
+    color: '#74B9FF',
+    lv2Name: '极寒',
+    lv2Desc: '8秒内计时暂停',
+    lv3Name: '冰冻圣域',
+    lv3Desc: '暂停10秒，结束后每完成2次三消+1秒',
   },
   // R级猫咪
   '布偶猫': {
     active: '叼走',
     icon: '🐾',
     activeDesc: '将收集槽中最底层3张牌移至临时存放槽中',
-    color: '#A29BFE'
+    color: '#A29BFE',
+    lv2Name: '大快朵颐',
+    lv2Desc: '将收集槽中最底层4张牌移至临时存放槽中',
+    lv3Name: '布偶冲击',
+    lv3Desc: '临时区扩至6格，从棋盘顶层随机取6张放入',
   },
   '三花猫': {
     active: '蹦跶',
     icon: '🐱',
     activeDesc: '有几率随机跳走场上任意1张干扰卡',
-    color: '#FD79A8'
+    color: '#FD79A8',
+    lv2Name: '连续蹦跶',
+    lv2Desc: '60%概率随机移除场上1张干扰牌',
+    lv3Name: '三花乱舞',
+    lv3Desc: '80%概率随机移除场上1张干扰牌',
   },
   '暹罗猫': {
     active: '瞬移',
     icon: '✨',
     activeDesc: '将收集槽3张卡打乱放回棋盘',
-    color: '#FDCB6E'
+    color: '#FDCB6E',
+    lv2Name: '闪现',
+    lv2Desc: '将收集槽4张卡打乱放回棋盘',
+    lv3Name: '时空乱流',
+    lv3Desc: '将收集槽和临时存放区的全部牌打乱放回棋盘',
   },
   '无毛猫': {
     active: '灼烧',
     icon: '🔥',
     activeDesc: '清除最顶层3张卡牌',
-    color: '#E17055'
+    color: '#E17055',
+    lv2Name: '烈焰',
+    lv2Desc: '清除顶层可消除的6张牌(2组三消)',
+    lv3Name: '焦土',
+    lv3Desc: '清除顶层(layer=0)所有可三消的牌',
   },
   // SR级猫咪
   '波斯猫': {
     active: '吐息',
     icon: '💨',
     activeDesc: '基于临时存放槽位，移出同等数量的牌',
-    color: '#00CEC9'
+    color: '#00CEC9',
+    lv2Name: '悠长吐息',
+    lv2Desc: '将收集槽中的牌填满临时存放槽+临时槽扩充1格',
+    lv3Name: '波斯传承',
+    lv3Desc: '将收集槽中的牌填满临时存放槽+本局额外1次重来机会',
   },
   '折耳猫': {
     active: '听声',
     icon: '👂',
     activeDesc: '撤销前2步，同时不计入失败次数',
-    color: '#81ECEC'
+    color: '#81ECEC',
+    lv2Name: '顺风耳',
+    lv2Desc: '撤销前3步，同时不计入失败次数',
+    lv3Name: '耳天通',
+    lv3Desc: '恢复本局开始时的棋盘状态+计时重置(鱼干保留，道具不归还)',
   },
   // SSR级猫咪
   '星空猫': {
     active: '永昼',
     icon: '🌟',
     activeDesc: '一定几率直接跳过本关',
-    color: '#A855F7'
+    color: '#A855F7',
+    lv2Name: '双星永昼',
+    lv2Desc: '跳关成功概率大幅提升',
+    lv3Name: '星河意志',
+    lv3Desc: '跳关成功+60鱼干；未触发+120鱼干',
   },
   '幸运猫': {
     active: '洗牌',
     icon: '🎴',
     activeDesc: '重新打乱当前棋盘所有卡牌',
-    color: '#F39C12'
+    color: '#F39C12',
+    lv2Name: '大洗牌',
+    lv2Desc: '重新打乱棋盘所有牌，自动消除顶层出现的3张可消除牌',
+    lv3Name: '幸运星',
+    lv3Desc: '重新打乱棋盘所有牌，自动消除顶层6张牌+有几率获1铃铛',
   }
 };
 
@@ -4640,6 +4688,54 @@ function sanitizePersonality(raw, breedId) {
     if (val.includes(std)) return std;
   }
   return getDefaultPersonality(breedId);
+}
+
+// ═══════════════════════════════════════
+// 猫咪共鸣系统 — 共鸣等级计算
+// ═══════════════════════════════════════
+function computeResonance(skillSlots) {
+  // skillSlots: [active0, active1, active2, passive0, passive1, passive2]
+  var active = skillSlots.slice(0, 3);
+  // 统计每个品种在出战位的出现次数和位置
+  var breedMap = {}; // { breed: { indices: [], count } }
+  for (var i = 0; i < 3; i++) {
+    var b = active[i];
+    if (!b) continue;
+    if (!breedMap[b]) breedMap[b] = { indices: [], count: 0, captainIndex: -1 };
+    breedMap[b].indices.push(i);
+    breedMap[b].count++;
+  }
+  // 确定队长（第一个出现的）和队员
+  for (var breed in breedMap) {
+    var info = breedMap[breed];
+    info.indices.sort(function(a, b) { return a - b; });
+    info.captainIndex = info.indices[0];
+    info.memberIndices = info.indices.slice(1);
+    info.level = Math.min(info.count, 3); // 共鸣等级 1/2/3
+  }
+  // 构建每个出战位的共鸣信息
+  var resonanceLevel = [1, 1, 1];   // 每个位置的共鸣等级
+  var isCaptain = [false, false, false];
+  var isMember = [false, false, false];
+  var captainBreed = [null, null, null]; // 该位置所属的队长品种（队员指向队长品种）
+  for (var i = 0; i < 3; i++) {
+    var b2 = active[i];
+    if (!b2) continue;
+    var info2 = breedMap[b2];
+    if (!info2) continue;
+    resonanceLevel[i] = info2.level;
+    isCaptain[i] = (info2.captainIndex === i);
+    isMember[i] = !isCaptain[i];
+    captainBreed[i] = b2;
+  }
+  return {
+    resonanceLevel: resonanceLevel,   // [1, 2, 2] 表示位置0是Lv1，位置1和2是Lv2
+    isCaptain: isCaptain,             // [true, false, false]
+    isMember: isMember,               // [false, true, true]
+    captainBreed: captainBreed,       // ['橘猫', '橘猫', null]
+    breedGroups: breedMap,            // { '橘猫': { count:2, level:2, ... } }
+    activeBreeds: active,             // ['橘猫', '橘猫', null]
+  };
 }
 
 /* ═══════════════════════════════════════
@@ -6212,10 +6308,12 @@ const BREED_TO_SKILL_ID = {
   '星空猫': '011',
   '幸运猫': '012'
 };
-function getSkillVideoSrc(breed) {
-  const id = BREED_TO_SKILL_ID[breed];
+function getSkillVideoSrc(breed, level) {
+  var id = BREED_TO_SKILL_ID[breed];
   if (!id) return '';
-  return `assets/skills/cat_${id}_skill.mp4`;
+  var lv = level || 1;
+  var suffix = lv >= 3 ? '3' : (lv >= 2 ? '2' : '');
+  return 'assets/skills/cat_' + id + '_skill' + suffix + '.mp4';
 }
 
 /* ═══════════════════════════════════════
@@ -6225,6 +6323,7 @@ function SkillAnimationOverlay({
   breed,
   skill,
   rarity,
+  resonanceLevel,
   visible,
   onClose,
   onProgress
@@ -6237,7 +6336,7 @@ function SkillAnimationOverlay({
   const closedRef = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const videoSrc = getSkillVideoSrc(breed);
+  const videoSrc = getSkillVideoSrc(breed, resonanceLevel || 1);
   const triggerClose = useCallback(() => {
     if (closedRef.current) return;
     closedRef.current = true;
@@ -6379,18 +6478,31 @@ function SkillConfirmModal({
   skill,
   onConfirm,
   onCancel,
-  conflict
+  conflict,
+  resonanceLevel
 }) {
   if (!breed || !skill) return null;
-  const confirmDisabled = !!conflict;
-  const rarityColors = {
+  var confirmDisabled = !!conflict;
+  var rarityColors = {
     N: '#B2BEC3',
     R: '#45B7D1',
     SR: '#6C5CE7',
     SSR: '#FD9644'
   };
-  const rarity = BREED_RARITY[breed] || 'N';
-  const color = rarityColors[rarity];
+  var rarity = BREED_RARITY[breed] || 'N';
+  var color = rarityColors[rarity];
+  var rLevel = resonanceLevel || 1;
+  var displayName = skill.active;
+  var displayDesc = skill.activeDesc;
+  if (rLevel === 2 && skill.lv2Name) {
+    displayName = 'Lv2 \u00B7 ' + skill.lv2Name;
+    displayDesc = skill.lv2Desc || skill.activeDesc;
+  } else if (rLevel === 3 && skill.lv3Name) {
+    displayName = 'Lv3\u89C9\u9192 \u00B7 ' + skill.lv3Name;
+    displayDesc = skill.lv3Desc || skill.activeDesc;
+  }
+  var nameColor = rLevel >= 3 ? '#FD9644' : rLevel >= 2 ? '#A29BFE' : '#F0EDFF';
+  var borderGlow = rLevel >= 3 ? 'rgba(253,150,68,0.5)' : rLevel >= 2 ? 'rgba(162,155,254,0.5)' : color + '40';
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
@@ -6408,15 +6520,15 @@ function SkillConfirmModal({
     },
     onClick: onCancel
   }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
+    onClick: function(e) { e.stopPropagation(); },
     style: {
       width: 280,
       background: 'linear-gradient(180deg, #2A1F4E 0%, #1A1235 100%)',
       borderRadius: 24,
       padding: '28px 22px',
       textAlign: 'center',
-      border: `1px solid ${color}40`,
-      boxShadow: `0 24px 64px rgba(0,0,0,0.5), 0 0 40px ${color}15`,
+      border: "1px solid " + borderGlow,
+      boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 40px " + color + "15",
       animation: 'slideUp 0.3s ease-out'
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -6430,10 +6542,21 @@ function SkillConfirmModal({
       display: 'block',
       filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
     },
-    onError: e => {
+    onError: function(e) {
       e.target.style.display = 'none';
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), rLevel >= 2 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: rLevel >= 3 ? '#FD9644' : '#A29BFE',
+      background: rLevel >= 3 ? 'rgba(253,150,68,0.15)' : 'rgba(162,155,254,0.15)',
+      borderRadius: 8,
+      padding: '2px 10px',
+      display: 'inline-block',
+      marginBottom: 8
+    }
+  }, rLevel >= 3 ? '\u4E09\u732B\u89C9\u9192' : '\u53CC\u732B\u5171\u9E23'), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 600,
@@ -6444,17 +6567,17 @@ function SkillConfirmModal({
     style: {
       fontSize: 20,
       fontWeight: 800,
-      color: '#F0EDFF',
+      color: nameColor,
       marginBottom: 6
     }
-  }, skill.active), /*#__PURE__*/React.createElement("div", {
+  }, displayName), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: 'rgba(240,237,255,0.6)',
       lineHeight: 1.6,
       marginBottom: 20
     }
-  }, skill.activeDesc), /*#__PURE__*/React.createElement("div", {
+  }, displayDesc), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 10
@@ -6478,13 +6601,13 @@ function SkillConfirmModal({
       flex: 1,
       height: 44,
       borderRadius: 14,
-      background: confirmDisabled ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg, ${color}, ${color}CC)`,
+      background: confirmDisabled ? 'rgba(255,255,255,0.06)' : "linear-gradient(135deg, " + color + ", " + color + "CC)",
       border: confirmDisabled ? '1px solid rgba(255,255,255,0.1)' : 'none',
       cursor: 'pointer',
       fontSize: 14,
       fontWeight: 700,
       color: confirmDisabled ? 'rgba(255,255,255,0.3)' : '#fff',
-      boxShadow: confirmDisabled ? 'none' : `0 6px 16px ${color}40`
+      boxShadow: confirmDisabled ? 'none' : "0 6px 16px " + color + "40"
     }
   }, "\u4F7F\u7528\u6280\u80FD"))));
 }
@@ -6769,20 +6892,23 @@ function CollectionSlot({
   freezeGridCount = 1,
   compact = false
 }) {
-  const count = maxSlots;
-  const [slotAnim, setSlotAnim] = useState(null);
-  const H = TILE_H;
-  const slotW = TILE_W;
-  const slotH = TILE_H;
+  var count = maxSlots;
+  var [slotAnim, setSlotAnim] = useState(null);
+  var gapPx = compact ? 3 : 2;
+  var padPx = 4;
+  var slotW = TILE_W;
+  var slotH = TILE_H;
+  // 计算槽位区域精确宽度（槽位 + 间距 + 内边距）
+  var slotsAreaW = count * slotW + (count - 1) * gapPx + padPx * 2;
 
   // P5: 检测新卡牌入场动画
   useEffect(() => {
     if (slot.length > 0) {
-      const lastItem = slot[slot.length - 1];
+      var lastItem = slot[slot.length - 1];
       if (lastItem && !matching.includes(lastItem.uid)) {
         setSlotAnim(lastItem.uid);
-        const timer = setTimeout(() => setSlotAnim(null), 400);
-        return () => clearTimeout(timer);
+        var timer = setTimeout(function() { setSlotAnim(null); }, 400);
+        return function() { clearTimeout(timer); };
       }
     }
   }, [slot, matching]);
@@ -6790,15 +6916,16 @@ function CollectionSlot({
     style: {
       position: 'relative',
       width: '100%',
-      height: H + 12,
+      height: TILE_H + 12,
       padding: '4px 0'
     }
   }, showBg && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       top: 0,
-      left: 0,
-      width: '100%',
+      left: '50%',
+      width: slotsAreaW,
+      marginLeft: -Math.round(slotsAreaW / 2),
       height: '100%',
       background: 'rgba(255,255,255,0.12)',
       backdropFilter: 'blur(10px)',
@@ -6815,8 +6942,8 @@ function CollectionSlot({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: compact ? 3 : 2,
-      padding: '0 4px',
+      gap: gapPx,
+      padding: '0 ' + padPx + 'px',
       zIndex: 1
     }
   }, Array.from({
@@ -6933,12 +7060,14 @@ function CollectionSlot({
         animation: 'frostRise 2.2s ease-out infinite 0.5s',
         filter: 'blur(2px)'
       }
-    })) : /*#__PURE__*/React.createElement(React.Fragment, null, !item && /*#__PURE__*/React.createElement("div", {
+    })) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute', top: 0, left: 0,
         width: '100%', height: '100%',
         borderRadius: 12, pointerEvents: 'none',
-        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.08), inset 0 -1px 2px rgba(255,255,255,0.5)'
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.12), inset 0 -1px 3px rgba(255,255,255,0.6)',
+        background: 'rgba(255,255,255,0.04)'
       }
     }), item ? (() => {
       let cat = CAT_TYPES.find(c => c.id === (item.visualType || item.type));
@@ -8744,11 +8873,6 @@ function Game() {
   const personalityEffectsRef = useRef(null); // 性格效果缓存，避免回调中重复计算
   const [phase, setPhase] = useState('playing'); // levelSelect → prep → playing
   const retryAttemptsUsedRef = useRef(0); // 黏人已使用的再来一次次数
-  // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
-  const personalityEffects = React.useMemo(() => computePersonalityEffects(battleCats), [battleCats]);
-  useEffect(() => {
-    personalityEffectsRef.current = personalityEffects;
-  }, [personalityEffects]);
   useEffect(() => {
     retryAttemptsUsedRef.current = retryAttemptsUsed;
   }, [retryAttemptsUsed]);
@@ -8767,6 +8891,18 @@ function Game() {
         setFreezeThawCounter(next);
       }
     }
+    // ═══ 蓝猫Lv3共鸣：冰冻圣域 结束后每2次三消+1秒 ═══
+    if (lv3FreezeBonusRef.current && lv3FreezeBonusRef.current.active && comboCount > prevComboRef.current) {
+      lv3FreezeBonusRef.current.comboCount++;
+      if (lv3FreezeBonusRef.current.comboCount % 2 === 0 && lv3FreezeBonusRef.current.totalAdded < lv3FreezeBonusRef.current.maxBonus) {
+        lv3FreezeBonusRef.current.totalAdded++;
+        timeLeftRef.current += 1;
+        setTimeLeft(function(prev) { return prev + 1; });
+      }
+      if (lv3FreezeBonusRef.current.totalAdded >= lv3FreezeBonusRef.current.maxBonus) {
+        lv3FreezeBonusRef.current.active = false;
+      }
+    }
     prevComboRef.current = comboCount;
   }, [comboCount, freezeThawCounter, frozenSlot, gameState]);
   const [battlePrepVisible, setBattlePrepVisible] = useState(initialCats.length === 0 ? false : true); // 备战弹窗显示状态
@@ -8776,6 +8912,8 @@ function Game() {
   const uidRef = useRef(0);
   const slotRef = useRef([]);
   const tilesRef = useRef(tiles);
+  const initialTilesRef = useRef(null); // 折耳猫Lv3: 保存本局初始棋盘状态
+  const lv3FreezeBonusRef = useRef(null); // 蓝猫Lv3: 冰冻圣域加时追踪 { active, comboCount, totalAdded, maxBonus }
   const tilesVersionRef = useRef(0); // 重绘版本号：tiles 任何结构变化均递增
   const shuffleAnimRef = useRef(null); // 白猫「重整」飞散动画状态
   const pendingSkillCallbackRef = useRef(null); // 非SSR技能延迟执行回调
@@ -8802,6 +8940,28 @@ function Game() {
 
   // P2: Skill system
   const [skillSlots, setSkillSlots] = useState([]); // [active1, active2, active3, passive1, passive2, passive3]
+  // ═══ 猫咪共鸣系统 — 共鸣等级计算 ═══
+  const resonance = React.useMemo(() => computeResonance(skillSlots), [skillSlots]);
+  const resonanceRef = useRef(resonance);
+  useEffect(() => { resonanceRef.current = resonance; }, [resonance]);
+  // 性格效果统一计算（useMemo 同步计算 + ref 供回调读取）
+  const personalityEffects = React.useMemo(() => {
+    var base = computePersonalityEffects(battleCats);
+    // ═══ 猫咪共鸣：队员性格效果减半 ═══
+    var hasMembers = resonance.isMember.some(function(m) { return m; });
+    if (hasMembers) {
+      var memberCount = resonance.isMember.filter(function(m) { return m; }).length;
+      var captainCount = 3 - memberCount;
+      var discount = 1 - memberCount * 0.5 / (captainCount + memberCount * 0.5);
+      base.fishBonus = Math.round(base.fishBonus * discount * 100) / 100;
+      base.scoreBonus = Math.round(base.scoreBonus * discount * 100) / 100;
+      base.skillScore = Math.round(base.skillScore * discount);
+    }
+    return base;
+  }, [battleCats, resonance]);
+  useEffect(() => {
+    personalityEffectsRef.current = personalityEffects;
+  }, [personalityEffects]);
   const [notifIndex, setNotifIndex] = useState(0);
 
   // ═══ 通知栏消息（干扰/禁用/被动 合一轮播） ═══
@@ -9213,6 +9373,7 @@ function Game() {
     reminderLastTimeRef.current = {};
     reminderCountRef.current = 0;
     skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
     setReminderBubble(null);
     setReminderGlow({});
     setTiles(generateBoard(level, selTimidFx));
@@ -9560,6 +9721,33 @@ function Game() {
         if (elapsed >= shuffleAnim.totalDuration) {
           // 动画结束：应用目标状态
           setTiles(shuffleAnim.targetTiles);
+          // ═══ 白猫共鸣 Lv2: 重整后自动消除第1组三消 ═══
+          if (shuffleAnim.lv2AutoMatch) {
+            var afterTiles = shuffleAnim.targetTiles;
+            var clickable = afterTiles.filter(function(t) { return !t.removed && !t.inSlot && !isTileBlocked(t, afterTiles) && !t.isInterference; });
+            var typeCounts = {};
+            for (var ci = 0; ci < clickable.length; ci++) {
+              var ct = clickable[ci].type;
+              typeCounts[ct] = (typeCounts[ct] || 0) + 1;
+            }
+            var matchType = null;
+            for (var mt in typeCounts) {
+              if (typeCounts[mt] >= 3) { matchType = mt; break; }
+            }
+            if (matchType) {
+              var matchTiles = clickable.filter(function(t) { return t.type === matchType; }).slice(0, 3);
+              var matchIds = new Set(matchTiles.map(function(t) { return t.id; }));
+              setTiles(function(prev) { return prev.map(function(t) { return matchIds.has(t.id) ? Object.assign({}, t, { removed: true, inSlot: false }) : t; }); });
+            }
+          }
+          // ═══ 白猫共鸣 Lv3: 重整后消除1张干扰牌 ═══
+          if (shuffleAnim.lv3RemoveInterference) {
+            var interfs = shuffleAnim.targetTiles.filter(function(t) { return !t.removed && !t.inSlot && t.isInterference && (t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || t.interferenceType === 'danger'); });
+            if (interfs.length > 0) {
+              var pick = interfs[Math.floor(Math.random() * interfs.length)];
+              setTiles(function(prev) { return prev.map(function(t) { return t.id === pick.id ? Object.assign({}, t, { removed: true, inSlot: false }) : t; }); });
+            }
+          }
           shuffleAnimRef.current = null;
         } else {
           // 插值计算每张牌的动画位置
@@ -10313,17 +10501,22 @@ function Game() {
     // 检查使用次数
     if (skillUseCount[key] >= skillUseMax[key]) return;
     if (gameState !== GAME_PLAYING) return;
+    // 共鸣系统：队员按钮不可点击
+    if (resonance.isMember[skillIndex]) return;
     const breedId = skillSlots[skillIndex];
     if (!breedId) return;
     const skill = CAT_SKILLS[breedId];
     if (!skill) return;
     // 羁绊【压制】：橘猫+布偶猫同时参战 → 橘猫被压制，无法使用技能
     const conflict = breedId === '橘猫' && skillSlots.slice(0, 3).some(function(b) { return b === '布偶猫'; });
+    // 共鸣等级
+    const rLevel = resonance.resonanceLevel[skillIndex] || 1;
     setConfirmSkill({
       index: skillIndex,
       breed: breedId,
       skill,
-      conflict: conflict
+      conflict: conflict,
+      resonanceLevel: rLevel
     });
   };
   const executeSkill = () => {
@@ -10338,6 +10531,7 @@ function Game() {
     const skillIndex = confirmSkill.index;
     const breedId = confirmSkill.breed;
     const skill = confirmSkill.skill;
+    const rLevel = confirmSkill.resonanceLevel || 1; // 共鸣等级 Lv1/Lv2/Lv3
     setConfirmSkill(null);
     const key = `active${skillIndex}`;
     if (skillUseCount[key] >= skillUseMax[key]) return;
@@ -10360,7 +10554,8 @@ function Game() {
     setSkillAnimData({
       breed: breedId,
       skill,
-      rarity
+      rarity,
+      resonanceLevel: rLevel
     });
     if (isSSR) {
       // SSR：立即显示动画卡片 + 立即生效
@@ -10481,12 +10676,13 @@ function Game() {
     switch (breedId) {
       case '橘猫':
         {
-          // P3: 挑出来 - 将收集槽中最底层2张牌移动到临时存放槽中（跳过冰冻牌和舔毛牌）
-          const startIdx = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
-          const nonGroomItems = slotRef.current.slice(startIdx).filter(s => !s.isGroom);
-          const tempCapacity = 3 + slotBonus;
-          const available = Math.max(0, tempCapacity - tempStorageRef.current.length);
-          const toMove = nonGroomItems.slice(0, Math.min(2, available));
+          // 挑出来 Lv1→Lv2→Lv3
+          var startIdx = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
+          var nonGroomItems = slotRef.current.slice(startIdx).filter(function(s) { return !s.isGroom; });
+          var tempCapacity = rLevel >= 3 ? 6 : (3 + slotBonus);
+          var available = Math.max(0, tempCapacity - tempStorageRef.current.length);
+          var moveCount = rLevel >= 3 ? nonGroomItems.length : (rLevel >= 2 ? 3 : 2);
+          var toMove = nonGroomItems.slice(0, Math.min(moveCount, available));
           if (toMove.length === 0) break;
 
           // ═══ 挑出来夸张飞行动画：牌从收集槽弹起 → 弧线飞入临时存放层 ═══
@@ -10570,7 +10766,7 @@ function Game() {
         }
       case '黑猫':
         {
-          // P3: 撤回 - 撤销上一步操作（跳过舔毛牌，舔毛牌无法撤回）
+          // 撤回 Lv1→Lv2→Lv3
           if (slotRef.current.length === 0) {
             setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
             break;
@@ -10580,64 +10776,82 @@ function Game() {
             matchTimeoutRef.current = null;
           }
           setMatching([]);
-          // 从末尾找到最近一张非舔毛牌
-          let lastNonGroom = null;
-          for (let i = slotRef.current.length - 1; i >= 0; i--) {
-            if (!slotRef.current[i].isGroom) {
-              lastNonGroom = slotRef.current[i];
+          var undoSteps = rLevel >= 2 ? 2 : 1;
+          for (var step = 0; step < undoSteps; step++) {
+            if (slotRef.current.length === 0) break;
+            // 从末尾找到最近一张非舔毛牌
+            var lastNonGroom = null;
+            for (var si = slotRef.current.length - 1; si >= 0; si--) {
+              if (!slotRef.current[si].isGroom) {
+                lastNonGroom = slotRef.current[si];
+                break;
+              }
+            }
+            if (lastNonGroom) {
+              var tileExists = tilesRef.current.some(function(t) { return t.id === lastNonGroom.tileId && t.removed; });
+              if (tileExists) setTiles(function(prev) { return prev.map(function(t) { return t.id === lastNonGroom.tileId ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
+              setSlot(function(prev) { return prev.filter(function(s) { return s.uid !== lastNonGroom.uid; }); });
+              setMoveHistory(function(h) { return h.slice(0, -1); });
+            } else {
+              if (step === 0) setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
               break;
             }
           }
-          if (lastNonGroom) {
-            const tileExists = tilesRef.current.some(t => t.id === lastNonGroom.tileId && t.removed);
-            if (tileExists) setTiles(prev => prev.map(t => t.id === lastNonGroom.tileId ? {
-              ...t,
-              removed: false,
-              inSlot: false
-            } : t));
-            setSlot(prev => prev.filter(s => s.uid !== lastNonGroom.uid));
-            setMoveHistory(h => h.slice(0, -1));
-          } else {
-            setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
+          // Lv3: 恢复撤销期间消耗的技能次数
+          if (rLevel >= 3) {
+            setSkillUseCount(function(prev) {
+              var next = Object.assign({}, prev);
+              next.active0 = 0;
+              next.active1 = 0;
+              next.active2 = 0;
+              return next;
+            });
+            setUsedSkills({ active0: false, active1: false, active2: false });
           }
           break;
         }
       case '白猫':
         {
-          // P3: 重整 - 飞散动画：牌从原位弹起飞散，再弧线归位到新位置
-          const remaining = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current));
+          // 重整 Lv1→Lv2→Lv3: 飞散动画
+          var remaining;
+          if (rLevel >= 3) {
+            // Lv3: 含被遮挡层的全部卡牌
+            remaining = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot; });
+          } else {
+            remaining = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current); });
+          }
           if (remaining.length === 0) break;
-          const positions = remaining.map(t => ({ col: t.col, row: t.row, layer: t.layer }));
-          const shuffledPositions = shuffleArr(positions);
-          // 预计算目标tiles（动画结束后一次性应用）
-          const targetTiles = tilesRef.current.map(t => {
-            if (t.removed || t.inSlot || isTileBlocked(t, tilesRef.current)) return t;
-            const idx = remaining.findIndex(r => r.id === t.id);
+          var positions = remaining.map(function(t) { return { col: t.col, row: t.row, layer: t.layer }; });
+          var shuffledPositions = shuffleArr(positions);
+          // 预计算目标tiles
+          var targetTiles = tilesRef.current.map(function(t) {
+            if (t.removed || t.inSlot) return t;
+            if (rLevel < 3 && isTileBlocked(t, tilesRef.current)) return t;
+            var idx = remaining.findIndex(function(r) { return r.id === t.id; });
             if (idx === -1) return t;
-            return { ...t, col: shuffledPositions[idx].col, row: shuffledPositions[idx].row, layer: shuffledPositions[idx].layer };
+            return Object.assign({}, t, { col: shuffledPositions[idx].col, row: shuffledPositions[idx].row, layer: shuffledPositions[idx].layer });
           });
-          // 为每张牌构建飞散动画数据（从棋盘中心向外爆炸方向）
-          const boardCX = boardWidth / 2;
-          const boardCY = boardHeight / 2;
-          const animItems = remaining.map((t, idx) => {
-            const endPos = shuffledPositions[idx];
-            const startX = tileX(t);
-            const startY = tileY(t);
-            const endX = tileX({ ...t, col: endPos.col, row: endPos.row, layer: endPos.layer });
-            const endY = tileY({ ...t, col: endPos.col, row: endPos.row, layer: endPos.layer });
-            const midBaseX = (startX + endX) / 2;
-            const midBaseY = (startY + endY) / 2;
-            const dx = midBaseX - boardCX;
-            const dy = midBaseY - boardCY;
-            const baseAngle = Math.atan2(dy, dx);
-            const scatterDist = 50 + Math.random() * 100;
-            const jitterAngle = baseAngle + (Math.random() - 0.5) * 1.2;
+          var boardCX = boardWidth / 2;
+          var boardCY = boardHeight / 2;
+          var animItems = remaining.map(function(t, idx) {
+            var endPos = shuffledPositions[idx];
+            var startX = tileX(t);
+            var startY = tileY(t);
+            var endX = tileX(Object.assign({}, t, { col: endPos.col, row: endPos.row, layer: endPos.layer }));
+            var endY = tileY(Object.assign({}, t, { col: endPos.col, row: endPos.row, layer: endPos.layer }));
+            var midBaseX = (startX + endX) / 2;
+            var midBaseY = (startY + endY) / 2;
+            var dx = midBaseX - boardCX;
+            var dy = midBaseY - boardCY;
+            var baseAngle = Math.atan2(dy, dx);
+            var scatterDist = 50 + Math.random() * 100;
+            var jitterAngle = baseAngle + (Math.random() - 0.5) * 1.2;
             return {
               tileId: t.id,
-              startX, startY,
+              startX: startX, startY: startY,
               midX: midBaseX + Math.cos(jitterAngle) * scatterDist,
               midY: midBaseY + Math.sin(jitterAngle) * scatterDist - 30,
-              endX, endY,
+              endX: endX, endY: endY,
               rotation: (Math.random() - 0.5) * 40,
             };
           });
@@ -10648,36 +10862,64 @@ function Game() {
             returnDuration: 280,
             totalDuration: 620,
             items: animItems,
-            targetTiles,
+            targetTiles: targetTiles,
+            // Lv2: 重整后自动消除第1组三消
+            lv2AutoMatch: rLevel >= 2,
+            // Lv3: 重整后消除1张干扰牌
+            lv3RemoveInterference: rLevel >= 3,
           };
           break;
         }
       case '蓝猫':
         {
-          // P3: 冻结 - 5秒内计时暂停
+          // 冻结 Lv1→Lv2→Lv3
+          var freezeDuration = rLevel >= 3 ? 10000 : (rLevel >= 2 ? 8000 : 5000);
           timerPauseRef.current = true;
           setTimerPaused(true);
-          setTimeout(() => {
+          setTimeout(function() {
             timerPauseRef.current = false;
             setTimerPaused(false);
-          }, 5000);
+            // Lv3: 暂停结束后，每完成2次三消额外+1秒（上限30秒）
+            if (rLevel >= 3) {
+              lv3FreezeBonusRef.current = { active: true, comboCount: 0, totalAdded: 0, maxBonus: 30 };
+            }
+          }, freezeDuration);
           break;
         }
       case '布偶猫':
         {
-          // P3: 叼走 - 将收集槽中最底层3张牌移至临时存放槽中（跳过冰冻牌和舔毛牌）
-          const startIdx = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
-          const nonGroomItems3 = slotRef.current.slice(startIdx).filter(s => !s.isGroom);
-          const tempCapacity3 = 3 + slotBonus;
-          const available3 = Math.max(0, tempCapacity3 - tempStorageRef.current.length);
-          const toMove3 = nonGroomItems3.slice(0, Math.min(3, available3));
+          // 叼走 Lv1→Lv2→Lv3
+          if (rLevel >= 3) {
+            // Lv3: 临时区扩至6格，从棋盘顶层随机取6张牌
+            var topLayerTiles = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && !t.isInterference; });
+            // 从maxLayer开始取
+            var maxL = 0;
+            for (var ti = 0; ti < topLayerTiles.length; ti++) { if (topLayerTiles[ti].layer > maxL) maxL = topLayerTiles[ti].layer; }
+            var topMost = topLayerTiles.filter(function(t) { return t.layer === maxL; });
+            var pickCount = Math.min(6, topMost.length);
+            var picked = shuffleArr(topMost).slice(0, pickCount);
+            if (picked.length === 0) break;
+            var pickedUids = new Set(picked.map(function(s) { return s.uid || s.id; }));
+            setTiles(function(prev) { return prev.map(function(t) { return pickedUids.has(t.uid || t.id) ? Object.assign({}, t, { inSlot: false, removed: true }) : t; }); });
+            setTempStorage(function(prev) {
+              var newItems = picked.map(function(p) { return { uid: 'lv3_' + p.id + '_' + Date.now(), type: p.type, tileId: p.id, isFromBoard: true }; });
+              return newItems.concat(prev);
+            });
+            break;
+          }
+          // Lv1/Lv2: 移动收集槽底牌到临时区
+          var startIdx = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
+          var nonGroomItems3 = slotRef.current.slice(startIdx).filter(function(s) { return !s.isGroom; });
+          var tempCapacity3 = 3 + slotBonus;
+          var available3 = Math.max(0, tempCapacity3 - tempStorageRef.current.length);
+          var moveCount3 = rLevel >= 2 ? 4 : 3;
+          var toMove3 = nonGroomItems3.slice(0, Math.min(moveCount3, available3));
           if (toMove3.length === 0) break;
 
-          // ═══ 叼走夸张飞行动画：牌从收集槽弹起 → 弧线飞入临时存放层 ═══
+          // ═══ 叼走夸张飞行动画 ═══
           var mainSlotEl = document.querySelector('#main-slot');
           var tempWrapper = mainSlotEl ? mainSlotEl.previousElementSibling : null;
           toMove3.forEach(function(item, moveIdx) {
-            // 找到该牌在收集槽中的原始索引
             var slotIdx = -1;
             for (var si = 0; si < slotRef.current.length; si++) {
               if (slotRef.current[si].uid === item.uid) { slotIdx = si; break; }
@@ -10686,12 +10928,10 @@ function Game() {
             var srcCell = mainSlotEl ? mainSlotEl.querySelector('[data-slot-index="' + slotIdx + '"]') : null;
             if (!srcCell) return;
             var srcRect = srcCell.getBoundingClientRect();
-            // 目标位置：临时存放层（新牌 prepend 到最前面）
             var dstIdx = moveIdx;
             var dstCell = tempWrapper ? tempWrapper.querySelector('[data-slot-index="' + dstIdx + '"]') : null;
             var dstRect = dstCell ? dstCell.getBoundingClientRect()
               : { left: srcRect.left, top: srcRect.top - 70, right: srcRect.right, bottom: srcRect.top - 70 + TILE_H };
-            // 获取卡牌图片
             var flyImgKey = item.type;
             if (item.isInterference) {
               var flyIc = INTERFERENCE_CARDS[item.interferenceType];
@@ -10699,7 +10939,6 @@ function Game() {
             }
             var flyImg = _tileImages[flyImgKey];
             if (!flyImg || flyImg.tagName !== 'IMG' || !flyImg.complete || !flyImg.naturalWidth) return;
-            // 创建飞行DOM元素
             var el = document.createElement('div');
             el.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;'
               + 'width:' + TILE_W + 'px;height:' + TILE_H + 'px;'
@@ -10710,7 +10949,6 @@ function Game() {
               + 'will-change:transform,opacity;opacity:1;'
               + 'box-shadow:0 8px 32px rgba(0,0,0,0.35);';
             document.body.appendChild(el);
-            // 错开启动 + 弧线路径
             var startTime = performance.now() + moveIdx * 90;
             var duration = 520;
             var sx = srcRect.left + srcRect.width / 2;
@@ -10723,19 +10961,14 @@ function Game() {
                 var elapsed = now - startTime;
                 if (elapsed < 0) { requestAnimationFrame(flyLoop); return; }
                 var t = Math.min(elapsed / duration, 1);
-                // easeInOutCubic 缓动
                 var et = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                // 夸张弧线：先下蹲蓄力 → 猛弹飞起 → 弧线滑翔 → 落入目标
-                var arcOffset = (1 - et) * (-20) + et * 0; // 简单插值
                 var xOff = dx * et;
-                var yOff = dy * et - 80 * Math.sin(Math.PI * et); // 抛物线弧
-                // 缩放：弹起时放大 → 滑翔时缩小 → 落入时轻微弹跳
+                var yOff = dy * et - 80 * Math.sin(Math.PI * et);
                 var scale;
-                if (t < 0.15) scale = 1 + t * 1.33;          // 0→1.2 蓄力放大
-                else if (t < 0.4) scale = 1.2 - (t - 0.15) * 0.8; // 1.2→1.0 缩小
-                else if (t < 0.85) scale = 1.0 - (t - 0.4) * 0.33; // 1.0→0.85 持续缩小
-                else scale = 0.85 + (t - 0.85) * 1.0;          // 0.85→1.0 弹回
-                // 旋转：叼走时先反向扭转再归正
+                if (t < 0.15) scale = 1 + t * 1.33;
+                else if (t < 0.4) scale = 1.2 - (t - 0.15) * 0.8;
+                else if (t < 0.85) scale = 1.0 - (t - 0.4) * 0.33;
+                else scale = 0.85 + (t - 0.85) * 1.0;
                 var rot = (moveIdx - 1) * 18 * Math.sin(Math.PI * et);
                 elRef.style.transform = 'translate(' + xOff + 'px,' + yOff + 'px) scale(' + scale + ') rotate(' + rot + 'deg)';
                 elRef.style.opacity = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
@@ -10749,197 +10982,249 @@ function Game() {
             })();
           });
 
-          const movedUids3 = new Set(toMove3.map(s => s.uid));
-          setSlot(prev => prev.filter(s => !movedUids3.has(s.uid)));
-          setTempStorage(prev => [...toMove3, ...prev]);
-          setMoveHistory(h => h.slice(Math.max(0, h.length - toMove3.length)));
-          toMove3.forEach(item => {
-            setTiles(prev => prev.map(t => t.id === item.tileId ? {
-              ...t,
-              inSlot: false,
-              removed: true
-            } : t));
+          var movedUids3 = new Set(toMove3.map(function(s) { return s.uid; }));
+          setSlot(function(prev) { return prev.filter(function(s) { return !movedUids3.has(s.uid); }); });
+          setTempStorage(function(prev) { return toMove3.concat(prev); });
+          setMoveHistory(function(h) { return h.slice(Math.max(0, h.length - toMove3.length)); });
+          toMove3.forEach(function(item) {
+            setTiles(function(prev) { return prev.map(function(t) { return t.id === item.tileId ? Object.assign({}, t, { inSlot: false, removed: true }) : t; }); });
           });
           break;
         }
       case '三花猫':
         {
-          // 胆小克制激活时，蹦跶必定跳走冰冻牌（胆小性格先手优势，提前结束解冻倒计时）
-          let freezeClearedByCowardly = false;
+          // 蹦跶 Lv1(50%)→Lv2(60%)→Lv3(80%): 每张干扰卡独立判定
+          var successRate = rLevel >= 3 ? 0.8 : (rLevel >= 2 ? 0.6 : 0.5);
+          // 胆小克制：提前结束解冻倒计时
+          var freezeClearedByCowardly = false;
           if (frozenSlot && freezeThawCounter > 0) {
             emitExplosion(100, 600, '#74B9FF');
             setFrozenSlot(null);
             freezeClearedByCowardly = true;
           }
-          // 蹦跶：随机跳走场上任意1张干扰卡（6种均可）
-          // 舔毛牌/冰冻牌/三花牌/小狗牌 → 50%几率；真身牌/粘连牌 → 0%
-          const interferenceCandidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current) && t.isInterference);
-          // 冰冻牌不出现在棋盘上，直接冻结收集槽，故作为虚拟候选加入
+          // 干扰候选: 舔毛/冰冻/三花/小狗牌，排除真身牌/粘连牌
+          var interferenceCandidates = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && !isTileBlocked(t, tilesRef.current) && t.isInterference && t.interferenceType !== 'disguise' && t.interferenceType !== 'sticky'; });
           if (frozenSlot && !freezeClearedByCowardly) {
             interferenceCandidates.push({ __isFrozenSlot: true, interferenceType: 'freeze', id: '__frozen_slot__' });
           }
-          console.log('[蹦跶] interferenceCandidates:', interferenceCandidates.length, interferenceCandidates.map(t => ({ type: t.type, interferenceType: t.interferenceType, row: t.row, col: t.col, layer: t.layer, __isFrozenSlot: t.__isFrozenSlot })));
-          let removed = [];
+          var removed = [];
           if (interferenceCandidates.length === 0) {
-            // 场上无干扰卡
             setSkillConflictMsg('蹦跶技能已使用，很遗憾场上没有任何干扰卡。');
           } else {
-            // 随机选1张干扰卡
-            const target = shuffleArr(interferenceCandidates)[0];
-            // 真身牌/粘连牌：0%几率（看不穿伪装/扯不开粘连）
-            // 其他干扰牌：50%几率
-            const successRate = (target.interferenceType === 'disguise' || target.interferenceType === 'sticky') ? 0 : 0.5;
-            if (Math.random() < successRate) {
-              if (target.__isFrozenSlot) {
-                // 跳走冰冻牌：解冻收集槽
-                emitExplosion(100, 600, '#74B9FF');
-                setFrozenSlot(null);
-              } else {
-                removed.push(target);
+            // 每张干扰卡独立判定
+            for (var ic = 0; ic < interferenceCandidates.length; ic++) {
+              var target = interferenceCandidates[ic];
+              if (Math.random() < successRate) {
+                if (target.__isFrozenSlot) {
+                  emitExplosion(100, 600, '#74B9FF');
+                  setFrozenSlot(null);
+                } else {
+                  removed.push(target);
+                }
               }
-            } else {
+            }
+            if (removed.length === 0 && !freezeClearedByCowardly) {
               setSkillConflictMsg('蹦跶技能已使用，很可惜没有任何事发生。');
             }
           }
-          removed.forEach(t => {
-            // 干扰牌用专用颜色，普通牌用猫咪颜色
-            let explodeColor = '#FD79A8';
-            if (t.isInterference && t.interferenceType === 'disguise') {
-              // 真身牌：未揭穿时用伪装面颜色
-              const disguiseCat = t.disguisedAs ? CAT_TYPES.find(c => c.id === t.disguisedAs) : null;
-              explodeColor = disguiseCat?.color || '#00CEC9';
-            } else if (t.isInterference) {
-              const iCard = INTERFERENCE_CARDS[t.interferenceType];
-              explodeColor = iCard?.color || explodeColor;
-            } else {
-              const cat = CAT_TYPES.find(c => c.id === t.type);
-              explodeColor = cat?.color || explodeColor;
+          removed.forEach(function(t) {
+            var explodeColor = '#FD79A8';
+            if (t.isInterference) {
+              var iCard = INTERFERENCE_CARDS[t.interferenceType];
+              explodeColor = iCard ? iCard.color : explodeColor;
             }
             emitExplosion(tileX(t) + TILE_W / 2, tileY(t) + TILE_H / 2, explodeColor);
           });
-          setTiles(prev => prev.map(t => removed.some(r => r.id === t.id) ? {
-            ...t,
-            removed: true
-          } : t));
+          setTiles(function(prev) { return prev.map(function(t) { return removed.some(function(r) { return r.id === t.id; }) ? Object.assign({}, t, { removed: true }) : t; }); });
           break;
         }
       case '暹罗猫':
         {
-          // P3: 瞬移 - 将收集槽3张卡打乱放回棋盘（跳过舔毛牌，舔毛牌无法被移出）
-          const nonGroomSlotItems = slotRef.current.filter(s => !s.isGroom);
-          const count = Math.min(nonGroomSlotItems.length, 3);
-          if (count === 0) break;
-          if (matchTimeoutRef.current) {
-            clearTimeout(matchTimeoutRef.current);
-            matchTimeoutRef.current = null;
+          // 瞬移 Lv1→Lv2→Lv3
+          var nonGroomSlotItems = slotRef.current.filter(function(s) { return !s.isGroom; });
+          // Lv3: 收集槽+临时存放区全部牌放回棋盘
+          if (rLevel >= 3) {
+            var tempItems = tempStorageRef.current || [];
+            var allItems = nonGroomSlotItems.concat(tempItems);
+            if (allItems.length === 0) break;
+            if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+            setMatching([]);
+            var allUids = new Set(allItems.map(function(s) { return s.uid; }));
+            setSlot(function(prev) { return prev.filter(function(s) { return !allUids.has(s.uid); }); });
+            setTempStorage([]);
+            setMoveHistory([]);
+            var shuffledAll = shuffleArr(allItems);
+            shuffledAll.forEach(function(item, idx) {
+              var candidates = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && isTileBlocked(t, tilesRef.current); });
+              if (candidates.length > 0) {
+                var target = candidates[idx % candidates.length];
+                setTiles(function(prev) { return prev.map(function(t) { return t.id === item.tileId ? Object.assign({}, t, { removed: false, inSlot: false, layer: target.layer, col: target.col, row: target.row }) : t; }); });
+              }
+            });
+            break;
           }
+          // Lv1/Lv2
+          var count = Math.min(nonGroomSlotItems.length, rLevel >= 2 ? 4 : 3);
+          if (count === 0) break;
+          if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
           setMatching([]);
-          const restoreItems = nonGroomSlotItems.slice(-count);
-          const restoreUids = new Set(restoreItems.map(s => s.uid));
-          setSlot(prev => prev.filter(s => !restoreUids.has(s.uid)));
-          setMoveHistory(h => h.slice(Math.max(0, h.length - count)));
-          const shuffledRestore = shuffleArr(restoreItems);
-          shuffledRestore.forEach((item, idx) => {
-            const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot && isTileBlocked(t, tilesRef.current));
+          var restoreItems = nonGroomSlotItems.slice(-count);
+          var restoreUids = new Set(restoreItems.map(function(s) { return s.uid; }));
+          setSlot(function(prev) { return prev.filter(function(s) { return !restoreUids.has(s.uid); }); });
+          setMoveHistory(function(h) { return h.slice(Math.max(0, h.length - count)); });
+          var shuffledRestore = shuffleArr(restoreItems);
+          shuffledRestore.forEach(function(item, idx) {
+            var candidates = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot && isTileBlocked(t, tilesRef.current); });
             if (candidates.length > 0) {
-              const target = candidates[idx % candidates.length];
-              setTiles(prev => prev.map(t => t.id === item.tileId ? {
-                ...t,
-                removed: false,
-                inSlot: false,
-                layer: target.layer,
-                col: target.col,
-                row: target.row
-              } : t));
+              var target = candidates[idx % candidates.length];
+              setTiles(function(prev) { return prev.map(function(t) { return t.id === item.tileId ? Object.assign({}, t, { removed: false, inSlot: false, layer: target.layer, col: target.col, row: target.row }) : t; }); });
             }
           });
           break;
         }
       case '幸运猫':
         {
-          // P3: 洗牌 - 重新打乱当前棋盘所有卡牌
-          setTiles(prev => {
-            const remaining = prev.filter(t => !t.removed && !t.inSlot);
-            const positions = remaining.map(t => ({
-              col: t.col,
-              row: t.row,
-              layer: t.layer
-            }));
-            const shuffledPositions = shuffleArr(positions);
-            return prev.map(t => {
+          // 洗牌 Lv1→Lv2→Lv3: 重新打乱当前棋盘所有卡牌
+          setTiles(function(prev) {
+            var remaining = prev.filter(function(t) { return !t.removed && !t.inSlot; });
+            var positions = remaining.map(function(t) { return { col: t.col, row: t.row, layer: t.layer }; });
+            var shuffledPositions = shuffleArr(positions);
+            var newTiles = prev.map(function(t) {
               if (t.removed || t.inSlot) return t;
-              const idx = remaining.findIndex(r => r.id === t.id);
-              return {
-                ...t,
-                ...shuffledPositions[idx]
-              };
+              var idx = remaining.findIndex(function(r) { return r.id === t.id; });
+              return Object.assign({}, t, shuffledPositions[idx]);
             });
+            // Lv2/Lv3: 洗牌后自动消除顶层的可消除牌
+            if (rLevel >= 2) {
+              var autoElimCount = rLevel >= 3 ? 6 : 3;
+              var clickable = newTiles.filter(function(t) { return !t.removed && !t.inSlot && !isTileBlocked(t, newTiles) && !t.isInterference; });
+              var typeCounts = {};
+              for (var ci = 0; ci < clickable.length; ci++) {
+                var ct = clickable[ci].type;
+                typeCounts[ct] = (typeCounts[ct] || 0) + 1;
+              }
+              var eliminated = 0;
+              for (var mt in typeCounts) {
+                if (eliminated >= autoElimCount) break;
+                if (typeCounts[mt] >= 3) {
+                  var matchTiles = clickable.filter(function(t) { return t.type === mt; }).slice(0, Math.min(3, autoElimCount - eliminated));
+                  matchTiles.forEach(function(mt) {
+                    newTiles = newTiles.map(function(t) { return t.id === mt.id ? Object.assign({}, t, { removed: true, inSlot: false }) : t; });
+                  });
+                  eliminated += matchTiles.length;
+                }
+              }
+            }
+            return newTiles;
           });
+          // Lv3: 有几率额外获得1铃铛（本地记录，后续同步服务端）
+          if (rLevel >= 3 && Math.random() < 0.3) {
+            try {
+              var currBells = parseInt(localStorage.getItem('miaolegemi_bells') || '0', 10);
+              localStorage.setItem('miaolegemi_bells', String(currBells + 1));
+              setSkillConflictMsg('幸运星触发！额外获得 1 铃铛 🔔');
+            } catch(e) {}
+          }
           break;
         }
       case '折耳猫':
         {
-          // P3: 听声 - 撤销前2步，同时不计入失败次数（跳过舔毛牌，舔毛牌无法撤回）
-          let removed = 0;
-          let attempts = 0;
-          while (removed < 2 && attempts < slotRef.current.length) {
-            attempts++;
-            if (matchTimeoutRef.current) {
-              clearTimeout(matchTimeoutRef.current);
-              matchTimeoutRef.current = null;
+          // 听声 Lv1→Lv2→Lv3: 撤销操作，不计入失败次数
+          var stepsToUndo = rLevel >= 3 ? 3 : (rLevel >= 2 ? 3 : 2); // Lv1=2, Lv2=3, Lv3=3+restore
+          // Lv3: 恢复本局开始时的棋盘状态
+          if (rLevel >= 3 && initialTilesRef.current) {
+            setTiles(initialTilesRef.current.map(function(t) { return Object.assign({}, t); }));
+            setSlot([]);
+            setTempStorage([]);
+            setGroomSlots([]);
+            if (isTimed) {
+              var lvlTime = levelConfig.timeLimit || 120;
+              timeLeftRef.current = lvlTime;
+              setTimeLeft(lvlTime);
             }
+            setMoveHistory([]);
             setMatching([]);
-            // 从末尾找到非舔毛牌
-            let lastNonGroom2 = null;
-            for (let i = slotRef.current.length - 1; i >= 0; i--) {
-              if (!slotRef.current[i].isGroom) {
-                lastNonGroom2 = slotRef.current[i];
-                break;
-              }
+            if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+            break;
+          }
+          var removed = 0;
+          var attempts = 0;
+          while (removed < stepsToUndo && attempts < slotRef.current.length) {
+            attempts++;
+            if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
+            setMatching([]);
+            var lastNonGroom2 = null;
+            for (var si = slotRef.current.length - 1; si >= 0; si--) {
+              if (!slotRef.current[si].isGroom) { lastNonGroom2 = slotRef.current[si]; break; }
             }
             if (!lastNonGroom2) break;
-            const tileExists = tilesRef.current.some(t => t.id === lastNonGroom2.tileId && t.removed);
-            if (tileExists) setTiles(prev => prev.map(t => t.id === lastNonGroom2.tileId ? {
-              ...t,
-              removed: false,
-              inSlot: false
-            } : t));
-            setSlot(prev => prev.filter(s => s.uid !== lastNonGroom2.uid));
-            setMoveHistory(h => h.slice(0, -1));
+            var tileExists = tilesRef.current.some(function(t) { return t.id === lastNonGroom2.tileId && t.removed; });
+            if (tileExists) setTiles(function(prev) { return prev.map(function(t) { return t.id === lastNonGroom2.tileId ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
+            setSlot(function(prev) { return prev.filter(function(s) { return s.uid !== lastNonGroom2.uid; }); });
+            setMoveHistory(function(h) { return h.slice(0, -1); });
             removed++;
           }
           break;
         }
       case '无毛猫':
         {
-          // P3: 灼烧 - 清除最顶层3张卡牌
-          const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot);
+          // 灼烧 Lv1→Lv2→Lv3: 清除顶层卡牌
+          var candidates = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot; });
           if (candidates.length === 0) break;
-          const maxLayer = Math.max(...candidates.map(t => t.layer));
-          const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, 3);
-          if (topTiles.length === 0) break;
-          topTiles.forEach(t => {
-            let explodeColor = '#E17055'; // 灼烧默认色
-            if (t.isInterference && t.interferenceType === 'disguise') {
-              // 真身牌：未揭穿时用伪装面颜色
-              const disguiseCat = t.disguisedAs ? CAT_TYPES.find(c => c.id === t.disguisedAs) : null;
-              explodeColor = disguiseCat?.color || '#00CEC9';
-            } else if (t.isInterference) {
-              const iCard = INTERFERENCE_CARDS[t.interferenceType];
-              explodeColor = iCard?.color || explodeColor;
+          var maxLayer = Math.max.apply(null, candidates.map(function(t) { return t.layer; }));
+          var topTiles = candidates.filter(function(t) { return t.layer === maxLayer; });
+          var toRemove = [];
+          if (rLevel >= 3) {
+            // Lv3: 清除顶层所有可三消的牌
+            var nonInterf = topTiles.filter(function(t) { return !t.isInterference; });
+            var typeGroups = {};
+            for (var ti = 0; ti < nonInterf.length; ti++) {
+              var tt = nonInterf[ti].type;
+              if (!typeGroups[tt]) typeGroups[tt] = [];
+              typeGroups[tt].push(nonInterf[ti]);
+            }
+            for (var tg in typeGroups) {
+              var group = typeGroups[tg];
+              while (group.length >= 3) {
+                toRemove = toRemove.concat(group.splice(0, 3));
+              }
+            }
+          } else if (rLevel >= 2) {
+            // Lv2: 清除顶层2组三消(共6张)
+            var nonInterf2 = topTiles.filter(function(t) { return !t.isInterference; });
+            var typeGroups2 = {};
+            for (var ti2 = 0; ti2 < nonInterf2.length; ti2++) {
+              var tt2 = nonInterf2[ti2].type;
+              if (!typeGroups2[tt2]) typeGroups2[tt2] = [];
+              typeGroups2[tt2].push(nonInterf2[ti2]);
+            }
+            var groupsFound = 0;
+            for (var tg2 in typeGroups2) {
+              if (groupsFound >= 2) break;
+              if (typeGroups2[tg2].length >= 3) {
+                toRemove = toRemove.concat(typeGroups2[tg2].slice(0, 3));
+                groupsFound++;
+              }
+            }
+          } else {
+            // Lv1: 清除顶层3张卡牌
+            toRemove = topTiles.slice(0, 3);
+          }
+          if (toRemove.length === 0) break;
+          toRemove.forEach(function(t) {
+            var explodeColor = '#E17055';
+            if (t.isInterference) {
+              var iCard = INTERFERENCE_CARDS[t.interferenceType];
+              explodeColor = iCard ? iCard.color : explodeColor;
             } else {
-              const cat = CAT_TYPES.find(c => c.id === t.type);
-              explodeColor = cat?.color || explodeColor;
+              var cat = CAT_TYPES.find(function(c) { return c.id === t.type; });
+              explodeColor = cat ? cat.color : explodeColor;
             }
             emitExplosion(tileX(t) + TILE_W / 2, tileY(t) + TILE_H / 2, explodeColor);
           });
-          setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? {
-            ...t,
-            removed: true
-          } : t));
-          setTimeout(() => {
-            // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
+          setTiles(function(prev) { return prev.map(function(t) { return toRemove.some(function(tt) { return tt.id === t.id; }) ? Object.assign({}, t, { removed: true }) : t; }); });
+          setTimeout(function() {
+            var nonBlockingRemaining = tilesRef.current.filter(function(t) { return !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); });
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -10949,37 +11234,33 @@ function Game() {
         }
       case '波斯猫':
         {
-          // P3: 吐息 - 基于临时存放槽位，移出同等数量的牌
-          const tempCount = tempStorageRef.current.length;
+          // 吐息 Lv1→Lv2→Lv3: 基于临时存放槽位清牌
+          // Lv2: 临时存放槽扩充1格
+          if (rLevel >= 2) { setSlotBonus(function(prev) { return prev + 1; }); }
+          // Lv3: 本局额外获得1次重来机会
+          if (rLevel >= 3) { setExtraRestarts(function(prev) { return prev + 1; }); }
+          var tempCount = tempStorageRef.current.length;
           if (tempCount === 0) break;
-          const candidates = tilesRef.current.filter(t => !t.removed && !t.inSlot);
+          var candidates = tilesRef.current.filter(function(t) { return !t.removed && !t.inSlot; });
           if (candidates.length === 0) break;
-          const maxLayer = Math.max(...candidates.map(t => t.layer));
-          const topTiles = candidates.filter(t => t.layer === maxLayer).slice(0, tempCount);
+          var maxLayer = Math.max.apply(null, candidates.map(function(t) { return t.layer; }));
+          var topTiles = candidates.filter(function(t) { return t.layer === maxLayer; }).slice(0, tempCount);
           if (topTiles.length === 0) break;
-          topTiles.forEach(t => {
-            let explodeColor = '#00CEC9'; // 吐息默认色
-            if (t.isInterference && t.interferenceType === 'disguise') {
-              // 真身牌：未揭穿时用伪装面颜色
-              const disguiseCat = t.disguisedAs ? CAT_TYPES.find(c => c.id === t.disguisedAs) : null;
-              explodeColor = disguiseCat?.color || '#00CEC9';
-            } else if (t.isInterference) {
-              const iCard = INTERFERENCE_CARDS[t.interferenceType];
-              explodeColor = iCard?.color || explodeColor;
+          topTiles.forEach(function(t) {
+            var explodeColor = '#00CEC9';
+            if (t.isInterference) {
+              var iCard = INTERFERENCE_CARDS[t.interferenceType];
+              explodeColor = iCard ? iCard.color : explodeColor;
             } else {
-              const cat = CAT_TYPES.find(c => c.id === t.type);
-              explodeColor = cat?.color || explodeColor;
+              var cat = CAT_TYPES.find(function(c) { return c.id === t.type; });
+              explodeColor = cat ? cat.color : explodeColor;
             }
             emitExplosion(tileX(t) + TILE_W / 2, tileY(t) + TILE_H / 2, explodeColor);
           });
-          setTiles(prev => prev.map(t => topTiles.some(tt => tt.id === t.id) ? {
-            ...t,
-            removed: true
-          } : t));
+          setTiles(function(prev) { return prev.map(function(t) { return topTiles.some(function(tt) { return tt.id === t.id; }) ? Object.assign({}, t, { removed: true }) : t; }); });
           setTempStorage([]);
-          setTimeout(() => {
-            // 胜利判定：排除小狗牌（不消除）
-            const nonBlockingRemaining = tilesRef.current.filter(t => !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))));
+          setTimeout(function() {
+            var nonBlockingRemaining = tilesRef.current.filter(function(t) { return !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); });
             if (nonBlockingRemaining.length === 0) {
               var allPilesDone = (pilesRef.current || []).every(function(p) { return p.isEmpty; });
               if (allPilesDone) setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -10989,10 +11270,17 @@ function Game() {
         }
       case '星空猫':
         {
-          // P3: 永昼 - 一定几率直接跳过本关
-          if (Math.random() < 0.3) {
-            // 30%几率
+          // 永昼 Lv1→Lv2→Lv3: 有概率直接跳过本关
+          var skipProb = rLevel >= 2 ? 0.6 : 0.3;
+          var skipped = Math.random() < skipProb;
+          if (skipped) {
+            // Lv3: 跳关成功额外奖励60鱼干
+            if (rLevel >= 3) { setScore(function(prev) { return prev + 60; }); }
             setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+          } else if (rLevel >= 3) {
+            // Lv3: 跳关失败补偿120鱼干
+            setScore(function(prev) { return prev + 120; });
+            setSkillConflictMsg('星河意志未触发，补偿120鱼干 🌟');
           }
           break;
         }
@@ -11242,10 +11530,12 @@ function Game() {
     reminderLastTimeRef.current = {};
     reminderCountRef.current = 0;
     skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
     setReminderBubble(null);
     setReminderGlow({});
     var restartTiles = generateBoard(currentLevel, restartTimidFx);
     tilesRef.current = restartTiles; // 立即同步 ref，避免旧棋盘残影
+    initialTilesRef.current = restartTiles.map(function(t) { return Object.assign({}, t); }); // 折耳猫Lv3: 保存初始状态
     setTiles(restartTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
@@ -11365,10 +11655,12 @@ function Game() {
     reminderLastTimeRef.current = {};
     reminderCountRef.current = 0;
     skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
     setReminderBubble(null);
     setReminderGlow({});
     var retryTiles = generateBoard(currentLevel, retryTimidFx);
     tilesRef.current = retryTiles; // 立即同步 ref，避免旧棋盘残影
+    initialTilesRef.current = retryTiles.map(function(t) { return Object.assign({}, t); }); // 折耳猫Lv3
     setTiles(retryTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
     setSlot([]);
@@ -11443,10 +11735,12 @@ function Game() {
       reminderLastTimeRef.current = {};
       reminderCountRef.current = 0;
       skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
       setReminderBubble(null);
       setReminderGlow({});
       const cycleTiles = generateBoard(1, cycleTimidFx);
       tilesRef.current = cycleTiles; // 立即同步 ref
+      initialTilesRef.current = cycleTiles.map(function(t) { return Object.assign({}, t); });
       console.timeEnd('[handleNextLevel] generateBoard(cycle)');
       setTiles(cycleTiles);
       setPiles(generatePileData(1)); // P2: 重置牌堆
@@ -11537,10 +11831,12 @@ function Game() {
       reminderLastTimeRef.current = {};
       reminderCountRef.current = 0;
       skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
       setReminderBubble(null);
       setReminderGlow({});
       const newTiles = generateBoard(nextLv, nextTimidFx);
       tilesRef.current = newTiles; // 立即同步 ref，避免 effect 时序导致旧棋盘残影
+      initialTilesRef.current = newTiles.map(function(t) { return Object.assign({}, t); });
       console.timeEnd('[handleNextLevel] generateBoard');
       console.log('[handleNextLevel] generateBoard 返回', newTiles.length, '张卡牌');
       setTiles(newTiles);
@@ -11557,9 +11853,13 @@ function Game() {
       reminderLastTimeRef.current = {};
       reminderCountRef.current = 0;
       skillReadySinceRef.current = {};
+    lv3FreezeBonusRef.current = null;
       setReminderBubble(null);
       setReminderGlow({});
-      setTiles(generateBoard(1, fbTimidFx)); // 兜底：回到第1关
+      var fbTiles = generateBoard(1, fbTimidFx);
+      tilesRef.current = fbTiles;
+      initialTilesRef.current = fbTiles.map(function(t) { return Object.assign({}, t); });
+      setTiles(fbTiles); // 兜底：回到第1关
       setPiles(generatePileData(1)); // P2: 重置牌堆
     }
     setSlot([]);
@@ -12544,8 +12844,8 @@ function Game() {
   }, /*#__PURE__*/React.createElement(CollectionSlot, {
     slot: tempStorage,
     matching: matching,
-    maxSlots: 3 + slotBonus,
-    showBg: false,
+    maxSlots: Math.max(3 + slotBonus, tempStorage.length),
+    showBg: true,
     compact: true
   })), /*#__PURE__*/React.createElement("div", {
     id: 'main-slot',
@@ -12642,6 +12942,17 @@ function Game() {
     var panelBreed = skillAnimData?.breed || '';
     var panelRarity = skillAnimData?.rarity || 'N';
     var panelSkill = skillAnimData?.skill;
+    var panelResonanceLv = skillAnimData?.resonanceLevel || 1;
+    // 共鸣等级对应的技能名称和描述
+    var panelSkillName = panelSkill?.active || '';
+    var panelSkillDesc = panelSkill?.activeDesc || '';
+    if (panelResonanceLv >= 3 && panelSkill?.lv3Name) {
+      panelSkillName = panelSkill.lv3Name;
+      panelSkillDesc = panelSkill.lv3Desc || panelSkill.activeDesc;
+    } else if (panelResonanceLv >= 2 && panelSkill?.lv2Name) {
+      panelSkillName = panelSkill.lv2Name;
+      panelSkillDesc = panelSkill.lv2Desc || panelSkill.activeDesc;
+    }
     var rarityColorMap = { N: '#B2BEC3', R: '#45B7D1', SR: '#6C5CE7', SSR: '#FD9644' };
     var panelRarityColor = rarityColorMap[panelRarity] || '#B2BEC3';
     return /*#__PURE__*/React.createElement("div", {
@@ -12715,7 +13026,7 @@ function Game() {
         color: '#fff',
         textShadow: '0 0 8px rgba(162,155,254,0.5)'
       }
-    }, panelSkill?.active || ''), /*#__PURE__*/React.createElement("div", {
+    }, panelSkillName), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: 'rgba(255,255,255,0.5)',
@@ -12723,7 +13034,7 @@ function Game() {
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap'
       }
-    }, panelSkill?.activeDesc || ''), /*#__PURE__*/React.createElement("div", {
+    }, panelSkillDesc), /*#__PURE__*/React.createElement("div", {
       style: {
         height: 5,
         background: 'rgba(255,255,255,0.1)',
@@ -12820,41 +13131,56 @@ function Game() {
       marginTop: 11
     }
   }, [0, 1, 2].map(i => {
-    const breed = skillSlots[i];
+    var breed = skillSlots[i];
     if (!breed) return /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         width: 77
       }
     });
-    const skill = CAT_SKILLS[breed];
-    const key = `active${i}`;
-    const usedCount = skillUseCount[key];
-    const maxUses = skillUseMax[key];
-    const noUsesLeft = usedCount >= maxUses;
-    const cooling = skillCooldowns[key] > 0;
-    const disabled = noUsesLeft || cooling;
-    const remUses = Math.max(0, maxUses - usedCount);
-    const rarityColors = {
+    var skill = CAT_SKILLS[breed];
+    var key = "active" + i;
+    var usedCount = skillUseCount[key];
+    var maxUses = skillUseMax[key];
+    var noUsesLeft = usedCount >= maxUses;
+    var cooling = skillCooldowns[key] > 0;
+    // \u5171\u9e23\uff1a\u961f\u5458\u6309\u94ae\u4e0d\u53ef\u70b9\u51fb
+    var isResonanceMember = resonance.isMember[i];
+    var resonanceLv = resonance.resonanceLevel[i];
+    var isResonanceCaptain = resonance.isCaptain[i];
+    var disabled = noUsesLeft || cooling || isResonanceMember;
+    var remUses = Math.max(0, maxUses - usedCount);
+    var rarityColors = {
       N: '#B2BEC3',
       R: '#45B7D1',
       SR: '#6C5CE7',
       SSR: '#FD9644'
     };
-    const rarity = BREED_RARITY[breed] || 'N';
-    const glowTier = reminderGlow[key];
-    const dimmed = cooling || noUsesLeft;
+    var rarity = BREED_RARITY[breed] || 'N';
+    var glowTier = reminderGlow[key];
+    var dimmed = cooling || noUsesLeft || isResonanceMember;
+    // \u5171\u9e23\u663e\u793a\u540d\u79f0\uff1a\u961f\u5458\u4e0d\u663e\u793a\u6280\u80fd\u540d\uff0c\u961f\u957f\u663e\u793a\u7eaf\u6280\u80fd\u540d(\u4e0d\u5e26Lv\u524d\u7f00)
+    var displayName = skill ? skill.active : '???';
+    if (isResonanceMember) {
+      displayName = '';
+    } else if (isResonanceCaptain && resonanceLv >= 2) {
+      if (resonanceLv === 2 && skill && skill.lv2Name) {
+        displayName = skill.lv2Name;
+      } else if (resonanceLv === 3 && skill && skill.lv3Name) {
+        displayName = skill.lv3Name;
+      }
+    }
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       'data-skill-index': i,
-      onClick: () => !disabled && handleSkillClick(i),
+      onClick: function() { if (!disabled) handleSkillClick(i); },
       style: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 3,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.35 : 1,
+        opacity: disabled ? (isResonanceMember ? 0.5 : 0.35) : 1,
         transition: 'all 0.2s',
         width: 77
       }
@@ -12863,7 +13189,7 @@ function Game() {
         width: 77,
         height: 77,
         position: 'relative',
-        filter: dimmed ? 'brightness(0.25) grayscale(0.6)' : glowTier ? (glowTier === 'danger' ? 'drop-shadow(0 0 8px rgba(255,80,80,0.8)) drop-shadow(0 0 16px rgba(255,80,80,0.4))' : glowTier === 'pulse' ? 'drop-shadow(0 0 8px rgba(108,92,231,0.7)) drop-shadow(0 0 14px rgba(108,92,231,0.35))' : 'drop-shadow(0 0 6px rgba(253,203,110,0.5)) drop-shadow(0 0 10px rgba(253,203,110,0.25))') : 'drop-shadow(0 4px 8px rgba(0,0,0,0.25))',
+        filter: dimmed ? (isResonanceMember ? 'brightness(0.4) grayscale(0.5)' : 'brightness(0.25) grayscale(0.6)') : glowTier ? (glowTier === 'danger' ? 'drop-shadow(0 0 8px rgba(255,80,80,0.8)) drop-shadow(0 0 16px rgba(255,80,80,0.4))' : glowTier === 'pulse' ? 'drop-shadow(0 0 8px rgba(108,92,231,0.7)) drop-shadow(0 0 14px rgba(108,92,231,0.35))' : 'drop-shadow(0 0 6px rgba(253,203,110,0.5)) drop-shadow(0 0 10px rgba(253,203,110,0.25))') : 'drop-shadow(0 4px 8px rgba(0,0,0,0.25))',
         transition: 'filter 0.3s, transform 0.2s',
         animation: glowTier === 'danger' ? 'catFloatDanger 1.5s ease-in-out infinite' : glowTier === 'pulse' ? 'catFloatPulse 1.5s ease-in-out infinite' : glowTier === 'gentle' ? 'catFloatGentle 2s ease-in-out infinite' : 'none'
       }
@@ -12877,10 +13203,42 @@ function Game() {
         display: 'block',
         filter: dimmed ? 'brightness(0.7)' : 'none'
       },
-      onError: e => {
+      onError: function(e) {
         e.target.style.display = 'none';
       }
-    }), cooling && /*#__PURE__*/React.createElement("div", {
+    }), /* \u5171\u9e23\u961f\u5458\u89d2\u6807 */
+    isResonanceMember && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        background: 'rgba(0,0,0,0.75)',
+        color: '#B2BEC3',
+        fontSize: 8,
+        fontWeight: 700,
+        padding: '1px 4px',
+        borderRadius: 4,
+        zIndex: 5,
+        pointerEvents: 'none',
+        letterSpacing: '0.5px'
+      }
+    }, "\u961f\u5458"), /* \u5171\u9e23\u961f\u957f\u89d2\u6807\uff08\u591a\u53ea\u540c\u79cd\u65f6\u663e\u793a\uff09 */
+    isResonanceCaptain && resonanceLv >= 2 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: -2,
+        left: -2,
+        background: 'linear-gradient(135deg, #FD9644, #FF6B6B)',
+        color: '#fff',
+        fontSize: 8,
+        fontWeight: 700,
+        padding: '1px 4px',
+        borderRadius: 4,
+        zIndex: 5,
+        pointerEvents: 'none',
+        letterSpacing: '0.5px'
+      }
+    }, "\u961f\u957f"), cooling && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: 0,
@@ -12915,7 +13273,7 @@ function Game() {
         color: '#fff',
         textShadow: '0 0 6px rgba(255,255,255,0.5)'
       }
-    }, "\u2713")), remUses >= 2 && /*#__PURE__*/React.createElement("div", {
+    }, "\u2713")), remUses >= 2 && !isResonanceMember && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: -2,
@@ -12935,9 +13293,9 @@ function Game() {
       }
     }, remUses)), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 13,
+        fontSize: resonanceLv >= 2 ? 11 : 13,
         fontWeight: 700,
-        color: disabled ? 'rgba(240,237,255,0.15)' : rarity === 'N' ? 'rgba(240,237,255,0.85)' : rarityColors[rarity],
+        color: disabled ? 'rgba(240,237,255,0.15)' : resonanceLv >= 3 ? '#FD9644' : resonanceLv >= 2 ? '#A29BFE' : rarity === 'N' ? 'rgba(240,237,255,0.85)' : rarityColors[rarity],
         letterSpacing: '1px',
         textAlign: 'center',
         lineHeight: 1.1,
@@ -12946,7 +13304,7 @@ function Game() {
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap'
       }
-    }, skill ? skill.active : '???'));
+    }, displayName));
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
@@ -12955,6 +13313,7 @@ function Game() {
     breed: confirmSkill?.breed,
     skill: confirmSkill?.skill,
     conflict: confirmSkill?.conflict,
+    resonanceLevel: confirmSkill?.resonanceLevel || 1,
     onConfirm: executeSkill,
     onCancel: () => setConfirmSkill(null)
   }), skillConflictMsg && /*#__PURE__*/React.createElement("div", {
@@ -12974,6 +13333,7 @@ function Game() {
     breed: skillAnimData?.breed,
     skill: skillAnimData?.skill,
     rarity: skillAnimData?.rarity,
+    resonanceLevel: skillAnimData?.resonanceLevel || 1,
     visible: skillAnimVisible,
     onProgress: setSkillAnimProgress,
     onClose: () => {
