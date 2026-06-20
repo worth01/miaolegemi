@@ -81,7 +81,7 @@ router.post('/pull', authMiddleware, async (req, res) => {
     if (selected.rarity === 'SR') newPity = 0;
 
     // 分配序列号
-    const serials = await prisma.catSerialRegistry.findMany({
+    const serials = await prisma.cat_serial_registry.findMany({
       where: { speciesId: selected.id, status: 'available' },
       orderBy: { serialNumber: 'asc' },
       take: 1,
@@ -89,17 +89,17 @@ router.post('/pull', authMiddleware, async (req, res) => {
 
     let serial;
     if (serials.length > 0) {
-      serial = await prisma.catSerialRegistry.update({
+      serial = await prisma.cat_serial_registry.update({
         where: { id: serials[0].id },
         data: { status: 'adopted', currentOwnerId: req.user!.userId, firstOwnerId: serials[0].firstOwnerId || req.user!.userId },
       });
     } else {
-      const maxSerial = await prisma.catSerialRegistry.aggregate({
+      const maxSerial = await prisma.cat_serial_registry.aggregate({
         where: { speciesId: selected.id },
         _max: { serialNumber: true },
       });
       const nextNum = ((maxSerial as any)._max.serialNumber || 0) + 1;
-      serial = await prisma.catSerialRegistry.create({
+      serial = await prisma.cat_serial_registry.create({
         data: {
           speciesId: selected.id,
           serialNumber: nextNum,
