@@ -13944,6 +13944,15 @@ function App() {
         // Online mode: sync from API
         if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
           try {
+            // 保存当前布阵配置，API 同步后恢复
+            var lineupBackup = {};
+            try {
+              var savedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+              (savedData.cats || []).forEach(function(c) {
+                if (c.battleSlot) lineupBackup[c.serialId || c._apiId] = c.battleSlot;
+                if (c.battleSpectator) lineupBackup['spec_' + (c.serialId || c._apiId)] = c.battleSpectator;
+              });
+            } catch(e) {}
             const apiCats = await MiaolegemiAPI.getCats();
             if (apiCats.length > 0) {
               const mapped = apiCats.map(c => ({
@@ -13972,7 +13981,9 @@ function App() {
                 witnessTotalScore: c.witnessTotalScore || 0,
                 fishSpent: c.fishSpent || 0,
                 isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
-                battleSlot: c.slotPosition,
+                // 优先使用本地布阵配置，其次 API 返回值
+                battleSlot: lineupBackup[c.id] || c.slotPosition,
+                battleSpectator: lineupBackup['spec_' + c.id] || c.battleSpectator,
                 previousOwners: Array.isArray(c.previousOwners) ? c.previousOwners : [],
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
                 _apiId: c.id,
