@@ -29,7 +29,9 @@
       };
     }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0b072a; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
@@ -15815,6 +15817,51 @@ root.render(/*#__PURE__*/React.createElement(App, null));</script>
   setInterval(applySpec, 500);
   applySpec();
 })();
+  </script>
+  <script>
+    // 注册 Service Worker（缓存静态资源，二次打开秒加载）
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function() {});
+    }
+    // 图片懒加载：对所有 img 标签添加 loading=lazy
+    (function() {
+      function setLazy(img) { if (!img.hasAttribute('loading')) img.loading = 'lazy'; }
+      document.querySelectorAll('img').forEach(setLazy);
+      new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) { m.addedNodes.forEach(function(n) { if (n.tagName === 'IMG') setLazy(n); }); });
+      }).observe(document.body, { childList: true, subtree: true });
+    })();
+    // 后台预加载游戏核心资源（页面空闲 2 秒后开始）
+    (function() {
+      var GAME_PRELOADS = [
+        'assets/audio/game-bgm.mp3',
+        'assets/audio/match.mp3',
+        'assets/audio/coin.mp3',
+        'assets/audio/lling.mp3',
+        // 守护猫动画（只预加载最常见的 5 只）
+        'assets/cats/ju/cat_anim.webp',
+        'assets/cats/bai/cat_anim.webp',
+        'assets/cats/hei/cat_anim.webp',
+        'assets/cats/bu/cat_anim.webp',
+        'assets/cats/san/cat_anim.webp',
+        // 猫纹理（棋盘卡片核心图）
+        'assets/Textures/cat/橘猫.webp',
+        'assets/Textures/cat/黑猫.webp',
+        'assets/Textures/cat/白猫.webp',
+        'assets/Textures/cat/蓝猫.webp',
+      ];
+      function doPreload() {
+        GAME_PRELOADS.forEach(function(src) {
+          var link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = src;
+          link.as = src.endsWith('.mp3') ? 'audio' : 'image';
+          document.head.appendChild(link);
+        });
+      }
+      var idleCallback = window.requestIdleCallback || function(fn) { setTimeout(fn, 2000); };
+      idleCallback(doPreload, { timeout: 3000 });
+    })();
   </script>
 </body>
 </html>

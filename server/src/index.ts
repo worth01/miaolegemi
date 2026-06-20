@@ -1,5 +1,6 @@
 // P5: 喵了个咪后端服务入口
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -21,6 +22,7 @@ const prisma = new PrismaClient();
 const PORT = 3001;
 
 // 中间件
+app.use(compression()); // Gzip/Brotli 压缩，HTML/CSS/JS 体积减少 70%+
 app.use(cors({
   origin: true,
   credentials: true

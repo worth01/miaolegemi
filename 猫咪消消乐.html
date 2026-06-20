@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="dns-prefetch" href="https://unpkg.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
@@ -13689,6 +13689,20 @@ root.render(React.createElement(ErrorBoundary, null, React.createElement(App)));
     window.visualViewport.addEventListener('resize', adaptToDevice);
   }
 })();
+</script>
+<script>
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+  }
+  // 图片懒加载（不影响棋盘 Canvas 渲染）
+  (function() {
+    function setLazy(img) { if (!img.hasAttribute('loading')) img.loading = 'lazy'; }
+    document.querySelectorAll('img').forEach(setLazy);
+    new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) { m.addedNodes.forEach(function(n) { if (n.tagName === 'IMG') setLazy(n); }); });
+    }).observe(document.body, { childList: true, subtree: true });
+  })();
 </script>
 </body>
 </html>
