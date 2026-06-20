@@ -14798,13 +14798,14 @@ function App() {
       try {
         const data = await MiaolegemiAPI.pullGacha();
         const c = data.cat;
-        const breed = BREEDS.find(b => b.id === c.serial.species.name) || BREEDS[0];
+        const catSpecies = c.cat_serial_registry?.cat_species;
+        const breed = BREEDS.find(b => b.id === catSpecies?.name) || BREEDS[0];
         const newCat = {
           serialId: c.id,
-          breedSerial: c.serial.serialNumber,
+          breedSerial: c.cat_serial_registry?.serialNumber,
           breedId: breed.id,
           name: breed.id,
-          rarity: c.serial.species.rarity,
+          rarity: catSpecies?.rarity,
           img: breed.img,
           desc: breed.desc,
           personality: sanitizePersonality(c.personality, breed.id),
@@ -14821,7 +14822,7 @@ function App() {
           witnessMaxScore: 0,
           witnessTotalScore: 0,
           fishSpent: 0,
-          isGenesis: c.serial.serialNumber <= 10,
+          isGenesis: (c.cat_serial_registry?.serialNumber || 0) <= 10,
           previousOwners: [],
           releasedAt: null,
           _apiId: c.id,
