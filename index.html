@@ -13203,7 +13203,10 @@ function App() {
   const [flipCardCat, setFlipCardCat] = useState(null);
   const [notifPerm, setNotifPerm] = useState('default');
   const [theme, setTheme] = useState(() => {
+    // 优先读取 URL 参数（从游戏返回时携带），其次 localStorage
     try {
+      var urlTheme = new URLSearchParams(window.location.search).get('theme');
+      if (urlTheme === 'light' || urlTheme === 'dark') return urlTheme;
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       return saved?.theme || 'dark';
     } catch (e) {
