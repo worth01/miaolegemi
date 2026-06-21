@@ -1,5 +1,5 @@
 // 喵了个咪 Service Worker — 静态资源缓存
-const CACHE_NAME = 'miaolegemi-v3';
+const CACHE_NAME = 'miaolegemi-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -50,7 +50,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 静态资源：Cache First（图片/音频/字体/视频）
+  // 静态资源：Cache First，fetch 失败时回退网络
   if (event.request.destination === 'image' ||
       event.request.destination === 'audio' ||
       event.request.destination === 'font' ||
@@ -61,12 +61,15 @@ self.addEventListener('fetch', event => {
       caches.match(event.request).then(cached => {
         if (cached) return cached;
         return fetch(event.request).then(response => {
-          // 只缓存完整响应(200)，跳过 206 等部分响应
           if (response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
           return response;
+        }).catch(err => {
+          // 网络失败且无缓存：静默失败，让浏览器按无 SW 处理
+          console.warn('SW: fetch failed for', url.pathname, err.message);
+          return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
       })
     );
