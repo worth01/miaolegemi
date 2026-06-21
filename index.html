@@ -2621,6 +2621,10 @@ function saveStateOnlineCache(state) {
       breedSerialCounters: state.gameData?.breedSerialCounters || cacheSaved?.breedSerialCounters || {},
       coolingPool: state.gameData?.coolingPool || cacheSaved?.coolingPool || {},
       homeMaxSlots: state.gameData?.homeMaxSlots || cacheSaved?.homeMaxSlots || 10,
+      // 保留游戏积分，不被服务端缺字段覆盖
+      personalBestScore: cacheSaved?.personalBestScore || state.gameData?.personalBestScore || 0,
+      todayTotalScore: cacheSaved?.todayTotalScore || state.gameData?.todayTotalScore || 0,
+      todayDate: cacheSaved?.todayDate || state.gameData?.todayDate || '',
       savedAt: Date.now()
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -14296,6 +14300,9 @@ function App() {
               knockoutSkinClaimed,
               finalTitleAwarded,
               bets,
+              personalBestScore: prev.personalBestScore,
+              todayTotalScore: prev.todayTotalScore,
+              todayDate: prev.todayDate,
               savedAt: Date.now()
             }
           });
