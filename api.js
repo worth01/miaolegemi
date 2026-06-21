@@ -382,6 +382,24 @@ const MiaolegemiAPI = {
     });
   },
 
+  /**
+   * 每日签到
+   * @returns {Promise<{fishEarned: number, bellsEarned: number, streak: number}>}
+   */
+  checkin: async () => {
+    return request('/user/checkin', {
+      method: 'POST'
+    });
+  },
+
+  /**
+   * 查询签到状态
+   * @returns {Promise<{checkedIn: boolean, streak: number}>}
+   */
+  getCheckinStatus: async () => {
+    return request('/user/checkin');
+  },
+
   // ═══════════════════════════════════════
   // 通用请求方法
   // ═══════════════════════════════════════

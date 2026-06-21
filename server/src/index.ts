@@ -13,6 +13,7 @@ import gachaRoutes from './routes/gacha.js';
 import gameRoutes from './routes/game.js';
 import userRoutes from './routes/user.js';
 import personalityRoutes from './routes/personalities.js';
+import checkinRoutes from './routes/checkin.js';
 
 // 加载环境变量
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/gacha', gachaRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/personalities', personalityRoutes);
+app.use('/api/user', checkinRoutes);
 
 // 启动前测试数据库连接
 prisma.$connect()
