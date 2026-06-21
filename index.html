@@ -2579,6 +2579,15 @@ function loadSavedTitle() {
 // 将服务器返回的状态写入 localStorage 作为离线缓存
 function saveStateOnlineCache(state) {
   try {
+    // 保留本地布阵配置，不被服务端数据覆盖
+    var cacheLineupBackup = {};
+    try {
+      var cacheSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      (cacheSaved.cats || []).forEach(function(c) {
+        if (c.battleSlot) cacheLineupBackup[c.serialId || c._apiId || c.id] = c.battleSlot;
+        if (c.battleSpectator) cacheLineupBackup['spec_' + (c.serialId || c._apiId || c.id)] = c.battleSpectator;
+      });
+    } catch(e) {}
     const data = {
       cats: state.cats ? state.cats.map(c => ({
         serialId: c.id,
@@ -2599,7 +2608,8 @@ function saveStateOnlineCache(state) {
         fishSpent: c.fishSpent || 0,
         intimacy: c.intimacy || 0,
         isGenesis: (c.breedSerial || 0) <= 10,
-        battleSlot: c.slotPosition,
+        battleSlot: cacheLineupBackup[c.id] || c.slotPosition,
+        battleSpectator: cacheLineupBackup['spec_' + c.id] || c.battleSpectator,
         releasedAt: c.releasedAt,
         coolingUntil: c.coolingUntil
       })) : [],
