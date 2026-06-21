@@ -13543,6 +13543,7 @@ function App() {
             }
             // 保存到 localStorage 作为离线缓存
             saveStateOnlineCache(state);
+            window.__serverDataLoaded = true;
           } catch (e) {
             if (e.message !== 'timeout') {
               MiaolegemiAPI.clearToken();
@@ -13670,6 +13671,7 @@ function App() {
             coolingPool = {};
           }
           saveStateOnlineCache(state);
+          window.__serverDataLoaded = true;
         } catch (e) {
           // 服务器不可达：保留当前本地数据，不清空
           console.warn('getState failed, keeping local data:', e.message);
@@ -14283,8 +14285,8 @@ function App() {
       pityCount
     });
     syncSkinDataToShared(equippedSkins, ownedSkins);
-    // 在线时同步到服务器（防抖 5 秒）
-    if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+    // 在线时同步到服务器（防抖 5 秒，等服务端数据加载完成后才同步）
+    if (!isLocalMode && MiaolegemiAPI.isLoggedIn() && window.__serverDataLoaded) {
       if (_syncTimer) clearTimeout(_syncTimer);
       _syncTimer = setTimeout(async () => {
         try {
