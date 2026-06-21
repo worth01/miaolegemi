@@ -6382,9 +6382,21 @@ function SkillAnimationOverlay({
     triggerClose();
   }, [triggerClose]);
   const handleVideoError = useCallback(() => {
+    var video = videoRef.current;
+    // 如果当前是 Lv2/Lv3 视频加载失败，降级到 Lv1 视频重试
+    if (video && resonanceLevel && resonanceLevel > 1) {
+      var fallbackSrc = getSkillVideoSrc(breed, 1);
+      if (fallbackSrc && video.src !== fallbackSrc) {
+        video.src = fallbackSrc;
+        video.load();
+        video.play().catch(function(){});
+        return;
+      }
+    }
+    // Lv1 也失败 → 1.5s 后关闭弹窗
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(triggerClose, 1500);
-  }, [triggerClose]);
+  }, [triggerClose, breed, resonanceLevel]);
   // 视频播放进度上报
   useEffect(() => {
     if (!visible) { if (onProgressRef.current) onProgressRef.current(0); return; }
