@@ -13195,7 +13195,13 @@ function App() {
     return tab && ['battle', 'bag'].includes(tab) ? 'cathome' : 'home';
   };
   const [activeTab, setActiveTab] = useState(getInitialActiveTab);
-  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(() => {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      var today = new Date().toISOString().slice(0, 10);
+      return saved.checkinDate === today;
+    } catch(e) { return false; }
+  });
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
   const [showCatDetail, setShowCatDetail] = useState(false);
@@ -14970,6 +14976,12 @@ function App() {
       });
     }
     setCheckedIn(true);
+    // 保存签到日期，防止刷新后可重复签到
+    try {
+      var chkSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      chkSaved.checkinDate = new Date().toISOString().slice(0, 10);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved));
+    } catch(e) {}
     setShowCheckIn(true);
   }, [isLocalMode]);
 
