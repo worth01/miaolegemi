@@ -14962,6 +14962,17 @@ function App() {
         });
         if (data.bellsEarned > 0) setBells(prev => prev + data.bellsEarned);
       } catch (e) {
+        // 服务器返回"今日已签到" → 说明之前签到成功了（可能是其他设备或页面刷新前）
+        // 此时只需要同步本地状态，不需要弹错误提示
+        if (e.message && e.message.includes('已签到')) {
+          setCheckedIn(true);
+          try {
+            var chkSaved2 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            chkSaved2.checkinDate = new Date().toISOString().slice(0, 10);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved2));
+          } catch(_e) {}
+          return;
+        }
         showConfirmModal({
           emoji: '❌',
           title: '签到失败',
