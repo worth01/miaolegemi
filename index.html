@@ -36,6 +36,9 @@
   <link rel="preload" as="image" href="assets/home-dark.webp" fetchpriority="high">
   <link rel="preload" as="image" href="assets/home-light.webp" fetchpriority="high">
   <style>
+    /* React 加载前先显示纯色背景，避免白屏 */
+    html, body { background: #0b072a; }
+  </style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0b072a; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
