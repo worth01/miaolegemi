@@ -13228,12 +13228,16 @@ function App() {
       return 'dark';
     }
   });
-  // 主题切换时保存到 localStorage，供下次登录恢复
+  // 主题切换时保存到 localStorage + 同步 URL，刷新不丢失
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       saved.theme = theme;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      // 静默更新 URL 参数，不刷新页面
+      var url = new URL(window.location.href);
+      url.searchParams.set('theme', theme);
+      window.history.replaceState({}, '', url.toString());
     } catch (e) {}
   }, [theme]);
   const [homeMaxSlots, setHomeMaxSlots] = useState(() => {
