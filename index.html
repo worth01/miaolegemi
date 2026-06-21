@@ -2578,16 +2578,16 @@ function loadSavedTitle() {
 
 // 将服务器返回的状态写入 localStorage 作为离线缓存
 function saveStateOnlineCache(state) {
+  // 读取本地当前数据，用于兜底服务端缺少的字段
+  var cacheSaved = {};
+  try { cacheSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
   try {
     // 保留本地布阵配置，不被服务端数据覆盖
     var cacheLineupBackup = {};
-    try {
-      var cacheSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      (cacheSaved.cats || []).forEach(function(c) {
-        if (c.battleSlot) cacheLineupBackup[c.serialId || c._apiId || c.id] = c.battleSlot;
-        if (c.battleSpectator) cacheLineupBackup['spec_' + (c.serialId || c._apiId || c.id)] = c.battleSpectator;
-      });
-    } catch(e) {}
+    (cacheSaved.cats || []).forEach(function(c) {
+      if (c.battleSlot) cacheLineupBackup[c.serialId || c._apiId || c.id] = c.battleSlot;
+      if (c.battleSpectator) cacheLineupBackup['spec_' + (c.serialId || c._apiId || c.id)] = c.battleSpectator;
+    });
     const data = {
       cats: state.cats ? state.cats.map(c => ({
         serialId: c.id,
@@ -2613,13 +2613,14 @@ function saveStateOnlineCache(state) {
         releasedAt: c.releasedAt,
         coolingUntil: c.coolingUntil
       })) : [],
-      bells: state.bells || 3,
-      activeTitle: state.activeTitle || '新手铲屎官',
-      globalSerialId: state.gameData?.globalSerialId || 1,
-      fishLedger: state.gameData?.fishLedger || [],
-      breedSerialCounters: state.gameData?.breedSerialCounters || {},
-      coolingPool: state.gameData?.coolingPool || {},
-      homeMaxSlots: state.gameData?.homeMaxSlots || 3,
+      // 保留本地已有的值，服务端没有则用本地兜底
+      bells: state.bells ?? cacheSaved?.bells ?? 3,
+      activeTitle: state.activeTitle || cacheSaved?.activeTitle || '新手铲屎官',
+      globalSerialId: state.gameData?.globalSerialId || cacheSaved?.globalSerialId || 1,
+      fishLedger: (state.gameData?.fishLedger && state.gameData.fishLedger.length > 0) ? state.gameData.fishLedger : (cacheSaved?.fishLedger || [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }]),
+      breedSerialCounters: state.gameData?.breedSerialCounters || cacheSaved?.breedSerialCounters || {},
+      coolingPool: state.gameData?.coolingPool || cacheSaved?.coolingPool || {},
+      homeMaxSlots: state.gameData?.homeMaxSlots || cacheSaved?.homeMaxSlots || 10,
       savedAt: Date.now()
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
