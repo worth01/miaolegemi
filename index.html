@@ -32,6 +32,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <!-- LCP 背景图预加载（页面最大可见元素，提前加载可显著降低 LCP） -->
+  <link rel="preload" as="image" href="assets/home-dark.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/home-light.webp" fetchpriority="high">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0b072a; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
