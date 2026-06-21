@@ -13190,7 +13190,12 @@ function App() {
 
   // State
   const [cats, setCats] = useState(loadState);
-  const [bells, setBells] = useState(3);
+  const [bells, setBells] = useState(() => {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return saved.bells ?? 3;
+    } catch(e) { return 3; }
+  });
   // 从URL参数决定默认tab: ?tab=battle/bag 时切换到cat标签页, ?tab=home 保持首页
   const getInitialActiveTab = () => {
     const params = new URLSearchParams(window.location.search);
@@ -13557,7 +13562,7 @@ function App() {
               id: 'local',
               username: '本地用户',
               nickname: '铲屎官',
-              bells: localData.bells || 3
+              bells: localData.bells ?? 3
             });
             setIsLocalMode(true);
           }
@@ -13596,7 +13601,7 @@ function App() {
         try {
           const state = await MiaolegemiAPI.getState();
           // 应用服务器数据
-          setBells(state.bells || userData.bells || 3);
+          setBells(state.bells ?? userData.bells ?? 3);
           setActiveTitle(state.activeTitle || '新手铲屎官');
           setPityCount(state.pityCount || 0);
           if (state.cats && state.cats.length > 0) {
@@ -13755,7 +13760,7 @@ function App() {
           id: 'guest',
           username: '游客',
           nickname: '铲屎官',
-          bells: localData.bells || 3
+          bells: localData.bells ?? 3
         });
       } else {
         setUser({
