@@ -11185,22 +11185,35 @@ function Game() {
             if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
             break;
           }
-          var removed = 0;
-          var attempts = 0;
-          while (removed < stepsToUndo && attempts < slotRef.current.length) {
-            attempts++;
+          // 收集要撤销的牌（本地副本避免异步导致重复撤销）
+          var zheSlot = slotRef.current.slice();
+          var zheRemovedUids = [];
+          var zheRemovedTileIds = [];
+          for (var step = 0; step < stepsToUndo; step++) {
+            if (zheSlot.length === 0) break;
+            var lastNonGroom2 = null;
+            var lastIdx2 = -1;
+            for (var si = zheSlot.length - 1; si >= 0; si--) {
+              if (!zheSlot[si].isGroom) { lastNonGroom2 = zheSlot[si]; lastIdx2 = si; break; }
+            }
+            if (!lastNonGroom2) {
+              if (step === 0) { setSkillConflictMsg("收集槽中没有牌，技能施放失败"); setSkillAnimVisible(false); }
+              break;
+            }
+            zheRemovedUids.push(lastNonGroom2.uid);
+            zheRemovedTileIds.push(lastNonGroom2.tileId);
+            zheSlot.splice(lastIdx2, 1);
+          }
+          if (zheRemovedTileIds.length > 0) {
             if (matchTimeoutRef.current) { clearTimeout(matchTimeoutRef.current); matchTimeoutRef.current = null; }
             setMatching([]);
-            var lastNonGroom2 = null;
-            for (var si = slotRef.current.length - 1; si >= 0; si--) {
-              if (!slotRef.current[si].isGroom) { lastNonGroom2 = slotRef.current[si]; break; }
-            }
-            if (!lastNonGroom2) { setSkillConflictMsg("收集槽中没有牌，技能施放失败"); setSkillAnimVisible(false); break; }
-            var tileExists = tilesRef.current.some(function(t) { return t.id === lastNonGroom2.tileId && t.removed; });
-            if (tileExists) setTiles(function(prev) { return prev.map(function(t) { return t.id === lastNonGroom2.tileId ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
-            setSlot(function(prev) { return prev.filter(function(s) { return s.uid !== lastNonGroom2.uid; }); });
-            setMoveHistory(function(h) { return h.slice(0, -1); });
-            removed++;
+            var zheTileSet = {};
+            for (var ti = 0; ti < zheRemovedTileIds.length; ti++) { zheTileSet[zheRemovedTileIds[ti]] = true; }
+            setTiles(function(prev) { return prev.map(function(t) { return zheTileSet[t.id] ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
+            var zheUidSet = {};
+            for (var ui = 0; ui < zheRemovedUids.length; ui++) { zheUidSet[zheRemovedUids[ui]] = true; }
+            setSlot(function(prev) { return prev.filter(function(s) { return !zheUidSet[s.uid]; }); });
+            setMoveHistory(function(h) { return h.slice(0, -zheRemovedTileIds.length); });
           }
           break;
         }
