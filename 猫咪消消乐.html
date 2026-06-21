@@ -8645,9 +8645,9 @@ function Game() {
             ...t,
             inSlot: false
           } : t));
-          setSlot([]);
+          (slotRef.current = [], setSlot([]));
           setGroomSlots([]);
-          setTempStorage([]);
+          (tempStorageRef.current = [], setTempStorage([]));
           setGameState(GAME_LOSE);
         }, 2000);
       }
@@ -9524,9 +9524,9 @@ function Game() {
         if (remaining > 0) {
           // 失败时把收集槽的牌放回棋盘，保证剩余卡牌统计准确
           setTiles(prev => prev.map(t => t.inSlot ? { ...t, inSlot: false } : t));
-          setSlot([]);
+          (slotRef.current = [], setSlot([]));
           setGroomSlots([]);
-          setTempStorage([]);
+          (tempStorageRef.current = [], setTempStorage([]));
           setGameState(GAME_LOSE);
         } else {
           setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
@@ -9997,9 +9997,9 @@ function Game() {
           ...t,
           inSlot: false
         } : t));
-        setSlot([]);
+        (slotRef.current = [], setSlot([]));
         setGroomSlots([]);
-        setTempStorage([]);
+        (tempStorageRef.current = [], setTempStorage([]));
         setGameState(GAME_LOSE);
       }, 1500);
       return; // 终止，不执行后续任何逻辑
@@ -10052,7 +10052,7 @@ function Game() {
         const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
         const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
         const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
-        setSlot(nextSlot);
+        (slotRef.current = nextSlot, setSlot(nextSlot));
         setMatching(allMatchUids);
 
         // 粒子特效
@@ -10089,7 +10089,7 @@ function Game() {
           setMatching([]);
         }, 350);
       } else {
-        setSlot(nextSlot);
+        (slotRef.current = nextSlot, setSlot(nextSlot));
       }
       return; // 真身牌揭穿+入槽完成
     }
@@ -10141,9 +10141,9 @@ function Game() {
             ...t,
             inSlot: false
           } : t));
-          setSlot([]);
+          (slotRef.current = [], setSlot([]));
           setGroomSlots([]);
-          setTempStorage([]);
+          (tempStorageRef.current = [], setTempStorage([]));
           setGameState(GAME_LOSE);
         }, 800);
         return;
@@ -10281,7 +10281,7 @@ function Game() {
         const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
         const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
         const allMatchUids = matchResult.sameType.slice(0, MATCH_COUNT).map(s => s.uid);
-        setSlot(nextSlotWithBoth);
+        (slotRef.current = nextSlotWithBoth, setSlot(nextSlotWithBoth));
         setMatching(allMatchUids);
         const catDef = CAT_TYPES.find(c => c.id === matchResult.type);
         const pColor = catDef ? catDef.color : '#FFD700';
@@ -10345,7 +10345,7 @@ function Game() {
           setMatching([]);
         }, 400);
       } else if (nextSlotWithBoth.length >= effectiveCapacity) {
-        setSlot(nextSlotWithBoth);
+        (slotRef.current = nextSlotWithBoth, setSlot(nextSlotWithBoth));
         setTimeout(() => {
           const typeCounts = {};
           nextSlotWithBoth.filter(s => !s.isGroom).forEach(s => {
@@ -10357,14 +10357,14 @@ function Game() {
               ...t,
               inSlot: false
             } : t));
-            setSlot([]);
+            (slotRef.current = [], setSlot([]));
             setGroomSlots([]);
-            setTempStorage([]);
+            (tempStorageRef.current = [], setTempStorage([]));
             setGameState(GAME_LOSE);
           }
         }, 300);
       } else {
-        setSlot(nextSlotWithBoth);
+        (slotRef.current = nextSlotWithBoth, setSlot(nextSlotWithBoth));
       }
       return; // 粘连牌批量入槽已完成，退出函数
     }
@@ -10395,7 +10395,7 @@ function Game() {
       const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
       const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
       const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
-      setSlot(nextSlot);
+      (slotRef.current = nextSlot, setSlot(nextSlot));
       setMatching(allMatchUids);
 
       // Particle effects at matched tile positions
@@ -10473,7 +10473,7 @@ function Game() {
       }, 400);
     } else if (nextSlot.length >= effectiveCapacity) {
       // 收集槽已满（含舔毛牌占位），判定失败
-      setSlot(nextSlot);
+      (slotRef.current = nextSlot, setSlot(nextSlot));
       setTimeout(() => {
         const typeCounts = {};
         nextSlot.filter(s => !s.isGroom).forEach(s => {
@@ -10486,14 +10486,14 @@ function Game() {
             ...t,
             inSlot: false
           } : t));
-          setSlot([]);
+          (slotRef.current = [], setSlot([]));
           setGroomSlots([]);
-          setTempStorage([]);
+          (tempStorageRef.current = [], setTempStorage([]));
           setGameState(GAME_LOSE);
         }
       }, 300);
     } else {
-      setSlot(nextSlot);
+      (slotRef.current = nextSlot, setSlot(nextSlot));
       // 舔毛牌等干扰牌入槽后不触发三消，需单独检查胜利条件
       setTimeout(() => {
         setTiles(prev => {
@@ -11101,7 +11101,7 @@ function Game() {
             setMatching([]);
             var allUids = new Set(allItems.map(function(s) { return s.uid; }));
             setSlot(function(prev) { return prev.filter(function(s) { return !allUids.has(s.uid); }); });
-            setTempStorage([]);
+            (tempStorageRef.current = [], setTempStorage([]));
             setMoveHistory([]);
             var shuffledAll = shuffleArr(allItems);
             shuffledAll.forEach(function(item, idx) {
@@ -11184,8 +11184,8 @@ function Game() {
           // Lv3: 恢复本局开始时的棋盘状态
           if (rLevel >= 3 && initialTilesRef.current) {
             setTiles(initialTilesRef.current.map(function(t) { return Object.assign({}, t); }));
-            setSlot([]);
-            setTempStorage([]);
+            (slotRef.current = [], setSlot([]));
+            (tempStorageRef.current = [], setTempStorage([]));
             setGroomSlots([]);
             if (isTimed) {
               var lvlTime = levelConfig.timeLimit || 120;
@@ -11321,7 +11321,7 @@ function Game() {
             emitExplosion(tileX(t) + TILE_W / 2, tileY(t) + TILE_H / 2, explodeColor);
           });
           setTiles(function(prev) { return prev.map(function(t) { return topTiles.some(function(tt) { return tt.id === t.id; }) ? Object.assign({}, t, { removed: true }) : t; }); });
-          setTempStorage([]);
+          (tempStorageRef.current = [], setTempStorage([]));
           setTimeout(function() {
             var nonBlockingRemaining = tilesRef.current.filter(function(t) { return !t.removed && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); });
             if (nonBlockingRemaining.length === 0) {
@@ -11624,8 +11624,8 @@ function Game() {
     initialTilesRef.current = restartTiles.map(function(t) { return Object.assign({}, t); }); // 折耳猫Lv3: 保存初始状态
     setTiles(restartTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
-    setSlot([]);
-    setTempStorage([]);
+    (slotRef.current = [], setSlot([]));
+    (tempStorageRef.current = [], setTempStorage([]));
     setGroomSlots([]);
     setStickyToast('');
     setFreezeToast('');
@@ -11749,8 +11749,8 @@ function Game() {
     initialTilesRef.current = retryTiles.map(function(t) { return Object.assign({}, t); }); // 折耳猫Lv3
     setTiles(retryTiles);
     setPiles(generatePileData(currentLevel)); // P2: 重置牌堆
-    setSlot([]);
-    setTempStorage([]);
+    (slotRef.current = [], setSlot([]));
+    (tempStorageRef.current = [], setTempStorage([]));
     setGroomSlots([]);
     setStickyToast('');
     setMatching([]);
@@ -11830,8 +11830,8 @@ function Game() {
       console.timeEnd('[handleNextLevel] generateBoard(cycle)');
       setTiles(cycleTiles);
       setPiles(generatePileData(1)); // P2: 重置牌堆
-      setSlot([]);
-      setTempStorage([]);
+      (slotRef.current = [], setSlot([]));
+      (tempStorageRef.current = [], setTempStorage([]));
       setGroomSlots([]);
       setStickyToast('');
       setFreezeToast('');
@@ -11948,8 +11948,8 @@ function Game() {
       setTiles(fbTiles); // 兜底：回到第1关
       setPiles(generatePileData(1)); // P2: 重置牌堆
     }
-    setSlot([]);
-    setTempStorage([]);
+    (slotRef.current = [], setSlot([]));
+    (tempStorageRef.current = [], setTempStorage([]));
     setGroomSlots([]);
     setStickyToast('');
     setFreezeToast('');
@@ -12097,7 +12097,7 @@ function Game() {
       const tempRemoveCount = Math.min(tempMatches.length, MATCH_COUNT);
       const slotRemoveCount = MATCH_COUNT - tempRemoveCount;
       const allMatchUids = sameType.slice(0, MATCH_COUNT).map(s => s.uid);
-      setSlot(nextSlot);
+      (slotRef.current = nextSlot, setSlot(nextSlot));
       setMatching(allMatchUids);
       setComboCount(c => c + 1);
       const now = Date.now();
@@ -12135,7 +12135,7 @@ function Game() {
         setMatching([]);
       }, 350);
     } else {
-      setSlot(nextSlot);
+      (slotRef.current = nextSlot, setSlot(nextSlot));
     }
   }, [gameState, frozenSlot, levelConfig, slotBonus]);
 
