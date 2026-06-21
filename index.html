@@ -13545,6 +13545,18 @@ function App() {
             // 保存到 localStorage 作为离线缓存
             saveStateOnlineCache(state, mapped);
             window.__serverDataLoaded = true;
+            // 从服务端同步签到状态
+            try {
+              var checkinStatus = await MiaolegemiAPI.getCheckinStatus();
+              if (checkinStatus.checkedIn) {
+                setCheckedIn(true);
+                try {
+                  var chkSaved3 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                  chkSaved3.checkinDate = new Date().toISOString().slice(0, 10);
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved3));
+                } catch(_e2) {}
+              }
+            } catch(_ce) { /* 忽略签到状态查询失败 */ }
           } catch (e) {
             if (e.message !== 'timeout') {
               MiaolegemiAPI.clearToken();
@@ -13674,6 +13686,18 @@ function App() {
           }
           saveStateOnlineCache(state, mapped);
           window.__serverDataLoaded = true;
+          // 从服务端同步签到状态
+          try {
+            var loginCheckinStatus = await MiaolegemiAPI.getCheckinStatus();
+            if (loginCheckinStatus.checkedIn) {
+              setCheckedIn(true);
+              try {
+                var chkSaved4 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                chkSaved4.checkinDate = new Date().toISOString().slice(0, 10);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved4));
+              } catch(_e3) {}
+            }
+          } catch(_ce2) { /* 忽略 */ }
         } catch (e) {
           // 服务器不可达：保留当前本地数据，不清空
           console.warn('getState failed, keeping local data:', e.message);
