@@ -12,7 +12,7 @@
 
 <br/>
 
-[![试玩](https://img.shields.io/badge/▶️_立即试玩-FF8C42?style=for-the-badge&logoColor=white)](https://worth01.github.io/miaolegemi/)
+[![试玩](https://img.shields.io/badge/▶️_立即试玩-FF8C42?style=for-the-badge&logoColor=white)](https://mwlxx.up.railway.app)
 [![GitHub Stars](https://img.shields.io/github/stars/worth01/miaolegemi?style=for-the-badge&color=FFD700)](https://github.com/worth01/miaolegemi/stargazers)
 [![License](https://img.shields.io/badge/License-MIT-52C41A?style=for-the-badge)](LICENSE)
 
