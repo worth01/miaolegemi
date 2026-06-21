@@ -2577,42 +2577,25 @@ function loadSavedTitle() {
 }
 
 // 将服务器返回的状态写入 localStorage 作为离线缓存
-function saveStateOnlineCache(state) {
+function saveStateOnlineCache(state, mappedCats) {
   // 读取本地当前数据，用于兜底服务端缺少的字段
   var cacheSaved = {};
   try { cacheSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
   try {
-    // 保留本地布阵配置，不被服务端数据覆盖
-    var cacheLineupBackup = {};
-    (cacheSaved.cats || []).forEach(function(c) {
-      if (c.battleSlot) cacheLineupBackup[c.serialId || c._apiId || c.id] = c.battleSlot;
-      if (c.battleSpectator) cacheLineupBackup['spec_' + (c.serialId || c._apiId || c.id)] = c.battleSpectator;
-    });
+    const catsToSave = mappedCats || (state.cats ? state.cats.map(c => ({
+      serialId: c.id, breedSerial: c.breedSerial || 0, breedId: c.breedId, name: c.breedId,
+      rarity: c.rarity, img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
+      desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
+      personality: c.personality, location: c.location,
+      bagExpiresAt: c.bagExpiresAt, acquiredAt: c.acquiredAt, lastFedAt: c.lastFedAt,
+      daysAlive: c.daysAlive || 0, gamesWitnessed: c.gamesWitnessed || 0,
+      bestCombo: c.bestCombo || 0, fishSpent: c.fishSpent || 0,
+      intimacy: c.intimacy || 0, isGenesis: (c.breedSerial || 0) <= 10,
+      battleSlot: c.slotPosition, battleSpectator: c.battleSpectator,
+      releasedAt: c.releasedAt, coolingUntil: c.coolingUntil
+    })) : []);
     const data = {
-      cats: state.cats ? state.cats.map(c => ({
-        serialId: c.id,
-        breedSerial: c.breedSerial || 0,
-        breedId: c.breedId,
-        name: c.breedId,
-        rarity: c.rarity,
-        img: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).img,
-        desc: (BREEDS.find(b => b.id === c.breedId) || BREEDS[0]).desc,
-        personality: c.personality,
-        location: c.location,
-        bagExpiresAt: c.bagExpiresAt,
-        acquiredAt: c.acquiredAt,
-        lastFedAt: c.lastFedAt,
-        daysAlive: c.daysAlive || 0,
-        gamesWitnessed: c.gamesWitnessed || 0,
-        bestCombo: c.bestCombo || 0,
-        fishSpent: c.fishSpent || 0,
-        intimacy: c.intimacy || 0,
-        isGenesis: (c.breedSerial || 0) <= 10,
-        battleSlot: cacheLineupBackup[c.id] || c.slotPosition,
-        battleSpectator: cacheLineupBackup['spec_' + c.id] || c.battleSpectator,
-        releasedAt: c.releasedAt,
-        coolingUntil: c.coolingUntil
-      })) : [],
+      cats: catsToSave,
       // 保留本地已有的值，服务端没有则用本地兜底
       bells: state.bells ?? cacheSaved?.bells ?? 3,
       activeTitle: state.activeTitle || cacheSaved?.activeTitle || '新手铲屎官',
@@ -13495,7 +13478,7 @@ function App() {
             } catch(e) {}
             // 加载猫
             if (state.cats && state.cats.length > 0) {
-              const mapped = state.cats.map(c => ({
+              mapped = state.cats.map(c => ({
                 serialId: c.id,
                 breedSerial: c.breedSerial || 0,
                 breedId: c.breedId,
@@ -13542,7 +13525,7 @@ function App() {
               if (gd.theme) setTheme(gd.theme);
             }
             // 保存到 localStorage 作为离线缓存
-            saveStateOnlineCache(state);
+            saveStateOnlineCache(state, mapped);
             window.__serverDataLoaded = true;
           } catch (e) {
             if (e.message !== 'timeout') {
@@ -13605,6 +13588,7 @@ function App() {
           setBells(state.bells ?? userData.bells ?? 3);
           setActiveTitle(state.activeTitle || '新手铲屎官');
           setPityCount(state.pityCount || 0);
+          var mapped = null;
           if (state.cats && state.cats.length > 0) {
             // 保存本地布阵配置，避免被服务端数据覆盖
             var loginLineupBackup = {};
@@ -13615,7 +13599,7 @@ function App() {
                 if (c.battleSpectator) loginLineupBackup['spec_' + (c.serialId || c._apiId)] = c.battleSpectator;
               });
             } catch(e) {}
-            const mapped = state.cats.map(c => ({
+            mapped = state.cats.map(c => ({
               serialId: c.id,
               breedSerial: c.breedSerial || 0,
               breedId: c.breedId,
@@ -13670,7 +13654,7 @@ function App() {
             breedSerialCounters = {};
             coolingPool = {};
           }
-          saveStateOnlineCache(state);
+          saveStateOnlineCache(state, mapped);
           window.__serverDataLoaded = true;
         } catch (e) {
           // 服务器不可达：保留当前本地数据，不清空
@@ -13995,7 +13979,7 @@ function App() {
             } catch(e) {}
             const apiCats = await MiaolegemiAPI.getCats();
             if (apiCats.length > 0) {
-              const mapped = apiCats.map(c => ({
+              mapped = apiCats.map(c => ({
                 serialId: c.id,
                 breedSerial: c.cat_serial_registry?.serialNumber || 0,
                 breedId: c.cat_serial_registry?.cat_species?.name || '橘猫',
