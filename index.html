@@ -13780,6 +13780,8 @@ function App() {
   const handleLogout = () => {
     setShowLogoutConfirm(false);
     MiaolegemiAPI.logout();
+    if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+    window.__serverDataLoaded = false;
     setUser(null);
     setIsLocalMode(true);
     // 清除本地数据，下一个用户从零开始
