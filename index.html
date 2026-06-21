@@ -13509,8 +13509,8 @@ function App() {
                 fishSpent: c.fishSpent || 0,
                 intimacy: c.intimacy || 0,
                 isGenesis: (c.breedSerial || 0) <= 10,
-                battleSlot: stateLineupBackup[c.id] || c.slotPosition,
-                battleSpectator: stateLineupBackup['spec_' + c.id] || c.battleSpectator,
+                battleSlot: stateLineupBackup[c.id] || (state.gameData?.battleLineup || {})['battle_' + c.id] || c.slotPosition,
+                battleSpectator: stateLineupBackup['spec_' + c.id] || (state.gameData?.battleLineup || {})['spectator_' + c.id] || c.battleSpectator,
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
                 coolingUntil: c.coolingUntil ? new Date(c.coolingUntil).getTime() : null,
                 _apiId: c.id,
@@ -13628,8 +13628,8 @@ function App() {
               fishSpent: c.fishSpent || 0,
               intimacy: c.intimacy || 0,
               isGenesis: (c.breedSerial || 0) <= 10,
-              battleSlot: loginLineupBackup[c.id] || c.slotPosition,
-              battleSpectator: loginLineupBackup['spec_' + c.id] || c.battleSpectator,
+              battleSlot: loginLineupBackup[c.id] || (state.gameData?.battleLineup || {})['battle_' + c.id] || c.slotPosition,
+              battleSpectator: loginLineupBackup['spec_' + c.id] || (state.gameData?.battleLineup || {})['spectator_' + c.id] || c.battleSpectator,
               releasedAt: c.releasedAt,
               coolingUntil: c.coolingUntil,
               _apiId: c.id,
@@ -14307,6 +14307,7 @@ function App() {
               personalBestScore: prev.personalBestScore,
               todayTotalScore: prev.todayTotalScore,
               todayDate: prev.todayDate,
+              battleLineup: prev.battleLineup,
               savedAt: Date.now()
             }
           });
@@ -14463,6 +14464,26 @@ function App() {
     setAdoptTarget(null);
   }, [adoptTarget, isLocalMode, user]);
 
+  // 同步布阵到服务端（出战席+观战席配置）
+  const syncBattleLineupToServer = cats => {
+    if (isLocalMode || !MiaolegemiAPI.isLoggedIn()) return;
+    try {
+      var slots = {};
+      cats.forEach(function(c) {
+        if (c.battleSlot) slots['battle_' + c._apiId] = c.battleSlot;
+        if (c.battleSpectator) slots['spectator_' + c._apiId] = c.battleSpectator;
+      });
+      if (Object.keys(slots).length > 0) {
+        MiaolegemiAPI.syncState({
+          gameData: {
+            battleLineup: slots,
+            homeMaxSlots: (JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')).homeMaxSlots || 10
+          }
+        }).catch(function(){});
+      }
+    } catch(e) {}
+  };
+
   // P2: Handle deploy (家园 → 出战席/观战席)
   const handleDeploy = useCallback(cat => {
     const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
@@ -14483,13 +14504,15 @@ function App() {
         });
         return;
       }
-      setCats(prev => prev.map(c => {
-        if (c.serialId !== cat.serialId) return c;
-        return {
-          ...c,
-          battleSlot: targetSlot
-        };
-      }));
+      setCats(prev => {
+        var next = prev.map(c => {
+          if (c.serialId !== cat.serialId) return c;
+          return { ...c, battleSlot: targetSlot };
+        });
+        // 同步布阵到服务端
+        syncBattleLineupToServer(next);
+        return next;
+      });
       return;
     }
 
@@ -14620,13 +14643,14 @@ function App() {
 
   // P2: Handle withdraw (出战席 → 家园)
   const handleWithdraw = useCallback(cat => {
-    setCats(prev => prev.map(c => {
-      if (c.serialId !== cat.serialId) return c;
-      return {
-        ...c,
-        battleSlot: null
-      };
-    }));
+    setCats(prev => {
+      var next = prev.map(c => {
+        if (c.serialId !== cat.serialId) return c;
+        return { ...c, battleSlot: null };
+      });
+      syncBattleLineupToServer(next);
+      return next;
+    });
   }, []);
 
   // Handle release
