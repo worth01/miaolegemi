@@ -1044,8 +1044,9 @@ async function shareContent(_a) {
   var url = a.url || window.location.href;
   var onSuccess = a.onSuccess;
   var onError = a.onError;
-  // 1. Web Share API（移动端原生分享面板）
-  if (navigator.share) {
+  // 1. Web Share API（仅移动端，桌面端会产生打不开的临时文件）
+  var isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || ('ontouchstart' in window);
+  if (navigator.share && isMobile) {
     try {
       await navigator.share({
         title: title,

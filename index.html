@@ -2688,8 +2688,9 @@ async function shareContent({
     url: url || window.location.href
   };
 
-  // 1. 优先 Web Share API（移动端原生分享面板，可分享到微信/短信等）
-  if (navigator.share) {
+  // 1. Web Share API（仅移动端，桌面端会产生打不开的临时文件）
+  var isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || ('ontouchstart' in window);
+  if (navigator.share && isMobile) {
     try {
       await navigator.share(shareData);
       if (onSuccess) onSuccess();
