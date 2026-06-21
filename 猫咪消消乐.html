@@ -11339,7 +11339,11 @@ function Game() {
           if (skipped) {
             // Lv3: 跳关成功额外奖励60鱼干
             if (rLevel >= 3) { setScore(function(prev) { return prev + 60; }); }
-            setGameState(LEVELS[currentLevel + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+            // 延迟跳关，等技能动画播放完毕（～2.5s）后再执行
+            var _curLv = currentLevel;
+            setTimeout(function() {
+              setGameState(LEVELS[_curLv + 1] ? GAME_LEVEL_COMPLETE : GAME_WIN);
+            }, 2500);
           } else if (rLevel >= 3) {
             // Lv3: 跳关失败补偿120鱼干
             setScore(function(prev) { return prev + 120; });
