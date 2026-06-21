@@ -13570,36 +13570,27 @@ function App() {
     setUser(userData);
     setIsLocalMode(localMode);
     if (!localMode) {
-      setBells(userData.bells || 3);
       setGuestMode(false);
       clearGuestMode();
-      // 先重置所有状态为空，清掉上一个用户的本地数据
-      setCats([]);
-      setActiveTitle('新手铲屎官');
-      setPityCount(0);
-      setOwnedSkins([]);
-      setEquippedSkins({});
-      setGroupStageScores({});
-      setGroupStageBellsClaimed([]);
-      setKnockoutConsecutiveClears(0);
-      setKnockoutEliminatedToday(false);
-      setKnockoutSkinClaimed(false);
-      setBets([]);
-      setHomeMaxSlots(3);
-      fishLedger = [{
-        type: 'earn',
-        amount: 100,
-        desc: '初始赠送',
-        time: Date.now()
-      }];
-      globalSerialId = 1;
-      breedSerialCounters = {};
-      coolingPool = {};
-      // 从服务器拉取完整游戏数据
+      // 先从服务器拉取完整游戏数据，再应用（避免重置→加载失败导致数据丢失）
       (async () => {
         try {
           const state = await MiaolegemiAPI.getState();
+          // 应用服务器数据
+          setBells(state.bells || userData.bells || 3);
+          setActiveTitle(state.activeTitle || '新手铲屎官');
+          setPityCount(state.pityCount || 0);
+          setHomeMaxSlots(3);
           if (state.cats && state.cats.length > 0) {
+            // 保存本地布阵配置，避免被服务端数据覆盖
+            var loginLineupBackup = {};
+            try {
+              var localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+              (localSaved.cats || []).forEach(function(c) {
+                if (c.battleSlot) loginLineupBackup[c.serialId || c._apiId] = c.battleSlot;
+                if (c.battleSpectator) loginLineupBackup['spec_' + (c.serialId || c._apiId)] = c.battleSpectator;
+              });
+            } catch(e) {}
             const mapped = state.cats.map(c => ({
               serialId: c.id,
               breedSerial: c.breedSerial || 0,
@@ -13619,7 +13610,8 @@ function App() {
               fishSpent: c.fishSpent || 0,
               intimacy: c.intimacy || 0,
               isGenesis: (c.breedSerial || 0) <= 10,
-              battleSlot: c.slotPosition,
+              battleSlot: loginLineupBackup[c.id] || c.slotPosition,
+              battleSpectator: loginLineupBackup['spec_' + c.id] || c.battleSpectator,
               releasedAt: c.releasedAt,
               coolingUntil: c.coolingUntil,
               _apiId: c.id,
@@ -13627,15 +13619,16 @@ function App() {
             }));
             setCats(mapped);
           }
-          setBells(state.bells || 3);
-          setActiveTitle(state.activeTitle || '新手铲屎官');
-          setPityCount(state.pityCount || 0);
           if (state.gameData) {
             const gd = state.gameData;
             if (gd.fishLedger && gd.fishLedger.length > 0) fishLedger = gd.fishLedger;
+            else fishLedger = [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }];
             if (gd.globalSerialId) globalSerialId = gd.globalSerialId;
+            else globalSerialId = 1;
             if (gd.breedSerialCounters) breedSerialCounters = gd.breedSerialCounters;
+            else breedSerialCounters = {};
             if (gd.coolingPool) coolingPool = gd.coolingPool;
+            else coolingPool = {};
             if (gd.ownedSkins) setOwnedSkins(gd.ownedSkins);
             if (gd.equippedSkins) setEquippedSkins(gd.equippedSkins || {});
             if (gd.groupStageScores) setGroupStageScores(gd.groupStageScores);
@@ -13646,10 +13639,17 @@ function App() {
             if (gd.bets) setBets(gd.bets);
             if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
             if (gd.theme) setTheme(gd.theme);
+          } else {
+            // 新用户默认值
+            fishLedger = [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }];
+            globalSerialId = 1;
+            breedSerialCounters = {};
+            coolingPool = {};
           }
           saveStateOnlineCache(state);
         } catch (e) {
-          // 服务器不可达，使用本地数据
+          // 服务器不可达：保留当前本地数据，不清空
+          console.warn('getState failed, keeping local data:', e.message);
         }
       })();
     }
