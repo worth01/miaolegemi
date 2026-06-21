@@ -2620,7 +2620,7 @@ function saveStateOnlineCache(state) {
       fishLedger: (state.gameData?.fishLedger && state.gameData.fishLedger.length > 0) ? state.gameData.fishLedger : (cacheSaved?.fishLedger || [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }]),
       breedSerialCounters: state.gameData?.breedSerialCounters || cacheSaved?.breedSerialCounters || {},
       coolingPool: state.gameData?.coolingPool || cacheSaved?.coolingPool || {},
-      homeMaxSlots: state.gameData?.homeMaxSlots || cacheSaved?.homeMaxSlots || 10,
+      homeMaxSlots: Math.max(state.gameData?.homeMaxSlots || 0, cacheSaved?.homeMaxSlots || 0, 10),
       // 保留游戏积分，不被服务端缺字段覆盖
       personalBestScore: cacheSaved?.personalBestScore || state.gameData?.personalBestScore || 0,
       todayTotalScore: cacheSaved?.todayTotalScore || state.gameData?.todayTotalScore || 0,
@@ -13533,7 +13533,7 @@ function App() {
               if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
               if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
               if (gd.bets) setBets(gd.bets);
-              if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+              if (gd.homeMaxSlots) setHomeMaxSlots(function(prev) { return Math.max(prev, gd.homeMaxSlots); });
               if (gd.theme) setTheme(gd.theme);
             }
             // 保存到 localStorage 作为离线缓存
@@ -13655,7 +13655,7 @@ function App() {
             if (gd.knockoutEliminatedToday !== undefined) setKnockoutEliminatedToday(gd.knockoutEliminatedToday);
             if (gd.knockoutSkinClaimed !== undefined) setKnockoutSkinClaimed(gd.knockoutSkinClaimed);
             if (gd.bets) setBets(gd.bets);
-            if (gd.homeMaxSlots) setHomeMaxSlots(gd.homeMaxSlots);
+            if (gd.homeMaxSlots) setHomeMaxSlots(function(prev) { return Math.max(prev, gd.homeMaxSlots); });
             if (gd.theme) setTheme(gd.theme);
           } else {
             // 新用户默认值
