@@ -2597,10 +2597,12 @@ function saveStateOnlineCache(state, mappedCats) {
     // 在现有 localStorage 基础上更新，只覆盖服务端有值的字段，保留本地独有字段
     var data = Object.assign({}, cacheSaved, {
       cats: catsToSave,
-      bells: state.bells ?? cacheSaved?.bells ?? 3,
+      // bells 优先本地（签到/抽卡后更实时），服务端兜底
+      bells: cacheSaved?.bells ?? state.bells ?? 3,
       activeTitle: state.activeTitle || cacheSaved?.activeTitle || '新手铲屎官',
       globalSerialId: state.gameData?.globalSerialId || cacheSaved?.globalSerialId || 1,
-      fishLedger: (state.gameData?.fishLedger && state.gameData.fishLedger.length > 0) ? state.gameData.fishLedger : (cacheSaved?.fishLedger || [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }]),
+      // fishLedger 始终优先本地（更实时），服务端仅在新设备兜底
+      fishLedger: (cacheSaved?.fishLedger && cacheSaved.fishLedger.length > 0) ? cacheSaved.fishLedger : ((state.gameData?.fishLedger && state.gameData.fishLedger.length > 0) ? state.gameData.fishLedger : [{ type: 'earn', amount: 100, desc: '初始赠送', time: Date.now() }]),
       breedSerialCounters: state.gameData?.breedSerialCounters || cacheSaved?.breedSerialCounters || {},
       coolingPool: state.gameData?.coolingPool || cacheSaved?.coolingPool || {},
       homeMaxSlots: Math.max(state.gameData?.homeMaxSlots || 0, cacheSaved?.homeMaxSlots || 0, 10),
