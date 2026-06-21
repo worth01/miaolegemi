@@ -10788,7 +10788,8 @@ function Game() {
       case '黑猫':
         {
           // 撤回 Lv1→Lv2→Lv3
-          if (slotRef.current.length === 0) {
+          var curSlot = slotRef.current.slice(); // 本地副本，避免 React 异步导致重复撤销
+          if (curSlot.length === 0) {
             setSkillConflictMsg('上一步没有进行任何操作，撤销失败');
             setSkillAnimVisible(false);
             break;
@@ -10799,25 +10800,38 @@ function Game() {
           }
           setMatching([]);
           var undoSteps = rLevel >= 2 ? 2 : 1;
+          var removedUids = [];
+          var removedTileIds = [];
           for (var step = 0; step < undoSteps; step++) {
-            if (slotRef.current.length === 0) break;
+            if (curSlot.length === 0) break;
             // 从末尾找到最近一张非舔毛牌
             var lastNonGroom = null;
-            for (var si = slotRef.current.length - 1; si >= 0; si--) {
-              if (!slotRef.current[si].isGroom) {
-                lastNonGroom = slotRef.current[si];
+            var lastIdx = -1;
+            for (var si = curSlot.length - 1; si >= 0; si--) {
+              if (!curSlot[si].isGroom) {
+                lastNonGroom = curSlot[si];
+                lastIdx = si;
                 break;
               }
             }
             if (lastNonGroom) {
-              var tileExists = tilesRef.current.some(function(t) { return t.id === lastNonGroom.tileId && t.removed; });
-              if (tileExists) setTiles(function(prev) { return prev.map(function(t) { return t.id === lastNonGroom.tileId ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
-              setSlot(function(prev) { return prev.filter(function(s) { return s.uid !== lastNonGroom.uid; }); });
-              setMoveHistory(function(h) { return h.slice(0, -1); });
+              removedUids.push(lastNonGroom.uid);
+              removedTileIds.push(lastNonGroom.tileId);
+              // 从本地副本中移除，避免下一步重复找到同一张
+              curSlot.splice(lastIdx, 1);
             } else {
               if (step === 0) { setSkillConflictMsg('上一步没有进行任何操作，撤销失败'); setSkillAnimVisible(false); }
               break;
             }
+          }
+          if (removedTileIds.length > 0) {
+            var tileIdSet = {};
+            for (var ti = 0; ti < removedTileIds.length; ti++) { tileIdSet[removedTileIds[ti]] = true; }
+            setTiles(function(prev) { return prev.map(function(t) { return tileIdSet[t.id] ? Object.assign({}, t, { removed: false, inSlot: false }) : t; }); });
+            var uidSet = {};
+            for (var ui = 0; ui < removedUids.length; ui++) { uidSet[removedUids[ui]] = true; }
+            setSlot(function(prev) { return prev.filter(function(s) { return !uidSet[s.uid]; }); });
+            setMoveHistory(function(h) { return h.slice(0, -removedTileIds.length); });
           }
           // Lv3: 恢复撤销期间消耗的技能次数
           if (rLevel >= 3) {
