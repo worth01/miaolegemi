@@ -13457,6 +13457,15 @@ function App() {
             setPityCount(state.pityCount);
             setActiveTitle(state.activeTitle);
             setIsLocalMode(false);
+            // 保存本地布阵配置，避免被服务端数据覆盖
+            var stateLineupBackup = {};
+            try {
+              var localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+              (localSaved.cats || []).forEach(function(c) {
+                if (c.battleSlot) stateLineupBackup[c.serialId || c._apiId] = c.battleSlot;
+                if (c.battleSpectator) stateLineupBackup['spec_' + (c.serialId || c._apiId)] = c.battleSpectator;
+              });
+            } catch(e) {}
             // 加载猫
             if (state.cats && state.cats.length > 0) {
               const mapped = state.cats.map(c => ({
@@ -13478,7 +13487,8 @@ function App() {
                 fishSpent: c.fishSpent || 0,
                 intimacy: c.intimacy || 0,
                 isGenesis: (c.breedSerial || 0) <= 10,
-                battleSlot: c.slotPosition,
+                battleSlot: stateLineupBackup[c.id] || c.slotPosition,
+                battleSpectator: stateLineupBackup['spec_' + c.id] || c.battleSpectator,
                 releasedAt: c.releasedAt ? new Date(c.releasedAt).getTime() : null,
                 coolingUntil: c.coolingUntil ? new Date(c.coolingUntil).getTime() : null,
                 _apiId: c.id,
