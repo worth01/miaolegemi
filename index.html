@@ -7243,10 +7243,12 @@ function CatDetailPage({
     }
   }, colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      const code = getOrCreateInviteCode();
+      var code = getOrCreateInviteCode();
+      var shareUrl = window.location.origin + '/index.html?invite=' + code;
       shareContent({
         title: '看看我的猫咪「' + cat.name + '」！',
-        text: '🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy) || 0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱'
+        text: '🐱 ' + cat.breedId + ' · ' + cat.rarity + '\n点链接直接玩 → ' + shareUrl,
+        url: shareUrl
       });
     },
     className: "btn-deploy-warm",
@@ -7260,10 +7262,12 @@ function CatDetailPage({
     }
   }, "\uD83D\uDCE4 \u63A8\u8350\u8FD9\u53EA\u732B") : /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      const code = getOrCreateInviteCode();
+      var code = getOrCreateInviteCode();
+      var shareUrl = window.location.origin + '/index.html?invite=' + code;
       shareContent({
         title: '看看我的猫咪「' + cat.name + '」！',
-        text: '🐱 品种：' + cat.breedId + '\n⭐ 稀有度：' + cat.rarity + '\n❤️ 亲密度：' + (Number(cat.intimacy) || 0) + '/100\n📋 推荐码：' + code + '\n一起来喵呜乐消消养猫吧～🐱'
+        text: '🐱 ' + cat.breedId + ' · ' + cat.rarity + '\n点链接直接玩 → ' + shareUrl,
+        url: shareUrl
       });
     },
     className: "flow-btn flow-play",
@@ -15140,11 +15144,13 @@ function App() {
 
   // P0: 好友推荐 - 分享邀请
   const handleShareInvite = useCallback(() => {
-    const code = getOrCreateInviteCode();
+    var code = getOrCreateInviteCode();
     setInviteCode(code);
+    var shareUrl = window.location.origin + '/index.html?invite=' + code;
     shareContent({
-      title: '喵呜乐消消',
-      text: '喵呜乐消消邀请你一起来玩！\n我的推荐码：' + code + '\n打开游戏输入推荐码，一起赚鱼干吧～🐱'
+      title: '喵呜乐消消 🐱',
+      text: '一起来撸猫消除吧！🎮\n点链接直接玩 → ' + shareUrl,
+      url: shareUrl
     });
   }, []);
 
