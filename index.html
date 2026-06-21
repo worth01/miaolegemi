@@ -2594,9 +2594,9 @@ function saveStateOnlineCache(state, mappedCats) {
       battleSlot: c.slotPosition, battleSpectator: c.battleSpectator,
       releasedAt: c.releasedAt, coolingUntil: c.coolingUntil
     })) : []);
-    const data = {
+    // 在现有 localStorage 基础上更新，只覆盖服务端有值的字段，保留本地独有字段
+    var data = Object.assign({}, cacheSaved, {
       cats: catsToSave,
-      // 保留本地已有的值，服务端没有则用本地兜底
       bells: state.bells ?? cacheSaved?.bells ?? 3,
       activeTitle: state.activeTitle || cacheSaved?.activeTitle || '新手铲屎官',
       globalSerialId: state.gameData?.globalSerialId || cacheSaved?.globalSerialId || 1,
@@ -2604,12 +2604,11 @@ function saveStateOnlineCache(state, mappedCats) {
       breedSerialCounters: state.gameData?.breedSerialCounters || cacheSaved?.breedSerialCounters || {},
       coolingPool: state.gameData?.coolingPool || cacheSaved?.coolingPool || {},
       homeMaxSlots: Math.max(state.gameData?.homeMaxSlots || 0, cacheSaved?.homeMaxSlots || 0, 10),
-      // 保留游戏积分，不被服务端缺字段覆盖
       personalBestScore: cacheSaved?.personalBestScore || state.gameData?.personalBestScore || 0,
       todayTotalScore: cacheSaved?.todayTotalScore || state.gameData?.todayTotalScore || 0,
       todayDate: cacheSaved?.todayDate || state.gameData?.todayDate || '',
       savedAt: Date.now()
-    };
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {}
 }
