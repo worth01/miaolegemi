@@ -216,13 +216,24 @@ router.post('/sync', authMiddleware, async (req: any, res) => {
   try {
     const { bells, activeTitle, pityCount, gameData } = req.body;
 
+    // 深度合并 gameData 而非整体替换，防止不同场景的 sync 互相覆盖
+    let mergedGameData = undefined;
+    if (gameData !== undefined) {
+      const currentUser = await prisma.users.findUnique({
+        where: { id: req.user.userId },
+        select: { gameData: true },
+      });
+      const existingGameData = (currentUser?.gameData as Record<string, any>) || {};
+      mergedGameData = { ...existingGameData, ...gameData };
+    }
+
     const user = await prisma.users.update({
       where: { id: req.user.userId },
       data: {
         ...(bells !== undefined ? { bells } : {}),
         ...(activeTitle !== undefined ? { activeTitle } : {}),
         ...(pityCount !== undefined ? { pityCount } : {}),
-        ...(gameData !== undefined ? { gameData } : {}),
+        ...(mergedGameData !== undefined ? { gameData: mergedGameData } : {}),
       }
     });
 
