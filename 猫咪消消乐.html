@@ -11496,6 +11496,25 @@ function Game() {
           if (currentScore > prev) data.groupStageScores[gsToday] = currentScore;
         }
         localStorage.setItem(key, JSON.stringify(data));
+        // 同步鱼干/铃铛到服务端，避免返回大厅后被旧数据覆盖
+        if (MiaolegemiAPI && MiaolegemiAPI.isLoggedIn()) {
+          try {
+            var syncData = JSON.parse(localStorage.getItem(key) || '{}');
+            MiaolegemiAPI.syncState({
+              gameData: {
+                fishLedger: syncData.fishLedger || [],
+                globalSerialId: syncData.globalSerialId,
+                breedSerialCounters: syncData.breedSerialCounters,
+                coolingPool: syncData.coolingPool,
+                homeMaxSlots: syncData.homeMaxSlots,
+                theme: syncData.theme,
+                personalBestScore: syncData.personalBestScore,
+                todayTotalScore: syncData.todayTotalScore,
+                todayDate: syncData.todayDate
+              }
+            }).catch(function(){});
+          } catch(e) {}
+        }
         // 写入通关/失败标记（供主应用播放猫咪动效）
         try {
           if (gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) {
