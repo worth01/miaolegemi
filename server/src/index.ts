@@ -6,6 +6,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
+console.log('APP STARTING...');
+process.on('uncaughtException', console.error);
+process.on('unhandledRejection', console.error);
+
 // 路由
 import authRoutes from './routes/auth.js';
 import catRoutes from './routes/cats.js';
