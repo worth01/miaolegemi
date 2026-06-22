@@ -533,6 +533,10 @@
     .flow-play::before { background: linear-gradient(90deg, #00ffff, #3399ff, #66ccff, #00ffff); }
     .flow-send { flex: 1; }
     .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
+    .flow-cancel { flex: 1; }
+    .flow-cancel::before { background: linear-gradient(90deg, #888, #aaa, #ccc, #888); }
+    .flow-skin-action { flex: 1; }
+    .flow-skin-action::before { background: linear-gradient(90deg, #FD9644, #FFEAA7, #FFB730, #FD9644); }
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
     .flow-cancel { display: none; } /* 全局隐藏，弹窗用 .modal-dark .flow-cancel 覆盖 */
@@ -6448,18 +6452,11 @@ function SkinModule({
     }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    style: {
-      flex: 1,
-      padding: '8px 0',
-      borderRadius: 10,
-      border: '1px solid ' + colors.cardBorder,
-      background: 'transparent',
-      color: colors.ink,
-      fontSize: 13,
-      fontWeight: 600,
-      cursor: 'pointer'
-    }
-  }, "取消"), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    className: "flow-btn flow-cancel",
+    style: { flex: 1 }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inner"
+  }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
@@ -6493,19 +6490,15 @@ function SkinModule({
       }
     },
     disabled: isEquipped && isDefaultSelected ? false : isEquipped,
+    className: isEquipped ? '' : "flow-btn flow-skin-action",
     style: {
       flex: 1,
-      padding: '8px 0',
-      borderRadius: 10,
-      border: 'none',
-      background: isEquipped ? colors.glass : 'linear-gradient(135deg, #FD9644, #FF6B6B)',
-      color: isEquipped ? colors.sub : '#fff',
-      fontSize: 13,
-      fontWeight: 700,
-      cursor: isEquipped ? 'default' : 'pointer',
       opacity: isEquipped ? 0.5 : 1
     }
-  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '皮肤商店购买'))));
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inner",
+    style: isEquipped ? { background: colors.glass, color: colors.sub } : {}
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '皮肤商店购买')))));
 }
 
 // 皮肤列表子项
