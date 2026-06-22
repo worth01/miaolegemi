@@ -8319,8 +8319,7 @@ function BattlePrep({
       marginTop: 16
     }
   }, isLightMode ? /*#__PURE__*/React.createElement(isCheckpoint ? "button" : "a", Object.assign({
-    onClick: isCheckpoint && onCancel ? onCancel : undefined
-  }, isCheckpoint ? {} : { href: "index.html?tab=home&theme=" + (isLightMode ? 'light' : 'dark') }), {
+    onClick: isCheckpoint && onCancel ? onCancel : undefined,
     style: {
       flex: 1,
       height: 38,
@@ -8337,7 +8336,7 @@ function BattlePrep({
       color: '#8B3A50',
       boxShadow: '0 4px 0 #E6A0B0, 0 2px 8px rgba(255,143,163,0.25)'
     }
-  }, isCheckpoint ? "\u53D6\u6D88" : "\u8FD4\u56DE") : /*#__PURE__*/React.createElement("button", {
+  }, isCheckpoint ? {} : { href: "index.html?tab=home&theme=" + (isLightMode ? 'light' : 'dark') }), isCheckpoint ? "\u53D6\u6D88" : "\u8FD4\u56DE") : /*#__PURE__*/React.createElement("button", {
     onClick: isCheckpoint && onCancel ? onCancel : (() => window.location.href = 'index.html?tab=home&theme=' + (isLightMode ? 'light' : 'dark')),
     className: "flow-btn flow-send",
     style: {
