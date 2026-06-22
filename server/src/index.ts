@@ -38,19 +38,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// 托管前端静态文件（手机通过局域网访问时只需一个端口）
-const staticDir = path.resolve(process.cwd(), '..');
-app.use(express.static(staticDir));
-
-// 全局错误处理
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  });
-});
-
-// 健康检查
+// 健康检查（最早注册，不受任何中间件影响）
 app.get('/health', (req, res) => {
   console.log('→ /health 被请求');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -67,7 +55,7 @@ setInterval(() => {
   console.log('💓 进程存活 -', new Date().toISOString());
 }, 30000);
 
-// API路由
+// ═══ API路由（必须在静态文件之前） ═══
 app.use('/api/auth', authRoutes);
 app.use('/api/cats', catRoutes);
 app.use('/api/gacha', gachaRoutes);
@@ -75,6 +63,18 @@ app.use('/api/game', gameRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/personalities', personalityRoutes);
 app.use('/api/user', checkinRoutes);
+
+// ═══ 托管前端静态文件（放最后，兜底） ═══
+const staticDir = path.resolve(process.cwd(), '..');
+app.use(express.static(staticDir));
+
+// ═══ 全局错误处理（必须是最后一个中间件） ═══
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  });
+});
 
 // 启动前测试数据库连接
 prisma.$connect()
