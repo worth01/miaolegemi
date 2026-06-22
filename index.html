@@ -6452,11 +6452,21 @@ function SkinModule({
     }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: "flow-btn flow-cancel",
-    style: { width: 100, flex: '0 0 auto' }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "inner"
-  }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    style: {
+      width: 100,
+      flex: '0 0 auto',
+      height: 32,
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.10), rgba(255,255,255,0.04))',
+      backgroundSize: '400% 400%',
+      animation: 'smoothFlow 6s linear infinite',
+      color: 'rgba(240,237,255,0.6)',
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, "取消"), colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
