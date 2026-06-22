@@ -52,8 +52,20 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // 健康检查
 app.get('/health', (req, res) => {
+  console.log('→ /health 被请求');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// 首页（兜底）
+app.get('/', (req, res) => {
+  console.log('→ / 被请求');
+  res.send('OK - 喵了个咪后端运行中');
+});
+
+// 诊断：每30秒打印一次，证明进程存活
+setInterval(() => {
+  console.log('💓 进程存活 -', new Date().toISOString());
+}, 30000);
 
 // API路由
 app.use('/api/auth', authRoutes);

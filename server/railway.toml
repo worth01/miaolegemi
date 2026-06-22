@@ -1,7 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "cd server && npx prisma generate && npx prisma db push && npx tsx src/index.ts"
-healthcheckPath = "/health"
-healthcheckTimeout = 30
