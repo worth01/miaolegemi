@@ -7,8 +7,8 @@ on:
 jobs:
   smoke-test:
     name: 冒烟测试
-    # 仅生产环境部署成功时触发，跳过 Preview 环境
-    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'production'
+    # Railway deployment_status 的 environment 可能为空，改用目标 URL 判断生产环境
+    if: github.event.deployment_status.state == 'success' && contains(github.event.deployment_status.target_url, 'mwlxx.qzz.io')
     runs-on: ubuntu-latest
     steps:
       - name: 等待部署稳定
