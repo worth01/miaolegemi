@@ -875,7 +875,9 @@
     .btn-adopt-warm,
     .btn-adopt-bag-warm,
     .btn-discard-bag-warm,
-    .btn-deploy-warm {
+    .btn-deploy-warm,
+    .btn-cancel-warm,
+    .btn-skin-action-warm {
       border-radius: 22px;
       font-weight: 700;
       cursor: pointer;
@@ -892,7 +894,9 @@
     .btn-adopt-warm::before,
     .btn-adopt-bag-warm::before,
     .btn-discard-bag-warm::before,
-    .btn-deploy-warm::before {
+    .btn-deploy-warm::before,
+    .btn-cancel-warm::before,
+    .btn-skin-action-warm::before {
       content: "";
       position: absolute;
       top: 1px; left: 6px; right: 6px; height: 50%;
@@ -908,7 +912,9 @@
     .btn-adopt-warm:hover,
     .btn-adopt-bag-warm:hover,
     .btn-discard-bag-warm:hover,
-    .btn-deploy-warm:hover {
+    .btn-deploy-warm:hover,
+    .btn-cancel-warm:hover,
+    .btn-skin-action-warm:hover {
       transform: translateY(-2px);
       filter: brightness(1.08);
     }
@@ -919,7 +925,9 @@
     .btn-adopt-warm:active,
     .btn-adopt-bag-warm:active,
     .btn-discard-bag-warm:active,
-    .btn-deploy-warm:active {
+    .btn-deploy-warm:active,
+    .btn-cancel-warm:active,
+    .btn-skin-action-warm:active {
       transform: translateY(2px) scale(0.96);
     }
 
@@ -945,6 +953,28 @@
     }
     .btn-full-warm:active {
       box-shadow: 0 1px 0 #8BC34A, 0 1px 4px rgba(76,175,80,0.15);
+    }
+
+    /* 取消（皮肤模块） */
+    .btn-cancel-warm {
+      background: linear-gradient(180deg, #E8E8E8 0%, #D0D0D0 100%);
+      border-color: #B0B0B0;
+      color: #666;
+      box-shadow: 0 3px 0 #B0B0B0, 0 1px 6px rgba(0,0,0,0.08);
+    }
+    .btn-cancel-warm:active {
+      box-shadow: 0 1px 0 #B0B0B0, 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* 当前使用中/换上皮肤（皮肤模块） */
+    .btn-skin-action-warm {
+      background: linear-gradient(180deg, #FFB347 0%, #FF8C00 100%);
+      border-color: #E67E00;
+      color: #FFF;
+      box-shadow: 0 3px 0 #E67E00, 0 1px 6px rgba(255,140,0,0.25);
+    }
+    .btn-skin-action-warm:active {
+      box-shadow: 0 1px 0 #E67E00, 0 1px 4px rgba(255,140,0,0.15);
     }
 
     /* 送走 */
@@ -6403,7 +6433,17 @@ function SkinModule({
       gap: 8,
       marginTop: 8
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, colors === CL ? /*#__PURE__*/React.createElement("button", {
+    onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
+    className: 'btn-cancel-warm',
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer'
+    }
+  }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     style: {
       flex: 1,
@@ -6416,7 +6456,30 @@ function SkinModule({
       fontWeight: 600,
       cursor: 'pointer'
     }
-  }, "取消"), /*#__PURE__*/React.createElement("button", {
+  }, "取消"), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    onClick: function () {
+      if (isDefaultSelected) {
+        if (equippedSkinId) onUnequipSkin(catKey);
+      } else if (isOwned) {
+        onEquipSkin(catKey, selectedSkinId);
+      } else {
+        onNavigate('shop');
+      }
+    },
+    disabled: isEquipped && isDefaultSelected ? false : isEquipped,
+    className: isEquipped ? '' : 'btn-skin-action-warm',
+    style: {
+      flex: 1,
+      padding: '8px 0',
+      border: isEquipped ? '2px solid #B0B0B0' : 'none',
+      background: isEquipped ? '#E8E8E0' : undefined,
+      color: isEquipped ? '#888' : undefined,
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: isEquipped ? 'default' : 'pointer',
+      opacity: isEquipped ? 0.6 : 1
+    }
+  }, isDefaultSelected && !equippedSkinId ? '当前使用中' : isEquipped ? '已装备' : isOwned ? '换上这套皮肤' : '皮肤商店购买') : /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
