@@ -11814,7 +11814,10 @@ function Game() {
     setExtraRestarts(r => Math.max(0, r - 1));
     handleRestart();
   };
+  var handleNextLevelLockRef = useRef(false); // 防止重复调用
   const handleNextLevel = () => {
+    if (handleNextLevelLockRef.current) { console.log('[handleNextLevel] 锁定中，跳过'); return; }
+    handleNextLevelLockRef.current = true;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
@@ -11824,6 +11827,7 @@ function Game() {
     // 存档点：第10关/第20关通关后弹出阵容调整弹窗
     if ((currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
       checkpointClearedRef.current = true;
+      handleNextLevelLockRef.current = false; // 解锁，允许用户确认后再次调用
       checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
       // 保存存档点（带日期，仅当天有效）
       try {
@@ -11938,6 +11942,7 @@ function Game() {
         setTimeout(function() { playGuardianCatIntro(cycleGuardian); }, 300);
       }
       console.timeEnd('[handleNextLevel] total');
+      handleNextLevelLockRef.current = false;
       return;
     }
     if (matchTimeoutRef.current) {
@@ -12069,6 +12074,7 @@ function Game() {
     }
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
+    handleNextLevelLockRef.current = false;
   };
   const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); }).length;
 
