@@ -3965,7 +3965,7 @@ function HomePage({
     }
   }, colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark');
+      window.location.href = (function(){var cp='';try{var lv=localStorage.getItem('miaolegemi_checkpoint');if(lv)cp='&startLevel='+lv;}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     },
     className: "btn-game-primary",
     style: {
@@ -3988,7 +3988,7 @@ function HomePage({
     }
   }, "\u8D5A\u9C7C\u5E72")) : /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark');
+      window.location.href = (function(){var cp='';try{var lv=localStorage.getItem('miaolegemi_checkpoint');if(lv)cp='&startLevel='+lv;}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     },
     className: "btn-main-dark",
     onMouseEnter: e => {
@@ -15738,7 +15738,7 @@ function App() {
     },
     onStartGame: () => {
       setShowPreBattle(false);
-      window.location.href = '猫咪消消乐.html?theme=' + (colors === CL ? 'light' : 'dark');
+      window.location.href = (function(){var cp='';try{var lv=localStorage.getItem('miaolegemi_checkpoint');if(lv)cp='&startLevel='+lv;}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     }
   }), !showCatDetail && !showPreBattle && /*#__PURE__*/React.createElement(TabBar, {
     active: activeTab,

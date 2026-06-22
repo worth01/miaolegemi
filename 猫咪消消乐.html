@@ -7949,9 +7949,13 @@ function BattlePrep({
   cats,
   skillSlots,
   onStart,
+  onCancel,
   levelConfig,
   onChangeLevel,
-  currentLevel = 1
+  currentLevel = 1,
+  isCheckpoint = false,
+  checkpointLabel = '',
+  isLightMode = false
 }) {
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -8034,7 +8038,7 @@ function BattlePrep({
       fontWeight: 500,
       color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.45)'
     }
-  }, "\xB7 ", levelConfig?.timedMode ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时` : '教学关'))), hasInterference && /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", isCheckpoint && checkpointLabel ? checkpointLabel : (levelConfig?.timedMode ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时` : '教学关')))), hasInterference && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       padding: '10px 14px',
@@ -8314,8 +8318,9 @@ function BattlePrep({
       gap: 10,
       marginTop: 16
     }
-  }, isLightMode ? /*#__PURE__*/React.createElement("a", {
-    href: "index.html?tab=home&theme=" + (isLightMode ? 'light' : 'dark'),
+  }, isLightMode ? /*#__PURE__*/React.createElement(isCheckpoint ? "button" : "a", Object.assign({
+    onClick: isCheckpoint && onCancel ? onCancel : undefined
+  }, isCheckpoint ? {} : { href: "index.html?tab=home&theme=" + (isLightMode ? 'light' : 'dark') }), {
     style: {
       flex: 1,
       height: 38,
@@ -8332,15 +8337,15 @@ function BattlePrep({
       color: '#8B3A50',
       boxShadow: '0 4px 0 #E6A0B0, 0 2px 8px rgba(255,143,163,0.25)'
     }
-  }, "\u8FD4\u56DE") : /*#__PURE__*/React.createElement("button", {
-    onClick: () => window.location.href = 'index.html?tab=home&theme=' + (isLightMode ? 'light' : 'dark'),
+  }, isCheckpoint ? "\u53D6\u6D88" : "\u8FD4\u56DE") : /*#__PURE__*/React.createElement("button", {
+    onClick: isCheckpoint && onCancel ? onCancel : (() => window.location.href = 'index.html?tab=home&theme=' + (isLightMode ? 'light' : 'dark')),
     className: "flow-btn flow-send",
     style: {
       flex: 1
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "inner"
-  }, "\u8FD4\u56DE")), isLightMode ? /*#__PURE__*/React.createElement("button", {
+  }, isCheckpoint ? "\u53D6\u6D88" : "\u8FD4\u56DE")), isLightMode ? /*#__PURE__*/React.createElement("button", {
     onClick: onStart,
     style: {
       flex: 1,
@@ -8354,7 +8359,7 @@ function BattlePrep({
       color: '#AA5A2A',
       boxShadow: '0 4px 0 #E6B050, 0 2px 8px rgba(255,180,50,0.25)'
     }
-  }, "\u5F00\u59CB") : /*#__PURE__*/React.createElement("button", {
+  }, isCheckpoint ? "\u786E\u5B9A" : "\u5F00\u59CB") : /*#__PURE__*/React.createElement("button", {
     onClick: onStart,
     className: "flow-btn flow-play",
     style: {
@@ -8362,7 +8367,7 @@ function BattlePrep({
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "inner"
-  }, "\u5F00\u59CB")))));
+  }, isCheckpoint ? "\u786E\u5B9A" : "\u5F00\u59CB")))));
 }
 
 /* ═══════════════════════════════════════
@@ -8555,7 +8560,13 @@ function LevelSelect({
    MAIN GAME COMPONENT
    ═══════════════════════════════════════ */
 function Game() {
-  const [currentLevel, setCurrentLevel] = useState(1);
+  // 存档点：从URL参数或localStorage读取起始关卡
+  const [currentLevel, setCurrentLevel] = useState(() => {
+    var startLv = parseInt(new URLSearchParams(window.location.search).get('startLevel')) || 0;
+    var savedCp = 0;
+    try { savedCp = parseInt(localStorage.getItem('miaolegemi_checkpoint') || '0'); } catch(e) {}
+    return Math.max(startLv, savedCp, 1);
+  });
   const levelConfig = getLevelConfig(currentLevel) || {};
   const [tiles, setTiles] = useState(() => generateBoard(1));
   const [slot, setSlot] = useState([]);
@@ -8937,6 +8948,13 @@ function Game() {
   const nourishingCats = useRef(initialCats); // 保持 ref 同步
   const fixedBattleCats = useRef(initialCats.length > 0 ? initialCats : null); // 标记已加载
   const shownBattlePrep = useRef(initialCats.length === 0); // 是否有猫咪（有猫咪才显示备战弹窗）
+  const [showCheckpoint, setShowCheckpoint] = useState(false); // 是否显示存档点弹窗
+  const checkpointLabelRef = useRef(currentLevel === 21 ? '超越关' : currentLevel === 11 ? '升级关' : ''); // 初始存档点标签
+  const checkpointClearedRef = useRef(false); // 本次打开弹窗是否已处理（防止重复）
+  // 清除旧的存档点（从第1关开始时重置）
+  if (currentLevel === 1) {
+    try { localStorage.removeItem('miaolegemi_checkpoint'); } catch(e) {}
+  }
   const uidRef = useRef(0);
   const slotRef = useRef([]);
   const tilesRef = useRef(tiles);
@@ -11794,8 +11812,23 @@ function Game() {
     const nextLv = currentLevel + 1;
     const nextConfig = getLevelConfig(nextLv);
     console.log('[handleNextLevel] 从关卡', currentLevel, '→', nextLv, 'nextConfig:', nextConfig?.name || '无');
+    // 存档点：第10关/第20关通关后弹出阵容调整弹窗
+    if ((currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
+      checkpointClearedRef.current = true;
+      checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
+      // 保存存档点
+      try { localStorage.setItem('miaolegemi_checkpoint', String(nextLv)); } catch(e) {}
+      setShowCheckpoint(true);
+      setGameState(GAME_PLAYING); // 保持在游戏状态，等待弹窗处理
+      console.log('[handleNextLevel] 触发存档点:', currentLevel, '标签:', checkpointLabelRef.current);
+      return;
+    }
+    // 重置存档点标记（正常流程，非存档点触发）
+    checkpointClearedRef.current = false;
     // 通关30关后显示完成画面
     if (currentLevel >= 30) {
+      // 全通关清除存档点
+      try { localStorage.removeItem('miaolegemi_checkpoint'); } catch(e) {}
       setShowCompletion(true);
       setGameState(GAME_PLAYING);
       console.log('[handleNextLevel] 30关全通，显示完成画面');
@@ -12167,16 +12200,36 @@ function Game() {
       filter: 'brightness(0.65) blur(1px)',
       zIndex: 0
     }
-  }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false) && /*#__PURE__*/React.createElement(BattlePrep, {
+  }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false || showCheckpoint) && /*#__PURE__*/React.createElement(BattlePrep, {
     cats: battleCats,
     skillSlots: skillSlots,
     onStart: () => {
+      if (showCheckpoint) {
+        // 存档点：确认 → 继续下一关
+        setShowCheckpoint(false);
+        handleNextLevel();
+        return;
+      }
       shownBattlePrep.current = true;
       setBattlePrepVisible(false);
+      // 从存档点开始游戏后清除存档
+      if (checkpointLabelRef.current) {
+        checkpointLabelRef.current = '';
+        try { localStorage.removeItem('miaolegemi_checkpoint'); } catch(e) {}
+      }
     },
+    onCancel: (showCheckpoint || checkpointLabelRef.current !== '') ? () => {
+      // 存档点：取消 → 返回大厅，保留存档
+      setShowCheckpoint(false);
+      checkpointClearedRef.current = false; // 下次还能触发
+      window.location.href = 'index.html?theme=' + (isLightMode ? 'light' : 'dark');
+    } : undefined,
     levelConfig: levelConfig,
     currentLevel: currentLevel,
-    onChangeLevel: () => setPhase('levelSelect')
+    onChangeLevel: showCheckpoint ? undefined : (() => setPhase('levelSelect')),
+    isCheckpoint: showCheckpoint || checkpointLabelRef.current !== '',
+    checkpointLabel: showCheckpoint ? checkpointLabelRef.current : (checkpointLabelRef.current || (levelConfig?.timedMode ? '' : '教学关')),
+    isLightMode: isLightMode
   }), phase === 'playing' && timerVisual === 'critical' && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
