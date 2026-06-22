@@ -2,4 +2,6 @@
   buildCommand = "cd server && npm install && npx prisma generate"
 
 [deploy]
-  startCommand = "cd server && npx prisma db push --accept-data-loss && npx tsx src/index.ts"
+  startCommand = "cd server && npx prisma generate && npx prisma migrate deploy && npx tsx src/index.ts"
+  healthcheckPath = "/"
+  healthcheckTimeout = 30

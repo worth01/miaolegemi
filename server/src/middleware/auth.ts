@@ -23,7 +23,7 @@ declare global {
 // 生成JWT Token
 export function generateToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any
   });
 }
 

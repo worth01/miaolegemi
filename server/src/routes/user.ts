@@ -11,8 +11,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
     const user = await prisma.users.findUnique({
       where: { id: req.user!.userId },
       include: {
-        cats: true,
-        gameSessions: {
+        player_cats: true,
+        game_sessions: {
           orderBy: { createdAt: 'desc' },
           take: 1
         }

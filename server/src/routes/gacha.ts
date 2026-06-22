@@ -165,7 +165,7 @@ router.get('/species', async (req, res) => {
 
     // 如果数据库为空，初始化品种数据
     if (species.length === 0) {
-      species = await prisma.cat_species.createMany({
+      await prisma.cat_species.createMany({
         data: CAT_WEIGHTS.map((cat, index) => ({
           name: cat.name,
           rarity: cat.rarity,
@@ -296,7 +296,7 @@ router.post('/cleanup-personalities', authMiddleware, async (req, res) => {
     for (const cat of cats) {
       const rawPersonality = cat.personality;
       // 检查是否是有效性格
-      const isValid = VALID_PERSONALITIES.includes(rawPersonality);
+      const isValid = VALID_PERSONALITIES.includes(rawPersonality as string);
 
       if (!isValid && rawPersonality) {
         // 获取品种对应的默认性格
