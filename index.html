@@ -14256,26 +14256,7 @@ function App() {
       const homeCats = cats.filter(c => c.location === 'home');
       const bagCats = cats.filter(c => c.location === 'bag');
 
-      // P2: Check home cats for low intimacy
-      for (const cat of homeCats) {
-        const intimacy = cat.intimacy || 0;
-        const key = `home_${cat.serialId}_${intimacy}`;
-        const lastSent = notifSentRef.current[key];
-        // 同猫同亲密度24小时内只提醒一次
-        if (lastSent && now - lastSent < 24 * 3600000) continue;
-        if (intimacy <= 10) {
-          setFeedToast({ text: `💔 ${cat.name} 亲密度仅剩${intimacy}%，快去陪伴它吧`, timestamp: now });
-          notifSentRef.current[key] = now;
-          return;
-        } else if (intimacy <= 30 && lastSent) {
-          // 首次打开不弹中度提醒，至少有过一次互动后才提醒
-          setFeedToast({ text: `💭 ${cat.name} 想你了，亲密度${intimacy}%`, timestamp: now });
-          notifSentRef.current[key] = now;
-          return;
-        }
-      }
-
-      // Check bag cats for expiration
+      // 亲密度提醒由首页 NotificationBanner 横幅负责，Toast 只处理包裹到期
       for (const cat of bagCats) {
         const daysLeft = getRemainingDays(cat);
         if (daysLeft <= 3 && daysLeft > 0) {
