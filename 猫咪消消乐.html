@@ -11814,10 +11814,8 @@ function Game() {
     setExtraRestarts(r => Math.max(0, r - 1));
     handleRestart();
   };
-  var handleNextLevelLockRef = useRef(false); // 防止重复调用
+  var skipCheckpointRef = useRef(false); // 跳过存档点检查（确认后直接继续）
   const handleNextLevel = () => {
-    if (handleNextLevelLockRef.current) { console.log('[handleNextLevel] 锁定中，跳过'); return; }
-    handleNextLevelLockRef.current = true;
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
@@ -11825,9 +11823,8 @@ function Game() {
     const nextConfig = getLevelConfig(nextLv);
     console.log('[handleNextLevel] 从关卡', currentLevel, '→', nextLv, 'nextConfig:', nextConfig?.name || '无');
     // 存档点：第10关/第20关通关后弹出阵容调整弹窗
-    if ((currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
+    if (!skipCheckpointRef.current && (currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
       checkpointClearedRef.current = true;
-      handleNextLevelLockRef.current = false; // 解锁，允许用户确认后再次调用
       checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
       // 保存存档点（带日期，仅当天有效）
       try {
@@ -11942,7 +11939,7 @@ function Game() {
         setTimeout(function() { playGuardianCatIntro(cycleGuardian); }, 300);
       }
       console.timeEnd('[handleNextLevel] total');
-      handleNextLevelLockRef.current = false;
+      skipCheckpointRef.current = false;
       return;
     }
     if (matchTimeoutRef.current) {
@@ -12074,7 +12071,7 @@ function Game() {
     }
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
-    handleNextLevelLockRef.current = false;
+    skipCheckpointRef.current = false;
   };
   const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); }).length;
 
@@ -12225,10 +12222,11 @@ function Game() {
     skillSlots: skillSlots,
     onStart: () => {
       if (showCheckpoint) {
-        // 存档点：确认 → 继续下一关（延迟确保React状态更新完毕）
+        // 存档点：确认 → 直接继续，不再触发存档点检查
         setShowCheckpoint(false);
-        shownBattlePrep.current = true; // 防止初始备战弹窗再次出现
-        setTimeout(function() { handleNextLevel(); }, 0);
+        shownBattlePrep.current = true;
+        skipCheckpointRef.current = true;
+        handleNextLevel();
         return;
       }
       shownBattlePrep.current = true;
