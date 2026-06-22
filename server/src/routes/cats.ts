@@ -109,10 +109,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
         cat_serial_registry: {
           include: {
             cat_species: true,
-            firstOwner: {
+            users_cat_serial_registry_firstOwnerIdTousers: {
               select: { nickname: true }
             },
-            lineages: {
+            cat_lineage: {
               orderBy: { dateLeft: 'desc' },
               take: 10
             }
@@ -186,9 +186,9 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
     });
 
     // 如果是创世区猫咪，更新首次发现者
-    if (cat.cat_serial_registry) {
+    if (cat.serialId) {
       const serial = await prisma.cat_serial_registry.findUnique({
-        where: { id: cat.cat_serial_registry.serialId }
+        where: { id: cat.serialId }
       });
       
       if (serial && !serial.firstOwnerId) {
@@ -512,7 +512,7 @@ router.get('/:serialId/lineage', authMiddleware, async (req, res) => {
     const lineage = await prisma.cat_lineage.findMany({
       where: { serialId: req.params.serialId },
       include: {
-        owner: {
+        users: {
           select: { nickname: true }
         }
       },

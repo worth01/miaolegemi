@@ -36,3 +36,14 @@ _scale_check.png
 _temp_check.png
 *.b64
 新建文件夹/
+
+# 备份文件
+*.bak
+
+# 私密截图
+screenshots/
+
+# 设计文档（二进制/临时）
+*.docx
+*.pdf
+*.xlsx
