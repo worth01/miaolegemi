@@ -4257,7 +4257,8 @@ var GUARDIAN_CAT_CONFIG = {
     catTop: 386,
     catWidth: 140,
     animWebp: 'assets/cats/ju/cat_anim.webp',
-    phaseTiming: [800, 800, 800, 800, 800, 800],  },
+    phaseTiming: [667, 667, 667, 667, 667, 667],
+    animWebm: 'assets/cats/ju/cat_anim.webm',  },
   // 暹罗猫+流星雨 — 第8/18/28关
   '暹罗猫': {
     breed: '暹罗猫',
@@ -9268,6 +9269,11 @@ function Game() {
   function preloadGuardianImages(breedId) {
     var cfg = GUARDIAN_CAT_CONFIG[breedId];
     if (!cfg) return;
+    if (cfg.animWebm) {
+      var vid = document.createElement('video');
+      vid.preload = 'auto';
+      vid.src = cfg.animWebm;
+    }
     if (cfg.animWebp) {
       var img = new Image();
       img.src = cfg.animWebp;
@@ -12662,8 +12668,9 @@ function Game() {
       var isLast3 = guardianAnimPhase === phases3[phases3.length - 1];
       var catTop3 = cfg.catTop || 415;
       var catW3 = cfg.catWidth || 140;
-      // 动画 WebP：单张图自动播放，无需逐帧切换
-      if (cfg.animWebp) {
+      // 动画 WebM 优先（视频更丝滑），WebP 兜底
+      if (cfg.animWebm || cfg.animWebp) {
+        var isWebm3 = !!cfg.animWebm;
         return /*#__PURE__*/React.createElement("div", {
           style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, pointerEvents: 'none', overflow: 'hidden', opacity: isLast3 ? 0 : 1, transition: isLast3 ? 'opacity 0.5s' : 'none' }
         },
@@ -12671,7 +12678,13 @@ function Game() {
           /*#__PURE__*/React.createElement("div", {
             style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 60% 50% at 50% ' + (catTop3 + catW3/2) + 'px, transparent 30%, rgba(0,0,0,0.45) 100%)', zIndex: 10 }
           }),
-          /*#__PURE__*/React.createElement("img", {
+          isWebm3 ? /*#__PURE__*/React.createElement("video", {
+            src: cfg.animWebm,
+            autoPlay: true,
+            muted: true,
+            playsInline: true,
+            style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, filter: 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
+          }) : /*#__PURE__*/React.createElement("img", {
             src: cfg.animWebp,
             style: { position: 'fixed', left: '50%', transform: 'translateX(-50%)', top: catTop3, width: catW3, zIndex: 20, filter: 'drop-shadow(0 0 14px rgba(255,220,140,0.45)) drop-shadow(0 0 35px rgba(255,200,100,0.3)) drop-shadow(0 0 60px rgba(255,160,60,0.15))' }
           })
