@@ -13668,9 +13668,11 @@ function App() {
       } catch (e) {
         console.warn('Auth check failed, using local mode');
       } finally {
+        // 生产环境不显示本地模式，强制登录
+        var isProduction = window.location.hostname === 'mwlxx.qzz.io';
         // 只有完全没登录过（无 token）才走离线模式，避免网络波动误切铲屎官
         var hasToken = MiaolegemiAPI.isLoggedIn();
-        if (!user && !hasToken) {
+        if (!user && !hasToken && !isProduction) {
           const saved = localStorage.getItem('miaolegemi_p0_v1');
           const localData = saved ? JSON.parse(saved) : null;
           if (localData && localData.cats && localData.cats.length > 0) {
