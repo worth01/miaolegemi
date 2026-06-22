@@ -8557,11 +8557,18 @@ function LevelSelect({
    MAIN GAME COMPONENT
    ═══════════════════════════════════════ */
 function Game() {
-  // 存档点：从URL参数或localStorage读取起始关卡
+  // 存档点：从URL参数或localStorage读取起始关卡（仅当天有效）
   const [currentLevel, setCurrentLevel] = useState(() => {
     var startLv = parseInt(new URLSearchParams(window.location.search).get('startLevel')) || 0;
     var savedCp = 0;
-    try { savedCp = parseInt(localStorage.getItem('miaolegemi_checkpoint') || '0'); } catch(e) {}
+    try {
+      var raw = localStorage.getItem('miaolegemi_checkpoint');
+      if (raw) {
+        var cp = JSON.parse(raw);
+        var today = new Date().toISOString().slice(0, 10);
+        if (cp.date === today) savedCp = cp.level || 0;
+      }
+    } catch(e) {}
     return Math.max(startLv, savedCp, 1);
   });
   const levelConfig = getLevelConfig(currentLevel) || {};
@@ -11818,8 +11825,13 @@ function Game() {
     if ((currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
       checkpointClearedRef.current = true;
       checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
-      // 保存存档点
-      try { localStorage.setItem('miaolegemi_checkpoint', String(nextLv)); } catch(e) {}
+      // 保存存档点（带日期，仅当天有效）
+      try {
+        localStorage.setItem('miaolegemi_checkpoint', JSON.stringify({
+          level: nextLv,
+          date: new Date().toISOString().slice(0, 10)
+        }));
+      } catch(e) {}
       setShowCheckpoint(true);
       setGameState(GAME_PLAYING); // 保持在游戏状态，等待弹窗处理
       console.log('[handleNextLevel] 触发存档点:', currentLevel, '标签:', checkpointLabelRef.current);
