@@ -13650,22 +13650,29 @@ function App() {
               }
             } catch(_ce) { /* 忽略签到状态查询失败 */ }
           } catch (e) {
-            // 服务器不可达，不登出，不回退离线模式——用本地缓存继续
+            // 服务器不可达，但 token 仍在——用本地缓存，不切离线模式
             console.warn('服务器不可达，使用本地缓存:', e.message);
             setCats(loadState());
-            // 保留当前 user 信息（不切到离线模式）
-            var localSaved2 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            if (!user && localSaved2._cachedUser) {
-              setUser(localSaved2._cachedUser);
-              setIsLocalMode(false);
+            // 从 localStorage 恢复用户信息（token 存在说明之前登录过）
+            var fallbackSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            if (fallbackSaved.bells != null) {
+              setUser({
+                id: 'cached',
+                username: fallbackSaved._cachedUser?.username || '在线用户',
+                nickname: fallbackSaved._cachedUser?.nickname || '铲屎官',
+                bells: fallbackSaved.bells
+              });
             }
           }
         }
       } catch (e) {
         console.warn('Auth check failed, using local mode');
       } finally {
-        var cachedCheck = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        if (!user && !cachedCheck._cachedUser) {
+        // 生产环境不显示本地模式，强制登录
+        var isProduction = window.location.hostname === 'mwlxx.qzz.io';
+        // 只有完全没登录过（无 token）才走离线模式，避免网络波动误切铲屎官
+        var hasToken = MiaolegemiAPI.isLoggedIn();
+        if (!user && !hasToken && !isProduction) {
           const saved = localStorage.getItem('miaolegemi_p0_v1');
           const localData = saved ? JSON.parse(saved) : null;
           if (localData && localData.cats && localData.cats.length > 0) {
