@@ -15286,11 +15286,11 @@ function App() {
   }, [showConfirmModal]);
 
   // P0: 好友推荐 - 分享邀请
-  const handleShareInvite = useCallback(() => {
+  const handleShareInvite = useCallback(async () => {
     var code = getOrCreateInviteCode();
     setInviteCode(code);
     var shareUrl = window.location.origin + '/index.html?invite=' + code;
-    shareContent({
+    await shareContent({
       title: '喵呜乐消消 🐱',
       text: '一起来撸猫消除吧！🎮\n点链接直接玩 → ' + shareUrl,
       url: shareUrl
