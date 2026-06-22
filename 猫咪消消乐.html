@@ -8177,14 +8177,15 @@ function BattlePrep({
     }, skill ? skill.active : '???')) : /*#__PURE__*/React.createElement("div", {
       onClick: () => window.location.href = 'index.html?tab=battle&theme=' + (isLightMode ? 'light' : 'dark'),
       style: {
-        width: 56,
-        height: 56,
-        borderRadius: 12,
+        width: 40,
+        height: 40,
+        borderRadius: '50%',
         margin: '0 auto 5',
+        border: '2px dashed rgba(253,150,68,0.4)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 18,
+        fontSize: 16,
         color: 'rgba(253,150,68,0.5)',
         cursor: 'pointer',
         transition: 'all 0.2s'
@@ -8272,15 +8273,15 @@ function BattlePrep({
     }, eff ? `${eff.passive}` : '无加成')) : /*#__PURE__*/React.createElement("div", {
       onClick: () => window.location.href = 'index.html?tab=battle&theme=' + (isLightMode ? 'light' : 'dark'),
       style: {
-        width: 56,
-        height: 56,
+        width: 40,
+        height: 40,
         borderRadius: '50%',
         margin: '0 auto 5',
         border: '2px dashed rgba(108,92,231,0.4)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 18,
+        fontSize: 16,
         color: 'rgba(108,92,231,0.5)',
         cursor: 'pointer',
         transition: 'all 0.2s'
