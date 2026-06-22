@@ -3963,7 +3963,6 @@ function HomePage({
     }
   }, colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      try { saveState(_latestCats, _latestBells, _latestTitle); } catch(e) {}
       window.location.href = (function(){var cp='';try{var raw=localStorage.getItem('miaolegemi_checkpoint');if(raw){var cpData=JSON.parse(raw);var today=new Date().toISOString().slice(0,10);if(cpData.date===today)cp='&startLevel='+cpData.level;}}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     },
     className: "btn-game-primary",
@@ -3987,7 +3986,6 @@ function HomePage({
     }
   }, "\u8D5A\u9C7C\u5E72")) : /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      try { saveState(_latestCats, _latestBells, _latestTitle); } catch(e) {}
       window.location.href = (function(){var cp='';try{var raw=localStorage.getItem('miaolegemi_checkpoint');if(raw){var cpData=JSON.parse(raw);var today=new Date().toISOString().slice(0,10);if(cpData.date===today)cp='&startLevel='+cpData.level;}}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     },
     className: "btn-main-dark",
@@ -13304,7 +13302,7 @@ function App() {
   const [activeTitle, setActiveTitle] = useState(loadSavedTitle);
   const [lineageCat, setLineageCat] = useState(null);
   const [flipCardCat, setFlipCardCat] = useState(null);
-  const [notifPerm, setNotifPerm] = useState('default');
+
   const [theme, setTheme] = useState(() => {
     // 优先读取 URL 参数（从游戏返回时携带），其次 localStorage
     try {
@@ -13373,9 +13371,7 @@ function App() {
   }, []);
   const [memorialDetailCat, setMemorialDetailCat] = useState(null);
   const [titleUnlockToast, setTitleUnlockToast] = useState(null);
-  const prevTitlesRef = useRef(new Set(
-    JSON.parse(localStorage.getItem('miaolegemi_shown_titles') || '[]')
-  ));
+  const prevTitlesRef = useRef(new Set());
 
   // 猫咪卡片动效系统 — 状态
   const [bubbles, setBubbles] = useState({}); // { [serialId]: { text, hiding } }
@@ -14205,16 +14201,7 @@ function App() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [isLocalMode]);
 
-  // Request notification permission on first interaction
-  useEffect(() => {
-    if (notifPerm !== 'default') return;
-    const timer = setTimeout(() => {
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().then(p => setNotifPerm(p));
-      }
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [notifPerm]);
+  // 不再请求浏览器通知权限（全部改用页面内 Toast）
 
   // 深夜睡眠检测（22:00 - 06:00）
   useEffect(() => {
@@ -14263,7 +14250,7 @@ function App() {
   // Push notifications: check cat statuses periodically
   const notifSentRef = useRef({});
   useEffect(() => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    // 始终运行关怀检查（页面内 Toast 替代浏览器通知）
     const checkAndNotify = () => {
       const now = Date.now();
       const homeCats = cats.filter(c => c.location === 'home');
@@ -14276,46 +14263,25 @@ function App() {
         const lastSent = notifSentRef.current[key];
         // Don't re-send same notification within 6 hours
         if (lastSent && now - lastSent < 6 * 3600000) continue;
-        let title, body;
         if (intimacy <= 10) {
-          title = `${cat.name} 与你渐行渐远`;
-          body = `#${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 亲密度仅剩${intimacy}%，它需要你的陪伴`;
-          try {
-            new Notification(title, {
-              body,
-              icon: cat.img,
-              tag: key
-            });
-          } catch (e) {}
+          setFeedToast({ text: `💔 ${cat.name} 亲密度仅剩${intimacy}%，快去陪伴它吧`, timestamp: now });
           notifSentRef.current[key] = now;
+          return;
         } else if (intimacy <= 30) {
-          title = `${cat.name} 想你了`;
-          body = `#${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 亲密度${intimacy}%，快去陪陪它`;
-          try {
-            new Notification(title, {
-              body,
-              icon: cat.img,
-              tag: key
-            });
-          } catch (e) {}
+          setFeedToast({ text: `💭 ${cat.name} 想你了，亲密度${intimacy}%`, timestamp: now });
           notifSentRef.current[key] = now;
+          return;
         }
       }
 
       // Check bag cats for expiration
       for (const cat of bagCats) {
         const daysLeft = getRemainingDays(cat);
-        if (daysLeft <= 7 && daysLeft > 0) {
+        if (daysLeft <= 3 && daysLeft > 0) {
           const key = `bag_${cat.serialId}_${daysLeft}`;
           const lastSent = notifSentRef.current[key];
           if (lastSent && now - lastSent < 6 * 3600000) continue;
-          try {
-            new Notification('包裹有猫即将离开', {
-              body: `${cat.name} #${String(cat.breedSerial || cat.serialId).padStart(3, '0')} 还有${daysLeft}天就要离开了`,
-              icon: cat.img,
-              tag: key
-            });
-          } catch (e) {}
+          setFeedToast({ text: `📦 ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
           notifSentRef.current[key] = now;
         }
       }
@@ -14335,39 +14301,21 @@ function App() {
         label: '历史领养达到10只！',
         slotName: '第4格'
       });
-      if ('Notification' in window && Notification.permission === 'granted') {
-        try {
-          new Notification('观赛区第4格已解锁！', {
-            body: '快去领养新猫咪吧'
-          });
-        } catch (e) {}
-      }
+      
     }
     if (slot5 && !milestoneState.current.slot5) {
       setMilestoneAlert({
         label: '有猫咪存活超过90天！',
         slotName: '第5格'
       });
-      if ('Notification' in window && Notification.permission === 'granted') {
-        try {
-          new Notification('观赛区第5格已解锁！', {
-            body: '猫咪与你的羁绊越来越深了'
-          });
-        } catch (e) {}
-      }
+      
     }
     if (slot6 && !milestoneState.current.slot6) {
       setMilestoneAlert({
         label: '历史领养达到30只！',
         slotName: '第6格'
       });
-      if ('Notification' in window && Notification.permission === 'granted') {
-        try {
-          new Notification('观赛区第6格已解锁！', {
-            body: '你已经是资深铲屎官了'
-          });
-        } catch (e) {}
-      }
+      
     }
     milestoneState.current = {
       slot4,
@@ -14389,14 +14337,13 @@ function App() {
     if (prevTitlesRef.current.size > 0) {
       for (const t of currentTitles) {
         if (!prevTitlesRef.current.has(t)) {
-          // 只在首页 + 当天首次提醒
           setTitleUnlockToast(t);
+          
           break; // show one at a time
         }
       }
     }
     prevTitlesRef.current = currentTitles;
-    try { localStorage.setItem('miaolegemi_shown_titles', JSON.stringify([...currentTitles])); } catch(e) {}
   }, [totalAdopted, cats]);
 
   // 实时同步最新状态，确保页面跳转前 beforeunload 能保存最新部署阵容
@@ -15769,7 +15716,6 @@ function App() {
     },
     onStartGame: () => {
       setShowPreBattle(false);
-      try { saveState(_latestCats, _latestBells, _latestTitle); } catch(e) {}
       window.location.href = (function(){var cp='';try{var raw=localStorage.getItem('miaolegemi_checkpoint');if(raw){var cpData=JSON.parse(raw);var today=new Date().toISOString().slice(0,10);if(cpData.date===today)cp='&startLevel='+cpData.level;}}catch(e){}return'猫咪消消乐.html?theme='+(colors===CL?'light':'dark')+cp;})();
     }
   }), !showCatDetail && !showPreBattle && /*#__PURE__*/React.createElement(TabBar, {
