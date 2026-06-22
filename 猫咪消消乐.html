@@ -12221,6 +12221,7 @@ function Game() {
       if (showCheckpoint) {
         // 存档点：确认 → 继续下一关（延迟确保React状态更新完毕）
         setShowCheckpoint(false);
+        shownBattlePrep.current = true; // 防止初始备战弹窗再次出现
         setTimeout(function() { handleNextLevel(); }, 0);
         return;
       }
