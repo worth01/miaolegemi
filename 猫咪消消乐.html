@@ -11814,32 +11814,25 @@ function Game() {
     setExtraRestarts(r => Math.max(0, r - 1));
     handleRestart();
   };
-  var skipCheckpointRef = useRef(false); // 跳过存档点检查（确认后直接继续）
-  var checkpointPendingRef = useRef(false); // 存档点弹窗待处理中，阻止重复触发
+  var pendingCpRef = useRef(null); // 待处理的存档点关卡号（null/11/21）
   const handleNextLevel = () => {
-    if (checkpointPendingRef.current) { console.log('[handleNextLevel] 存档点待处理，跳过'); return; }
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
     const nextLv = currentLevel + 1;
     const nextConfig = getLevelConfig(nextLv);
     console.log('[handleNextLevel] 从关卡', currentLevel, '→', nextLv, 'nextConfig:', nextConfig?.name || '无');
-    // 存档点：第10关/第20关通关后弹出阵容调整弹窗
-    if (!skipCheckpointRef.current && (currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
+    // 存档点：第10关/第20关通关后标记，等关卡推进完再弹窗
+    if ((currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
       checkpointClearedRef.current = true;
-      checkpointPendingRef.current = true;
       checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
-      // 保存存档点（带日期，仅当天有效）
       try {
         localStorage.setItem('miaolegemi_checkpoint', JSON.stringify({
           level: nextLv,
           date: new Date().toISOString().slice(0, 10)
         }));
       } catch(e) {}
-      setShowCheckpoint(true);
-      setGameState(GAME_PLAYING); // 保持在游戏状态，等待弹窗处理
-      console.log('[handleNextLevel] 触发存档点:', currentLevel, '标签:', checkpointLabelRef.current);
-      return;
+      pendingCpRef.current = nextLv;
     }
     // 重置存档点标记（正常流程，非存档点触发）
     checkpointClearedRef.current = false;
@@ -11942,7 +11935,7 @@ function Game() {
         setTimeout(function() { playGuardianCatIntro(cycleGuardian); }, 300);
       }
       console.timeEnd('[handleNextLevel] total');
-      skipCheckpointRef.current = false;
+      
       return;
     }
     if (matchTimeoutRef.current) {
@@ -12074,7 +12067,7 @@ function Game() {
     }
     // P4: 保持固定阵容，不重新读取
     console.timeEnd('[handleNextLevel] total');
-    skipCheckpointRef.current = false;
+    
   };
   const remaining = tiles.filter(function(t) { return !t.removed && !t.inSlot && !(t.isInterference && (t.interferenceType === 'danger' || t.interferenceType === 'groom' || t.interferenceType === 'freeze' || t.interferenceType === 'transform' || (t.interferenceType === 'disguise' && !t.revealed))); }).length;
 
@@ -12220,17 +12213,19 @@ function Game() {
       filter: 'brightness(0.65) blur(1px)',
       zIndex: 0
     }
-  }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false || showCheckpoint) && /*#__PURE__*/React.createElement(BattlePrep, {
+  }), (phase === 'prep' || phase === 'playing' && shownBattlePrep.current === false || showCheckpoint || pendingCpRef.current !== null) && /*#__PURE__*/React.createElement(BattlePrep, {
     cats: battleCats,
     skillSlots: skillSlots,
     onStart: () => {
+      if (pendingCpRef.current !== null) {
+        // 存档点：确认 → 已完成过渡，直接关弹窗
+        pendingCpRef.current = null;
+        shownBattlePrep.current = true;
+        return;
+      }
       if (showCheckpoint) {
-        // 存档点：确认 → 直接继续，不再触发存档点检查
         setShowCheckpoint(false);
         shownBattlePrep.current = true;
-        checkpointPendingRef.current = false;
-        skipCheckpointRef.current = true;
-        handleNextLevel();
         return;
       }
       shownBattlePrep.current = true;
@@ -12241,18 +12236,18 @@ function Game() {
         try { localStorage.removeItem('miaolegemi_checkpoint'); } catch(e) {}
       }
     },
-    onCancel: (showCheckpoint || checkpointLabelRef.current !== '') ? () => {
+    onCancel: (showCheckpoint || pendingCpRef.current !== null || checkpointLabelRef.current !== '') ? () => {
       // 存档点：取消 → 返回大厅，保留存档
       setShowCheckpoint(false);
+      pendingCpRef.current = null;
       checkpointClearedRef.current = false;
-      checkpointPendingRef.current = false;
       window.location.href = 'index.html?theme=' + (isLightMode ? 'light' : 'dark');
     } : undefined,
     levelConfig: levelConfig,
     currentLevel: currentLevel,
     onChangeLevel: showCheckpoint ? undefined : (() => setPhase('levelSelect')),
-    isCheckpoint: showCheckpoint || checkpointLabelRef.current !== '',
-    checkpointLabel: showCheckpoint ? checkpointLabelRef.current : (checkpointLabelRef.current || (levelConfig?.timedMode ? '' : '教学关')),
+    isCheckpoint: showCheckpoint || pendingCpRef.current !== null || checkpointLabelRef.current !== '',
+    checkpointLabel: (showCheckpoint || pendingCpRef.current !== null) ? checkpointLabelRef.current : (checkpointLabelRef.current || (levelConfig?.timedMode ? '' : '教学关')),
     isLightMode: isLightMode
   }), phase === 'playing' && timerVisual === 'critical' && /*#__PURE__*/React.createElement("div", {
     style: {
