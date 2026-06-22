@@ -8036,7 +8036,7 @@ function BattlePrep({
       fontWeight: 500,
       color: isLightMode ? '#8B5A00' : 'rgba(240,237,255,0.45)'
     }
-  }, "\xB7 ", isCheckpoint && checkpointLabel ? checkpointLabel : (levelConfig?.timedMode ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时` : '教学关')))), hasInterference && /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", isCheckpoint && checkpointLabel ? checkpointLabel : (levelConfig?.timedMode ? `${formatTimeLimitDisplay(levelConfig.timeLimit)} 倒计时` : '教学关')))), !isCheckpoint && hasInterference && /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: 12,
       padding: '10px 14px',
