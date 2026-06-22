@@ -1,0 +1,39 @@
+name: Deploy Verification
+
+on:
+  deployment_status:
+    branches: [main]
+
+jobs:
+  smoke-test:
+    name: 冒烟测试
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 健康检查
+        run: |
+          echo "🏥 健康检查 https://mwlxx.qzz.io/health"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://mwlxx.qzz.io/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ 健康检查失败：HTTP $STATUS"
+            exit 1
+          fi
+          echo "✅ 健康检查通过"
+
+      - name: API 检查
+        run: |
+          echo "🔌 检查 API 可达性..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://mwlxx.qzz.io/api/auth/me)
+          echo "Auth endpoint 返回 HTTP $STATUS"
+          echo "✅ 服务正常运行"
+
+      - name: 静态资源检查
+        run: |
+          echo "📦 检查前端资源..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://mwlxx.qzz.io/index.html)
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ index.html 正常返回"
+          else
+            echo "❌ index.html 返回 HTTP $HTTP_CODE"
+            exit 1
+          fi
