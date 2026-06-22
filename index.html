@@ -9108,7 +9108,7 @@ function GachaPage({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
-      color: '#fff',
+      color: colors === CL ? '#4A2800' : '#fff' /* 明亮模式：SSR标签字体色 */,
       background: colors === CL ? undefined : 'linear-gradient(90deg, rgba(253,150,68,0.3), rgba(255,180,67,0.2), rgba(253,150,68,0.3))',
       backgroundSize: colors !== CL ? '200% 100%' : undefined,
       animation: colors !== CL ? 'smoothFlow 4s linear infinite' : undefined,
@@ -9171,7 +9171,7 @@ function GachaPage({
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
-      color: '#fff',
+      color: colors === CL ? '#4A2800' : '#fff' /* 明亮模式：SR标签字体色 */,
       background: colors === CL ? undefined : 'linear-gradient(90deg, rgba(108,92,231,0.3), rgba(162,155,254,0.2), rgba(108,92,231,0.3))',
       backgroundSize: colors !== CL ? '200% 100%' : undefined,
       animation: colors !== CL ? 'smoothFlow 4s linear infinite' : undefined,
@@ -9365,7 +9365,7 @@ function GachaPage({
       cursor: isAnimating || bells < 1 ? 'not-allowed' : 'pointer',
       fontSize: 16,
       fontWeight: 800,
-      color: '#fff',
+      color: '#4A2800' /* 明亮模式：抽卡按钮字体色 */,
       opacity: isAnimating || bells < 1 ? 0.6 : 1,
       textShadow: '0 1px 4px rgba(80,40,10,0.35)'
     }
