@@ -11815,7 +11815,9 @@ function Game() {
     handleRestart();
   };
   var skipCheckpointRef = useRef(false); // 跳过存档点检查（确认后直接继续）
+  var checkpointPendingRef = useRef(false); // 存档点弹窗待处理中，阻止重复触发
   const handleNextLevel = () => {
+    if (checkpointPendingRef.current) { console.log('[handleNextLevel] 存档点待处理，跳过'); return; }
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
@@ -11825,6 +11827,7 @@ function Game() {
     // 存档点：第10关/第20关通关后弹出阵容调整弹窗
     if (!skipCheckpointRef.current && (currentLevel === 10 || currentLevel === 20) && !checkpointClearedRef.current) {
       checkpointClearedRef.current = true;
+      checkpointPendingRef.current = true;
       checkpointLabelRef.current = currentLevel === 10 ? '升级关' : '超越关';
       // 保存存档点（带日期，仅当天有效）
       try {
@@ -12225,6 +12228,7 @@ function Game() {
         // 存档点：确认 → 直接继续，不再触发存档点检查
         setShowCheckpoint(false);
         shownBattlePrep.current = true;
+        checkpointPendingRef.current = false;
         skipCheckpointRef.current = true;
         handleNextLevel();
         return;
@@ -12240,7 +12244,8 @@ function Game() {
     onCancel: (showCheckpoint || checkpointLabelRef.current !== '') ? () => {
       // 存档点：取消 → 返回大厅，保留存档
       setShowCheckpoint(false);
-      checkpointClearedRef.current = false; // 下次还能触发
+      checkpointClearedRef.current = false;
+      checkpointPendingRef.current = false;
       window.location.href = 'index.html?theme=' + (isLightMode ? 'light' : 'dark');
     } : undefined,
     levelConfig: levelConfig,
