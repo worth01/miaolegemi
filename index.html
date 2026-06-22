@@ -13135,7 +13135,7 @@ function LoginPage({
       fontWeight: 700,
       opacity: loading ? 0.6 : 1
     }
-  }, loading ? '处理中...' : mode === 'login' ? '登录' : '注册'), /*#__PURE__*/React.createElement("div", {
+  }, loading ? '处理中...' : mode === 'login' ? '登录' : '注册'), !isProduction && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
