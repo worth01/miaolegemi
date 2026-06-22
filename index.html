@@ -13553,6 +13553,7 @@ function App() {
                 try {
                   var chkSaved3 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                   chkSaved3.checkinDate = new Date().toISOString().slice(0, 10);
+                  chkSaved3.fishLedger = fishLedger;
                   localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved3));
                 } catch(_e2) {}
               }
@@ -14993,6 +14994,7 @@ function App() {
           try {
             var chkSaved2 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
             chkSaved2.checkinDate = new Date().toISOString().slice(0, 10);
+            chkSaved2.fishLedger = fishLedger;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved2));
           } catch(_e) {}
           return;
@@ -15014,10 +15016,11 @@ function App() {
       });
     }
     setCheckedIn(true);
-    // 保存签到日期，防止刷新后可重复签到
+    // 保存签到日期 + fishLedger，防止刷新后丢失
     try {
       var chkSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       chkSaved.checkinDate = new Date().toISOString().slice(0, 10);
+      chkSaved.fishLedger = fishLedger;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(chkSaved));
     } catch(e) {}
     setShowCheckIn(true);
