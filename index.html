@@ -13563,6 +13563,17 @@ function App() {
             var localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
             var localBells = localSaved.bells ?? state.bells ?? 3;
             setBells(Math.max(localBells, state.bells || 3));
+            // 缓存用户信息到 localStorage，离线时恢复避免切到“铲屎官”
+            try {
+              var cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+              cached._cachedUser = {
+                id: state.userId,
+                username: state.username,
+                nickname: state.nickname,
+                bells: Math.max(localBells, state.bells || 3)
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+            } catch(_) {}
             setPityCount(state.pityCount);
             setActiveTitle(state.activeTitle);
             setIsLocalMode(false);
@@ -13639,17 +13650,22 @@ function App() {
               }
             } catch(_ce) { /* 忽略签到状态查询失败 */ }
           } catch (e) {
-            if (e.message !== 'timeout') {
-              MiaolegemiAPI.clearToken();
-            }
-            // 服务器不可达，回退到 localStorage
+            // 服务器不可达，不登出，不回退离线模式——用本地缓存继续
+            console.warn('服务器不可达，使用本地缓存:', e.message);
             setCats(loadState());
+            // 保留当前 user 信息（不切到离线模式）
+            var localSaved2 = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            if (!user && localSaved2._cachedUser) {
+              setUser(localSaved2._cachedUser);
+              setIsLocalMode(false);
+            }
           }
         }
       } catch (e) {
         console.warn('Auth check failed, using local mode');
       } finally {
-        if (!user) {
+        var cachedCheck = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        if (!user && !cachedCheck._cachedUser) {
           const saved = localStorage.getItem('miaolegemi_p0_v1');
           const localData = saved ? JSON.parse(saved) : null;
           if (localData && localData.cats && localData.cats.length > 0) {
