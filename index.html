@@ -5704,6 +5704,7 @@ function NurturingArea({
       disabled: !canFullFeed(intimacy),
       className: canFullFeed(intimacy) ? 'btn-full-warm' : '',
       style: {
+        width: 100,
         padding: '0 15px',
         height: 32,
         borderRadius: 18,
@@ -6437,6 +6438,7 @@ function SkinModule({
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     className: 'btn-cancel-warm',
     style: {
+      width: 100,
       flex: '0 0 auto',
       padding: '0 15px',
       height: 32,
