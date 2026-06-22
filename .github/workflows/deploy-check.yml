@@ -5,9 +5,8 @@ on:
     branches: [main]
 
 jobs:
-  smoke-test:
-    name: 冒烟测试
-    # Railway deployment_status 的 environment 可能为空，改用目标 URL 判断生产环境
+  smoke-api:
+    name: API 冒烟测试
     if: github.event.deployment_status.state == 'success' && contains(github.event.deployment_status.target_url, 'mwlxx.qzz.io')
     runs-on: ubuntu-latest
     steps:
@@ -45,3 +44,25 @@ jobs:
           else
             echo "⚠️ index.html 返回 HTTP $HTTP_CODE（可能刚部署还在预热）"
           fi
+
+  smoke-browser:
+    name: 浏览器冒烟测试
+    if: github.event.deployment_status.state == 'success' && contains(github.event.deployment_status.target_url, 'mwlxx.qzz.io')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 等待部署稳定
+        run: sleep 20
+
+      - name: 安装 Playwright
+        run: npm install playwright && npx playwright install chromium --with-deps
+
+      - name: Headless 浏览器测试
+        run: node test/smoke.mjs
