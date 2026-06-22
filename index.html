@@ -534,7 +534,7 @@
     .flow-send { flex: 1; }
     .flow-send::before { background: linear-gradient(90deg, #ff3366, #9933ff, #cc33ff, #ff3366); }
     .flow-cancel { flex: 1; }
-    .flow-cancel::before { background: linear-gradient(90deg, #888, #aaa, #ccc, #888); }
+    .flow-cancel::before { background: linear-gradient(90deg, #999, #ccc, #eee, #999); }
     .flow-skin-action { flex: 1; }
     .flow-skin-action::before { background: linear-gradient(90deg, #FD9644, #FFEAA7, #FFB730, #FD9644); }
     .flow-lineage { width: 100%; }
@@ -6452,19 +6452,11 @@ function SkinModule({
     }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    style: {
-      width: 100,
-      flex: '0 0 auto',
-      height: 32,
-      borderRadius: 10,
-      border: '1px solid rgba(255,255,255,0.15)',
-      background: 'rgba(255,255,255,0.05)',
-      color: 'rgba(240,237,255,0.6)',
-      fontSize: 13,
-      fontWeight: 600,
-      cursor: 'pointer'
-    }
-  }, "取消"), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    className: "flow-btn flow-cancel",
+    style: { width: 100, flex: '0 0 auto' }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inner"
+  }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
