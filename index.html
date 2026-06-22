@@ -14625,8 +14625,11 @@ function App() {
           if (c.serialId !== cat.serialId) return c;
           return { ...c, battleSlot: targetSlot };
         });
-        // 同步布阵到服务端
+        // 同步布阵到服务端（双保险：gameData + slotPosition）
         syncBattleLineupToServer(next);
+        if (!isLocalMode && cat._apiId) {
+          MiaolegemiAPI.deployCat(cat._apiId, targetSlot).catch(function(){});
+        }
         return next;
       });
       return;
@@ -14765,6 +14768,9 @@ function App() {
         return { ...c, battleSlot: null };
       });
       syncBattleLineupToServer(next);
+      if (!isLocalMode && cat._apiId) {
+        MiaolegemiAPI.withdrawCat(cat._apiId).catch(function(){});
+      }
       return next;
     });
   }, []);
