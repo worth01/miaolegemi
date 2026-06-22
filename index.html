@@ -6471,8 +6471,11 @@ function SkinModule({
     }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: "btn-cancel-dark"
-  }, "取消"), colors === CL ? /*#__PURE__*/React.createElement("button", {
+    className: "flow-btn flow-fill",
+    style: { width: 100, flex: '0 0 auto' }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inner"
+  }, "取消")), colors === CL ? /*#__PURE__*/React.createElement("button", {
     onClick: function () {
       if (isDefaultSelected) {
         if (equippedSkinId) onUnequipSkin(catKey);
