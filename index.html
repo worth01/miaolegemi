@@ -13559,14 +13559,16 @@ function App() {
               nickname: state.nickname,
               bells: state.bells
             });
-            setBells(state.bells);
+            // 铃铛/鱼干：优先保留本地（更实时），服务器仅兜底
+            var localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            var localBells = localSaved.bells ?? state.bells ?? 3;
+            setBells(Math.max(localBells, state.bells || 3));
             setPityCount(state.pityCount);
             setActiveTitle(state.activeTitle);
             setIsLocalMode(false);
             // 保存本地布阵配置，避免被服务端数据覆盖
             var stateLineupBackup = {};
             try {
-              var localSaved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
               (localSaved.cats || []).forEach(function(c) {
                 if (c.battleSlot) stateLineupBackup[c.serialId || c._apiId] = c.battleSlot;
                 if (c.battleSpectator) stateLineupBackup['spec_' + (c.serialId || c._apiId)] = c.battleSpectator;
