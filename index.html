@@ -537,6 +537,8 @@
     .flow-cancel::before { background: linear-gradient(90deg, #999, #ccc, #eee, #999); }
     .flow-skin-action { flex: 1; }
     .flow-skin-action::before { background: linear-gradient(90deg, #FD9644, #FFEAA7, #FFB730, #FD9644); }
+    .flow-cancel-skin { flex: 0 0 auto; }
+    .flow-cancel-skin::before { background: linear-gradient(90deg, #999, #ccc, #eee, #999); }
     .flow-lineage { width: 100%; }
     .flow-lineage::before { background: linear-gradient(90deg, #9933ff, #6666ff, #8066ff, #9933ff); }
     .flow-cancel { display: none; } /* 全局隐藏，弹窗用 .modal-dark .flow-cancel 覆盖 */
@@ -6471,7 +6473,7 @@ function SkinModule({
     }
   }, "取消") : /*#__PURE__*/React.createElement("button", {
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
-    className: "flow-btn flow-fill",
+    className: "flow-btn flow-cancel-skin",
     style: { width: 100, flex: '0 0 auto' }
   }, /*#__PURE__*/React.createElement("span", {
     className: "inner"
