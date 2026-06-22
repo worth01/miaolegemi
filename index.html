@@ -6437,8 +6437,9 @@ function SkinModule({
     onClick: function () { return setSelectedSkinId(equippedSkinId || 'default'); },
     className: 'btn-cancel-warm',
     style: {
-      flex: 1,
-      padding: '8px 0',
+      flex: '0 0 auto',
+      padding: '0 15px',
+      height: 32,
       fontSize: 13,
       fontWeight: 600,
       cursor: 'pointer'
@@ -6473,7 +6474,7 @@ function SkinModule({
       padding: '8px 0',
       border: isEquipped ? '2px solid #B0B0B0' : 'none',
       background: isEquipped ? '#E8E8E0' : undefined,
-      color: isEquipped ? '#888' : undefined,
+      color: isEquipped ? '#888' : '#8B5A00' /* 明亮模式：皮肤操作按钮浅棕色 */,
       fontSize: 13,
       fontWeight: 700,
       cursor: isEquipped ? 'default' : 'pointer',
