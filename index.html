@@ -13373,7 +13373,9 @@ function App() {
   }, []);
   const [memorialDetailCat, setMemorialDetailCat] = useState(null);
   const [titleUnlockToast, setTitleUnlockToast] = useState(null);
-  const prevTitlesRef = useRef(new Set());
+  const prevTitlesRef = useRef(new Set(
+    JSON.parse(localStorage.getItem('miaolegemi_shown_titles') || '[]')
+  ));
 
   // 猫咪卡片动效系统 — 状态
   const [bubbles, setBubbles] = useState({}); // { [serialId]: { text, hiding } }
@@ -14387,19 +14389,14 @@ function App() {
     if (prevTitlesRef.current.size > 0) {
       for (const t of currentTitles) {
         if (!prevTitlesRef.current.has(t)) {
+          // 只在首页 + 当天首次提醒
           setTitleUnlockToast(t);
-          if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification('新称号解锁！', {
-                body: t
-              });
-            } catch (e) {}
-          }
           break; // show one at a time
         }
       }
     }
     prevTitlesRef.current = currentTitles;
+    try { localStorage.setItem('miaolegemi_shown_titles', JSON.stringify([...currentTitles])); } catch(e) {}
   }, [totalAdopted, cats]);
 
   // 实时同步最新状态，确保页面跳转前 beforeunload 能保存最新部署阵容
