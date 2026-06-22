@@ -12746,7 +12746,8 @@ function TabBar({
 function LoginPage({
   onLogin,
   onViewPrivacy,
-  onViewAgreement
+  onViewAgreement,
+  isProduction
 }) {
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
@@ -13158,7 +13159,7 @@ function LoginPage({
       height: 1,
       background: colors.cardBorder
     }
-  })), /*#__PURE__*/React.createElement("button", {
+  })), !isProduction && /*#__PURE__*/React.createElement("button", {
     onClick: handleLocalMode,
     style: {
       width: '100%',
@@ -15482,7 +15483,8 @@ function App() {
     return /*#__PURE__*/React.createElement(IosFrame, null, /*#__PURE__*/React.createElement(LoginPage, {
       onLogin: handleLogin,
       onViewPrivacy: () => setCurrentPage('privacy'),
-      onViewAgreement: () => setCurrentPage('agreement')
+      onViewAgreement: () => setCurrentPage('agreement'),
+      isProduction: window.location.hostname === 'mwlxx.qzz.io'
     }), /*#__PURE__*/React.createElement(AgreementModal, {
       show: showAgreementModal,
       onAgree: handleAgreeAgreement,
