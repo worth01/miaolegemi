@@ -12207,9 +12207,9 @@ function Game() {
     skillSlots: skillSlots,
     onStart: () => {
       if (showCheckpoint) {
-        // 存档点：确认 → 继续下一关
+        // 存档点：确认 → 继续下一关（延迟确保React状态更新完毕）
         setShowCheckpoint(false);
-        handleNextLevel();
+        setTimeout(function() { handleNextLevel(); }, 0);
         return;
       }
       shownBattlePrep.current = true;
