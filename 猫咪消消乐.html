@@ -11816,6 +11816,8 @@ function Game() {
   };
   var pendingCpRef = useRef(null); // 待处理的存档点关卡号（null/11/21）
   const handleNextLevel = () => {
+    // 已经显示完成画面或存档点弹窗待处理时，防止重复调用
+    if (showCompletion || pendingCpRef.current !== null) { console.log('[handleNextLevel] 完成画面或存档点待处理，跳过'); return; }
     setNewRecordAchieved(false);
     setPreviousBestScore(0);
     console.time('[handleNextLevel] total');
@@ -11838,6 +11840,8 @@ function Game() {
     checkpointClearedRef.current = false;
     // 通关30关后显示完成画面
     if (currentLevel >= 30) {
+      // 清除待处理的存档点，防止死循环
+      pendingCpRef.current = null;
       // 全通关清除存档点
       try { localStorage.removeItem('miaolegemi_checkpoint'); } catch(e) {}
       setShowCompletion(true);
