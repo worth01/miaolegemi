@@ -20,7 +20,7 @@ dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
-const PORT = 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // 中间件
 app.use(compression()); // Gzip/Brotli 压缩，HTML/CSS/JS 体积减少 70%+
@@ -62,7 +62,7 @@ prisma.$connect()
   .catch(err => console.error('  ❌ 数据库连接失败:', err.message));
 
 // 启动服务器
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`
   ╔════════════════════════════════════════╗
   ║     🐱 喵呜乐消消 后端服务启动成功          ║
