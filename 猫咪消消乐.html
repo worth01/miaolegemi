@@ -10958,9 +10958,9 @@ function Game() {
           // Lv1/Lv2: 移动收集槽底牌到临时区
           var startIdx = frozenSlot && !freezeBlockOverride ? levelConfig.freeze_grid_count || 1 : 0;
           var nonGroomItems3 = slotRef.current.slice(startIdx).filter(function(s) { return !s.isGroom; });
-          var tempCapacity3 = 3 + slotBonus;
-          var available3 = Math.max(0, tempCapacity3 - tempStorageRef.current.length);
           var moveCount3 = rLevel >= 2 ? 4 : 3;
+          var tempCapacity3 = Math.max(3 + slotBonus, moveCount3); // Lv2扩容至4格，Lv1保持3格
+          var available3 = Math.max(0, tempCapacity3 - tempStorageRef.current.length);
           var toMove3 = nonGroomItems3.slice(0, Math.min(moveCount3, available3));
           if (toMove3.length === 0) { setSkillConflictMsg("收集槽中没有牌，技能施放失败"); setSkillAnimVisible(false); break; }
 
