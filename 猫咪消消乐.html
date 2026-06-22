@@ -13424,6 +13424,7 @@ function Game() {
       }
     }, remUses)), /*#__PURE__*/React.createElement("span", {
       style: {
+        marginTop: -14,
         fontSize: resonanceLv >= 2 ? 11 : 13,
         fontWeight: 700,
         color: disabled ? 'rgba(240,237,255,0.15)' : resonanceLv >= 3 ? '#FD9644' : resonanceLv >= 2 ? '#A29BFE' : rarity === 'N' ? 'rgba(240,237,255,0.85)' : rarityColors[rarity],
@@ -13433,7 +13434,12 @@ function Game() {
         maxWidth: 77,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        background: 'rgba(15,10,30,0.7)',
+        padding: '1px 4px',
+        borderRadius: 3,
+        position: 'relative',
+        zIndex: 1
       }
     }, displayName));
   })), /*#__PURE__*/React.createElement("div", {
