@@ -156,6 +156,9 @@
       var loseSfx = new Audio('assets/audio/lose.mp3');
       loseSfx.volume = 0.7;
       loseSfx.preload = 'auto';
+      var barkSfx = new Audio('assets/audio/bark.mp3');
+      barkSfx.volume = 0.7;
+      barkSfx.preload = 'auto';
       // 音效就绪标记
       var sfxReady = false;
       matchSfx.addEventListener('canplaythrough', function() { sfxReady = true; }, { once: true });
@@ -184,6 +187,12 @@
           if (!s.sfxOn) return;
           loseSfx.currentTime = 0;
           loseSfx.play().catch(function(){});
+        },
+        playBark: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          barkSfx.currentTime = 0;
+          barkSfx.play().catch(function(){});
         },
         playGuardian: function(audioSrc) {
           var s = loadAudioSettings();
@@ -10028,7 +10037,8 @@ function Game() {
         ...t,
         inSlot: true
       } : t));
-      // 立即触发闯关失败
+      // 播放狗叫音效，等音效结束后再弹出失败弹窗
+      if (window.__gameSfx) window.__gameSfx.playBark();
       setDangerToast('小狗牌入槽｜游戏失败');
       setTimeout(() => {
         setDangerToast('');
@@ -10040,7 +10050,7 @@ function Game() {
         setGroomSlots([]);
         (tempStorageRef.current = [], setTempStorage([]));
         setGameState(GAME_LOSE);
-      }, 1500);
+      }, 2200); // 给 bark.mp3 充足播放时间
       return; // 终止，不执行后续任何逻辑
     }
 
@@ -11569,6 +11579,7 @@ function Game() {
             data.knockoutEliminatedDate = todayStr;
           }
           if ((gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) && !data.knockoutEliminatedToday) {
+            if (gameState === GAME_WIN && window.__gameSfx) window.__gameSfx.playWin();
             data.knockoutConsecutiveClears = (data.knockoutConsecutiveClears || 0) + 1;
           }
         }
