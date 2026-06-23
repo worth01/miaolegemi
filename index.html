@@ -3165,25 +3165,25 @@ function isFinalDayActive() {
 /* P2: 分组赛得分段位判定 */
 function getGroupStageBracket(todayScore) {
   if (todayScore >= 5000) return {
-    name: 'Gold',
+    name: '黄金',
     color: '#FFD700',
     emoji: '🥇',
     threshold: 5000
   };
   if (todayScore >= 3000) return {
-    name: 'Silver',
+    name: '白银',
     color: '#C0C0C0',
     emoji: '🥈',
     threshold: 3000
   };
   if (todayScore >= 1000) return {
-    name: 'Bronze',
+    name: '青铜',
     color: '#CD7F32',
     emoji: '🥉',
     threshold: 1000
   };
   return {
-    name: 'Participant',
+    name: '参与者',
     color: '#B2BEC3',
     emoji: '👏',
     threshold: 0
@@ -3315,25 +3315,21 @@ function GroupStageBanner({
   const todayScore = scores[today] || 0;
   const bracket = getGroupStageBracket(todayScore);
   const claimedToday = claimed.includes(today);
-  const canClaim = bracket.name === 'Gold' && !claimedToday;
+  const canClaim = bracket.name === '\u9EC4\u91D1' && !claimedToday;
   return /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? '' : 'profile-card-dark',
     style: {
       margin: '0 16px 8px',
-      padding: '10px 16px',
+      padding: '6px 16px',
       borderRadius: 12,
-      background: colors === CL ? 'linear-gradient(135deg, rgba(253,150,68,0.2), rgba(255,107,107,0.15))' : undefined,
-      border: colors === CL ? '1px solid rgba(253,150,68,0.3)' : undefined,
+      background: colors === CL ? '#FFF8E7' : undefined,
+      border: colors === CL ? '1px solid #C4A882' : undefined,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
       position: 'relative'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 18
-    }
-  }, "\u26BD"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
