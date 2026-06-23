@@ -8372,7 +8372,8 @@ function MarketPage({
   groupStageBellsClaimed,
   onClaimGroupStageBell,
   initialSubTab,
-  showConfirmModal
+  showConfirmModal,
+  isLocalMode
 }) {
   const [subTab, setSubTab] = React.useState(initialSubTab || 'gacha');
   useEffect(() => {
@@ -15666,7 +15667,8 @@ function App() {
     groupStageBellsClaimed: groupStageBellsClaimed,
     onClaimGroupStageBell: handleClaimGroupStageBell,
     initialSubTab: marketTab,
-    showConfirmModal: showConfirmModal
+    showConfirmModal: showConfirmModal,
+    isLocalMode: isLocalMode
   }) : activeTab === 'shop' ? /*#__PURE__*/React.createElement(ShopPage, {
     fish: fish,
     bells: bells,

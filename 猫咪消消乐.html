@@ -6376,7 +6376,10 @@ function SkillAnimationOverlay({
   }, [visible, breed]);
   useEffect(() => {
     if (phase !== 'active') return;
-    timerRef.current = setTimeout(triggerClose, 3500);
+    // 用视频真实时长作超时兜底（+500ms缓冲），不再硬编码3.5s
+    var video = videoRef.current;
+    var duration = (video && video.duration > 0) ? video.duration * 1000 + 500 : 10000;
+    timerRef.current = setTimeout(triggerClose, duration);
     return () => clearTimeout(timerRef.current);
   }, [phase, triggerClose]);
   const handleVideoEnded = useCallback(() => {
