@@ -9097,42 +9097,54 @@ function GachaPage({
 
   // 使用新的保底系统
   const pityInfo = getPityProgress(pityCount);
-  const handleGacha = () => {
+  const handleGacha = async () => {
     if (bells < 1 || animPhase !== 'idle') return;
 
     // 播放摇铃铛音效
     if (window.__lobbySfx) window.__lobbySfx.playBell();
 
-    // 使用新保底系统
+    // 在线模式：先请求服务器，动画+结果统一用服务器数据
+    if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+      try {
+        const data = await MiaolegemiAPI.pullGacha();
+        const catSpecies = data.cat?.cat_serial_registry?.cat_species;
+        const breed = BREEDS.find(b => b.id === catSpecies?.name) || BREEDS[0];
+        const serverCat = {
+          breedId: breed.id, name: breed.id, rarity: catSpecies?.rarity,
+          img: breed.img, desc: breed.desc,
+          personality: BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇',
+          serialId: globalSerialId + 1, breedSerial: data.cat?.cat_serial_registry?.serialNumber || 1,
+          triggeredPity: data.triggeredPity || null, _serverData: data
+        };
+        setAnimCat(serverCat);
+        setAnimPhase('shake');
+        timersRef.current = [setTimeout(() => {
+          setAnimPhase('reveal');
+          onGacha(serverCat.breedId, serverCat.rarity, data.pityCount, serverCat.triggeredPity, data);
+        }, 1500), setTimeout(() => { setAnimPhase('idle'); setAnimCat(null); }, 3000)];
+        return;
+      } catch (e) {
+        // 服务器失败，降级到本地抽卡
+        console.warn('服务器抽卡失败，降级本地:', e.message);
+      }
+    }
+
+    // 本地/离线模式：使用本地保底系统
     const result = doGacha(pityCount);
-    const {
-      breed,
-      rarity,
-      newPityCount,
-      triggeredPity
-    } = result;
+    const { breed, rarity, newPityCount, triggeredPity } = result;
     const previewCat = {
-      breedId: breed.id,
-      name: breed.id,
-      rarity: breed.rarity,
-      img: breed.img,
-      desc: breed.desc,
+      breedId: breed.id, name: breed.id, rarity: breed.rarity,
+      img: breed.img, desc: breed.desc,
       personality: BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇',
-      serialId: globalSerialId + 1,
-      breedSerial: breedSerialCounters[breed.id] || 1,
-      triggeredPity // 标记是否触发保底
+      serialId: globalSerialId + 1, breedSerial: breedSerialCounters[breed.id] || 1,
+      triggeredPity
     };
     setAnimCat(previewCat);
     setAnimPhase('shake');
-
-    // Animation timeline: shake+sweep+particles(1.5s) → cat pops out(1.5s) → done
     timersRef.current = [setTimeout(() => {
       onGacha(previewCat.breedId, previewCat.rarity, newPityCount, triggeredPity);
       setAnimPhase('reveal');
-    }, 1500), setTimeout(() => {
-      setAnimPhase('idle');
-      setAnimCat(null);
-    }, 3000)];
+    }, 1500), setTimeout(() => { setAnimPhase('idle'); setAnimCat(null); }, 3000)];
   };
 
   // Sort cats: SSR > SR > R > N, same rarity by serialId ascending
@@ -14936,11 +14948,12 @@ function App() {
 
   // Handle gacha — breedId/rarity pre-rolled by GachaPage for animation sync
   // 支持新参数: breedId, rarity, newPityCount, triggeredPity
-  const handleGacha = useCallback(async (breedId, rarity, newPityCount, triggeredPity) => {
+  const handleGacha = useCallback(async (breedId, rarity, newPityCount, triggeredPity, serverData) => {
     if (bells < 1) return;
     if (!isLocalMode) {
       try {
-        const data = await MiaolegemiAPI.pullGacha();
+        // 如果动画层已调过API，直接复用，避免两次抽卡结果不一致
+        const data = serverData || await MiaolegemiAPI.pullGacha();
         const c = data.cat;
         const catSpecies = c.cat_serial_registry?.cat_species;
         const breed = BREEDS.find(b => b.id === catSpecies?.name) || BREEDS[0];
