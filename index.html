@@ -14353,7 +14353,7 @@ function App() {
       _syncTimer = setTimeout(async () => {
         try {
           const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-          await MiaolegemiAPI.syncState({
+          MiaolegemiAPI.syncState({
             bells,
             activeTitle,
             pityCount,
@@ -14379,7 +14379,7 @@ function App() {
               battleLineup: prev.battleLineup,
               savedAt: Date.now()
             }
-          });
+          }).catch(() => {}); // 静默网络错误，避免后台标签页刷屏
         } catch (e) {}
       }, 5000);
     }
