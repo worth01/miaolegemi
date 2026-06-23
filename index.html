@@ -2782,10 +2782,13 @@ async function shareContent({
     showShareToast('已复制到剪贴板，去粘贴分享吧～');
     // 滚动到Toast可见区域
     setTimeout(() => {
-      const el = document.querySelector('.phone-screen') || document.scrollingElement;
-      if (el) el.scrollBy({ top: 60, behavior: 'smooth' });
-      else window.scrollBy({ top: 60, behavior: 'smooth' });
-    }, 100);
+      const el = document.querySelector('.phone-screen');
+      if (el) {
+        el.scrollTo({ top: el.scrollTop + 80, behavior: 'smooth' });
+      } else {
+        window.scrollBy({ top: 80, behavior: 'smooth' });
+      }
+    }, 300);
     if (onSuccess) onSuccess();
     return 'copied';
   } catch (err) {
