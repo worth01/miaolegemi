@@ -152,7 +152,12 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: '猫咪仍在冷却期，请稍后再试' });
     }
 
-    // 检查家园是否有空位
+    // 检查家园是否有空位（从 gameData 读取上限，默认10）
+    const user = await prisma.users.findUnique({
+      where: { id: req.user!.userId },
+      select: { gameData: true }
+    });
+    const homeMax = (user?.gameData as any)?.homeMaxSlots || 10;
     const homeCount = await prisma.player_cats.count({
       where: {
         ownerId: req.user!.userId,
@@ -160,8 +165,8 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
       }
     });
 
-    if (homeCount >= 6) {
-      return res.status(400).json({ error: '家园已满（最多6只），请先送走或部署猫咪' });
+    if (homeCount >= homeMax) {
+      return res.status(400).json({ error: `家园已满（最多${homeMax}只），请先送走或部署猫咪` });
     }
 
     // 领养
