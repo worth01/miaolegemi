@@ -2780,6 +2780,12 @@ async function shareContent({
       document.body.removeChild(textarea);
     }
     showShareToast('已复制到剪贴板，去粘贴分享吧～');
+    // 滚动到Toast可见区域
+    setTimeout(() => {
+      const el = document.querySelector('.phone-screen') || document.scrollingElement;
+      if (el) el.scrollBy({ top: 60, behavior: 'smooth' });
+      else window.scrollBy({ top: 60, behavior: 'smooth' });
+    }, 100);
     if (onSuccess) onSuccess();
     return 'copied';
   } catch (err) {
