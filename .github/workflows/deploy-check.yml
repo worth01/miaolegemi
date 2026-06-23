@@ -7,7 +7,7 @@ on:
 jobs:
   smoke-api:
     name: API 冒烟测试
-    if: github.event.deployment_status.state == 'success' && contains(github.event.deployment_status.target_url, 'mwlxx.qzz.io')
+    if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: 等待部署稳定
@@ -47,7 +47,7 @@ jobs:
 
   smoke-browser:
     name: 浏览器冒烟测试
-    if: github.event.deployment_status.state == 'success' && contains(github.event.deployment_status.target_url, 'mwlxx.qzz.io')
+    if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
