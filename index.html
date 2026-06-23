@@ -3744,10 +3744,10 @@ function NotificationBanner({
     className: colors === CL ? '' : 'alert-bar-dark',
     style: {
       margin: '2px 16px 0',
-      padding: '8px 14px',
+      padding: '6px 14px',
       borderRadius: 12,
-      background: colors === CL ? `${banner.color}15` : undefined,
-      border: colors === CL ? `1px solid ${banner.color}30` : undefined,
+      background: colors === CL ? '#FFF8E7' : undefined,
+      border: colors === CL ? '1px solid #C4A882' : undefined,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
@@ -3755,10 +3755,6 @@ function NotificationBanner({
       animation: 'fadeIn 0.3s ease-out'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, banner.priority <= 2 ? '⚠️' : '📢'), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       fontSize: 11,
