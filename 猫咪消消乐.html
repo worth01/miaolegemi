@@ -11588,7 +11588,7 @@ function Game() {
             data.knockoutEliminatedDate = todayStr;
           }
           if ((gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) && !data.knockoutEliminatedToday) {
-            if (gameState === GAME_WIN && window.__gameSfx) window.__gameSfx.playWin();
+            if ((gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) && window.__gameSfx) window.__gameSfx.playWin();
             data.knockoutConsecutiveClears = (data.knockoutConsecutiveClears || 0) + 1;
           }
         }
@@ -11623,7 +11623,7 @@ function Game() {
         // 写入通关/失败标记（供主应用播放猫咪动效）
         try {
           if (gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) {
-            if (gameState === GAME_WIN && window.__gameSfx) window.__gameSfx.playWin();
+            if ((gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) && window.__gameSfx) window.__gameSfx.playWin();
             localStorage.setItem('miaolegemi_game_flags', JSON.stringify({
               justWon: true,
               timestamp: Date.now()
