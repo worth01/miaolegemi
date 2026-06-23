@@ -150,6 +150,9 @@
       var coinSfx = new Audio('assets/audio/coin.mp3');
       coinSfx.volume = 0.5;
       coinSfx.preload = 'auto';
+      var winSfx = new Audio('assets/audio/win.mp3');
+      winSfx.volume = 0.7;
+      winSfx.preload = 'auto';
       // 音效就绪标记
       var sfxReady = false;
       matchSfx.addEventListener('canplaythrough', function() { sfxReady = true; }, { once: true });
@@ -166,6 +169,12 @@
           if (!s.sfxOn) return;
           coinSfx.currentTime = 0;
           coinSfx.play().catch(function(){});
+        },
+        playWin: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          winSfx.currentTime = 0;
+          winSfx.play().catch(function(){});
         },
         playGuardian: function(audioSrc) {
           var s = loadAudioSettings();
@@ -11585,6 +11594,8 @@ function Game() {
         // 写入通关/失败标记（供主应用播放猫咪动效）
         try {
           if (gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) {
+            // 播放胜利音效
+            if (gameState === GAME_WIN && window.__gameSfx) window.__gameSfx.playWin();
             localStorage.setItem('miaolegemi_game_flags', JSON.stringify({
               justWon: true,
               timestamp: Date.now()

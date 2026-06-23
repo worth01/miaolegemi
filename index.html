@@ -1397,6 +1397,7 @@
         home:   { el: null, path: 'assets/audio/hhome.mp3',  vol: 0.30 },
         ling:   { el: null, path: 'assets/audio/ling.mp3',   vol: 0.30 },
         goodbye:{ el: null, path: 'assets/audio/goodbye.mp3', vol: 0.30 },
+        wode:   { el: null, path: 'assets/audio/wode.mp3',   vol: 0.30 },
       };
 
       var savedSettings = loadAudioSettings();
@@ -13425,7 +13426,7 @@ function App() {
       cathome: 'home',
       cat: 'home',
       shop: 'bgm',
-      me: 'bgm',
+      me: 'wode',
     };
     const track = tabToTrack[activeTab] || 'bgm';
     AudioManager.play(track);
