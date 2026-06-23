@@ -2780,15 +2780,6 @@ async function shareContent({
       document.body.removeChild(textarea);
     }
     showShareToast('已复制到剪贴板，去粘贴分享吧～');
-    // 滚动到Toast可见区域
-    setTimeout(() => {
-      const el = document.querySelector('.phone-screen');
-      if (el) {
-        el.scrollTo({ top: el.scrollTop + 80, behavior: 'smooth' });
-      } else {
-        window.scrollBy({ top: 80, behavior: 'smooth' });
-      }
-    }, 300);
     if (onSuccess) onSuccess();
     return 'copied';
   } catch (err) {
@@ -4547,15 +4538,21 @@ function HomePage({
     }
   }, m.done ? '已完成' : m.reward)))), shareToast && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 8,
-      padding: '8px 14px',
-      borderRadius: 12,
-      background: colors === CL ? '#FFF8E7' : 'rgba(108,92,231,0.12)',
-      border: colors === CL ? '2px solid #C4A882' : '1px solid rgba(108,92,231,0.2)',
-      fontSize: 12,
+      position: 'fixed',
+      bottom: '30%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '12px 24px',
+      borderRadius: 16,
+      background: colors === CL ? '#FFF8E7' : 'rgba(0,0,0,0.9)',
+      border: colors === CL ? '2px solid #C4A882' : '1px solid rgba(255,255,255,0.15)',
+      fontSize: 13,
+      fontWeight: 600,
       color: colors === CL ? '#4A2800' : '#fff',
       textAlign: 'center',
-      animation: 'slideUp 0.3s ease-out'
+      zIndex: 200,
+      animation: 'slideUp 0.3s ease-out',
+      boxShadow: colors === CL ? '0 8px 32px rgba(0,0,0,0.15)' : '0 8px 32px rgba(0,0,0,0.5)'
     }
   }, shareToast)));
 }
@@ -13355,6 +13352,12 @@ function App() {
   useEffect(() => {
     setShareToastCallback(setShareToast);
   }, []);
+  // 分享Toast 3秒自动消失
+  useEffect(() => {
+    if (!shareToast) return;
+    const timer = setTimeout(() => setShareToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [shareToast]);
   const [milestoneAlert, setMilestoneAlert] = useState(null); // { label, slotName }
   const milestoneAlertTimer = useRef(null);
   const milestoneState = useRef(JSON.parse(localStorage.getItem('milestoneAlertsShown') || 'null') || {
