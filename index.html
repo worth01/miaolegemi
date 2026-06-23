@@ -42,6 +42,7 @@
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
     @keyframes slideUp { 0%{transform:translateY(30px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes fadeInUp { 0%{margin-top:30px;opacity:0} 100%{margin-top:0;opacity:1} }
     @keyframes coinPop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3);opacity:1} 100%{transform:scale(1);opacity:1} }
     @keyframes goldSweep { 0%{left:-100%;opacity:0} 20%{left:-100%;opacity:1} 50%{left:100%;opacity:1} 51%{left:100%;opacity:0} 100%{left:100%;opacity:0} }
     @keyframes particleFly { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0} }
@@ -136,13 +137,13 @@
       animation: cat-float 4s ease-in-out infinite;
     }
     .cat-card-p9-dark {
-      background: rgba(22,12,44,0.8);
+      background: transparent;
       border: 1px solid transparent;
-      box-shadow: 0 0 8px var(--rarity-glow, rgba(255,105,180,0.2));
+      box-shadow: none;
     }
     .cat-card-p9-dark:hover {
       transform: scale(1.06);
-      box-shadow: 0 0 16px var(--rarity-glow, rgba(255,105,180,0.3));
+      box-shadow: none;
     }
     .slotted-cat { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes dropIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -2765,7 +2766,7 @@ async function shareContent({
 
   // 2. 降级：剪贴板复制 + Toast 提示
   try {
-    const copyText = text + (url ? '\n' + url : '');
+    const copyText = text;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(copyText);
     } else {
@@ -4407,8 +4408,7 @@ function HomePage({
       style: {
         fontSize: 12,
         fontWeight: 600,
-        color: colors.ink,
-        filter: colors === CL ? undefined : 'drop-shadow(0 0 3px #fff)'
+        color: colors.ink
       }
     }, "\u5305\u88F9\u533A\u6709 ", bagCats.length, " \u53EA\u732B\u54AA\u7B49\u4F60"), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4538,15 +4538,22 @@ function HomePage({
     }
   }, m.done ? '已完成' : m.reward)))), shareToast && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 8,
-      padding: '10px 14px',
-      borderRadius: 12,
-      background: colors === CL ? '#FFF8E7' : 'rgba(108,92,231,0.12)',
-      border: colors === CL ? '2px solid #C4A882' : '1px solid rgba(108,92,231,0.2)',
-      fontSize: 12,
-      color: colors.primary,
+      position: 'fixed',
+      bottom: '30%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '12px 24px',
+      borderRadius: 16,
+      background: colors === CL ? '#FFF8E7' : 'rgba(0,0,0,0.9)',
+      border: colors === CL ? '2px solid #C4A882' : '1px solid rgba(255,255,255,0.15)',
+      fontSize: 11,
+      fontWeight: 600,
+      color: colors === CL ? '#4A2800' : '#fff',
       textAlign: 'center',
-      animation: 'slideUp 0.3s ease-out'
+      whiteSpace: 'nowrap',
+      zIndex: 200,
+      animation: 'fadeInUp 0.3s ease-out',
+      boxShadow: colors === CL ? '0 8px 32px rgba(0,0,0,0.15)' : '0 8px 32px rgba(0,0,0,0.5)'
     }
   }, shareToast)));
 }
@@ -4877,10 +4884,7 @@ function LineupManager({
   }, availableCats.map(cat => /*#__PURE__*/React.createElement("div", {
     key: cat.serialId,
     className: `cat-card-p9${colors !== CL ? ' cat-card-p9-dark' : ''}`,
-    style: colors !== CL ? {
-      border: `1px solid ${RARITY_COLORS[cat.rarity]}40`,
-      ['--rarity-glow']: RARITY_COLORS[cat.rarity] + '40'
-    } : {},
+    style: {},
     ref: el => {
       if (el && !el._dragTouchBound) {
         el._dragTouchBound = true;
@@ -5089,10 +5093,7 @@ function LineupManager({
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: `cat-card-p9${colors !== CL ? ' cat-card-p9-dark' : ''}`,
-    style: colors !== CL ? {
-      opacity: 0.9,
-      border: `1px solid ${RARITY_COLORS[draggingCat.rarity]}40`
-    } : {
+    style: {
       opacity: 0.9
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -9097,42 +9098,54 @@ function GachaPage({
 
   // 使用新的保底系统
   const pityInfo = getPityProgress(pityCount);
-  const handleGacha = () => {
+  const handleGacha = async () => {
     if (bells < 1 || animPhase !== 'idle') return;
 
     // 播放摇铃铛音效
     if (window.__lobbySfx) window.__lobbySfx.playBell();
 
-    // 使用新保底系统
+    // 在线模式：先请求服务器，动画+结果统一用服务器数据
+    if (!isLocalMode && MiaolegemiAPI.isLoggedIn()) {
+      try {
+        const data = await MiaolegemiAPI.pullGacha();
+        const catSpecies = data.cat?.cat_serial_registry?.cat_species;
+        const breed = BREEDS.find(b => b.id === catSpecies?.name) || BREEDS[0];
+        const serverCat = {
+          breedId: breed.id, name: breed.id, rarity: catSpecies?.rarity,
+          img: breed.img, desc: breed.desc,
+          personality: BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇',
+          serialId: globalSerialId + 1, breedSerial: data.cat?.cat_serial_registry?.serialNumber || 1,
+          triggeredPity: data.triggeredPity || null, _serverData: data
+        };
+        setAnimCat(serverCat);
+        setAnimPhase('shake');
+        timersRef.current = [setTimeout(() => {
+          setAnimPhase('reveal');
+          onGacha(serverCat.breedId, serverCat.rarity, data.pityCount, serverCat.triggeredPity, data);
+        }, 1500), setTimeout(() => { setAnimPhase('idle'); setAnimCat(null); }, 3000)];
+        return;
+      } catch (e) {
+        // 服务器失败，降级到本地抽卡
+        console.warn('服务器抽卡失败，降级本地:', e.message);
+      }
+    }
+
+    // 本地/离线模式：使用本地保底系统
     const result = doGacha(pityCount);
-    const {
-      breed,
-      rarity,
-      newPityCount,
-      triggeredPity
-    } = result;
+    const { breed, rarity, newPityCount, triggeredPity } = result;
     const previewCat = {
-      breedId: breed.id,
-      name: breed.id,
-      rarity: breed.rarity,
-      img: breed.img,
-      desc: breed.desc,
+      breedId: breed.id, name: breed.id, rarity: breed.rarity,
+      img: breed.img, desc: breed.desc,
       personality: BREED_DEFAULT_PERSONALITIES[breed.id] || '傲娇',
-      serialId: globalSerialId + 1,
-      breedSerial: breedSerialCounters[breed.id] || 1,
-      triggeredPity // 标记是否触发保底
+      serialId: globalSerialId + 1, breedSerial: breedSerialCounters[breed.id] || 1,
+      triggeredPity
     };
     setAnimCat(previewCat);
     setAnimPhase('shake');
-
-    // Animation timeline: shake+sweep+particles(1.5s) → cat pops out(1.5s) → done
     timersRef.current = [setTimeout(() => {
       onGacha(previewCat.breedId, previewCat.rarity, newPityCount, triggeredPity);
       setAnimPhase('reveal');
-    }, 1500), setTimeout(() => {
-      setAnimPhase('idle');
-      setAnimCat(null);
-    }, 3000)];
+    }, 1500), setTimeout(() => { setAnimPhase('idle'); setAnimCat(null); }, 3000)];
   };
 
   // Sort cats: SSR > SR > R > N, same rarity by serialId ascending
@@ -13334,6 +13347,12 @@ function App() {
   useEffect(() => {
     setShareToastCallback(setShareToast);
   }, []);
+  // 分享Toast 3秒自动消失
+  useEffect(() => {
+    if (!shareToast) return;
+    const timer = setTimeout(() => setShareToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [shareToast]);
   const [milestoneAlert, setMilestoneAlert] = useState(null); // { label, slotName }
   const milestoneAlertTimer = useRef(null);
   const milestoneState = useRef(JSON.parse(localStorage.getItem('milestoneAlertsShown') || 'null') || {
@@ -14936,11 +14955,12 @@ function App() {
 
   // Handle gacha — breedId/rarity pre-rolled by GachaPage for animation sync
   // 支持新参数: breedId, rarity, newPityCount, triggeredPity
-  const handleGacha = useCallback(async (breedId, rarity, newPityCount, triggeredPity) => {
+  const handleGacha = useCallback(async (breedId, rarity, newPityCount, triggeredPity, serverData) => {
     if (bells < 1) return;
     if (!isLocalMode) {
       try {
-        const data = await MiaolegemiAPI.pullGacha();
+        // 如果动画层已调过API，直接复用，避免两次抽卡结果不一致
+        const data = serverData || await MiaolegemiAPI.pullGacha();
         const c = data.cat;
         const catSpecies = c.cat_serial_registry?.cat_species;
         const breed = BREEDS.find(b => b.id === catSpecies?.name) || BREEDS[0];
