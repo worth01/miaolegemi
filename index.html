@@ -2765,7 +2765,7 @@ async function shareContent({
 
   // 2. 降级：剪贴板复制 + Toast 提示
   try {
-    const copyText = text + (url ? '\n' + url : '');
+    const copyText = text;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(copyText);
     } else {
@@ -4544,7 +4544,7 @@ function HomePage({
       background: colors === CL ? '#FFF8E7' : 'rgba(108,92,231,0.12)',
       border: colors === CL ? '2px solid #C4A882' : '1px solid rgba(108,92,231,0.2)',
       fontSize: 12,
-      color: colors.primary,
+      color: colors === CL ? '#4A2800' : '#fff',
       textAlign: 'center',
       animation: 'slideUp 0.3s ease-out'
     }
