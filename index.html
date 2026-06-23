@@ -3708,7 +3708,7 @@ function NotificationBanner({
     banner = {
       cat: lowIntimacyCat,
       text: `${lowIntimacyCat.name} #${String(lowIntimacyCat.breedSerial || lowIntimacyCat.serialId).padStart(3, '0')} 亲密度很低，快去喂它吧`,
-      color: colors === CL ? '#8B6914' : colors.pink,
+      color: colors === CL ? '#8B6914' : '#fff',
       priority: 1
     };
   } else if (expiringBag) {
