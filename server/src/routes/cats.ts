@@ -153,11 +153,16 @@ router.post('/:id/adopt', authMiddleware, async (req, res) => {
     }
 
     // 检查家园是否有空位（从 gameData 读取上限，默认10）
-    const user = await prisma.users.findUnique({
+    const userRecord = await prisma.users.findUnique({
       where: { id: req.user!.userId },
       select: { gameData: true }
     });
-    const homeMax = (user?.gameData as any)?.homeMaxSlots || 10;
+    let homeMax = 10;
+    try {
+      const gd = (userRecord?.gameData as any) || {};
+      homeMax = gd.homeMaxSlots || 10;
+    } catch(e) {}
+    if (homeMax < 6) homeMax = 10; // 最低保证6→10
     const homeCount = await prisma.player_cats.count({
       where: {
         ownerId: req.user!.userId,
