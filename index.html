@@ -8425,7 +8425,8 @@ function MarketPage({
     pityCount: pityCount,
     onGacha: onGacha,
     cats: cats,
-    onCardClick: onCardClick
+    onCardClick: onCardClick,
+    isLocalMode: isLocalMode
   }) : subTab === 'leaderboard' ? /*#__PURE__*/React.createElement(FriendLeaderboard, {
     todayTotalScore: todayTotalScore,
     user: user
@@ -9071,7 +9072,8 @@ function GachaPage({
   pityCount,
   onGacha,
   cats,
-  onCardClick
+  onCardClick,
+  isLocalMode
 }) {
   // Pre-computed 128 gold particle positions
   const goldParticles = useRef(Array.from({
