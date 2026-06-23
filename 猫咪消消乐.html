@@ -159,6 +159,9 @@
       var barkSfx = new Audio('assets/audio/bark.mp3');
       barkSfx.volume = 0.7;
       barkSfx.preload = 'auto';
+      var bingSfx = new Audio('assets/audio/bing.mp3');
+      bingSfx.volume = 0.6;
+      bingSfx.preload = 'auto';
       // 音效就绪标记
       var sfxReady = false;
       matchSfx.addEventListener('canplaythrough', function() { sfxReady = true; }, { once: true });
@@ -193,6 +196,12 @@
           if (!s.sfxOn) return;
           barkSfx.currentTime = 0;
           barkSfx.play().catch(function(){});
+        },
+        playBing: function() {
+          var s = loadAudioSettings();
+          if (!s.sfxOn) return;
+          bingSfx.currentTime = 0;
+          bingSfx.play().catch(function(){});
         },
         playGuardian: function(audioSrc) {
           var s = loadAudioSettings();
@@ -10050,7 +10059,7 @@ function Game() {
         setGroomSlots([]);
         (tempStorageRef.current = [], setTempStorage([]));
         setGameState(GAME_LOSE);
-      }, 2200); // 给 bark.mp3 充足播放时间
+      }, 2200);
       return; // 终止，不执行后续任何逻辑
     }
 
@@ -10065,6 +10074,7 @@ function Game() {
         inSlot: true,
         isDisguiseShell: false
       } : t));
+      if (window.__gameSfx) window.__gameSfx.playBing();
       setDisguiseToast('伪装已解除');
       window._disguiseToastShown = true;
       setTimeout(() => setDisguiseToast(''), 1000);
@@ -11614,6 +11624,7 @@ function Game() {
         // 写入通关/失败标记（供主应用播放猫咪动效）
         try {
           if (gameState === GAME_WIN || gameState === GAME_LEVEL_COMPLETE) {
+            if (gameState === GAME_WIN && window.__gameSfx) window.__gameSfx.playWin();
             localStorage.setItem('miaolegemi_game_flags', JSON.stringify({
               justWon: true,
               timestamp: Date.now()
