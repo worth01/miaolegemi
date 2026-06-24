@@ -7712,7 +7712,7 @@ function CatCardFlipModal({
       color: cat.location === 'home' ? colors.green : colors.orange,
       border: `1px solid ${cat.location === 'home' ? 'rgba(0,184,148,0.25)' : 'rgba(253,150,68,0.25)'}`
     }
-  }, cat.location === 'home' ? '🏠 家园' : '📦 包裹区', cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
+  }, cat.location === 'home' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/nav-home.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 家园") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/box-package.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 包裹区"), cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
