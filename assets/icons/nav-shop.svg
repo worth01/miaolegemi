@@ -8,7 +8,7 @@
 Created by potrace 1.16, written by Peter Selinger 2001-2019
 </metadata>
 <g transform="translate(0.000000,280.000000) scale(0.100000,-0.100000)"
-fill="currentColor" stroke="none">
+fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
 <path d="M203 2464 c-46 -23 -100 -86 -112 -131 -15 -52 -14 -83 4 -134 39
 -109 151 -162 266 -127 34 10 42 9 58 -7 24 -21 31 -55 91 -430 29 -184 41
 -261 95 -615 16 -105 34 -183 49 -215 22 -49 75 -113 108 -131 15 -8 14 -15
