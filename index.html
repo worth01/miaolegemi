@@ -9458,7 +9458,7 @@ function GachaPage({
       opacity: isAnimating || bells < 1 ? 0.6 : 1,
       textShadow: '0 1px 4px rgba(80,40,10,0.35)'
     }
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:16,height:16}}), " )")) : /*#__PURE__*/React.createElement("button", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : "抽卡") : /*#__PURE__*/React.createElement("button", {
     onClick: handleGacha,
     disabled: isAnimating || bells < 1,
     className: "btn-main-dark",
@@ -9491,7 +9491,7 @@ function GachaPage({
     alt: ""
   }), /*#__PURE__*/React.createElement("span", {
     className: "btn-main-text"
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:16,height:16}}), " )")))), /*#__PURE__*/React.createElement("div", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : "抽卡"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 20px'
     }
