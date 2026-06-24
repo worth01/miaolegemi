@@ -2028,7 +2028,7 @@ const INTIMACY_EFFECTS = {
    ═══════════════════════════════════════ */
 const CAT_LINES = {
   normal: ['😸 喵～主人好！', '🐾 摸摸我嘛～', '😻 今天消消乐了吗？', '🌟 我在这里哦！', '😼 要不要一起玩？', '呼噜呼噜～', '今天心情不错！', '陪我玩嘛～', '抓不到我～嘿嘿～'],
-  feed: ['😋 好吃好吃！', '${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})} 最喜欢鱼干了！', '🥰 谢谢主人～', '😺 再来一条！', '喵呜～幸福！', '好吃！再来一条～', '呜呼～开饭啦！'],
+  feed: ['😋 好吃好吃！', '🐟 最喜欢鱼干了！', '🥰 谢谢主人～', '😺 再来一条！', '喵呜～幸福！', '好吃！再来一条～', '呜呼～开饭啦！'],
   win: ['🏆 太棒了主人！', '🎉 我就知道你可以的！', '⭐ 厉害厉害！', '🥳 为你感到骄傲！', '喵呜～我们赢了！', '不愧是本喵的铲屎官！'],
   fail: ['😿 没关系的...', '💙 下次一定！', '🤗 我陪着你呢～', '😌 休息一下再来！', '喵…已经很努力了', '不要灰心，抱抱～'],
   sleep: ['💤 zZz...', '🌙 晚安主人...', '😴 好困哦...', '呼…呼…', 'zZz...喵...']
@@ -2219,7 +2219,7 @@ const PASSIVE_SKILLS = {
   '蓝猫': {
     name: '沉静',
     desc: '鱼干+10%',
-    icon: React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}}),
+    icon: '🐟',
     bonus: {
       type: 'fish_bonus',
       value: 0.1
@@ -3067,11 +3067,14 @@ function CurrencyBar({
       cursor: 'pointer',
       border: colors === CL ? '1px solid rgba(255,180,80,0.2)' : 'none'
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/icons/fish.svg",
     style: {
-      fontSize: 14
+      width: 18,
+      height: 18,
+      filter: colors === CL ? 'none' : 'invert(0.7)'
     }
-  }, "\uD83D\uDC1F"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 700,
@@ -3090,11 +3093,14 @@ function CurrencyBar({
       cursor: 'pointer',
       border: colors === CL ? '1px solid rgba(255,200,100,0.2)' : 'none'
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/icons/bell.svg",
     style: {
-      fontSize: 14
+      width: 18,
+      height: 18,
+      filter: colors === CL ? 'none' : 'invert(0.7)'
     }
-  }, "\uD83D\uDD14"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 700,
@@ -3673,7 +3679,7 @@ function BettingPanel({
         fontSize: 9,
         color: colors.sub
       }
-    }, bet.won ? '+' + (bet.fishWagered + Math.floor(bet.fishWagered * 0.5)) + ' ${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})}' : '-' + bet.fishWagered + ' ${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})}')), bet.won && !bet.shared && /*#__PURE__*/React.createElement("button", {
+    }, bet.won ? '+' + (bet.fishWagered + Math.floor(bet.fishWagered * 0.5)) + ' 🐟' : '-' + bet.fishWagered + ' 🐟')), bet.won && !bet.shared && /*#__PURE__*/React.createElement("button", {
       onClick: function () {
         onShareBet(bet);
       },
@@ -4452,17 +4458,17 @@ function HomePage({
   }, [{
     icon: '☀️',
     text: '每日打卡',
-    reward: '+5 ${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})}',
+    reward: '+5 🐟',
     done: checkedIn
   }, {
     icon: '🎁',
     text: '体验抽卡',
-    reward: '+1 ${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})}',
+    reward: '+1 🔔',
     done: gachaDone
   }, {
     icon: '👥',
     text: '把游戏推荐给朋友',
-    reward: '+30 ${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})}',
+    reward: '+30 🐟',
     done: (inviteRewardToday || 0) >= 3,
     type: 'invite'
   }].map((m, i, arr) => /*#__PURE__*/React.createElement("div", {
@@ -5706,7 +5712,7 @@ function NurturingArea({
         fontWeight: 700,
         opacity: !canFeed ? 0.5 : 1
       }
-    }, canFeed ? '${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})} 喂食 -1' : '鱼干不足') : /*#__PURE__*/React.createElement("button", {
+    }, canFeed ? '🐟 喂食 -1' : '鱼干不足') : /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         unlockAudio && unlockAudio();
         onTriggerFeed && onTriggerFeed(cat);
@@ -5720,7 +5726,7 @@ function NurturingArea({
       }
     }, /*#__PURE__*/React.createElement("span", {
       className: "inner"
-    }, canFeed ? '${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})} 喂食 -1' : '鱼干不足')), intimacy < 100 && (colors === CL ? /*#__PURE__*/React.createElement("button", {
+    }, canFeed ? '🐟 喂食 -1' : '鱼干不足')), intimacy < 100 && (colors === CL ? /*#__PURE__*/React.createElement("button", {
       onClick: () => onBatchFeed && onBatchFeed(cat),
       disabled: !canFullFeed(intimacy),
       className: canFullFeed(intimacy) ? 'btn-full-warm' : '',
@@ -7714,7 +7720,7 @@ function CatCardFlipModal({
       color: cat.location === 'home' ? colors.green : colors.orange,
       border: `1px solid ${cat.location === 'home' ? 'rgba(0,184,148,0.25)' : 'rgba(253,150,68,0.25)'}`
     }
-  }, cat.location === 'home' ? '🏠 家园' : React.createElement("img",{src:"assets/icons/box-package.svg",style:{width:20,height:20,verticalAlign:"middle"}}), " 包裹区", cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
+  }, cat.location === 'home' ? '🏠 家园' : '📦 包裹区', cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -7925,7 +7931,7 @@ function FriendLeaderboard({
       id: 10,
       name: '爱吃鱼的猫',
       score: 1350,
-      avatar: React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}}),
+      avatar: '🐟',
       cat: '波斯猫',
       catImg: 'assets/Textures/cat/波斯猫.webp'
     }, {
@@ -8912,7 +8918,7 @@ function ShopPage({
         textShadow: '0 1px 2px rgba(0,0,0,0.4)',
         backdropFilter: 'blur(4px)'
       }
-    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : bells < skin.price ? '铃铛不足' : skin.price + ' ${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})}'));
+    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : bells < skin.price ? '铃铛不足' : skin.price + ' 🔔'));
   })), equipTarget && /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? 'modal-sm-spec' : 'modal-dark',
     style: {
@@ -9340,7 +9346,7 @@ function GachaPage({
     },
     onError: e => {
       e.target.style.display = 'none';
-      e.target.parentElement.innerHTML = '<div style="font-size:60px">${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})}</div>';
+      e.target.parentElement.innerHTML = '<div style="font-size:60px">🔔</div>';
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9460,7 +9466,7 @@ function GachaPage({
       opacity: isAnimating || bells < 1 ? 0.6 : 1,
       textShadow: '0 1px 4px rgba(80,40,10,0.35)'
     }
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})})') : /*#__PURE__*/React.createElement("button", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)') : /*#__PURE__*/React.createElement("button", {
     onClick: handleGacha,
     disabled: isAnimating || bells < 1,
     className: "btn-main-dark",
@@ -9493,7 +9499,7 @@ function GachaPage({
     alt: ""
   }), /*#__PURE__*/React.createElement("span", {
     className: "btn-main-text"
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})})'))), /*#__PURE__*/React.createElement("div", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : '抽卡 (-1🔔)'))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 20px'
     }
@@ -14286,7 +14292,7 @@ function App() {
           const key = `bag_${cat.serialId}_${daysLeft}`;
           const lastSent = notifSentRef.current[key];
           if (lastSent && now - lastSent < 6 * 3600000) continue;
-          setFeedToast({ text: `${React.createElement("img",{src:"assets/icons/box-package.svg",style:{width:20,height:20,verticalAlign:"middle"}})} ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
+          setFeedToast({ text: `📦 ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
           notifSentRef.current[key] = now;
         }
       }
@@ -14446,7 +14452,7 @@ function App() {
     }));
     // 喂食Toast
     setFeedToast({
-      text: `${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})} -1 ｜ ❤️ 好感度 +5！`,
+      text: `🐟 -1 ｜ ❤️ 好感度 +5！`,
       timestamp: Date.now()
     });
     setTimeout(() => setFeedToast(null), 2000);
@@ -15257,7 +15263,7 @@ function App() {
         showConfirmModal({
           emoji: '🐟',
           title: '分享成功',
-          message: '+3 鱼干 ${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})}',
+          message: '+3 鱼干 🐟',
           onConfirm: () => {}
         });
       }
@@ -15534,11 +15540,11 @@ function App() {
     onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
     onSettingsClick: () => { var s = loadAudioSettings(); setBgmOn(s.bgmOn); setSfxOn(s.sfxOn); setShowSettings(true); },
     onFishClick: () => setInfoModal({
-      title: '${React.createElement("img",{src:"assets/icons/fish.svg",style:{width:16,height:16,verticalAlign:"middle"}})} 鱼干',
+      title: '🐟 鱼干',
       content: '日常高频资源，用于喂猫。通过签到和消消乐获得。'
     }),
     onBellClick: () => setInfoModal({
-      title: '${React.createElement("img",{src:"assets/icons/bell.svg",style:{width:16,height:16,verticalAlign:"middle"}})} 猫铃铛',
+      title: '🔔 猫铃铛',
       content: '稀缺资源，用于抽卡获得新猫咪。可通过连续签到和特殊活动获得。'
     }),
     left: /*#__PURE__*/React.createElement("span", {
