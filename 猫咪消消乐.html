@@ -12531,7 +12531,7 @@ function Game() {
       color: !isTimed ? 'rgba(240,237,255,0.5)' : timerVisual === 'idle' ? '#55EFC4' : timerVisual === 'warn' ? '#FD9644' : timerVisual === 'danger' || timerVisual === 'critical' ? '#FF6B6B' : '#A29BFE',
       animation: timerVisual === 'danger' ? 'timerBounce 0.25s ease-in-out infinite' : timerVisual === 'critical' ? 'timerBounce 0.15s ease-in-out infinite' : 'none'
     }
-  }, !isTimed ? '不限时间' : timerVisual === 'idle' ? `${timerDelay}s` : `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`))), /*#__PURE__*/React.createElement("button", {
+  }, !isTimed ? '不限时间' : timerVisual === 'idle' ? `${timerDelay}s` : `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`))), __DEV__ && /*#__PURE__*/React.createElement("button", {
     onClick: handleNextLevel,
     style: {
       background: 'rgba(253,150,68,0.2)',
