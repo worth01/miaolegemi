@@ -3656,7 +3656,7 @@ function BettingPanel({
       style: {
         fontSize: 14
       }
-    }, bet.won ? '🎉' : '💔'), /*#__PURE__*/React.createElement("div", {
+    }, bet.won ? React.createElement("img",{src:"assets/icons/celebrate.svg",style:{width:16,height:16,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/heart-broken.svg",style:{width:14,height:14,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
@@ -11019,7 +11019,7 @@ function MilestoneUnlockModal({
       marginBottom: 8,
       animation: 'coinPop 0.6s ease-out'
     }
-  }, "\uD83C\uDF89"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/celebrate.svg",style:{width:16,height:16,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 800,
@@ -12835,9 +12835,9 @@ function LoginPage({
       if (msgLower.includes('网络') || msgLower.includes('failed to fetch') || msgLower.includes('fetch') || msgLower.includes('networkerror')) {
         setError('⚠️ 网络连接失败，请确认：1.后端已启动(端口3001) 2.使用http访问而非file:// 3.刷新页面后重试');
       } else if (msgLower.includes('用户名') || msgLower.includes('密码')) {
-        setError('❌ ' + rawMsg);
+        setError(React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " " + rawMsg);
       } else {
-        setError('❌ ' + rawMsg);
+        setError(React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " " + rawMsg);
       }
       refreshCaptcha();
     } finally {
