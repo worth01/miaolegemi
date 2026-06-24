@@ -11144,7 +11144,7 @@ function SettingsModal({
     style: toggleTrack(theme === 'dark')
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(theme === 'dark') })), /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 12, color: theme === 'dark' ? '#A29BFE' : 'rgba(100,60,20,0.5)', fontWeight: theme === 'dark' ? 700 : 400 }
-  }, "🌙 暗黑"))), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "背景音量"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", { src: "assets/icons/moon.svg", style: { width: 16, height: 16, verticalAlign: "middle", filter: theme === 'dark' ? 'invert(0.7) sepia(0.5) hue-rotate(200deg) saturate(3) brightness(1.2)' : 'none' } }), " 暗黑"))), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "背景音量"), /*#__PURE__*/React.createElement("div", {
     onClick: onBgmToggle,
     style: toggleTrack(bgmOn)
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(bgmOn) }))), /*#__PURE__*/React.createElement("div", { style: { ...rowStyle, borderBottom: 'none' } }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "音效开关"), /*#__PURE__*/React.createElement("div", {
