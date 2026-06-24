@@ -8394,11 +8394,11 @@ function MarketPage({
     }
   }, [{
     key: 'gacha',
-    icon: React.createElement("img",{src:"assets/icons/gift-orange.svg",style:{width:26,height:26,verticalAlign:"middle",marginTop:-2}}),
+    icon: 'assets/icons/gift-orange.svg',
     label: '抽卡'
   }, {
     key: 'leaderboard',
-    icon: 'assets/icons/trophy.svg',
+    icon: 'assets/icons/trophy-gold.svg',
     label: '好友榜'
   }, {
     key: 'event',
@@ -8423,7 +8423,7 @@ function MarketPage({
       boxShadow: subTab === t.key && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4), 0 0 4px rgba(255,105,180,0.3) inset' : 'none',
       filter: subTab !== t.key && colors !== CL ? 'drop-shadow(0 0 3px rgba(255,105,180,0.2))' : 'none'
     }
-  }, typeof t.icon === 'string' && t.icon.startsWith('assets/') ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: t.icon, style: { width: 16, height: 16, verticalAlign: "middle", filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", t.label) : /*#__PURE__*/React.createElement(React.Fragment, null, t.icon, " ", t.label)))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
+  }, typeof t.icon === 'string' && t.icon.startsWith('assets/') ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: t.icon, style: { width: 18, height: 18, verticalAlign: "middle", filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", t.label) : /*#__PURE__*/React.createElement(React.Fragment, null, t.icon, " ", t.label)))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
     bells: bells,
     pityCount: pityCount,
     onGacha: onGacha,
