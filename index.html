@@ -8398,11 +8398,11 @@ function MarketPage({
     label: '抽卡'
   }, {
     key: 'leaderboard',
-    icon: '🏆',
+    icon: 'assets/icons/trophy.svg',
     label: '好友榜'
   }, {
     key: 'event',
-    icon: '⚽',
+    icon: 'assets/icons/sport-soccer.svg',
     label: '活动'
   }].map(t => /*#__PURE__*/React.createElement("div", {
     key: t.key,
@@ -8423,7 +8423,7 @@ function MarketPage({
       boxShadow: subTab === t.key && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4), 0 0 4px rgba(255,105,180,0.3) inset' : 'none',
       filter: subTab !== t.key && colors !== CL ? 'drop-shadow(0 0 3px rgba(255,105,180,0.2))' : 'none'
     }
-  }, t.icon, " ", t.label))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
+  }, typeof t.icon === 'string' && t.icon.startsWith('assets/') ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: t.icon, style: { width: 16, height: 16, verticalAlign: "middle", filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", t.label) : /*#__PURE__*/React.createElement(React.Fragment, null, t.icon, " ", t.label)))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
     bells: bells,
     pityCount: pityCount,
     onGacha: onGacha,
@@ -8795,11 +8795,11 @@ function ShopPage({
   }, [{
     key: 'worldcup',
     label: '世界杯限定',
-    icon: '⚽'
+    icon: 'assets/icons/sport-soccer.svg'
   }, {
     key: 'permanent',
     label: '永久皮肤',
-    icon: '👔'
+    icon: 'assets/icons/tie.svg'
   }].map(tab => /*#__PURE__*/React.createElement("button", {
     key: tab.key,
     onClick: () => {
@@ -8816,7 +8816,7 @@ function ShopPage({
       fontWeight: 600,
       cursor: 'pointer'
     }
-  }, tab.icon, " ", tab.label))), shopSubTab === 'worldcup' && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", { src: tab.icon, style: { width: 14, height: 14, verticalAlign: "middle", filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", tab.label))), shopSubTab === 'worldcup' && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: colors.orange,
