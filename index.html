@@ -7714,7 +7714,7 @@ function CatCardFlipModal({
       color: cat.location === 'home' ? colors.green : colors.orange,
       border: `1px solid ${cat.location === 'home' ? 'rgba(0,184,148,0.25)' : 'rgba(253,150,68,0.25)'}`
     }
-  }, cat.location === 'home' ? '🏠 家园' : '📦 包裹区', cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
+  }, cat.location === 'home' ? '🏠 家园' : React.createElement("img",{src:"assets/icons/box-package.svg",style:{width:20,height:20,verticalAlign:"middle"}}), " 包裹区", cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -14286,7 +14286,7 @@ function App() {
           const key = `bag_${cat.serialId}_${daysLeft}`;
           const lastSent = notifSentRef.current[key];
           if (lastSent && now - lastSent < 6 * 3600000) continue;
-          setFeedToast({ text: `📦 ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
+          setFeedToast({ text: `${React.createElement("img",{src:"assets/icons/box-package.svg",style:{width:20,height:20,verticalAlign:"middle"}})} ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
           notifSentRef.current[key] = now;
         }
       }
