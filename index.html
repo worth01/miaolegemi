@@ -12744,9 +12744,8 @@ function TabBar({
       style: {
         width: iconSize,
         height: iconSize,
-        color: colors.ink,
-        opacity: isActive ? 1 : 0.45,
-        filter: isActive ? (colors === CL ? 'none' : 'drop-shadow(0 0 6px #00e5ff)') : 'none'
+        color: isActive ? colors.ink : (colors === CL ? colors.sub : '#999'),
+        filter: isActive && colors !== CL ? 'drop-shadow(0 0 6px #00e5ff)' : 'none'
       }
     }), /*#__PURE__*/React.createElement("span", {
       style: {
