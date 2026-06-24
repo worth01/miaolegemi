@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>喵呜乐消消·养好猫·趣闯关</title>
+  <!-- 图标：浏览器标签 / iOS主屏 / Android -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+  <link rel="shortcut icon" href="assets/favicon.ico">
   <!-- 性能优化：预连接 CDN，节省 DNS+TCP+TLS 约 500ms -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1305,6 +1309,7 @@
       padding: 8px 30px; border-radius: 20px;
       z-index: 100; pointer-events: none;
       box-shadow: 0 4px 20px rgba(253,150,68,0.4);
+      white-space: nowrap;
     }
     .feed-toast.in {
       animation: toast-slide 0.3s ease-out;
@@ -2024,7 +2029,7 @@ const INTIMACY_EFFECTS = {
    ═══════════════════════════════════════ */
 const CAT_LINES = {
   normal: ['😸 喵～主人好！', '🐾 摸摸我嘛～', '😻 今天消消乐了吗？', '🌟 我在这里哦！', '😼 要不要一起玩？', '呼噜呼噜～', '今天心情不错！', '陪我玩嘛～', '抓不到我～嘿嘿～'],
-  feed: ['😋 好吃好吃！', '🐟 最喜欢鱼干了！', '🥰 谢谢主人～', '😺 再来一条！', '喵呜～幸福！', '好吃！再来一条～', '呜呼～开饭啦！'],
+  feed: ['😋 好吃好吃！', '最喜欢鱼干了！', '🥰 谢谢主人～', '😺 再来一条！', '喵呜～幸福！', '好吃！再来一条～', '呜呼～开饭啦！'],
   win: ['🏆 太棒了主人！', '🎉 我就知道你可以的！', '⭐ 厉害厉害！', '🥳 为你感到骄傲！', '喵呜～我们赢了！', '不愧是本喵的铲屎官！'],
   fail: ['😿 没关系的...', '💙 下次一定！', '🤗 我陪着你呢～', '😌 休息一下再来！', '喵…已经很努力了', '不要灰心，抱抱～'],
   sleep: ['💤 zZz...', '🌙 晚安主人...', '😴 好困哦...', '呼…呼…', 'zZz...喵...']
@@ -2215,7 +2220,7 @@ const PASSIVE_SKILLS = {
   '蓝猫': {
     name: '沉静',
     desc: '鱼干+10%',
-    icon: '🐟',
+    icon: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
     bonus: {
       type: 'fish_bonus',
       value: 0.1
@@ -3057,17 +3062,16 @@ function CurrencyBar({
       display: 'flex',
       alignItems: 'center',
       gap: 5,
-      background: colors === CL ? 'rgba(255,180,80,0.15)' : 'rgba(253,150,68,0.12)',
+      background: 'transparent',
       borderRadius: 999,
       padding: '3px 12px',
       cursor: 'pointer',
-      border: colors === CL ? '1px solid rgba(255,180,80,0.2)' : 'none'
+      border: '1px solid transparent'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "\uD83D\uDC1F"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/icons/fish-blue.svg",
+    style: { width: 22, height: 22, filter: colors === CL ? "none" : "drop-shadow(0 0 2px #2563A0) drop-shadow(0 0 4px #2563A0) drop-shadow(0 0 4px rgba(255,255,255,0.3)) drop-shadow(0 0 10px rgba(255,255,255,0.15))" }
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 700,
@@ -3080,17 +3084,16 @@ function CurrencyBar({
       display: 'flex',
       alignItems: 'center',
       gap: 5,
-      background: colors === CL ? 'rgba(255,200,100,0.15)' : 'rgba(162,155,254,0.12)',
+      background: 'transparent',
       borderRadius: 999,
       padding: '3px 12px',
       cursor: 'pointer',
-      border: colors === CL ? '1px solid rgba(255,200,100,0.2)' : 'none'
+      border: '1px solid transparent'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14
-    }
-  }, "\uD83D\uDD14"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/icons/bell-yellow.svg",
+    style: { width: 22, height: 22, filter: colors === CL ? "none" : "drop-shadow(0 0 4px #C8960C) drop-shadow(0 0 8px #C8960C)" }
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       fontWeight: 700,
@@ -3108,12 +3111,12 @@ function CurrencyBar({
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: 18,
-      background: colors === CL ? 'rgba(180,120,40,0.12)' : 'rgba(255,255,255,0.08)',
-      border: colors === CL ? '1px solid rgba(180,120,40,0.2)' : '1px solid rgba(255,255,255,0.1)',
+      background: 'transparent',
+      border: '1px solid transparent',
       transition: 'all 0.2s',
       flexShrink: 0
     }
-  }, "⚙️")));
+  }, React.createElement("img",{src:"assets/icons/gear.svg",style:{width:22,height:22,verticalAlign:"middle",filter:colors===CL?'drop-shadow(0 1px 2px rgba(0,0,0,0.2))':'invert(0.85) brightness(1.1)'}}))));
 }
 
 /* ═══════════════════════════════════════
@@ -3274,7 +3277,7 @@ function NightBonusBanner({
     style: {
       fontSize: 14
     }
-  }, '🌙'), React.createElement('span', {
+  }, React.createElement("img",{src:"assets/icons/moon.svg",style:{width:14,height:14,verticalAlign:"middle"}})), React.createElement('span', {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -3301,7 +3304,7 @@ function NightBonusBanner({
       marginLeft: 4,
       lineHeight: 1
     }
-  }, '✕'));
+  }, React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}})));
 }
 /* P2: 分组赛横幅 */
 function GroupStageBanner({
@@ -3390,7 +3393,7 @@ function KnockoutBanner({
     style: {
       fontSize: 18
     }
-  }, eliminated ? '💔' : '🏆'), /*#__PURE__*/React.createElement("div", {
+  }, eliminated ? React.createElement("img",{src:"assets/icons/heart-broken.svg",style:{width:14,height:14,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/trophy.svg",style:{width:14,height:14,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -3495,7 +3498,7 @@ function BettingPanel({
     if (!selectedTeam || !upcomingMatch) return;
     if (fish < wager) {
       showConfirmModal({
-        emoji: '🐟',
+        emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
         title: '鱼干不足',
         message: '投注所需鱼干不足',
         onConfirm: () => {}
@@ -3654,7 +3657,7 @@ function BettingPanel({
       style: {
         fontSize: 14
       }
-    }, bet.won ? '🎉' : '💔'), /*#__PURE__*/React.createElement("div", {
+    }, bet.won ? React.createElement("img",{src:"assets/icons/celebrate.svg",style:{width:16,height:16,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/heart-broken.svg",style:{width:14,height:14,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
@@ -3669,7 +3672,7 @@ function BettingPanel({
         fontSize: 9,
         color: colors.sub
       }
-    }, bet.won ? '+' + (bet.fishWagered + Math.floor(bet.fishWagered * 0.5)) + ' 🐟' : '-' + bet.fishWagered + ' 🐟')), bet.won && !bet.shared && /*#__PURE__*/React.createElement("button", {
+    }, bet.won ? '+' + (bet.fishWagered + Math.floor(bet.fishWagered * 0.5)) + ' React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}})' : '-' + bet.fishWagered + ' React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}})')), bet.won && !bet.shared && /*#__PURE__*/React.createElement("button", {
       onClick: function () {
         onShareBet(bet);
       },
@@ -4043,7 +4046,7 @@ function HomePage({
       alignItems: 'center',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\u2694\uFE0F"), " \u51FA\u6218\u5E2D", /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", { src: "assets/icons/battle-prep-bluegray.svg", style: { width: 18, height: 18, verticalAlign: "middle", marginTop: -2, filter: colors === CL ? "none" : "invert(0.85) brightness(1.1)" } }), " \u51FA\u6218\u5E2D", /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -4186,7 +4189,7 @@ function HomePage({
       alignItems: 'center',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\uD83C\uDFC6"), "\u597D\u53CB\u4ECA\u65E5\u6218\u51B5"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", { src: "assets/icons/trophy-gold.svg", style: { width: 24, height: 24, verticalAlign: "middle" } }), " \u597D\u53CB\u4ECA\u65E5\u6218\u51B5"), /*#__PURE__*/React.createElement("div", {
     onClick: () => onNavigate('market', null, 'leaderboard'),
     style: {
       fontSize: 11,
@@ -4356,7 +4359,7 @@ function HomePage({
     style: {
       fontSize: 18
     }
-  }, checkedIn ? '✅' : '📅'), /*#__PURE__*/React.createElement("div", {
+  }, checkedIn ? React.createElement("img",{src:"assets/icons/check-ok-green.svg",style:{width:26,height:26,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/calendar.svg",style:{width:26,height:26,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -4397,11 +4400,10 @@ function HomePage({
         alignItems: 'center',
         gap: 8
       }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 18
-      }
-    }, "\uD83D\uDCE6"), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/icons/box-package.svg",
+      style: { width: 26, height: 26, filter: colors === CL ? 'none' : 'invert(0.7)' }
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
@@ -4437,7 +4439,7 @@ function HomePage({
       alignItems: 'center',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCCB"), " \u6BCF\u65E5\u4EFB\u52A1"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, React.createElement("img",{src:"assets/icons/clipboard.svg",style:{width:24,height:24,verticalAlign:"middle",marginTop:-2,filter:colors===CL?"none":"invert(0.85) brightness(1.1)"}})), " \u6BCF\u65E5\u4EFB\u52A1"), /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? '' : 'mission-card-dark',
     style: {
       background: colors === CL ? colors.card : undefined,
@@ -4446,19 +4448,19 @@ function HomePage({
       overflow: 'hidden'
     }
   }, [{
-    icon: '☀️',
+    icon: React.createElement("img",{src:"assets/icons/sun-gold.svg",style:{width:26,height:26,verticalAlign:"middle",marginTop:-2}}),
     text: '每日打卡',
-    reward: '+5 🐟',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+5 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: checkedIn
   }, {
-    icon: '🎁',
+    icon: React.createElement("img",{src:"assets/icons/gift-orange.svg",style:{width:26,height:26,verticalAlign:"middle",marginTop:-2}}),
     text: '体验抽卡',
-    reward: '+1 🔔',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+1 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/bell-yellow.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: gachaDone
   }, {
-    icon: '👥',
+    icon: React.createElement("img",{src:"assets/icons/people-green.svg",style:{width:26,height:26,verticalAlign:"middle",marginTop:-2}}),
     text: '把游戏推荐给朋友',
-    reward: '+30 🐟',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+30 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: (inviteRewardToday || 0) >= 3,
     type: 'invite'
   }].map((m, i, arr) => /*#__PURE__*/React.createElement("div", {
@@ -5220,7 +5222,7 @@ function CatPage({
       transition: 'all 0.25s',
       boxShadow: subTab === 'battle' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none'
     }
-  }, "\u2694\uFE0F \u5907\u6218\u533A"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/battle-prep-bluegray.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2,filter:colors===CL?"none":"invert(0.85) brightness(1.1)"}}), " 备战区"), /*#__PURE__*/React.createElement("div", {
     onClick: () => setSubTab('home'),
     style: {
       flex: 1,
@@ -5237,7 +5239,7 @@ function CatPage({
       transition: 'all 0.25s',
       boxShadow: subTab === 'home' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none'
     }
-  }, "\uD83C\uDFE0 \u5BB6\u56ED (", homeCats.length, "/", homeMaxSlots, ")"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/nav-home.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2,filter:colors===CL?'none':'invert(0.7)'}}), " 家园 (", homeCats.length, "/", homeMaxSlots, ")"), /*#__PURE__*/React.createElement("div", {
     onClick: () => setSubTab('bag'),
     style: {
       flex: 1,
@@ -5254,7 +5256,7 @@ function CatPage({
       transition: 'all 0.25s',
       boxShadow: subTab === 'bag' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none'
     }
-  }, "\uD83D\uDCE6 \u5305\u88F9 (", bagCats.length, ")")), subTab === 'battle' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(LineupManager, {
+  }, React.createElement("img",{src:"assets/icons/box-package.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2,filter:colors===CL?'none':'invert(0.7)'}}), " 包裹 (", bagCats.length, ")")), subTab === 'battle' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(LineupManager, {
     battleCats: battleCats,
     spectatorCats: spectatorCats,
     homeCats: homeCats,
@@ -5702,7 +5704,7 @@ function NurturingArea({
         fontWeight: 700,
         opacity: !canFeed ? 0.5 : 1
       }
-    }, canFeed ? '🐟 喂食 -1' : '鱼干不足') : /*#__PURE__*/React.createElement("button", {
+    }, canFeed ? /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 喂食 -1") : '鱼干不足') : /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         unlockAudio && unlockAudio();
         onTriggerFeed && onTriggerFeed(cat);
@@ -5716,7 +5718,7 @@ function NurturingArea({
       }
     }, /*#__PURE__*/React.createElement("span", {
       className: "inner"
-    }, canFeed ? '🐟 喂食 -1' : '鱼干不足')), intimacy < 100 && (colors === CL ? /*#__PURE__*/React.createElement("button", {
+    }, canFeed ? /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 喂食 -1") : '鱼干不足')), intimacy < 100 && (colors === CL ? /*#__PURE__*/React.createElement("button", {
       onClick: () => onBatchFeed && onBatchFeed(cat),
       disabled: !canFullFeed(intimacy),
       className: canFullFeed(intimacy) ? 'btn-full-warm' : '',
@@ -7710,7 +7712,7 @@ function CatCardFlipModal({
       color: cat.location === 'home' ? colors.green : colors.orange,
       border: `1px solid ${cat.location === 'home' ? 'rgba(0,184,148,0.25)' : 'rgba(253,150,68,0.25)'}`
     }
-  }, cat.location === 'home' ? '🏠 家园' : '📦 包裹区', cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
+  }, cat.location === 'home' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/nav-home.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 家园") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/box-package.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 包裹区"), cat.battleSlot != null && ` · 出战席${cat.battleSlot}号(主动)`, cat.battleSpectator != null && ` · 观战区(被动)`), cat.location === 'home' && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -7921,7 +7923,7 @@ function FriendLeaderboard({
       id: 10,
       name: '爱吃鱼的猫',
       score: 1350,
-      avatar: '🐟',
+      avatar: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
       cat: '波斯猫',
       catImg: 'assets/Textures/cat/波斯猫.webp'
     }, {
@@ -8075,7 +8077,7 @@ function FriendLeaderboard({
       color: colors.ink,
       marginBottom: 4
     }
-  }, "\uD83C\uDFC6 \u597D\u53CB\u4ECA\u65E5\u6218\u51B5"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/trophy-gold.svg",style:{width:24,height:24,verticalAlign:"middle",marginTop:-2}}), " 好友今日战况"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: colors.muted,
@@ -8392,15 +8394,15 @@ function MarketPage({
     }
   }, [{
     key: 'gacha',
-    icon: '🎁',
+    icon: 'assets/icons/gift-orange.svg',
     label: '抽卡'
   }, {
     key: 'leaderboard',
-    icon: '🏆',
+    icon: 'assets/icons/trophy-gold.svg',
     label: '好友榜'
   }, {
     key: 'event',
-    icon: '⚽',
+    icon: 'assets/icons/sport-soccer.svg',
     label: '活动'
   }].map(t => /*#__PURE__*/React.createElement("div", {
     key: t.key,
@@ -8421,7 +8423,7 @@ function MarketPage({
       boxShadow: subTab === t.key && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4), 0 0 4px rgba(255,105,180,0.3) inset' : 'none',
       filter: subTab !== t.key && colors !== CL ? 'drop-shadow(0 0 3px rgba(255,105,180,0.2))' : 'none'
     }
-  }, t.icon, " ", t.label))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
+  }, typeof t.icon === 'string' && t.icon.startsWith('assets/') ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: t.icon, style: { width: 18, height: 18, verticalAlign: "middle", marginTop: -2, filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", t.label) : /*#__PURE__*/React.createElement(React.Fragment, null, t.icon, " ", t.label)))), subTab === 'gacha' ? /*#__PURE__*/React.createElement(GachaPage, {
     bells: bells,
     pityCount: pityCount,
     onGacha: onGacha,
@@ -8793,11 +8795,11 @@ function ShopPage({
   }, [{
     key: 'worldcup',
     label: '世界杯限定',
-    icon: '⚽'
+    icon: 'assets/icons/sport-soccer.svg'
   }, {
     key: 'permanent',
     label: '永久皮肤',
-    icon: '👔'
+    icon: 'assets/icons/tie.svg'
   }].map(tab => /*#__PURE__*/React.createElement("button", {
     key: tab.key,
     onClick: () => {
@@ -8814,7 +8816,7 @@ function ShopPage({
       fontWeight: 600,
       cursor: 'pointer'
     }
-  }, tab.icon, " ", tab.label))), shopSubTab === 'worldcup' && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", { src: tab.icon, style: { width: 14, height: 14, verticalAlign: "middle", marginTop: -2, filter: colors === CL ? 'none' : 'invert(0.7)' } }), " ", tab.label))), shopSubTab === 'worldcup' && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: colors.orange,
@@ -8946,7 +8948,7 @@ function ShopPage({
         fontSize: 11,
         cursor: 'pointer'
       }
-    }, cat.name, " ", isCatEquipped ? '✓' : '');
+    }, cat.name, " ", isCatEquipped ? React.createElement("img",{src:"assets/icons/check-mark.svg",style:{width:12,height:12,verticalAlign:"middle"}}) : null);
   }), getMatchingCats(getSkinById(equipTarget)?.breedId).length === 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
@@ -10273,7 +10275,7 @@ function ProfilePage({
       color: m.unlocked ? colors.green : colors.muted,
       minWidth: 32
     }
-  }, m.unlocked ? '✅' : '🔒', " ", m.label), /*#__PURE__*/React.createElement("div", {
+  }, m.unlocked ? React.createElement("img",{src:"assets/icons/check-ok.svg",style:{width:14,height:14,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/lock.svg",style:{width:14,height:14,verticalAlign:"middle"}}), " ", m.label), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -11017,7 +11019,7 @@ function MilestoneUnlockModal({
       marginBottom: 8,
       animation: 'coinPop 0.6s ease-out'
     }
-  }, "\uD83C\uDF89"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/celebrate.svg",style:{width:16,height:16,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 800,
@@ -11129,7 +11131,7 @@ function SettingsModal({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 18, fontWeight: 800, textAlign: 'center', marginBottom: 10, color: colors === CL ? '#4A2800' : '#F0EDFF' }
-  }, "⚙️ 设置"), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "模式选择"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/gear.svg", style: { width: 22, height: 22, verticalAlign: "middle", filter: colors === CL ? 'none' : 'invert(0.85) brightness(1.1)' } }), " 设置")), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "模式选择"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -11137,12 +11139,12 @@ function SettingsModal({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 12, color: theme === 'light' ? '#C06800' : 'rgba(240,237,255,0.5)', fontWeight: theme === 'light' ? 700 : 400 }
-  }, "☀️ 明亮"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/sun-gold.svg",style:{width:16,height:16,verticalAlign:"middle",filter:theme==='dark'?'invert(0.7) brightness(1.2)':'none'}}), " 明亮"), /*#__PURE__*/React.createElement("div", {
     onClick: () => onThemeChange(theme === 'light' ? 'dark' : 'light'),
     style: toggleTrack(theme === 'dark')
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(theme === 'dark') })), /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 12, color: theme === 'dark' ? '#A29BFE' : 'rgba(100,60,20,0.5)', fontWeight: theme === 'dark' ? 700 : 400 }
-  }, "🌙 暗黑"))), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "背景音量"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("img", { src: "assets/icons/moon.svg", style: { width: 16, height: 16, verticalAlign: "middle", filter: theme === 'dark' ? 'invert(0.7) sepia(0.5) hue-rotate(200deg) saturate(3) brightness(1.2)' : 'none' } }), " 暗黑"))), /*#__PURE__*/React.createElement("div", { style: rowStyle }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "背景音量"), /*#__PURE__*/React.createElement("div", {
     onClick: onBgmToggle,
     style: toggleTrack(bgmOn)
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(bgmOn) }))), /*#__PURE__*/React.createElement("div", { style: { ...rowStyle, borderBottom: 'none' } }, /*#__PURE__*/React.createElement("span", { style: labelStyle }, "音效开关"), /*#__PURE__*/React.createElement("div", {
@@ -11960,7 +11962,7 @@ function GachaResultModal({
   const isPity = isPitySSR || isPitySR;
 
   // 保底标签文案
-  const pityLabel = isPitySSR ? '🎉 大保底出SSR!' : isPitySR ? '💎 小保底出SR!' : null;
+  const pityLabel = isPitySSR ? '🎉 大保底出SSR!' : isPitySR ? React.createElement("img",{src:"assets/icons/diamond.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " 小保底出SR!" : null;
   const pityColor = isPitySSR ? '#FD9644' : isPitySR ? '#A29BFE' : null;
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12680,25 +12682,26 @@ function TabBar({
   active,
   onChange
 }) {
-  const tabs = [{
+  var iconSize = 28;
+  var tabs = [{
     key: 'home',
-    icon: '🏠',
+    icon: 'assets/icons/nav-home.svg',
     label: '首页'
   }, {
     key: 'market',
-    icon: '🎪',
+    icon: 'assets/icons/nav-market.svg',
     label: '喵市'
   }, {
     key: 'cathome',
-    icon: '🐱',
+    icon: 'assets/icons/nav-cat.svg',
     label: '家园'
   }, {
     key: 'shop',
-    icon: '🛒',
+    icon: 'assets/icons/nav-shop.svg',
     label: '猫铺'
   }, {
     key: 'me',
-    icon: '👤',
+    icon: 'assets/icons/nav-me.svg',
     label: '我的'
   }];
   return /*#__PURE__*/React.createElement("div", {
@@ -12733,12 +12736,15 @@ function TabBar({
         background: isActive ? colors === CL ? 'rgba(255,180,80,0.18)' : 'rgba(255,105,180,0.12)' : 'transparent',
         transition: 'all 0.2s'
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: tab.icon,
+      alt: tab.label,
       style: {
-        fontSize: 20,
-        filter: isActive ? colors === CL ? 'none' : 'drop-shadow(0 0 6px #00e5ff)' : colors === CL ? 'grayscale(0.5) opacity(0.5)' : 'drop-shadow(0 0 4px #ff69b4)'
+        width: iconSize,
+        height: iconSize,
+        filter: colors === CL ? (isActive ? 'none' : 'opacity(0.55)') : (isActive ? 'invert(1) brightness(1.1) drop-shadow(0 0 6px #00e5ff)' : 'invert(0.7) drop-shadow(0 0 6px #ff69b4)')
       }
-    }, tab.icon), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: isActive ? 700 : 400,
@@ -12829,9 +12835,9 @@ function LoginPage({
       if (msgLower.includes('网络') || msgLower.includes('failed to fetch') || msgLower.includes('fetch') || msgLower.includes('networkerror')) {
         setError('⚠️ 网络连接失败，请确认：1.后端已启动(端口3001) 2.使用http访问而非file:// 3.刷新页面后重试');
       } else if (msgLower.includes('用户名') || msgLower.includes('密码')) {
-        setError('❌ ' + rawMsg);
+        setError(React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " " + rawMsg);
       } else {
-        setError('❌ ' + rawMsg);
+        setError(React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " " + rawMsg);
       }
       refreshCaptcha();
     } finally {
@@ -13844,7 +13850,7 @@ function App() {
     // Web fallback: 关闭窗口
     window.close();
     // 如果无法关闭，显示退出提示
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0F0A1E;color:#F0EDFF;font-family:sans-serif;text-align:center;padding:40px;"><div><div style="font-size:48px;margin-bottom:16px;">👋</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">感谢关注喵呜乐消消</div><div style="font-size:13px;opacity:0.6;">您需要同意协议才能使用游戏服务<br/>请关闭本页面</div></div></div>';
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0F0A1E;color:#F0EDFF;font-family:sans-serif;text-align:center;padding:40px;"><div><img src="assets/icons/wave.svg" style="width:48px;height:48px;margin-bottom:16px;filter:invert(1)"/><div style="font-size:18px;font-weight:700;margin-bottom:8px;">感谢关注喵呜乐消消</div><div style="font-size:13px;opacity:0.6;">您需要同意协议才能使用游戏服务<br/>请关闭本页面</div></div></div>';
   };
 
   // 合规：登录授权弹窗
@@ -14277,8 +14283,9 @@ function App() {
         if (daysLeft <= 3 && daysLeft > 0) {
           const key = `bag_${cat.serialId}_${daysLeft}`;
           const lastSent = notifSentRef.current[key];
-          if (lastSent && now - lastSent < 6 * 3600000) continue;
-          setFeedToast({ text: `📦 ${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
+          if (lastSent && now - lastSent < 12 * 3600000) continue;
+          setFeedToast({ text: `${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
+          setTimeout(() => setFeedToast(null), 1500);
           notifSentRef.current[key] = now;
         }
       }
@@ -14438,7 +14445,7 @@ function App() {
     }));
     // 喂食Toast
     setFeedToast({
-      text: `🐟 -1 ｜ ❤️ 好感度 +5！`,
+      text: `React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}}) -1 ｜ ❤️ 好感度 +5！`,
       timestamp: Date.now()
     });
     setTimeout(() => setFeedToast(null), 2000);
@@ -14789,7 +14796,7 @@ function App() {
   const handleSaveFromFarewell = useCallback(async cat => {
     if (fish < cat.saveCost) {
       showConfirmModal({
-        emoji: '🐟',
+        emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
         title: '鱼干不足',
         message: `挽留需要 ${cat.saveCost} 鱼干`,
         onConfirm: () => {}
@@ -14928,7 +14935,7 @@ function App() {
     const cost = 1500;
     if (getFishBalance() < cost) {
       showConfirmModal({
-        emoji: '🐟',
+        emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
         title: '鱼干不足',
         message: '拓展家园需要1500鱼干，快去消消乐赚取吧！',
         onConfirm: () => {}
@@ -15099,7 +15106,7 @@ function App() {
     }
     if (getFishBalance() < 100) {
       showConfirmModal({
-        emoji: '🐟',
+        emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
         title: '鱼干不足',
         message: '需要100条鱼干',
         onConfirm: () => {}
@@ -15204,7 +15211,7 @@ function App() {
   const handlePlaceBet = useCallback((matchId, catBreedId, teamName, fishWagered) => {
     if (getFishBalance() < fishWagered) {
       showConfirmModal({
-        emoji: '🐟',
+        emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
         title: '鱼干不足',
         message: '投注所需鱼干不足',
         onConfirm: () => {}
@@ -15247,9 +15254,9 @@ function App() {
           shared: true
         } : b));
         showConfirmModal({
-          emoji: '🐟',
+          emoji: React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
           title: '分享成功',
-          message: '+3 鱼干 🐟',
+          message: '+3 鱼干 React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}})',
           onConfirm: () => {}
         });
       }
@@ -15263,7 +15270,7 @@ function App() {
     var shareUrl = window.location.origin + '/index.html?invite=' + code;
     await shareContent({
       title: '喵呜乐消消 🐱',
-      text: '一起来撸猫消除吧！🎮\n点链接直接玩 → ' + shareUrl,
+      text: React.createElement("img",{src:"assets/icons/gamepad.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " 一起来撸猫消除吧！\\n点链接直接玩 → " + shareUrl,
       url: shareUrl
     });
   }, []);
@@ -15526,7 +15533,7 @@ function App() {
     onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
     onSettingsClick: () => { var s = loadAudioSettings(); setBgmOn(s.bgmOn); setSfxOn(s.sfxOn); setShowSettings(true); },
     onFishClick: () => setInfoModal({
-      title: '🐟 鱼干',
+      title: /*#__PURE__*/React.createElement(React.Fragment, null, React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }), " 鱼干"),
       content: '日常高频资源，用于喂猫。通过签到和消消乐获得。'
     }),
     onBellClick: () => setInfoModal({
@@ -15539,11 +15546,10 @@ function App() {
         alignItems: 'center',
         gap: 8
       }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 14
-      }
-    }, "\uD83D\uDC4B"), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: colors === CL ? "assets/icons/wave-pink.svg" : "assets/icons/wave-cream.svg",
+      style: { width: 22, height: 22 }
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 13,
         color: colors === CL ? '#6B3A00' : colors.sub,
