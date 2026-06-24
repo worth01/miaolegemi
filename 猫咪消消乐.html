@@ -9952,8 +9952,9 @@ function Game() {
       var fcSY = fcRect.top + (tileY(tile) / boardHeight) * fcRect.height;
       var fcEX = fcSX;
       var fcEY = fcRect.bottom - 10;
-      // 目标槽位索引 = 逻辑槽内牌数（排除正在消除的牌）
-      var targetIdx = slotRef.current.filter(function(s) { return !matchingRef.current.includes(s.uid); }).length;
+      // 目标槽位索引 = 逻辑槽内牌数 + 冰冻偏移（冰冻牌占据前N格）
+      var activeCount = slotRef.current.filter(function(s) { return !matchingRef.current.includes(s.uid); }).length;
+      var targetIdx = activeCount + (frozenSlot && !freezeOverride ? freezeGridCount : 0);
       // 尝试取目标槽格的 DOM 坐标
       var slotCell = document.querySelector('#main-slot [data-slot-index=\"' + targetIdx + '\"]');
       if (slotCell) {
