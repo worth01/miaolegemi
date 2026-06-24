@@ -3303,7 +3303,7 @@ function NightBonusBanner({
       marginLeft: 4,
       lineHeight: 1
     }
-  }, '✕'));
+  }, React.createElement("img",{src:"assets/icons/close-x.svg",style:{width:14,height:14,verticalAlign:"middle"}})));
 }
 /* P2: 分组赛横幅 */
 function GroupStageBanner({
@@ -10274,7 +10274,7 @@ function ProfilePage({
       color: m.unlocked ? colors.green : colors.muted,
       minWidth: 32
     }
-  }, m.unlocked ? '✅' : '🔒', " ", m.label), /*#__PURE__*/React.createElement("div", {
+  }, m.unlocked ? React.createElement("img",{src:"assets/icons/check-ok.svg",style:{width:14,height:14,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/lock.svg",style:{width:14,height:14,verticalAlign:"middle"}}), " ", m.label), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -11961,7 +11961,7 @@ function GachaResultModal({
   const isPity = isPitySSR || isPitySR;
 
   // 保底标签文案
-  const pityLabel = isPitySSR ? '🎉 大保底出SSR!' : isPitySR ? '💎 小保底出SR!' : null;
+  const pityLabel = isPitySSR ? '🎉 大保底出SSR!' : isPitySR ? React.createElement("img",{src:"assets/icons/diamond.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " 小保底出SR!" : null;
   const pityColor = isPitySSR ? '#FD9644' : isPitySR ? '#A29BFE' : null;
   return /*#__PURE__*/React.createElement("div", {
     style: {
