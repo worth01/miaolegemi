@@ -8910,7 +8910,7 @@ function ShopPage({
         textShadow: '0 1px 2px rgba(0,0,0,0.4)',
         backdropFilter: 'blur(4px)'
       }
-    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : bells < skin.price ? '铃铛不足' : React.createElement(React.Fragment, null, skin.price, " ", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:14,height:14,verticalAlign:"middle"}}))));
+    }, owned ? '已拥有' : skin.price === 0 ? '免费领取' : bells < skin.price ? '铃铛不足' : React.createElement(React.Fragment, null, skin.price, " ", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2}}))));
   })), equipTarget && /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? 'modal-sm-spec' : 'modal-dark',
     style: {
@@ -9182,7 +9182,7 @@ function GachaPage({
       color: colors.ink,
       marginBottom: 4
     }
-  }, /*#__PURE__*/React.createElement(React.Fragment, null, "🎁 猫咪抽卡· 现有", bells, " 颗", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:14,height:14,verticalAlign:"middle"}}), "· 消耗1枚抽一次")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(React.Fragment, null, "🎁 猫咪抽卡· 现有", bells, " 颗", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2}}), "· 消耗1枚抽一次")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 16
     }
@@ -9458,7 +9458,7 @@ function GachaPage({
       opacity: isAnimating || bells < 1 ? 0.6 : 1,
       textShadow: '0 1px 4px rgba(80,40,10,0.35)'
     }
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:14,height:14,verticalAlign:"middle"}}), ")")) : /*#__PURE__*/React.createElement("button", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2}}), ")")) : /*#__PURE__*/React.createElement("button", {
     onClick: handleGacha,
     disabled: isAnimating || bells < 1,
     className: "btn-main-dark",
@@ -9491,7 +9491,7 @@ function GachaPage({
     alt: ""
   }), /*#__PURE__*/React.createElement("span", {
     className: "btn-main-text"
-  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:14,height:14,verticalAlign:"middle"}}), ")")))), /*#__PURE__*/React.createElement("div", {
+  }, isAnimating ? '抽卡中...' : bells < 1 ? '铃铛不足' : React.createElement(React.Fragment, null, "抽卡 (-1", React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2}}), ")")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 20px'
     }
@@ -15537,7 +15537,7 @@ function App() {
       content: '日常高频资源，用于喂猫。通过签到和消消乐获得。'
     }),
     onBellClick: () => setInfoModal({
-      title: React.createElement(React.Fragment, null, React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:14,height:14,verticalAlign:"middle"}}), " 猫铃铛"),
+      title: React.createElement(React.Fragment, null, React.createElement("img",{src:"assets/icons/bell-yellow.svg",style:{width:18,height:18,verticalAlign:"middle",marginTop:-2}}), " 猫铃铛"),
       content: '稀缺资源，用于抽卡获得新猫咪。可通过连续签到和特殊活动获得。'
     }),
     left: /*#__PURE__*/React.createElement("span", {
