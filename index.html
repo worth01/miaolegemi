@@ -4449,17 +4449,17 @@ function HomePage({
   }, [{
     icon: '☀️',
     text: '每日打卡',
-    reward: '+5 🐟',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+5 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: checkedIn
   }, {
     icon: '🎁',
     text: '体验抽卡',
-    reward: '+1 🔔',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+1 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/bell-yellow.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: gachaDone
   }, {
     icon: '👥',
     text: '把游戏推荐给朋友',
-    reward: '+30 🐟',
+    reward: /*#__PURE__*/React.createElement(React.Fragment, null, "+30 ", /*#__PURE__*/React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } })),
     done: (inviteRewardToday || 0) >= 3,
     type: 'invite'
   }].map((m, i, arr) => /*#__PURE__*/React.createElement("div", {
