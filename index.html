@@ -3392,7 +3392,7 @@ function KnockoutBanner({
     style: {
       fontSize: 18
     }
-  }, eliminated ? '💔' : '🏆'), /*#__PURE__*/React.createElement("div", {
+  }, eliminated ? React.createElement("img",{src:"assets/icons/heart-broken.svg",style:{width:14,height:14,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/trophy.svg",style:{width:14,height:14,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -4045,7 +4045,7 @@ function HomePage({
       alignItems: 'center',
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\u2694\uFE0F"), " \u51FA\u6218\u5E2D", /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("img", { src: "assets/icons/battle-prep.svg", style: { width: 18, height: 18, verticalAlign: "middle" } }), " \u51FA\u6218\u5E2D", /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -4358,7 +4358,7 @@ function HomePage({
     style: {
       fontSize: 18
     }
-  }, checkedIn ? '✅' : '📅'), /*#__PURE__*/React.createElement("div", {
+  }, checkedIn ? React.createElement("img",{src:"assets/icons/check-ok.svg",style:{width:14,height:14,verticalAlign:"middle"}}) : React.createElement("img",{src:"assets/icons/calendar.svg",style:{width:14,height:14,verticalAlign:"middle"}})), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -5222,7 +5222,7 @@ function CatPage({
       transition: 'all 0.25s',
       boxShadow: subTab === 'battle' && colors !== CL ? '0 0 8px rgba(255,105,180,0.6), 0 0 20px rgba(255,46,185,0.4)' : 'none'
     }
-  }, "\u2694\uFE0F \u5907\u6218\u533A"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/battle-prep.svg",style:{width:18,height:18,verticalAlign:"middle"}}), " 备战区"), /*#__PURE__*/React.createElement("div", {
     onClick: () => setSubTab('home'),
     style: {
       flex: 1,
@@ -11139,7 +11139,7 @@ function SettingsModal({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 12, color: theme === 'light' ? '#C06800' : 'rgba(240,237,255,0.5)', fontWeight: theme === 'light' ? 700 : 400 }
-  }, "☀️ 明亮"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/sun.svg",style:{width:16,height:16,verticalAlign:"middle"}}), " 明亮"), /*#__PURE__*/React.createElement("div", {
     onClick: () => onThemeChange(theme === 'light' ? 'dark' : 'light'),
     style: toggleTrack(theme === 'dark')
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(theme === 'dark') })), /*#__PURE__*/React.createElement("span", {
@@ -15269,7 +15269,7 @@ function App() {
     var shareUrl = window.location.origin + '/index.html?invite=' + code;
     await shareContent({
       title: '喵呜乐消消 🐱',
-      text: '一起来撸猫消除吧！🎮\n点链接直接玩 → ' + shareUrl,
+      text: React.createElement("img",{src:"assets/icons/gamepad.svg",style:{width:14,height:14,verticalAlign:"middle"}}) + " 一起来撸猫消除吧！\\n点链接直接玩 → " + shareUrl,
       url: shareUrl
     });
   }, []);
