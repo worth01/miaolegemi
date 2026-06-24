@@ -12684,25 +12684,26 @@ function TabBar({
   active,
   onChange
 }) {
-  const tabs = [{
+  var iconSize = 24;
+  var tabs = [{
     key: 'home',
-    icon: '🏠',
+    icon: 'assets/icons/nav-home.svg',
     label: '首页'
   }, {
     key: 'market',
-    icon: '🎪',
+    icon: 'assets/icons/nav-market.svg',
     label: '喵市'
   }, {
     key: 'cathome',
-    icon: '🐱',
+    icon: 'assets/icons/nav-cat.svg',
     label: '家园'
   }, {
     key: 'shop',
-    icon: '🛒',
+    icon: 'assets/icons/nav-shop.svg',
     label: '猫铺'
   }, {
     key: 'me',
-    icon: '👤',
+    icon: 'assets/icons/nav-me.svg',
     label: '我的'
   }];
   return /*#__PURE__*/React.createElement("div", {
@@ -12737,12 +12738,16 @@ function TabBar({
         background: isActive ? colors === CL ? 'rgba(255,180,80,0.18)' : 'rgba(255,105,180,0.12)' : 'transparent',
         transition: 'all 0.2s'
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: tab.icon,
+      alt: tab.label,
       style: {
-        fontSize: 20,
-        filter: isActive ? colors === CL ? 'none' : 'drop-shadow(0 0 6px #00e5ff)' : colors === CL ? 'grayscale(0.5) opacity(0.5)' : 'drop-shadow(0 0 4px #ff69b4)'
+        width: iconSize,
+        height: iconSize,
+        opacity: isActive ? 1 : 0.45,
+        filter: isActive ? (colors === CL ? 'none' : 'drop-shadow(0 0 6px #00e5ff)') : 'none'
       }
-    }, tab.icon), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: isActive ? 700 : 400,
