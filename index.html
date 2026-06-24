@@ -11139,7 +11139,7 @@ function SettingsModal({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 12, color: theme === 'light' ? '#C06800' : 'rgba(240,237,255,0.5)', fontWeight: theme === 'light' ? 700 : 400 }
-  }, React.createElement("img",{src:"assets/icons/sun.svg",style:{width:16,height:16,verticalAlign:"middle"}}), " 明亮"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("img",{src:"assets/icons/sun-gold.svg",style:{width:16,height:16,verticalAlign:"middle",filter:theme==='dark'?'invert(0.7) brightness(1.2)':'none'}}), " 明亮"), /*#__PURE__*/React.createElement("div", {
     onClick: () => onThemeChange(theme === 'light' ? 'dark' : 'light'),
     style: toggleTrack(theme === 'dark')
   }, /*#__PURE__*/React.createElement("div", { style: toggleKnob(theme === 'dark') })), /*#__PURE__*/React.createElement("span", {
