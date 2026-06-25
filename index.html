@@ -3701,12 +3701,23 @@ function NotificationBanner({
   const nurturing = cats.filter(c => c.location === 'home');
   const bagCats = cats.filter(c => c.location === 'bag');
   const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
+  const [dismissedBagSerials, setDismissedBagSerials] = useState(new Set());
   let banner = null;
 
   // P2: 亲密度系统通知
   const lowIntimacyCat = nurturing.find(c => (c.intimacy || 0) <= 20);
-  const expiringBag = bagCats.find(c => getRemainingDays(c) <= 7);
+  const expiringBag = bagCats.find(c => getRemainingDays(c) <= 7 && !dismissedBagSerials.has(c.serialId));
   const emptyBattleSlot = battleCats.length < 3;
+
+  // 包裹到期已点击关闭后，若该猫不再濒临到期（>7天或已处理），清除关闭记录
+  useEffect(() => {
+    if (dismissedBagSerials.size === 0) return;
+    const stillExpiring = new Set(bagCats.filter(c => getRemainingDays(c) <= 7).map(c => c.serialId));
+    const toClear = [...dismissedBagSerials].filter(sid => !stillExpiring.has(sid));
+    if (toClear.length > 0) {
+      setDismissedBagSerials(prev => { const next = new Set(prev); toClear.forEach(s => next.delete(s)); return next; });
+    }
+  }, [bagCats, dismissedBagSerials]);
 
   // Priority: low intimacy > bag expiring > empty battle
   if (lowIntimacyCat) {
@@ -3720,7 +3731,7 @@ function NotificationBanner({
     const days = getRemainingDays(expiringBag);
     banner = {
       cat: expiringBag,
-      text: `包裹区有猫还有${days}天就会离开`,
+      text: `${expiringBag.name} 还有${days}天就要离开包裹区了`,
       color: colors.yellow,
       priority: 2
     };
@@ -3736,7 +3747,11 @@ function NotificationBanner({
   if (!banner) return null;
   return /*#__PURE__*/React.createElement("div", {
     onClick: () => {
-      if (banner.cat) {
+      if (banner.priority === 2 && banner.cat) {
+        // 包裹到期：关闭横幅并跳转家园-包裹区
+        setDismissedBagSerials(prev => { const next = new Set(prev); next.add(banner.cat.serialId); return next; });
+        onNavigate('cathome', null, 'bag');
+      } else if (banner.cat) {
         onNavigate('catDetail', banner.cat);
       } else if (banner.priority === 3) {
         onNavigate('cathome');
@@ -3767,7 +3782,7 @@ function NotificationBanner({
       fontSize: 12,
       color: colors.muted
     }
-  }, "\u2192"));
+  }, "→"));
 }
 
 /* ═══════════════════════════════════════
@@ -14268,32 +14283,7 @@ function App() {
     return () => window.removeEventListener('devicemotion', handleMotion);
   }, [cats, showBubble, triggerAnimation]);
 
-  // Push notifications: check cat statuses periodically
-  const notifSentRef = useRef({});
-  useEffect(() => {
-    // 始终运行关怀检查（页面内 Toast 替代浏览器通知）
-    const checkAndNotify = () => {
-      const now = Date.now();
-      const homeCats = cats.filter(c => c.location === 'home');
-      const bagCats = cats.filter(c => c.location === 'bag');
-
-      // 亲密度提醒由首页 NotificationBanner 横幅负责，Toast 只处理包裹到期
-      for (const cat of bagCats) {
-        const daysLeft = getRemainingDays(cat);
-        if (daysLeft <= 3 && daysLeft > 0) {
-          const key = `bag_${cat.serialId}_${daysLeft}`;
-          const lastSent = notifSentRef.current[key];
-          if (lastSent && now - lastSent < 12 * 3600000) continue;
-          setFeedToast({ text: `${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
-          setTimeout(() => setFeedToast(null), 1500);
-          notifSentRef.current[key] = now;
-        }
-      }
-    };
-    checkAndNotify();
-    const timer = setInterval(checkAndNotify, 120000); // every 2 minutes
-    return () => clearInterval(timer);
-  }, [cats]);
+  // 包裹到期提醒已移入 NotificationBanner 横幅展示
 
   // Detect newly unlocked milestones + titles
   useEffect(() => {
@@ -14445,7 +14435,10 @@ function App() {
     }));
     // 喂食Toast
     setFeedToast({
-      text: `React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}}) -1 ｜ ❤️ 好感度 +5！`,
+      text: React.createElement(React.Fragment, null,
+        React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
+        " -1  好感度 +5"
+      ),
       timestamp: Date.now()
     });
     setTimeout(() => setFeedToast(null), 2000);
@@ -15930,7 +15923,7 @@ function App() {
   }), feedToast && /*#__PURE__*/React.createElement("div", {
     className: "feed-toast in",
     key: feedToast.timestamp,
-    style: colors === CL ? { background: '#FFF8E7', border: '2px solid #C4A882', color: '#4A2800', boxShadow: '0 4px 20px rgba(180,140,100,0.4)' } : {}
+    style: colors === CL ? { background: '#FFF8E7', border: '2px solid #C4A882', color: '#4A2800', boxShadow: '0 4px 20px rgba(180,140,100,0.4)', whiteSpace: 'nowrap', maxWidth: '90vw', overflow: 'hidden', textOverflow: 'ellipsis' } : { whiteSpace: 'nowrap', maxWidth: '90vw', overflow: 'hidden', textOverflow: 'ellipsis' }
   }, feedToast.text), guestToast && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
