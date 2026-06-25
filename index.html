@@ -46,6 +46,7 @@
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }
     @keyframes slideUp { 0%{transform:translateY(30px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes slideUpScaled { 0%{transform:translateY(30px) scale(0.7);opacity:0} 100%{transform:translateY(0) scale(0.7);opacity:1} }
     @keyframes fadeInUp { 0%{margin-top:30px;opacity:0} 100%{margin-top:0;opacity:1} }
     @keyframes coinPop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.3);opacity:1} 100%{transform:scale(1);opacity:1} }
     @keyframes goldSweep { 0%{left:-100%;opacity:0} 20%{left:-100%;opacity:1} 50%{left:100%;opacity:1} 51%{left:100%;opacity:0} 100%{left:100%;opacity:0} }
@@ -3324,11 +3325,11 @@ function GroupStageBanner({
   return /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? '' : 'profile-card-dark',
     style: {
-      margin: '2px 16px',
+      margin: '2px 0',
       padding: '6px 16px',
       borderRadius: 12,
       background: colors === CL ? '#FFF8E7' : `${bracket.color}12`,
-      border: colors === CL ? '1px solid #C4A882' : `1px solid ${bracket.color}25`,
+      border: colors === CL ? '1px solid ' + colors.cardBorder : undefined,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
@@ -3701,12 +3702,23 @@ function NotificationBanner({
   const nurturing = cats.filter(c => c.location === 'home');
   const bagCats = cats.filter(c => c.location === 'bag');
   const battleCats = cats.filter(c => c.battleSlot >= 1 && c.battleSlot <= 3);
+  const [dismissedBagSerials, setDismissedBagSerials] = useState(new Set());
   let banner = null;
 
   // P2: 亲密度系统通知
   const lowIntimacyCat = nurturing.find(c => (c.intimacy || 0) <= 20);
-  const expiringBag = bagCats.find(c => getRemainingDays(c) <= 7);
+  const expiringBag = bagCats.find(c => getRemainingDays(c) <= 7 && !dismissedBagSerials.has(c.serialId));
   const emptyBattleSlot = battleCats.length < 3;
+
+  // 包裹到期已点击关闭后，若该猫不再濒临到期（>7天或已处理），清除关闭记录
+  useEffect(() => {
+    if (dismissedBagSerials.size === 0) return;
+    const stillExpiring = new Set(bagCats.filter(c => getRemainingDays(c) <= 7).map(c => c.serialId));
+    const toClear = [...dismissedBagSerials].filter(sid => !stillExpiring.has(sid));
+    if (toClear.length > 0) {
+      setDismissedBagSerials(prev => { const next = new Set(prev); toClear.forEach(s => next.delete(s)); return next; });
+    }
+  }, [bagCats, dismissedBagSerials]);
 
   // Priority: low intimacy > bag expiring > empty battle
   if (lowIntimacyCat) {
@@ -3720,7 +3732,7 @@ function NotificationBanner({
     const days = getRemainingDays(expiringBag);
     banner = {
       cat: expiringBag,
-      text: `包裹区有猫还有${days}天就会离开`,
+      text: `${expiringBag.name} 还有${days}天就要离开包裹区了`,
       color: colors.yellow,
       priority: 2
     };
@@ -3736,7 +3748,11 @@ function NotificationBanner({
   if (!banner) return null;
   return /*#__PURE__*/React.createElement("div", {
     onClick: () => {
-      if (banner.cat) {
+      if (banner.priority === 2 && banner.cat) {
+        // 包裹到期：关闭横幅并跳转家园-包裹区
+        setDismissedBagSerials(prev => { const next = new Set(prev); next.add(banner.cat.serialId); return next; });
+        onNavigate('cathome', null, 'bag');
+      } else if (banner.cat) {
         onNavigate('catDetail', banner.cat);
       } else if (banner.priority === 3) {
         onNavigate('cathome');
@@ -3767,7 +3783,7 @@ function NotificationBanner({
       fontSize: 12,
       color: colors.muted
     }
-  }, "\u2192"));
+  }, "→"));
 }
 
 /* ═══════════════════════════════════════
@@ -7966,12 +7982,15 @@ function FriendLeaderboard({
         textAlign: 'center',
         padding: '24px'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/icons/lock.svg",
       style: {
-        fontSize: 40,
-        marginBottom: 12
+        width: 40,
+        height: 40,
+        marginBottom: 12,
+        filter: colors === CL ? 'none' : 'invert(1)'
       }
-    }, "\uD83D\uDD12"), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         fontWeight: 700,
@@ -7986,8 +8005,18 @@ function FriendLeaderboard({
       }
     }, "\u6388\u6743\u597D\u53CB\u5173\u7CFB\u540E\u53EF\u67E5\u770B\u597D\u53CB\u6218\u51B5"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowAuthModal(true),
-      className: colors === CL ? 'btn-primary-spec' : '',
-      style: colors === CL ? { padding: '8px 24px' } : {
+      style: colors === CL ? {
+        padding: '8px 24px',
+        background: 'linear-gradient(180deg, #FFF8E7, #F5E6C8)',
+        border: '2px solid #C4A882',
+        borderRadius: 50,
+        color: '#8B6914',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        boxShadow: '0 2px 8px rgba(180,140,100,0.25)'
+      } : {
         padding: '8px 24px',
         background: 'rgba(0,0,0,0.4)',
         border: '2px solid #00ffff',
@@ -8033,7 +8062,7 @@ function FriendLeaderboard({
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.cardBorder}`,
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8246,7 +8275,7 @@ function EventPage({
       fontWeight: 700,
       color: colors.ink
     }
-  }, "\u26BD 2026 \u4E16\u754C\u676F\u8054\u52A8\u8FDB\u884C\u4E2D"), /*#__PURE__*/React.createElement("div", {
+  }, "2026 \u4E16\u754C\u676F\u8054\u52A8\u8FDB\u884C\u4E2D"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: colors.sub,
@@ -10727,7 +10756,7 @@ function AdoptConfirmModal({
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10811,7 +10840,7 @@ function ReleaseConfirmModal({
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : '1px solid rgba(255,107,107,0.3)',
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10879,7 +10908,7 @@ function CheckInModal({
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : '1px solid rgba(108,92,231,0.3)',
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.4s ease-out'
+      animation: 'slideUpScaled 0.4s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11011,7 +11040,7 @@ function MilestoneUnlockModal({
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : '1px solid rgba(108,92,231,0.3)',
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
       boxShadow: '0 0 60px rgba(108,92,231,0.25)',
-      animation: 'slideUp 0.4s ease-out'
+      animation: 'slideUpScaled 0.4s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11127,7 +11156,7 @@ function SettingsModal({
       maxWidth: 320,
       boxShadow: colors === CL ? '0 8px 32px rgba(100,60,20,0.2)' : '0 0 32px rgba(108,92,231,0.3), 0 0 64px rgba(108,92,231,0.1)',
       border: colors === CL ? '1px solid rgba(255,200,120,0.3)' : '1px solid rgba(108,92,231,0.25)',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 18, fontWeight: 800, textAlign: 'center', marginBottom: 10, color: colors === CL ? '#4A2800' : '#F0EDFF' }
@@ -11337,7 +11366,7 @@ function MemorialDetailModal({
       padding: '24px 20px',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11596,7 +11625,7 @@ function InfoModal({
       borderRadius: 20,
       padding: '24px 20px',
       border: `1px solid ${colors.border}`,
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11683,7 +11712,7 @@ function LineageModal({
       borderRadius: 24,
       padding: '24px 20px',
       border: `1px solid ${isGenesis ? 'rgba(253,150,68,0.4)' : colors.border}`,
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11990,7 +12019,7 @@ function GachaResultModal({
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${RARITY_COLORS[cat.rarity]}30`,
       boxShadow: colors === CL ? `0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12), 0 0 40px ${RARITY_COLORS[cat.rarity]}20` : `0 0 40px ${RARITY_COLORS[cat.rarity]}20`,
-      animation: 'slideUp 0.4s ease-out'
+      animation: 'slideUpScaled 0.4s ease-out forwards'
     }
   }, isPity && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12426,7 +12455,7 @@ function AgreementModal({
       padding: '32px 24px 24px',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : '1px solid rgba(108,92,231,0.3)',
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : '0 0 80px rgba(108,92,231,0.2)',
-      animation: 'slideUp 0.4s ease-out'
+      animation: 'slideUpScaled 0.4s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12537,7 +12566,7 @@ function LoginAuthModal({
       padding: '32px 24px 24px',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : '1px solid rgba(108,92,231,0.3)',
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : '0 0 80px rgba(108,92,231,0.2)',
-      animation: 'slideUp 0.4s ease-out'
+      animation: 'slideUpScaled 0.4s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14268,32 +14297,7 @@ function App() {
     return () => window.removeEventListener('devicemotion', handleMotion);
   }, [cats, showBubble, triggerAnimation]);
 
-  // Push notifications: check cat statuses periodically
-  const notifSentRef = useRef({});
-  useEffect(() => {
-    // 始终运行关怀检查（页面内 Toast 替代浏览器通知）
-    const checkAndNotify = () => {
-      const now = Date.now();
-      const homeCats = cats.filter(c => c.location === 'home');
-      const bagCats = cats.filter(c => c.location === 'bag');
-
-      // 亲密度提醒由首页 NotificationBanner 横幅负责，Toast 只处理包裹到期
-      for (const cat of bagCats) {
-        const daysLeft = getRemainingDays(cat);
-        if (daysLeft <= 3 && daysLeft > 0) {
-          const key = `bag_${cat.serialId}_${daysLeft}`;
-          const lastSent = notifSentRef.current[key];
-          if (lastSent && now - lastSent < 12 * 3600000) continue;
-          setFeedToast({ text: `${cat.name} 还有${daysLeft}天就要离开包裹区了`, timestamp: now });
-          setTimeout(() => setFeedToast(null), 1500);
-          notifSentRef.current[key] = now;
-        }
-      }
-    };
-    checkAndNotify();
-    const timer = setInterval(checkAndNotify, 120000); // every 2 minutes
-    return () => clearInterval(timer);
-  }, [cats]);
+  // 包裹到期提醒已移入 NotificationBanner 横幅展示
 
   // Detect newly unlocked milestones + titles
   useEffect(() => {
@@ -14445,7 +14449,10 @@ function App() {
     }));
     // 喂食Toast
     setFeedToast({
-      text: `React.createElement("img",{src:"assets/icons/fish-blue.svg",style:{width:14,height:14,verticalAlign:"middle"}}) -1 ｜ ❤️ 好感度 +5！`,
+      text: React.createElement(React.Fragment, null,
+        React.createElement("img", { src: "assets/icons/fish-blue.svg", style: { width: 14, height: 14, verticalAlign: "middle" } }),
+        " -1  好感度 +5"
+      ),
       timestamp: Date.now()
     });
     setTimeout(() => setFeedToast(null), 2000);
@@ -15843,7 +15850,7 @@ function App() {
       textAlign: 'center',
       border: colors === CL ? '4px solid rgba(255,180,80,0.45)' : `1px solid ${colors.border}`,
       boxShadow: colors === CL ? '0 20px 60px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.12)' : 'none',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUpScaled 0.3s ease-out forwards'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -15930,7 +15937,7 @@ function App() {
   }), feedToast && /*#__PURE__*/React.createElement("div", {
     className: "feed-toast in",
     key: feedToast.timestamp,
-    style: colors === CL ? { background: '#FFF8E7', border: '2px solid #C4A882', color: '#4A2800', boxShadow: '0 4px 20px rgba(180,140,100,0.4)' } : {}
+    style: colors === CL ? { background: '#FFF8E7', border: '2px solid #C4A882', color: '#4A2800', boxShadow: '0 4px 20px rgba(180,140,100,0.4)', whiteSpace: 'nowrap', maxWidth: '90vw', overflow: 'hidden', textOverflow: 'ellipsis' } : { whiteSpace: 'nowrap', maxWidth: '90vw', overflow: 'hidden', textOverflow: 'ellipsis' }
   }, feedToast.text), guestToast && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
