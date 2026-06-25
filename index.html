@@ -3324,11 +3324,11 @@ function GroupStageBanner({
   return /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? '' : 'profile-card-dark',
     style: {
-      margin: '2px 16px',
+      margin: '2px 0',
       padding: '6px 16px',
       borderRadius: 12,
       background: colors === CL ? '#FFF8E7' : `${bracket.color}12`,
-      border: colors === CL ? '1px solid #C4A882' : `1px solid ${bracket.color}25`,
+      border: colors === CL ? '1px solid ' + colors.cardBorder : undefined,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
@@ -7981,12 +7981,15 @@ function FriendLeaderboard({
         textAlign: 'center',
         padding: '24px'
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/icons/lock.svg",
       style: {
-        fontSize: 40,
-        marginBottom: 12
+        width: 40,
+        height: 40,
+        marginBottom: 12,
+        filter: colors === CL ? 'none' : 'invert(1)'
       }
-    }, "\uD83D\uDD12"), /*#__PURE__*/React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 15,
         fontWeight: 700,
@@ -8001,8 +8004,18 @@ function FriendLeaderboard({
       }
     }, "\u6388\u6743\u597D\u53CB\u5173\u7CFB\u540E\u53EF\u67E5\u770B\u597D\u53CB\u6218\u51B5"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowAuthModal(true),
-      className: colors === CL ? 'btn-primary-spec' : '',
-      style: colors === CL ? { padding: '8px 24px' } : {
+      style: colors === CL ? {
+        padding: '8px 24px',
+        background: 'linear-gradient(180deg, #FFF8E7, #F5E6C8)',
+        border: '2px solid #C4A882',
+        borderRadius: 50,
+        color: '#8B6914',
+        fontSize: 14,
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        boxShadow: '0 2px 8px rgba(180,140,100,0.25)'
+      } : {
         padding: '8px 24px',
         background: 'rgba(0,0,0,0.4)',
         border: '2px solid #00ffff',
@@ -8261,7 +8274,7 @@ function EventPage({
       fontWeight: 700,
       color: colors.ink
     }
-  }, "\u26BD 2026 \u4E16\u754C\u676F\u8054\u52A8\u8FDB\u884C\u4E2D"), /*#__PURE__*/React.createElement("div", {
+  }, "2026 \u4E16\u754C\u676F\u8054\u52A8\u8FDB\u884C\u4E2D"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: colors.sub,
