@@ -4538,7 +4538,7 @@ const CAT_SKILLS = {
   },
   '三花猫': {
     active: '蹦跶',
-    icon: '🐱',
+    icon: 'assets/icons/cat-gold.svg',
     activeDesc: '有几率随机跳走场上任意1张干扰卡',
     color: '#FD79A8',
     lv2Name: '连续蹦跶',
@@ -8068,7 +8068,7 @@ function BattlePrep({
     style: {
       fontSize: 16
     }
-  }, levelConfig?.breed ? '🐱' : '❓'), /*#__PURE__*/React.createElement("span", {
+  }, levelConfig?.breed ? null : '❓'), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 14,
       fontWeight: 700,
@@ -8507,7 +8507,7 @@ function LevelSelect({
       color: '#F0EDFF',
       letterSpacing: '-0.5px'
     }
-  }, "\uD83D\uDC31 \u9009\u62E9\u5173\u5361"), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", { src: "assets/icons/cat-gold.svg", style: { width: 16, height: 16, verticalAlign: "middle" } }), " \u9009\u62E9\u5173\u5361"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: 'rgba(240,237,255,0.5)',
@@ -13289,7 +13289,7 @@ function Game() {
         animation: 'catEarWiggle 0.4s ease-in-out 2',
         filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
       }
-    }, '🐱'),
+    }), /*#__PURE__*/React.createElement("img", { src: "assets/icons/cat-gold.svg", style: { width: 28, height: 28, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" } }),
     /* 台词气泡 */
     /*#__PURE__*/React.createElement("div", {
       style: {
