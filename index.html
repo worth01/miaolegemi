@@ -3375,9 +3375,11 @@ function GroupStageBanner({
 function KnockoutBanner({
   clears,
   eliminated,
-  skinClaimed
+  skinClaimed,
+  dismissed,
+  onGoToActivity
 }) {
-  if (!isKnockoutStageActive()) return null;
+  if (!isKnockoutStageActive() || dismissed) return null;
   return /*#__PURE__*/React.createElement("div", {
     className: colors === CL ? '' : 'profile-card-dark',
     style: {
@@ -3415,7 +3417,17 @@ function KnockoutBanner({
       color: colors.green,
       fontWeight: 600
     }
-  }, "\u5DF2\u9886\u53D6"));
+  }, "\u5DF2\u9886\u53D6"), onGoToActivity && /*#__PURE__*/React.createElement("span", {
+    onClick: onGoToActivity,
+    style: {
+      fontSize: 16,
+      color: colors === CL ? '#8B4513' : 'rgba(255,255,255,0.6)',
+      cursor: 'pointer',
+      padding: '4px 6px',
+      fontWeight: 700,
+      flexShrink: 0
+    }
+  }, "\u2192"));
 }
 
 /* P2: 大决战横幅 */
@@ -3468,7 +3480,9 @@ function BettingPanel({
   onPlaceBet,
   onShareBet,
   fish,
-  showConfirmModal
+  showConfirmModal,
+  dismissed,
+  onGoToActivity
 }) {
   var upcomingMatch = getUpcomingMatch();
   var [selectedTeam, setSelectedTeam] = React.useState(null);
@@ -3495,6 +3509,7 @@ function BettingPanel({
 
   // Don't show if no upcoming match and no active/settled bets to display
   if (!upcomingMatch && activeBets.length === 0 && settledBets.length === 0) return null;
+  if (dismissed) return null;
   var handlePlace = function () {
     if (!selectedTeam || !upcomingMatch) return;
     if (fish < wager) {
@@ -3520,12 +3535,27 @@ function BettingPanel({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: colors.ink,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       marginBottom: 8
     }
-  }, "\u26BD \u55B5\u661F\u7ADE\u731C"), upcomingMatch && !betPlaced && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: colors.ink
+    }
+  }, "\u26BD \u55B5\u661F\u7ADE\u731C"), onGoToActivity && /*#__PURE__*/React.createElement("span", {
+    onClick: onGoToActivity,
+    style: {
+      fontSize: 16,
+      color: colors === CL ? '#8B4513' : 'rgba(255,255,255,0.6)',
+      cursor: 'pointer',
+      padding: '2px 4px',
+      fontWeight: 700
+    }
+  }, "\u2192")), upcomingMatch && !betPlaced && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: colors.sub,
@@ -13450,6 +13480,25 @@ function App() {
     localStorage.setItem('miaolegemi_group_dismiss', today);
     setGroupStageDismissed(true);
   }, []);
+  const [knockoutDismissed, setKnockoutDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('miaolegemi_knockout_dismiss') === new Date().toISOString().slice(0, 10);
+    } catch (e) { return false; }
+  });
+  const [bettingDismissed, setBettingDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('miaolegemi_betting_dismiss') === new Date().toISOString().slice(0, 10);
+    } catch (e) { return false; }
+  });
+  const goToActivity = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('miaolegemi_knockout_dismiss', today);
+    localStorage.setItem('miaolegemi_betting_dismiss', today);
+    setKnockoutDismissed(true);
+    setBettingDismissed(true);
+    setActiveTab('market');
+    setMarketTab('event');
+  }, []);
   const audioUnlockedRef = useRef(false);
 
   // ═══ BGM 切换：根据标签页 ═══
@@ -15587,16 +15636,20 @@ function App() {
     fish: fish,
     dismissed: groupStageDismissed,
     onClose: dismissGroupStage
-  }), /*#__PURE__*/React.createElement(KnockoutBanner, {
+  }), activeTab === 'home' && /*#__PURE__*/React.createElement(KnockoutBanner, {
     clears: knockoutConsecutiveClears,
     eliminated: knockoutEliminatedToday,
-    skinClaimed: knockoutSkinClaimed
-  }), /*#__PURE__*/React.createElement(FinalDayBanner, null), /*#__PURE__*/React.createElement(BettingPanel, {
+    skinClaimed: knockoutSkinClaimed,
+    dismissed: knockoutDismissed,
+    onGoToActivity: goToActivity
+  }), activeTab === 'home' && /*#__PURE__*/React.createElement(FinalDayBanner, null), activeTab === 'home' && /*#__PURE__*/React.createElement(BettingPanel, {
     bets: bets,
     onPlaceBet: handlePlaceBet,
     onShareBet: handleShareBet,
     fish: fish,
-    showConfirmModal: showConfirmModal
+    showConfirmModal: showConfirmModal,
+    dismissed: bettingDismissed,
+    onGoToActivity: goToActivity
   }), showCatDetail ? /*#__PURE__*/React.createElement(CatDetailPage, {
     cats: cats,
     catSerialId: selectedCat?.serialId,
