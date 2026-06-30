@@ -6,7 +6,7 @@
             src="https://img.shields.io/badge/LINUX-DO-FFB003.svg?logo=data:image/svg%2bxml;base64,DQo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiPjxwYXRoIGQ9Ik00Ni44Mi0uMDU1aDYuMjVxMjMuOTY5IDIuMDYyIDM4IDIxLjQyNmM1LjI1OCA3LjY3NiA4LjIxNSAxNi4xNTYgOC44NzUgMjUuNDV2Ni4yNXEtMi4wNjQgMjMuOTY4LTIxLjQzIDM4LTExLjUxMiA3Ljg4NS0yNS40NDUgOC44NzRoLTYuMjVxLTIzLjk3LTIuMDY0LTM4LjAwNC0yMS40M1EuOTcxIDY3LjA1Ni0uMDU0IDUzLjE4di02LjQ3M0MxLjM2MiAzMC43ODEgOC41MDMgMTguMTQ4IDIxLjM3IDguODE3IDI5LjA0NyAzLjU2MiAzNy41MjcuNjA0IDQ2LjgyMS0uMDU2IiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZWNlY2VjO2ZpbGwtb3BhY2l0eToxIi8+PHBhdGggZD0iTTQ3LjI2NiAyLjk1N3EyMi41My0uNjUgMzcuNzc3IDE1LjczOGE0OS43IDQ5LjcgMCAwIDEgNi44NjcgMTAuMTU3cS00MS45NjQuMjIyLTgzLjkzIDAgOS43NS0xOC42MTYgMzAuMDI0LTI0LjM4N2E2MSA2MSAwIDAgMSA5LjI2Mi0xLjUwOCIgc3R5bGU9InN0cm9rZTpub25lO2ZpbGwtcnVsZTpldmVub2RkO2ZpbGw6IzE5MTkxOTtmaWxsLW9wYWNpdHk6MSIvPjxwYXRoIGQ9Ik03Ljk4IDcwLjkyNmMyNy45NzctLjAzNSA1NS45NTQgMCA4My45My4xMTNRODMuNDI2IDg3LjQ3MyA2Ni4xMyA5NC4wODZxLTE4LjgxIDYuNTQ0LTM2LjgzMi0xLjg5OC0xNC4yMDMtNy4wOS0yMS4zMTctMjEuMjYyIiBzdHlsZT0ic3Ryb2tlOm5vbmU7ZmlsbC1ydWxlOmV2ZW5vZGQ7ZmlsbDojZjlhZjAwO2ZpbGwtb3BhY2l0eToxIi8+PC9zdmc+" /></a>
 </p> 
   
-### **🐱喵呜乐消消·养好猫，趣闯关**
+### **喵呜乐消消·养好猫，趣闯关**
 
 **猫咪养成 × 消除游戏 · 网页直接可玩 · 无需安装**
 
@@ -29,13 +29,21 @@
 <br/>
 
 <!-- 游戏截图 -->
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/1271e703-67ba-4204-9492-dfb6aebae7c6" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/9c2bc55b-9179-4625-99ed-87013a395f6a" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/2ce92ed2-b8be-4552-a5d5-98757a0d3644" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/b903b874-ae8d-4f68-a48d-e8f52c76e717" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/61ee17fe-dc75-4321-952c-c0b742838491" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/5a1aec3c-4458-4ae4-b7f5-91f46cd39e8a" />
-<img width="248" height="530" alt="image" src="https://github.com/user-attachments/assets/81b69252-8d8c-4b39-8957-987a1e1fb687" />
+<img width="248" height="490" alt="截屏2026-06-30 16 58 02" src="https://github.com/user-attachments/assets/b5ba7d95-b267-46a6-a400-4aab175ec936" />
+<img width="248" height="490" alt="截屏2026-06-30 16 58 30" src="https://github.com/user-attachments/assets/d5576a69-b983-4933-a5f6-df8fed97edd9" />
+
+<img width="248" height="490" alt="截屏2026-06-30 16 48 19" src="https://github.com/user-attachments/assets/31790052-b76f-44f3-b81c-6c07132bca5a" />
+
+<img width="248" height="490" alt="截屏2026-06-30 16 49 20" src="https://github.com/user-attachments/assets/cfd54ed6-c8f6-4fab-b5c9-c508ef51a768" />
+<img width="248" height="490" alt="截屏2026-06-30 16 49 08" src="https://github.com/user-attachments/assets/bf78dd8a-259b-4d0a-91a1-fc649e049e92" />
+<img width="248" height="490" alt="截屏2026-06-30 16 48 48" src="https://github.com/user-attachments/assets/53eaabd4-68d7-49d3-9b8c-686b44d89edc" />
+
+<img width="248" height="490" alt="截屏2026-06-30 16 48 36" src="https://github.com/user-attachments/assets/7da28c7e-e3f8-4ca3-ab5e-5cda124ece92" />
+<img width="200" height="200" alt="截屏2026-06-30 16 53 55" src="https://github.com/user-attachments/assets/98399350-d01e-4cf8-ac57-9e86a285d188" />
+<img width="200" height="200" alt="截屏2026-06-30 16 54 09" src="https://github.com/user-attachments/assets/284a6be7-64c5-43dc-a2fe-9a903a5c6e42" />
+<img width="200" height="200" alt="截屏2026-06-30 16 54 19" src="https://github.com/user-attachments/assets/08609296-44b7-48db-ad8a-f7bab8cf51cc" />
+<img width="200" height="200" alt="截屏2026-06-30 16 53 35" src="https://github.com/user-attachments/assets/8d732427-427c-4ce2-96f0-f8c5910e09cc" />
+
 
 </div>
 
@@ -302,6 +310,9 @@ MIT License · 自由使用，欢迎 Star ⭐ 支持一下
 
 **如果你觉得好玩，点一个 ⭐ Star 是对我最大的鼓励！**
 
-*养好猫，趣闯关 🐱*
+*养好猫，趣闯关*
+
+<img width="50" height="50" alt="6DB80BF3-89FB-41E1-82B6-9C3D6DA8569A_1_201_a" src="https://github.com/user-attachments/assets/90c66783-d3d1-4d41-8cd0-cd43df4f944b" />
+
 
 </div>
